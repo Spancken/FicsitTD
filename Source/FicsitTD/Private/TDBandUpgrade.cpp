@@ -12,6 +12,7 @@
 #include "FGDismantleInterface.h"
 #include "Buildables/FGBuildableConveyorBelt.h"
 #include "Buildables/FGBuildableConveyorLift.h"
+#include "Buildables/FGBuildableConveyorBase.h"
 #include "FGFactoryConnectionComponent.h"
 
 UTDBandUpgrade* UTDBandUpgrade::Get(const UObject* WorldContext)
@@ -188,6 +189,11 @@ FString UTDBandUpgrade::RuesteUm(int32 Stufe)
 		}
 		return nullptr;
 	};
+	// Selbsttest 19:53: an noch nicht fertigen Teilen gesetzte Verbindungen gingen verloren (54 offene Enden) -> erst fertigstellen
+	for (const TPair<AFGBuildable*, AFGBuildable*>& P : Neue)
+	{
+		P.Value->FinishSpawning(P.Value->GetActorTransform());
+	}
 	int32 Verbunden = 0, Fehlt = 0;
 	for (const FVerbindung& V : Verbindungen)
 	{
@@ -206,11 +212,17 @@ FString UTDBandUpgrade::RuesteUm(int32 Stufe)
 			++Verbunden;
 		}
 	}
-	int32 B = 0, L = 0;
+	// Bandketten neu bilden: das Spiel fasst verbundene Baender beim Anmelden zu Ketten zusammen - die neuen Teile wurden
+	// ohne Verbindungen angemeldet, also ab- und mit Verbindungen wieder anmelden
 	for (const TPair<AFGBuildable*, AFGBuildable*>& P : Neue)
 	{
-		P.Value->FinishSpawning(P.Value->GetActorTransform());
+		if (AFGBuildableConveyorBase* Foerderer = Cast<AFGBuildableConveyorBase>(P.Value))
+		{
+			Bau->RemoveConveyor(Foerderer);
+			Bau->AddConveyor(Foerderer);
+		}
 	}
+	int32 B = 0, L = 0;
 	for (const TPair<AFGBuildable*, AFGBuildable*>& P : Neue)
 	{
 		IFGDismantleInterface::Execute_Upgrade(P.Key, P.Value);
@@ -242,8 +254,19 @@ int32 UTDBandUpgrade::VerbindeOffeneEnden(UWorld* World, bool bNurZaehlen, FStri
 				continue;
 			}
 			// dieselbe Suche wie beim Einrasten im Bau-Assistenten: passendes Ende (Richtung, Art) an derselben Stelle
-			UFGFactoryConnectionComponent* G = UFGFactoryConnectionComponent::FindCompatibleOverlappingConnections(E, E->GetComponentLocation(), nullptr, 50.f);
-			if (!G || G->IsConnected() || G->GetOwner() == *It)
+			// nur echte Gegenstuecke: offen, nicht am selben Teil, kein Pfeiler (SnapOnly), Richtung passt (Selbsttest 19:53: Pfeiler gezaehlt)
+			TArray<UFGFactoryConnectionComponent*> Kandidaten;
+			UFGFactoryConnectionComponent::FindAllOverlappingConnections(Kandidaten, World, E->GetComponentLocation(), 50.f, EFactoryConnectionDirection::FCD_ANY);
+			UFGFactoryConnectionComponent* G = nullptr;
+			for (UFGFactoryConnectionComponent* K : Kandidaten)
+			{
+				if (K && K != E && K->GetOwner() != *It && !K->IsConnected() && K->GetDirection() != EFactoryConnectionDirection::FCD_SNAP_ONLY && E->CanConnectTo(K))
+				{
+					G = K;
+					break;
+				}
+			}
+			if (!G)
 			{
 				continue;
 			}
