@@ -20,6 +20,9 @@ public:
 	 *  offene Band- und Lift-Enden mit einem passenden Gegenstueck an derselben Stelle verbinden (wie das Einrasten beim Bauen).
 	 *  bNurZaehlen: nichts aendern, nur zaehlen (Selbsttest-Pruefung "BandVerbindungen"). Rueckgabe: Anzahl offener Enden mit Gegenstueck */
 	static int32 VerbindeOffeneEnden(UWorld* World, bool bNurZaehlen, FString* OutBericht = nullptr);
+	/** 0.78.4 (Marius: Mk1 soll nach der Mk2-Forschung nicht mehr in der Schnellleiste stehen): Band- und Lift-Rezepte
+	 *  unter Mk<Stufe> in allen Schnellleisten aller Spieler durch Mk<Stufe> ersetzen. Rueckgabe: Anzahl ersetzter Plaetze */
+	static int32 SchnellleisteAufStufe(UWorld* World, int32 Stufe);
 
 private:
 	void Verbinde();

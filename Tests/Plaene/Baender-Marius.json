@@ -1,0 +1,45 @@
+{
+  "Name": "Baender-Marius",
+  "_Hinweis": "0.78.4: Kopie von Marius' Spielstand W05 (05.11. 20:28, nach der fehlgeschlagenen Reparatur). Prueft Richtung der Band-Enden, repariert, speichert unter eigenem Namen, laedt, prueft erneut. Das Original bleibt unberuehrt.",
+  "Spielstand": "Autotest_Marius_W05",
+  "Quelle": "Marius_W05_Baender.sav",
+  "ErweiterteEinstellungen": true,
+  "WarteNachLaden": 20,
+  "MaxMinuten": 10,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "befehl": "td baender pruefen"
+    },
+    {
+      "foto": "M1_vorher"
+    },
+    {
+      "befehl": "td baender reparieren"
+    },
+    {
+      "warte": 2
+    },
+    {
+      "speichere": "Autotest_Marius_W05_repariert"
+    },
+    {
+      "lade": "Autotest_Marius_W05_repariert"
+    },
+    {
+      "pruefe": "BandVerbindungen",
+      "text": "nach Reparatur, Speichern und Laden: kein Ende offen oder falsch herum"
+    },
+    {
+      "foto": "M2_nachher"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}
