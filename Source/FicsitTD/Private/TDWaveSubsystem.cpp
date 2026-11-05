@@ -1,4 +1,5 @@
 ﻿#include "TDWaveSubsystem.h"
+#include "TDSicherheitsnetz.h"
 #include "TDLaufProtokoll.h"
 #include "FGItemPickup.h"
 #include "TDBalance.h"
@@ -2556,6 +2557,7 @@ void UTDWaveSubsystem::PruefeNachzuegler(FTDWellenGegner& G, float Abstand, floa
 	{
 		UE_LOG(LogFicsitTD, Log, TEXT("Nachzuegler: %s bei %s (%.0f m vor dem Kern) nach %d Versuchen entfernt"), *Kreatur->GetClass()->GetName(),
 			*Vorher.ToCompactString(), Abstand / 100.f, G.Rettungen - 1);
+		TDNetz::Melde(TDNetz::EArt::NachzueglerEntfernt);
 		UGameplayStatics::ApplyDamage(Kreatur, 1.e7f, nullptr, nullptr, UDamageType::StaticClass());
 		if (Kreatur->IsAliveAndWell())
 		{
@@ -2610,6 +2612,7 @@ void UTDWaveSubsystem::PruefeNachzuegler(FTDWellenGegner& G, float Abstand, floa
 		}
 	}
 	const bool bVersetzt = Kreatur->TeleportTo(Ziel + FVector(0.f, 0.f, 150.f), Kreatur->GetActorRotation());
+	TDNetz::Melde(TDNetz::EArt::NachzueglerVersetzt);
 	if (Hirn)
 	{
 		Hirn->Neustart(Kreatur, Bester ? *Bester : TArray<FVector>());

@@ -19,6 +19,8 @@ namespace TDBalance
 	FICSITTD_API FString Lade();
 	/** Gibt es den Schluessel in Tabelle oder Datei? (ohne Warnung) */
 	FICSITTD_API bool Hat(const FString& Schluessel);
+	/** 0.78.2 Selbsttest (Schritt "balance"): Wert bis zum naechsten Laden setzen; nur bekannte Schluessel */
+	FICSITTD_API bool SetzeTest(const FString& Schluessel, float Wert);
 	/** Pfad der Balance-Datei */
 	FICSITTD_API FString Pfad();
 }

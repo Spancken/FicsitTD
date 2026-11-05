@@ -123,6 +123,8 @@ private:
 	int32 mAbgestuerzt = 0;
 	/** 0.78.1: Sekunden mit 0 LP ohne Tod (Zombie-Hog) */
 	float mOhneLeben = 0.f;
+	/** 0.78.2: letzter Ort mit Bodenkontakt (Diagnose: wo faellt er durch?) */
+	FVector mLetzterBoden = FVector::ZeroVector;
 	/** Weg fuehrt bis zum Kern (false = versperrt, er endet an einer Mauer) */
 	bool mWegVoll = true;
 	/** Sekunden bis zur naechsten Neuberechnung des Weges */

@@ -172,6 +172,10 @@
       "text": "Kern hat Welle 30 überstanden"
     },
     {
+      "pruefe": "Sicherheitsnetze",
+      "text": "kein Sicherheitsnetz ausgelöst (Versetzen, Absturz, 0 LP)"
+    },
+    {
       "pruefe": "KeineWarnungen",
       "text": "keine Warnungen oder Fehler des Mods im Log"
     }

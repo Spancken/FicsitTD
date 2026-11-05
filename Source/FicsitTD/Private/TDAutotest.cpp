@@ -15,6 +15,7 @@
 #include "FGBuildableSubsystem.h"
 #include "TDEinsatz.h"
 #include "TDGegnerHirn.h"
+#include "TDSicherheitsnetz.h"
 #include "Creature/FGCreature.h"
 #include "FGHealthComponent.h"
 #include "FGSaveManagerInterface.h"
@@ -164,6 +165,7 @@ void UTDAutotest::StartePlan()
 	mBauplatz = 0;
 	mBauplatzInnen = 0;
 	mKernGefallen = false;
+	TDNetz::Zuruecksetzen();
 	mNachzueglerUhr = 0.f;
 	mNachzueglerMeldungen = 0;
 	mNachzueglerWelle = 0;
@@ -429,6 +431,25 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 			PC->SetControlRotation((Kern->GetActorLocation() - Ort).Rotation());
 		}
 		Ergebnis(TEXT("Ueberblick"), TEXT("Figur über dem Kern"), Kern && Figur);
+		return true;
+	}
+	const TSharedPtr<FJsonObject>* BalanceWerte = nullptr;
+	if (S->TryGetObjectField(TEXT("balance"), BalanceWerte))
+	{
+		// 0.78.2: Balance-Werte fuer den A/B-Versuch setzen (gelten bis zum naechsten Laden der Datei)
+		TArray<FString> Teile;
+		bool bAlle = true;
+		for (const TPair<FString, TSharedPtr<FJsonValue>>& V : (*BalanceWerte)->Values)
+		{
+			const bool bOk = TDBalance::SetzeTest(V.Key, static_cast<float>(V.Value->AsNumber()));
+			bAlle &= bOk;
+			Teile.Add(FString::Printf(TEXT("%s=%g%s"), *V.Key, V.Value->AsNumber(), bOk ? TEXT("") : TEXT(" (unbekannt)")));
+		}
+		for (TActorIterator<ATDDefenseCore> It(World); It; ++It)
+		{
+			It->AktualisiereLadequelle();
+		}
+		Ergebnis(TEXT("Pruefstand"), TEXT("Balance ") + FString::Join(Teile, TEXT(", ")), bAlle);
 		return true;
 	}
 	if (S->HasField(TEXT("stromfrei")))
@@ -882,6 +903,13 @@ bool UTDAutotest::Pruefe(UWorld* World, const TSharedPtr<FJsonObject>& S, FStrin
 		OutIst = Ohne.Num() ? FString::Printf(TEXT("%d von %d ohne Strom: %s"), Ohne.Num(), Alle, *FString::Join(Ohne, TEXT(", "))) : FString::Printf(TEXT("alle %d mit Strom"), Alle);
 		return Ohne.Num() == 0;
 	}
+	if (Name == TEXT("Sicherheitsnetze"))
+	{
+		// 0.78.2: jede Ausloesung eines Sicherheitsnetzes ist ein Fehler mit Ursache (Ziel 0)
+		int32 Summe = 0;
+		OutIst = TDNetz::Text(&Summe);
+		return Summe == 0;
+	}
 	if (Name == TEXT("KeineWarnungen"))
 	{
 		const TArray<FString> Zeilen = mLog ? mLog->Zeilen() : TArray<FString>();
@@ -952,7 +980,7 @@ void UTDAutotest::MeldeNachzuegler(UWorld* World, const TArray<AFGCreature*>& Le
 			}
 		}
 		const UTDGegnerHirn* Hirn = UTDGegnerHirn::Von(C);
-		Teile.Add(FString::Printf(TEXT("%s LP %.0f/%.0f, %.0f m vom Kern (Hoehe %+.1f m), %d Tuerme zielen darauf%s | %s"), *Name,
+		Teile.Add(FString::Printf(TEXT("%s LP %.2f/%.0f, %.0f m vom Kern (Hoehe %+.1f m), %d Tuerme zielen darauf%s | %s"), *Name,
 			Leben ? Leben->GetCurrentHealth() : -1.f, Leben ? Leben->GetMaxHealth() : -1.f, FVector::Dist2D(C->GetActorLocation(), Mitte) / 100.f,
 			(C->GetActorLocation().Z - Mitte.Z) / 100.f, Zielen, Grund.IsEmpty() ? TEXT("") : *(TEXT(", sonst ") + Grund), Hirn ? *Hirn->Diagnose() : TEXT("-")));
 	}

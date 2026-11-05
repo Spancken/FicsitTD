@@ -7,6 +7,7 @@ Die Baender gelten vorerst nur als Hinweis, nicht als Fehler, bis sie mit Marius
 import csv
 import json
 import os
+import statistics
 import sys
 
 HIER = os.path.dirname(os.path.abspath(__file__))
@@ -36,11 +37,17 @@ def main():
            "Munitionsnot = Turm-Sekunden mit Ziel ohne Munition ÷ (Türme × Wellendauer). Bild p95 in ms (22 ms ≈ 45 FPS)."]
     verletzungen = 0
     lauf, vorher = 0, 10 ** 6
+    laeufe_kurz = []
     for z in zeilen:
         if int(zahl(z["Welle"])) <= vorher:   # Wellennummer beginnt neu: naechster Plan im Paket
             lauf += 1
             aus += ["", f"### {namen[lauf - 1] if lauf <= len(namen) else f'Lauf {lauf}'}", ""] + kopf
         vorher = int(zahl(z["Welle"]))
+        name = namen[lauf - 1] if lauf <= len(namen) else f"Lauf {lauf}"
+        if len(laeufe_kurz) < lauf:
+            laeufe_kurz.append([name, 100.0, 0])
+        laeufe_kurz[-1][1] = min(laeufe_kurz[-1][1], zahl(z["Kern_Proz"]))
+        laeufe_kurz[-1][2] = max(laeufe_kurz[-1][2], int(zahl(z["Welle"])))
         stufe = STUFEN.get(int(zahl(z["Stufe"])), z["Stufe"])
         b = baender.get(stufe, {})
         welle = int(zahl(z["Welle"]))
@@ -60,6 +67,16 @@ def main():
         verletzungen += len(hinweise)
         aus.append(f"| {welle} | {stufe} | {z['Gegner']} | {z['Tuerme']} | {q:.2f} | {kern:.0f} | {zahl(z['Kernverlust_Proz']):.1f} | {100 * not_:.0f} % | "
                    f"{zahl(z['OhneStrom_s']):.0f} | {dauer:.0f} | {zahl(z['Bild_p95_ms']):.1f} | {', '.join(hinweise) or 'ok'} |")
+    # 0.78.2 Streuung: je Plan Laeufe, W30 erreicht, Kern-Tiefpunkt (Median, Spanne). Ziel: Spanne <= 25 Punkte
+    je_plan = {}
+    for name, tief, hoechste in laeufe_kurz:
+        je_plan.setdefault(name, []).append((tief, hoechste))
+    if any(len(v) > 1 for v in je_plan.values()):
+        aus += ["", "### Streuung je Plan", "", "| Plan | Läufe | höchste Welle je Lauf | Kern-Tiefpunkt Median | Spanne | Ziel Spanne ≤ 25 |", "|---|---|---|---|---|---|"]
+        for name, v in je_plan.items():
+            tiefs = sorted(t for t, _ in v)
+            spanne = tiefs[-1] - tiefs[0]
+            aus.append(f"| {name} | {len(v)} | {', '.join(str(h) for _, h in v)} | {statistics.median(tiefs):.0f} % | {spanne:.0f} | {'ja' if spanne <= 25 else '**nein**'} |")
     aus += ["", f"**{verletzungen} Bandverletzungen** in {len(zeilen)} Wellen (vorerst nur Hinweis, Bänder in `Tests\\zielbaender.json`)."]
     with open(bericht, "a", encoding="utf-8") as f:
         f.write("\n".join(aus) + "\n")

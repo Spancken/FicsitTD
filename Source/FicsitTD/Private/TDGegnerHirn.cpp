@@ -24,6 +24,7 @@
 #include "EngineUtils.h"
 #include "Engine/World.h"
 #include "FGHealthComponent.h"
+#include "TDSicherheitsnetz.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "NavigationPath.h"
 #include "NavigationSystem.h"
@@ -380,10 +381,18 @@ void UTDGegnerHirn::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 		{
 			if (mOhneLeben += 1.f; mOhneLeben >= 2.f)
 			{
-				UE_LOG(LogFicsitTD, Log, TEXT("Hirn: %s lebt mit 0 LP seit %.0f s, wird getoetet"), *Kreatur->GetClass()->GetName(), mOhneLeben);
+				// 0.78.2: Zustand mitschreiben, um die Ursache zu finden (warum kein Tod bei 0 LP?)
+				UE_LOG(LogFicsitTD, Log, TEXT("Hirn: %s lebt mit 0 LP (genau %.4f von %.0f) seit %.0f s, wird getoetet | tot-Flag %s, betaeubt %s, Bewegung %s, Zustand %s"),
+					*Kreatur->GetClass()->GetName(), Rest->GetCurrentHealth(), Rest->GetMaxHealth(), mOhneLeben, Rest->IsDead() ? TEXT("ja") : TEXT("nein"), Kreatur->IsStunned() ? TEXT("ja") : TEXT("nein"),
+					Bewegung ? *UEnum::GetValueAsString(Bewegung->MovementMode.GetValue()) : TEXT("?"), *Diagnose());
+				TDNetz::Melde(TDNetz::EArt::OhneLeben);
 				Rest->Kill();
 				return;
 			}
+		}
+		if (Bewegung && Bewegung->MovementMode == MOVE_Walking)
+		{
+			mLetzterBoden = Kreatur->GetActorLocation();
 		}
 		// 0.78.1 (Pruefstand 05.11.: drei Niederlagen der Mischbasis durch Gegner, die nach dem Versetzen durch die Welt fielen):
 		// im freien Fall und mehr als Gegner.AbsturzGrenze m unter dem Kern -> zurueck auf den Weg; beim dritten Mal sterben.
@@ -395,7 +404,9 @@ void UTDGegnerHirn::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 			const FVector Vorher = Kreatur->GetActorLocation();
 			if (mAbgestuerzt >= 3 || mWeg.Num() < 2)
 			{
-				UE_LOG(LogFicsitTD, Log, TEXT("Hirn: %s zum %d. Mal aus der Welt gefallen (%s), entfernt"), *Kreatur->GetClass()->GetName(), mAbgestuerzt, *Vorher.ToCompactString());
+				UE_LOG(LogFicsitTD, Log, TEXT("Hirn: %s zum %d. Mal aus der Welt gefallen (%s, zuletzt Boden bei %s), entfernt"), *Kreatur->GetClass()->GetName(), mAbgestuerzt,
+					*Vorher.ToCompactString(), *mLetzterBoden.ToCompactString());
+				TDNetz::Melde(TDNetz::EArt::AbsturzEntfernt);
 				if (UFGHealthComponent* Leben = Kreatur->GetHealthComponent())
 				{
 					Leben->Kill();
@@ -408,8 +419,9 @@ void UTDGegnerHirn::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 				Bewegung->StopMovementImmediately();
 			}
 			Kreatur->TeleportTo(Zurueck, Kreatur->GetActorRotation(), false, true);
-			UE_LOG(LogFicsitTD, Log, TEXT("Hirn: %s aus der Welt gefallen (%s), zurueck auf den Weg %s"), *Kreatur->GetClass()->GetName(),
-				*Vorher.ToCompactString(), *Zurueck.ToCompactString());
+			UE_LOG(LogFicsitTD, Log, TEXT("Hirn: %s aus der Welt gefallen (%s, zuletzt Boden bei %s), zurueck auf den Weg %s"), *Kreatur->GetClass()->GetName(),
+				*Vorher.ToCompactString(), *mLetzterBoden.ToCompactString(), *Zurueck.ToCompactString());
+			TDNetz::Melde(TDNetz::EArt::Absturz);
 		}
 		// Logistik: durch sie hindurchlaufen (Marius 02.11.: Baender duerfen keine Wege lenken); nur bei neuer Liste uebernehmen
 		const UTDWaveSubsystem* Wellen = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
@@ -651,10 +663,12 @@ void UTDGegnerHirn::Marschiere(AFGCreature* Kreatur, float DeltaTime)
 		else
 		{
 			UE_LOG(LogFicsitTD, Log, TEXT("Hirn: %s festgefahren, kein Boden am Wegpunkt %s - nicht versetzt"), *Kreatur->GetClass()->GetName(), *Ziel.ToCompactString());
+			TDNetz::Melde(TDNetz::EArt::KeinBoden);
 		}
 		if (bBoden && Kreatur->TeleportTo(Ziel, Kreatur->GetActorRotation()))
 		{
 			++mVersetzt;
+			TDNetz::Melde(TDNetz::EArt::Festgefahren);
 			UE_LOG(LogFicsitTD, Log, TEXT("Hirn: %s festgefahren bei %s, versetzt | %s"), *Kreatur->GetClass()->GetName(), *Vorher.ToCompactString(), *Zustand);
 		}
 		mBester += 1000.f;

@@ -1,0 +1,21 @@
+{
+  "Name": "Streuung",
+  "_Hinweis": "Jeder Referenzplan 5-mal (Streuung der Wellen), etwa 3 h ohne Aufsicht.",
+  "Plaene": [
+    "Referenz-Misch",
+    "Referenz-Faul",
+    "Referenz-Gewehr",
+    "Referenz-Misch",
+    "Referenz-Faul",
+    "Referenz-Gewehr",
+    "Referenz-Misch",
+    "Referenz-Faul",
+    "Referenz-Gewehr",
+    "Referenz-Misch",
+    "Referenz-Faul",
+    "Referenz-Gewehr",
+    "Referenz-Misch",
+    "Referenz-Faul",
+    "Referenz-Gewehr"
+  ]
+}

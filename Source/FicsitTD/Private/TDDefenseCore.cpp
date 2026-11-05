@@ -1,4 +1,5 @@
 ﻿#include "TDDefenseCore.h"
+#include "Components/WorldPartitionStreamingSourceComponent.h"
 #include "FicsitTDModule.h"
 #include "TDDecoy.h"
 #include "TDEinsatz.h"
@@ -49,9 +50,44 @@ ATDDefenseCore::ATDDefenseCore()
 	mLeuchtring = Teil(TEXT("KernLeuchtring"));
 }
 
+void ATDDefenseCore::AktualisiereLadequelle()
+{
+	// 0.78.2 (Analyse 05.11.: alle Abstuerze an einer Stelle 156 m vom Kern, Spieler weit weg): die Welt laedt Gelaende- und
+	// Felskollision nur um Ladequellen (sonst nur den Spieler). Der Mod haelt Wellengegner auch ohne Zuschauer aktiv ("Weg C"),
+	// also muss das Schlachtfeld selbst geladen bleiben: der Kern ist eine Ladequelle wie ein Spieler (Kern.Ladequelle 0 = aus, fuer den A/B-Test)
+	const bool bAn = TDBalance::Wert(TEXT("Kern.Ladequelle"), 1.f) > 0.5f;
+	const float Radius = TDBalance::Wert(TEXT("Kern.LadeRadius"), 0.f);
+	if (bAn && !mLadequelle)
+	{
+		mLadequelle = NewObject<UWorldPartitionStreamingSourceComponent>(this, TEXT("TDLadequelle"));
+		if (Radius > 0.f)
+		{
+			FStreamingSourceShape Form;
+			Form.bUseGridLoadingRange = false;
+			Form.Radius = Radius * 100.f;
+			mLadequelle->Shapes.Add(Form);
+		}
+		mLadequelle->RegisterComponent();
+	}
+	if (mLadequelle)
+	{
+		if (bAn)
+		{
+			mLadequelle->EnableStreamingSource();
+		}
+		else
+		{
+			mLadequelle->DisableStreamingSource();
+		}
+	}
+	UE_LOG(LogFicsitTD, Log, TEXT("Abwehrkern %s: Ladequelle %s (%s), Weltaufteilung %s"), *GetName(), bAn ? TEXT("an") : TEXT("aus"),
+		Radius > 0.f ? *FString::Printf(TEXT("%.0f m"), Radius) : TEXT("Laderadius wie ein Spieler"), GetWorld()->GetWorldPartition() ? TEXT("ja") : TEXT("nein"));
+}
+
 void ATDDefenseCore::BeginPlay()
 {
 	Super::BeginPlay();
+	AktualisiereLadequelle();
 	// 0.61: Aufbau und Kristall des alten Kerns entfallen (die Blueprint setzt sie noch), dafuer die Teile des Tiefbohrers
 	if (mAufbau)
 	{

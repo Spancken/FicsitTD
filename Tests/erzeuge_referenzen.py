@@ -72,6 +72,7 @@ def plan(name, hinweis, ausbau, versorgung, extra=None, bis=30):
             s += [{"ueberblick": True}, {"foto": f"{name}_W{welle:02d}"}]
     s += [{"ueberblick": True}, {"foto": f"{name}_W{bis:02d}"},
           {"pruefe": "KernLebt", "text": f"Kern hat Welle {bis} überstanden"},
+          {"pruefe": "Sicherheitsnetze", "text": "kein Sicherheitsnetz ausgelöst (Versetzen, Absturz, 0 LP)"},
           {"pruefe": "KeineWarnungen", "text": "keine Warnungen oder Fehler des Mods im Log"}]
     return {"Name": name, "_Hinweis": hinweis + " Erzeugt von Tests\\erzeuge_referenzen.py.",
             "NeuesSpiel": {"Startort": "Rocky Desert"}, "ErweiterteEinstellungen": False, "WarteNachLaden": 60, "MaxMinuten": 45,
@@ -85,12 +86,22 @@ def main():
         plan("Referenz-Gewehr", "Nur Gewehrtürme (nach dem Start), ab Welle 15 mit Doktrin Gewehrturm. Zeigt, ob eine Linie allein trägt.", GEWEHR, SATT,
              extra={15: [{"erforsche": "DoktrinGewehr"}]}),
     ]
+    # 0.78.2 Ursachen-Versuch Absturz: gleiche Mischbasis ohne Ladequelle am Kern (Zustand bis 0.78.1) gegen mit Ladequelle
+    plaene.append(plan("Ursache-Ladequelle-aus", "Wie Referenz-Misch, aber ohne Ladequelle am Kern (A/B-Versuch: fallen die Gegner nur ohne sie durch?).",
+                       MISCH, SATT, extra={0: [{"balance": {"Kern.Ladequelle": 0}}]}))
     for p in plaene:
         with open(os.path.join(HIER, "Plaene", p["Name"] + ".json"), "w", encoding="utf-8") as f:
             json.dump(p, f, ensure_ascii=False, indent=2)
     with open(os.path.join(HIER, "Pakete", "Pruefstand.json"), "w", encoding="utf-8") as f:
         json.dump({"Name": "Pruefstand", "_Hinweis": "Referenzläufe bis Welle 30 (M1), je Plan etwa 15 min.",
-                   "Plaene": [p["Name"] for p in plaene]}, f, ensure_ascii=False, indent=2)
+                   "Plaene": [p["Name"] for p in plaene if p["Name"].startswith("Referenz")]}, f, ensure_ascii=False, indent=2)
+    with open(os.path.join(HIER, "Pakete", "Ursache.json"), "w", encoding="utf-8") as f:
+        json.dump({"Name": "Ursache", "_Hinweis": "A/B-Versuch Absturz: Mischbasis ohne und mit Ladequelle am Kern, etwa 30 min.",
+                   "Plaene": ["Ursache-Ladequelle-aus", "Referenz-Misch"]}, f, ensure_ascii=False, indent=2)
+    # 0.78.2 Streuung: jeder Plan 5-mal (Ziel: Kern-Tiefpunkt schwankt um hoechstens 25 Punkte), etwa 3 h
+    with open(os.path.join(HIER, "Pakete", "Streuung.json"), "w", encoding="utf-8") as f:
+        json.dump({"Name": "Streuung", "_Hinweis": "Jeder Referenzplan 5-mal (Streuung der Wellen), etwa 3 h ohne Aufsicht.",
+                   "Plaene": [p["Name"] for p in plaene if p["Name"].startswith("Referenz")] * 5}, f, ensure_ascii=False, indent=2)
     print("Referenzen:", ", ".join(f"{p['Name']} ({len(p['Schritte'])} Schritte)" for p in plaene))
 
 
