@@ -9,6 +9,8 @@
 #include "Command/ChatCommandLibrary.h"
 #include "FGPlayerController.h"
 #include "FGSaveSystem.h"
+#include "FGSaveSession.h"
+#include "FGGameMode.h"
 #include "FGSaveManagerInterface.h"
 #include "EngineUtils.h"
 #include "Engine/GameInstance.h"
@@ -164,7 +166,14 @@ void UTDAutotest::StartePlan()
 	UWorld* World = GetGameInstance() ? GetGameInstance()->GetWorld() : nullptr;
 	if (World && World->IsGameWorld() && World->GetMapName().Contains(TEXT("Persistent_Level")))
 	{
-		LadeSpielstand(World);   // schon im Spiel: naechsten Spielstand direkt laden
+		if (mPlan->HasField(TEXT("NeuesSpiel")))
+		{
+			StarteNeuesSpiel(World);
+		}
+		else
+		{
+			LadeSpielstand(World);   // schon im Spiel: naechsten Spielstand direkt laden
+		}
 	}
 	else
 	{
@@ -219,6 +228,14 @@ bool UTDAutotest::Tick(float /*BildDt*/)
 		}
 		return true;
 	}
+	// 0.77 (Test Neustart: Spielfigur starb in den Duenen, der Test wartete endlos): im Selbsttest ist die Figur unverwundbar
+	if (World && World->GetFirstPlayerController())
+	{
+		if (APawn* Figur = World->GetFirstPlayerController()->GetPawn())
+		{
+			Figur->SetCanBeDamaged(false);
+		}
+	}
 	const float MaxSekunden = 60.f * (mPlan.IsValid() && mPlan->HasField(TEXT("MaxMinuten")) ? mPlan->GetNumberField(TEXT("MaxMinuten")) : 12.f);
 	if (mPhase != EPhase::Fertig && mPlanZeit > MaxSekunden)
 	{
@@ -232,7 +249,14 @@ bool UTDAutotest::Tick(float /*BildDt*/)
 		// Hauptmenue: kurz warten, bis es steht, dann den Spielstand laden
 		if (World && !TDIstSpielwelt(World) && World->GetFirstPlayerController() && mUhr > 8.f)
 		{
-			LadeSpielstand(World);
+			if (mPlan->HasField(TEXT("NeuesSpiel")))
+			{
+				StarteNeuesSpiel(World);
+			}
+			else
+			{
+				LadeSpielstand(World);
+			}
 		}
 		else if (TDIstSpielwelt(World))
 		{
@@ -246,9 +270,11 @@ bool UTDAutotest::Tick(float /*BildDt*/)
 		{
 			if (mUhr > (mPlan->HasField(TEXT("WarteNachLaden")) ? mPlan->GetNumberField(TEXT("WarteNachLaden")) : 20.f))
 			{
-				Ergebnis(TEXT("Laden"), FString::Printf(TEXT("Spielstand %s geladen"), *mPlan->GetStringField(TEXT("Spielstand"))), true);
+				Ergebnis(TEXT("Laden"), mPlan->HasField(TEXT("NeuesSpiel")) && !mLadenImPlan ? FString(TEXT("neues Spiel gestartet"))
+					: FString(TEXT("Spielstand geladen")), true);
 				mPhase = EPhase::Spiel;
-				mIndex = 0;
+				mIndex = mLadenImPlan ? mIndex + 1 : 0;
+				mLadenImPlan = false;
 				mSchrittBegonnen = false;
 			}
 		}
@@ -285,9 +311,27 @@ bool UTDAutotest::Tick(float /*BildDt*/)
 	return mPhase != EPhase::Fertig;
 }
 
-void UTDAutotest::LadeSpielstand(UWorld* World)
+void UTDAutotest::StarteNeuesSpiel(UWorld* World)
 {
-	const FString Name = mPlan->GetStringField(TEXT("Spielstand"));
+	// 0.77 Neustart-Rauchtest: neues Spiel mit dem Sitzungsschalter "FICSIT Tower Defense" (Wert wie im Log einer echten Sitzung)
+	const TSharedPtr<FJsonObject> Neu = mPlan->GetObjectField(TEXT("NeuesSpiel"));
+	// Optionsnamen wie im Log einer echten Sitzung ("?sessionName=...", AFGGameMode::SessionNameOption ist nicht linkbar)
+	FString Optionen = TEXT("?sessionName=Autotest_Neu?SessionSettings=FicsitTD.TowerDefense=AgAAAAQAAAABAAAA?skiponboarding");
+	if (Neu->HasField(TEXT("Startort")))
+	{
+		Optionen += FString::Printf(TEXT("?%s=%s"), AFGGameMode::StartLocationOption, *Neu->GetStringField(TEXT("Startort")));
+	}
+	UE_LOG(LogFicsitTD, Log, TEXT("Autotest: neues Spiel %s"), *Optionen);
+	mAlteWelt = TDIstSpielwelt(World) ? World : nullptr;
+	UGameplayStatics::SetGlobalTimeDilation(World, 1.f);
+	UGameplayStatics::OpenLevel(World, FName(TEXT("/Game/FactoryGame/Map/GameLevel01/Persistent_Level")), true, Optionen);
+	mPhase = EPhase::Laedt;
+	mUhr = 0.f;
+}
+
+void UTDAutotest::LadeSpielstand(UWorld* World, const FString& NameVorgabe)
+{
+	const FString Name = NameVorgabe.IsEmpty() ? mPlan->GetStringField(TEXT("Spielstand")) : NameVorgabe;
 	UFGSaveSystem* Speicher = UFGSaveSystem::Get(World);
 	FSaveHeader Kopf;
 	if (!Speicher || !Speicher->LoadSaveGameHeaderSync(Name, Kopf))
@@ -352,6 +396,26 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		const bool bOk = Pruefe(World, S, Ist);
 		Ergebnis(TEXT("Pruefung"), S->HasField(TEXT("text")) ? S->GetStringField(TEXT("text")) : Wort, bOk, Ist);
 		return true;
+	}
+	if (S->TryGetStringField(TEXT("speichere"), Wort))
+	{
+		// 0.77: speichern wie der Mod je Welle (UFGSaveSession), danach kurz warten, bis die Datei geschrieben ist
+		if (mSchrittUhr <= Dt + 0.01f)
+		{
+			UFGSaveSession* Speicher = UFGSaveSession::Get(World);
+			if (Speicher)
+			{
+				Speicher->SaveGame(Wort, FOnSaveGameComplete(), nullptr);
+			}
+			Ergebnis(TEXT("Speichern"), Wort, Speicher != nullptr);
+		}
+		return mSchrittUhr >= 5.f;
+	}
+	if (S->TryGetStringField(TEXT("lade"), Wort))
+	{
+		mLadenImPlan = true;
+		LadeSpielstand(World, Wort);
+		return false;   // weiter geht es nach dem Laden (Phase Laedt setzt den naechsten Schritt)
 	}
 	if (S->TryGetStringField(TEXT("erforsche"), Wort))
 	{
@@ -570,6 +634,44 @@ bool UTDAutotest::Pruefe(UWorld* World, const TSharedPtr<FJsonObject>& S, FStrin
 		const bool bSoll = !S->HasField(TEXT("erwartet")) || S->GetBoolField(TEXT("erwartet"));
 		OutIst = !Rezept ? FString(TEXT("Rezept nicht gefunden")) : FString::Printf(TEXT("%s %s"), *Rezept->GetName(), bFrei ? TEXT("frei") : TEXT("nicht frei"));
 		return Rezept && bFrei == bSoll;
+	}
+	if (Name == TEXT("Sichtlinie"))
+	{
+		// 0.77: von jedem Turm 16 Richtungen in 20 m auf Bodenhoehe (+1 m) pruefen; Anteil freier Linien gegen "min"
+		int32 Frei = 0, Alle = 0;
+		TMap<FString, int32> Hindernisse;
+		const float Abstand = (S->HasField(TEXT("abstand")) ? S->GetNumberField(TEXT("abstand")) : 20.0) * 100.f;
+		for (TActorIterator<ATDTurretBase> It(World); It; ++It)
+		{
+			for (int32 k = 0; k < 16; ++k)
+			{
+				const FVector Richtung = FRotator(0.f, k * 22.5f, 0.f).Vector();
+				FVector Punkt = It->GetActorLocation() + Richtung * Abstand;
+				FHitResult Boden;
+				if (World->LineTraceSingleByChannel(Boden, Punkt + FVector(0.f, 0.f, 3000.f), Punkt - FVector(0.f, 0.f, 3000.f), ECC_Visibility))
+				{
+					Punkt = Boden.ImpactPoint + FVector(0.f, 0.f, 100.f);
+				}
+				FString Hindernis;
+				++Alle;
+				if (It->FreieSichtZuPunkt(Punkt, Hindernis))
+				{
+					++Frei;
+				}
+				else
+				{
+					++Hindernisse.FindOrAdd(Hindernis);
+				}
+			}
+		}
+		TArray<FString> Teile;
+		for (const TPair<FString, int32>& H : Hindernisse)
+		{
+			Teile.Add(FString::Printf(TEXT("%s %d"), *H.Key, H.Value));
+		}
+		const float Anteil = Alle ? float(Frei) / Alle : 0.f;
+		OutIst = FString::Printf(TEXT("%d von %d Linien frei (%.0f %%)%s"), Frei, Alle, Anteil * 100.f, Teile.Num() ? *(TEXT("; verdeckt durch ") + FString::Join(Teile, TEXT(", "))) : TEXT(""));
+		return Alle > 0 && Anteil >= (S->HasField(TEXT("min")) ? S->GetNumberField(TEXT("min")) : 0.75);
 	}
 	if (Name == TEXT("TuermeMitStrom"))
 	{

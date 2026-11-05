@@ -2,6 +2,7 @@
 #include "FicsitTDModule.h"
 #include "TDDefenseCore.h"
 #include "TDWaveSubsystem.h"
+#include "TDBalance.h"
 #include "EngineUtils.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
@@ -1562,7 +1563,7 @@ void UTDKernplatz::WarteNetzFuerEinsatz()
 		Waves->VerwerfeFronten();   // Fronten mit dem fertigen Netz neu suchen
 	}
 	TArray<FString> Meldungen;
-	Einsatz->Starte(Kern, mStufe, 30, mSpieler.Get(), Meldungen);
+	Einsatz->Starte(Kern, mStufe, TDBalance::Ganz(TEXT("Einsatz.WellenStandard"), 50), mSpieler.Get(), Meldungen);   // 0.77 Marius: 50 Wellen Standard
 	for (const FString& M : Meldungen)
 	{
 		Melde(M);

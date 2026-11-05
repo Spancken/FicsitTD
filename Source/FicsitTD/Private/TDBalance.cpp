@@ -21,17 +21,18 @@ namespace TDBalanceIntern
 		// Fronten (Marius 02.11.): eine Richtung zu Beginn; zweite ab NeueFrontAbWelle, dritte ab 2 x NeueFrontAbWelle - 1 (Normal: 11 / 21)
 		{ TEXT("Stufen.Erkundung.Budget"), 0.6f }, { TEXT("Stufen.Erkundung.GegnerLP"), 0.7f }, { TEXT("Stufen.Erkundung.AufbauSekunden"), 1800.f },
 		{ TEXT("Stufen.Erkundung.PauseSekunden"), 900.f }, { TEXT("Stufen.Erkundung.FrontenStart"), 1.f }, { TEXT("Stufen.Erkundung.NeueFrontAbWelle"), 16.f },
-		{ TEXT("Stufen.Erkundung.EliteAbWelle"), 12.f }, { TEXT("Stufen.Erkundung.KernLP"), 30000.f },
+		{ TEXT("Stufen.Erkundung.EliteAbWelle"), 15.f }, { TEXT("Stufen.Erkundung.KernLP"), 30000.f },
 		{ TEXT("Stufen.Normal.Budget"), 1.0f }, { TEXT("Stufen.Normal.GegnerLP"), 1.0f }, { TEXT("Stufen.Normal.AufbauSekunden"), 1200.f },
 		{ TEXT("Stufen.Normal.PauseSekunden"), 600.f }, { TEXT("Stufen.Normal.FrontenStart"), 1.f }, { TEXT("Stufen.Normal.NeueFrontAbWelle"), 11.f },
-		{ TEXT("Stufen.Normal.EliteAbWelle"), 8.f }, { TEXT("Stufen.Normal.KernLP"), 20000.f },
+		{ TEXT("Stufen.Normal.EliteAbWelle"), 10.f }, { TEXT("Stufen.Normal.KernLP"), 20000.f },
 		{ TEXT("Stufen.Hart.Budget"), 2.0f }, { TEXT("Stufen.Hart.GegnerLP"), 1.6f }, { TEXT("Stufen.Hart.AufbauSekunden"), 900.f },
 		{ TEXT("Stufen.Hart.PauseSekunden"), 480.f }, { TEXT("Stufen.Hart.FrontenStart"), 1.f }, { TEXT("Stufen.Hart.NeueFrontAbWelle"), 8.f },
-		{ TEXT("Stufen.Hart.EliteAbWelle"), 6.f }, { TEXT("Stufen.Hart.KernLP"), 15000.f },
+		{ TEXT("Stufen.Hart.EliteAbWelle"), 7.f }, { TEXT("Stufen.Hart.KernLP"), 15000.f },
 		{ TEXT("Stufen.Albtraum.Budget"), 2.0f }, { TEXT("Stufen.Albtraum.GegnerLP"), 1.7f }, { TEXT("Stufen.Albtraum.AufbauSekunden"), 600.f },
 		{ TEXT("Stufen.Albtraum.PauseSekunden"), 360.f }, { TEXT("Stufen.Albtraum.FrontenStart"), 1.f }, { TEXT("Stufen.Albtraum.NeueFrontAbWelle"), 6.f },
-		{ TEXT("Stufen.Albtraum.EliteAbWelle"), 4.f }, { TEXT("Stufen.Albtraum.KernLP"), 10000.f },
+		{ TEXT("Stufen.Albtraum.EliteAbWelle"), 5.f }, { TEXT("Stufen.Albtraum.KernLP"), 10000.f },
 
+		// 0.77 (Marius 05.11.2026): EliteAbWelle 15/10/7/5 wie in seiner Balance.json, mit denen alle Testlaeufe liefen
 		// ---- Wellen: Budget = Stufe.Budget x (Grund + JeWelle x N + Quadrat x N^2); Gegner-LP x (1 + LPJeWelle x (N-1)) ----
 		// 0.56 (Lauf 03.11.: Q 0,06 statt 0,2-0,3, Wellen viel zu leicht): Simulation Q W5 0,12 / W10 0,28 bei Standard-Turmzahl
 		{ TEXT("Wellen.BudgetGrund"), 12.f }, { TEXT("Wellen.BudgetJeWelle"), 5.f }, { TEXT("Wellen.BudgetQuadrat"), 0.15f },
@@ -179,6 +180,7 @@ namespace TDBalanceIntern
 		{ TEXT("Doktrin.Schaden"), 0.25f }, { TEXT("Doktrin.LevelRabatt"), 0.25f },
 		// 0.74 (pruefe_mod.py fand sie): bisher ohne Standardwert, im Log als "Schluessel fehlt"
 		{ TEXT("Metrik.Referenzzeit"), 60.f }, { TEXT("Test.WellenSprung"), 1.f },
+		{ TEXT("Einsatz.WellenStandard"), 50.f },   // 0.77 Marius: 50 Wellen sind Standard
 		{ TEXT("Forschung.Brandmunition.AbWelle"), 15.f }, { TEXT("Forschung.Akkubank.AbWelle"), 15.f },
 		{ TEXT("Forschung.DoktrinBolzen.AbWelle"), 15.f }, { TEXT("Forschung.DoktrinGewehr.AbWelle"), 15.f }, { TEXT("Forschung.DoktrinNobelisk.AbWelle"), 15.f },
 		{ TEXT("Forschung.DoktrinTesla.AbWelle"), 15.f }, { TEXT("Forschung.DoktrinFlamme.AbWelle"), 15.f },

@@ -228,7 +228,7 @@ private:
 	TObjectPtr<UTextBlock> mPionierKnopfText;
 	UPROPERTY()
 	TArray<TObjectPtr<UTDTalentKnopf>> mTalentKnoepfe;
-	int32 mLaenge = 1;
+	int32 mLaenge = 2;   // 0.77: Standard 50 Wellen
 	UPROPERTY()
 	TObjectPtr<UTextBlock> mStartText;
 	UPROPERTY()

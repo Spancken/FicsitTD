@@ -739,6 +739,8 @@ FString ATDTurretBase::GetStromText() const
 	return HasPower() ? TEXT("ja") : TEXT("NEIN (kein Netz mit Generator)");
 }
 
+static bool TDSichtFrei(const ATDTurretBase* Turm, const FVector& Von, const FVector& Nach, const AActor* Ziel, FString& OutHindernis);
+
 FString ATDTurretBase::KeinZielGrund() const
 {
 	const UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
@@ -774,11 +776,10 @@ FString ATDTurretBase::KeinZielGrund() const
 	}
 	else
 	{
-		FHitResult Hit;
-		FCollisionQueryParams Query(TEXT("FicsitTDTurmSicht"), false, this);
-		if (GetWorld()->LineTraceSingleByChannel(Hit, Achse, Naechster->GetActorLocation(), ECC_Visibility, Query) && !FreieSicht(Achse, Naechster))
+		FString Hindernis;
+		if (!TDSichtFrei(this, Achse, Naechster->GetActorLocation(), Naechster, Hindernis))
 		{
-			Grund = FString::Printf(TEXT("Sicht verdeckt durch %s"), Hit.GetActor() ? *Hit.GetActor()->GetClass()->GetName() : TEXT("Landschaft"));
+			Grund = FString::Printf(TEXT("Sicht verdeckt durch %s"), *Hindernis);
 		}
 		else
 		{
@@ -1127,20 +1128,37 @@ AFGCreature* ATDTurretBase::SucheZiel(const FVector& Achse) const
 	return nullptr;
 }
 
-bool ATDTurretBase::FreieSicht(const FVector& Von, const AActor* Ziel) const
+/** 0.77 (Bewertung 05.11., Beobachtung T2: "Sicht verdeckt durch AbstractInstanceManager"): Lightweight-Bauteile (Fundamente,
+ *  Rampen, Treppen, Traeger) liegen alle in einem Actor. Nur Mauern sollen die Sicht nehmen; der Rest wird uebergangen.
+ *  Liefert true, wenn das Hindernis zaehlt; OutName = Name fuer Meldungen */
+static bool TDHindernisZaehlt(const FHitResult& Hit, FString& OutName)
 {
-	FCollisionQueryParams Query(TEXT("FicsitTDTurmSicht"), false, this);
-	// Bis zu 6 Durchlaeufe: Hindernisse, die nicht zaehlen, werden ignoriert und die Linie weiter verfolgt
-	for (int32 Versuch = 0; Versuch < 6; ++Versuch)
+	const AActor* Getroffen = Hit.GetActor();
+	OutName = Getroffen ? Getroffen->GetClass()->GetName() : FString(TEXT("Landschaft"));
+	if (Getroffen && OutName.Contains(TEXT("AbstractInstanceManager")))
+	{
+		const UStaticMeshComponent* Teil = Cast<UStaticMeshComponent>(Hit.GetComponent());
+		const FString Modell = Teil && Teil->GetStaticMesh() ? Teil->GetStaticMesh()->GetName() : FString();
+		OutName = Modell.IsEmpty() ? OutName : Modell;
+		return Modell.Contains(TEXT("Wall"));
+	}
+	return true;
+}
+
+static bool TDSichtFrei(const ATDTurretBase* Turm, const FVector& Von, const FVector& Nach, const AActor* Ziel, FString& OutHindernis)
+{
+	FCollisionQueryParams Query(TEXT("FicsitTDTurmSicht"), false, Turm);
+	// Bis zu 8 Durchlaeufe: Hindernisse, die nicht zaehlen, werden uebergangen und die Linie weiter verfolgt
+	for (int32 Versuch = 0; Versuch < 8; ++Versuch)
 	{
 		FHitResult Hit;
-		if (!GetWorld()->LineTraceSingleByChannel(Hit, Von, Ziel->GetActorLocation(), ECC_Visibility, Query))
+		if (!Turm->GetWorld()->LineTraceSingleByChannel(Hit, Von, Nach, ECC_Visibility, Query))
 		{
 			return true;
 		}
 		const AActor* Getroffen = Hit.GetActor();
 		// Eigene Verteidigung (Mauern, Tuerme, Koeder) blockiert nicht
-		if (Getroffen == Ziel || Cast<ITDDamageable>(Getroffen) || Cast<ATDDecoy>(Getroffen))
+		if ((Ziel && Getroffen == Ziel) || Cast<ITDDamageable>(Getroffen) || Cast<ATDDecoy>(Getroffen))
 		{
 			return true;
 		}
@@ -1150,9 +1168,29 @@ bool ATDTurretBase::FreieSicht(const FVector& Von, const AActor* Ziel) const
 			Query.AddIgnoredActor(Getroffen);
 			continue;
 		}
+		if (!TDHindernisZaehlt(Hit, OutHindernis))
+		{
+			if (Hit.GetComponent())
+			{
+				Query.AddIgnoredComponent(Hit.GetComponent());
+			}
+			continue;
+		}
 		return false;
 	}
 	return true;
+}
+
+bool ATDTurretBase::FreieSicht(const FVector& Von, const AActor* Ziel) const
+{
+	FString Hindernis;
+	return Ziel && TDSichtFrei(this, Von, Ziel->GetActorLocation(), Ziel, Hindernis);
+}
+
+bool ATDTurretBase::FreieSichtZuPunkt(const FVector& Nach, FString& OutHindernis) const
+{
+	const FVector Von = mDreht && mHeadMesh ? mHeadMesh->GetComponentLocation() : GetMuzzleLocation();
+	return TDSichtFrei(this, Von, Nach, nullptr, OutHindernis);
 }
 
 const TCHAR* ATDTurretBase::SchadensartName(ETDSchadensart Art)

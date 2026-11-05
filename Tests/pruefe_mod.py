@@ -161,6 +161,12 @@ def main():
     pruefe_balance_json(standard)
     if args.sim:
         pruefe_simulator()
+    # Roadmap M0: Zahlentabellen in Spielregeln.md bei jedem Build aus dem Code erneuern
+    try:
+        import erzeuge_spielregeln
+        erzeuge_spielregeln.main()
+    except Exception as e:
+        HINWEIS(f"Spielregeln.md: Zahlen nicht erzeugt ({e})")
     for h in hinweise:
         print("HINWEIS", h)
     for f in fehler:

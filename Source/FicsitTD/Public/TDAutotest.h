@@ -39,6 +39,8 @@ public:
  *   {"erforsche": "Knoten"}               Forschung direkt geben (0.75)
  *   {"uebertakte": "Gewehrturm", "splitter": 2}  Energiesplitter in den ersten Turm des Typs (0.75)
  *   {"oeffne": "MAM"|"<Turmtyp>"}, {"schliesse": true}  Fenster fuer Fotos (0.75)
+ *   {"speichere": "Name"}, {"lade": "Name"}  Spielstand speichern bzw. mitten im Plan laden (0.77)
+ *   Plan-Feld "NeuesSpiel": {"Startort": "..."} statt "Spielstand": neues Spiel mit Tower-Defense-Schalter (0.77)
  *   {"klick": [x, y]}                     Mausklick im Spielfenster, Anteil 0..1 von links oben (0.75)
  */
 UCLASS()
@@ -58,7 +60,8 @@ private:
 	void PlanFertig(const FString& Grund);
 	void PaketFertig();
 	bool Tick(float Dt);
-	void LadeSpielstand(UWorld* World);
+	void LadeSpielstand(UWorld* World, const FString& Name = FString());
+	void StarteNeuesSpiel(UWorld* World);
 	/** einen Schritt ausfuehren; true = fertig, weiter zum naechsten */
 	bool Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float Dt);
 	bool Pruefe(UWorld* World, const TSharedPtr<FJsonObject>& S, FString& OutIst);
@@ -80,6 +83,8 @@ private:
 	float mGesamt = 0.f;
 	double mLetzte = 0.0;
 	bool mKlickUnten = false;
+	/** 0.77: Laden mitten im Plan (Schritt "lade"): danach mit dem naechsten Schritt weiter statt von vorn */
+	bool mLadenImPlan = false;
 	bool mSchrittBegonnen = false;
 	FTSTicker::FDelegateHandle mTicker;
 	TArray<TSharedPtr<FJsonValue>> mErgebnisse;

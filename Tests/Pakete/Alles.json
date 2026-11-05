@@ -1,5 +1,9 @@
 {
   "Name": "Alles",
   "_Hinweis": "Alle Plaene in einem Spielstart (0.76). Neue Plaene hier eintragen.",
-  "Plaene": [ "Grundtest", "Spezialisierung" ]
+  "Plaene": [
+    "Grundtest",
+    "Spezialisierung",
+    "Neustart"
+  ]
 }

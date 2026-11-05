@@ -425,7 +425,7 @@ void UTDKernTerminal::BaueOberflaeche()
 	FreiKnopf->OnClicked.AddDynamic(this, &UTDKernTerminal::FreiUmschalten);
 	Aktion(FreiKnopf);
 
-	mLaengeKnopf = NeuerKnopf(TEXT("Länge: Standard (30)"), Knopftext);
+	mLaengeKnopf = NeuerKnopf(TEXT("Länge: Standard (50)"), Knopftext);
 	mLaengeText = Knopftext;
 	mLaengeKnopf->OnClicked.AddDynamic(this, &UTDKernTerminal::LaengeWechseln);
 	Aktion(mLaengeKnopf);
@@ -659,7 +659,7 @@ void UTDKernTerminal::Aktualisiere()
 	mStartKnopf->SetVisibility(bEinsatz ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
 	if (mLaengeKnopf)
 	{
-		static const TCHAR* Namen[] = { TEXT("Kurz (20)"), TEXT("Standard (30)"), TEXT("Lang (50)"), TEXT("Endlos") };
+		static const TCHAR* Namen[] = { TEXT("Kurz (20)"), TEXT("Mittel (30)"), TEXT("Standard (50)"), TEXT("Endlos") };   // 0.77 Marius: 50 Wellen sind Standard
 		static const TCHAR* Wellen[] = { TEXT("20 Wellen"), TEXT("30 Wellen"), TEXT("50 Wellen"), TEXT("endlos") };
 		mLaengeKnopf->SetVisibility(bEinsatz ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
 		mLaengeText->SetText(FText::FromString(FString::Printf(TEXT("Länge: %s"), Namen[mLaenge])));

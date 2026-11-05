@@ -93,6 +93,8 @@ public:
 	/** 0.75 Selbsttest (UTDAutotest, Pruefung TurmWert): SchadenBonus, TaktBonus, Uebertakt, NennDPS, LevelPreis, LevelMax, Level,
 	 *  Doktrin (0/1), KannUebertakten (0/1), SplitterPlaetze, StromLaden (MW beim Aufladen/Produzieren); unbekannt = -1 */
 	float TestWert(const FString& Name) const;
+	/** 0.77 Selbsttest Sichtlinie: freie Sicht von der Muendung zu einem Punkt? OutHindernis = was blockiert */
+	bool FreieSichtZuPunkt(const FVector& Nach, FString& OutHindernis) const;
 
 	/** Zielwahl je Turm (Marius 03.11.2026): Reihenfolge der Ziele und bevorzugte Gegnerfamilie, im Maschinenfenster unten */
 	static constexpr int32 ZielModusAnzahl = 5;

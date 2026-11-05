@@ -39,7 +39,7 @@ $auftrag = [ordered]@{ Name = $name; Bereitschaft = [bool]($Bereit -or $Weiter);
 $ordner = Get-ChildItem (Join-Path $saved "SaveGames") -Directory | Where-Object { $_.Name -match '^\d+$' } |
     Sort-Object { (Get-ChildItem $_.FullName -Filter *.sav | Sort-Object LastWriteTime -Descending | Select-Object -First 1).LastWriteTime } -Descending |
     Select-Object -First 1
-foreach ($p in $plaene) { Copy-Item (Join-Path $Testspielstaende $p.Quelle) (Join-Path $ordner.FullName ($p.Spielstand + ".sav")) -Force }
+foreach ($p in $plaene) { if ($p.Quelle) { Copy-Item (Join-Path $Testspielstaende $p.Quelle) (Join-Path $ordner.FullName ($p.Spielstand + ".sav")) -Force } }
 
 $laeuft = Get-Process $spielProzess -ErrorAction SilentlyContinue | Select-Object -First 1
 if ($laeuft -and -not $Weiter) { throw "Das Spiel laeuft schon - schliessen oder mit -Weiter an die Bereitschaft schicken." }

@@ -27,6 +27,11 @@
       "text": "alle Türme hängen am Stromnetz"
     },
     {
+      "pruefe": "Sichtlinie",
+      "min": 0.75,
+      "text": "Türme sehen über Plattform und Rampen (16 Richtungen, 20 m)"
+    },
+    {
       "befehl": "td kern status"
     },
     {

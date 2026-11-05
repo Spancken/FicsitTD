@@ -1,0 +1,48 @@
+{
+  "Name": "Neustart",
+  "_Hinweis": "M0 (0.77): neues Spiel mit Tower-Defense-Schalter: Plattform und Kern entstehen, Einsatz startet; speichern und wieder laden. Ohne Welle (am Start steht noch kein Turm).",
+  "NeuesSpiel": {},
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 10,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warte": 20
+    },
+    {
+      "pruefe": "KernLebt",
+      "text": "Abwehrkern steht auf dem Kernplatz"
+    },
+    {
+      "befehl": "td kern status"
+    },
+    {
+      "foto": "N1_NeuesSpiel"
+    },
+    {
+      "speichere": "Autotest_Neustart"
+    },
+    {
+      "lade": "Autotest_Neustart"
+    },
+    {
+      "pruefe": "KernLebt",
+      "text": "Kern nach Speichern und Laden da"
+    },
+    {
+      "befehl": "td kern status"
+    },
+    {
+      "foto": "N2_NachLaden"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}
