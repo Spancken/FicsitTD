@@ -1,0 +1,7 @@
+{
+  "_Hinweis": "Bekannte, dokumentierte Abweichungen fuer pruefe_mod.py. Jede Ausnahme mit Grund und Ziel, wann sie wegfaellt.",
+  "Mono": {
+    "_Bolzenturm": "0.73: faellt ab Welle 40 ab (Q 1,72 bei W50); faellt weg mit S5 (Ballista/Repetierer)",
+    "Bolzenturm": 1.8
+  }
+}

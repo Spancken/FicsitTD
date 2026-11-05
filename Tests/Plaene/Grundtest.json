@@ -1,0 +1,76 @@
+{
+  "Name": "Grundtest",
+  "_Hinweis": "A2: T2-Spielstand laden, Welle 11 im Zeitraffer abwehren, Kern, Schaden je Turmart und Log pruefen. Schritte siehe TDAutotest.h.",
+  "Spielstand": "Autotest_FicsitTD_T2",
+  "Quelle": "FicsitTD_T2.sav",
+  "ErweiterteEinstellungen": true,
+  "WarteNachLaden": 20,
+  "MaxMinuten": 12,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "pruefe": "KernLebt",
+      "text": "Kern steht nach dem Laden"
+    },
+    {
+      "pruefe": "Forschung",
+      "knoten": "Durchschlagbolzen",
+      "erwartet": true,
+      "text": "Forschung aus dem Spielstand erhalten"
+    },
+    {
+      "pruefe": "TuermeMitStrom",
+      "text": "alle Türme hängen am Stromnetz"
+    },
+    {
+      "befehl": "td kern status"
+    },
+    {
+      "foto": "01_Start"
+    },
+    {
+      "zeitraffer": 3
+    },
+    {
+      "befehl": "td kern weiter"
+    },
+    {
+      "warteBis": "WelleLaeuft",
+      "max": 30
+    },
+    {
+      "warteBis": "WelleVorbei",
+      "max": 420
+    },
+    {
+      "zeitraffer": 1
+    },
+    {
+      "warte": 3
+    },
+    {
+      "pruefe": "WelleAbgewehrt",
+      "text": "Welle abgewehrt"
+    },
+    {
+      "pruefe": "SchadenJeTurmart",
+      "text": "jede Turmart hat Schaden gemacht"
+    },
+    {
+      "pruefe": "KernLebt",
+      "min": 50,
+      "text": "Kern über 50 %"
+    },
+    {
+      "foto": "02_NachWelle"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}

@@ -1,0 +1,237 @@
+{
+  "Name": "Spezialisierung",
+  "_Hinweis": "A3/A4 (0.75): prueft 0.72/0.73 im T2-Spielstand: stille Turm-Rezepte, Panzersperre weg, Gabelung Zielsuch/Panzerbrechend, Doktrin Gewehrturm (Schaden, Levelpreis, Level 5), Energiesplitter/Uebertakten; Fotos von Turmfenster und MAM. Tesla und Flamme fehlen im T2-Stand (dafuer T3-Spielstand noetig).",
+  "Spielstand": "Autotest_FicsitTD_T2",
+  "Quelle": "FicsitTD_T2.sav",
+  "ErweiterteEinstellungen": true,
+  "WarteNachLaden": 20,
+  "MaxMinuten": 12,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "pruefe": "TuermeMitStrom",
+      "text": "alle Türme hängen am Stromnetz"
+    },
+    {
+      "pruefe": "TurmWert",
+      "turm": "Gewehrturm",
+      "wert": "SchadenBonus",
+      "soll": 1.2,
+      "text": "Gewehrturm Level 2: Schaden x1,2"
+    },
+    {
+      "pruefe": "TurmWert",
+      "turm": "Gewehrturm",
+      "wert": "KannUebertakten",
+      "soll": 1,
+      "text": "Gewehrturm lässt sich übertakten"
+    },
+    {
+      "pruefe": "TurmWert",
+      "turm": "Gewehrturm",
+      "wert": "SplitterPlaetze",
+      "soll": 3,
+      "toleranz": 0,
+      "text": "Gewehrturm hat 3 Splitter-Plätze"
+    },
+    {
+      "pruefe": "RezeptFrei",
+      "rezept": "/FicsitTD/Buildings/Barrier/Recipe_TD_Barrier.Recipe_TD_Barrier_C",
+      "erwartet": false,
+      "text": "Panzersperre ist entfernt"
+    },
+    {
+      "pruefe": "RezeptFrei",
+      "rezept": "/FicsitTD/Buildings/GunTurret/Recipe_TD_Gun_Standard.Recipe_TD_Gun_Standard_C",
+      "text": "stilles Turm-Rezept Gewehrmunition ist frei"
+    },
+    {
+      "pruefe": "ForschungZustand",
+      "knoten": "Panzerbrechend",
+      "soll": "Ausgeschlossen",
+      "text": "Gabelung: Zielsuch ist erforscht, also Panzerbrechend ausgeschlossen"
+    },
+    {
+      "erforsche": "Panzerbrechend"
+    },
+    {
+      "warte": 2
+    },
+    {
+      "pruefe": "RezeptFrei",
+      "rezept": "/FicsitTD/Buildings/GunTurret/Recipe_TD_Gun_Panzer.Recipe_TD_Gun_Panzer_C",
+      "text": "Panzerbrechend: Turm-Rezept still freigeschaltet"
+    },
+    {
+      "pruefe": "RezeptFrei",
+      "rezept": "/FicsitTD/Recipes/Recipe_TD_PatronePanzer.Recipe_TD_PatronePanzer_C",
+      "text": "Panzerbrechend: Assembler-Rezept frei"
+    },
+    {
+      "erforsche": "DoktrinGewehr"
+    },
+    {
+      "warte": 2
+    },
+    {
+      "pruefe": "TurmWert",
+      "turm": "Gewehrturm",
+      "wert": "Doktrin",
+      "soll": 1,
+      "text": "Doktrin Gewehrturm aktiv"
+    },
+    {
+      "pruefe": "TurmWert",
+      "turm": "Gewehrturm",
+      "wert": "SchadenBonus",
+      "soll": 1.5,
+      "text": "Doktrin: Schaden x1,2 x1,25 = x1,5"
+    },
+    {
+      "pruefe": "TurmWert",
+      "turm": "Gewehrturm",
+      "wert": "LevelPreis",
+      "soll": 11,
+      "toleranz": 0,
+      "text": "Doktrin: Level 3 kostet 11 statt 15 EP"
+    },
+    {
+      "pruefe": "TurmWert",
+      "turm": "Bolzenturm",
+      "wert": "Doktrin",
+      "soll": 0,
+      "text": "Bolzenturm hat keine Doktrin"
+    },
+    {
+      "pruefe": "ForschungZustand",
+      "knoten": "DoktrinBolzen",
+      "soll": "Ausgeschlossen",
+      "text": "Doktrin Bolzenturm ausgeschlossen"
+    },
+    {
+      "erforsche": "Turmfertigung2"
+    },
+    {
+      "erforsche": "Turmfertigung3"
+    },
+    {
+      "warte": 2
+    },
+    {
+      "pruefe": "TurmWert",
+      "turm": "Gewehrturm",
+      "wert": "LevelMax",
+      "soll": 5,
+      "toleranz": 0,
+      "text": "Doktrin: Level 5 schon mit Turmfertigung III"
+    },
+    {
+      "pruefe": "TurmWert",
+      "turm": "Bolzenturm",
+      "wert": "LevelMax",
+      "soll": 4,
+      "toleranz": 0,
+      "text": "ohne Doktrin: Level 4 mit Turmfertigung III"
+    },
+    {
+      "oeffne": "Gewehrturm"
+    },
+    {
+      "warte": 3
+    },
+    {
+      "foto": "03_Turmfenster"
+    },
+    {
+      "schliesse": true
+    },
+    {
+      "warte": 1
+    },
+    {
+      "oeffne": "MAM"
+    },
+    {
+      "warte": 4
+    },
+    {
+      "klick": [
+        0.307,
+        0.21
+      ],
+      "_text": "Baum Ballistik"
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "04_MAM_Ballistik"
+    },
+    {
+      "klick": [
+        0.307,
+        0.283
+      ],
+      "_text": "Baum Festung"
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "05_MAM_Festung"
+    },
+    {
+      "schliesse": true
+    },
+    {
+      "warte": 1
+    },
+    {
+      "uebertakte": "Gewehrturm",
+      "splitter": 2
+    },
+    {
+      "zeitraffer": 3
+    },
+    {
+      "befehl": "td kern weiter"
+    },
+    {
+      "warteBis": "WelleLaeuft",
+      "max": 30
+    },
+    {
+      "warteBis": "WelleVorbei",
+      "max": 420
+    },
+    {
+      "zeitraffer": 1
+    },
+    {
+      "warte": 3
+    },
+    {
+      "pruefe": "TurmWert",
+      "turm": "Gewehrturm",
+      "wert": "Uebertakt",
+      "soll": 2.0,
+      "text": "Gewehrturm mit 2 Splittern auf 200 %"
+    },
+    {
+      "pruefe": "WelleAbgewehrt",
+      "text": "Welle abgewehrt"
+    },
+    {
+      "pruefe": "SchadenJeTurmart",
+      "text": "jede Turmart hat Schaden gemacht"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}
