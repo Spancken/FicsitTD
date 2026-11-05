@@ -12,6 +12,7 @@
 #include "FGDismantleInterface.h"
 #include "Buildables/FGBuildableConveyorBelt.h"
 #include "Buildables/FGBuildableConveyorLift.h"
+#include "FGFactoryConnectionComponent.h"
 
 UTDBandUpgrade* UTDBandUpgrade::Get(const UObject* WorldContext)
 {
@@ -119,45 +120,152 @@ FString UTDBandUpgrade::RuesteUm(int32 Stufe)
 			Lifte.Add(*It);
 		}
 	}
-	int32 B = 0, L = 0;
+	// 0.78.3 (Marius 05.11.: nach dem Aufruesten hingen Baender nicht mehr an Gebaeuden): vorher wurde jedes Band einzeln ersetzt und
+	// das alte abgerissen - der Abriss loeste dabei die Verbindung des Nachbarn, der schon am neuen Band hing. Jetzt wie der Bau-Assistent:
+	// 1. alle Verbindungen merken und loesen, 2. alle neuen Teile aufsetzen (noch nicht fertig), 3. neu verbinden, 4. fertigstellen,
+	// 5. Gegenstaende uebergeben und die alten abreissen (sie haben keine Verbindungen mehr)
+	struct FVerbindung { AFGBuildable* Eigner; FName Name; AFGBuildable* Partner; FName PartnerName; };
+	TArray<AFGBuildable*> Alte;
+	Alte.Append(Baender);
+	Alte.Append(Lifte);
+	TArray<FVerbindung> Verbindungen;
+	for (AFGBuildable* Alt : Alte)
+	{
+		TInlineComponentArray<UFGFactoryConnectionComponent*> Enden(Alt);
+		for (UFGFactoryConnectionComponent* E : Enden)
+		{
+			if (UFGFactoryConnectionComponent* G = E->GetConnection())
+			{
+				Verbindungen.Add({ Alt, E->GetFName(), Cast<AFGBuildable>(G->GetOwner()), G->GetFName() });
+			}
+		}
+	}
+	for (AFGBuildable* Alt : Alte)
+	{
+		IFGDismantleInterface::Execute_PreUpgrade(Alt);
+		TInlineComponentArray<UFGFactoryConnectionComponent*> Enden(Alt);
+		for (UFGFactoryConnectionComponent* E : Enden)
+		{
+			E->ClearConnection();
+		}
+	}
+	TMap<AFGBuildable*, AFGBuildable*> Neue;
 	for (AFGBuildableConveyorBelt* Alt : Baender)
 	{
 		const FTransform T = Alt->GetActorTransform();
-		IFGDismantleInterface::Execute_PreUpgrade(Alt);
-		AFGBuildableConveyorBelt* Neu = Cast<AFGBuildableConveyorBelt>(Bau->BeginSpawnBuildable(BandKlasse, T));
-		if (!Neu)
+		if (AFGBuildableConveyorBelt* Neu = Cast<AFGBuildableConveyorBelt>(Bau->BeginSpawnBuildable(BandKlasse, T)))
 		{
-			continue;
+			*Neu->GetMutableSplinePointData() = Alt->GetSplinePointData();
+			Neu->SetBuiltWithRecipe(BandRezept);
+			Neu->SetCustomizationData_Native(Alt->GetCustomizationData_Implementation());
+			Neue.Add(Alt, Neu);
 		}
-		*Neu->GetMutableSplinePointData() = Alt->GetSplinePointData();
-		Neu->SetBuiltWithRecipe(BandRezept);
-		Neu->SetCustomizationData_Native(Alt->GetCustomizationData_Implementation());
-		Neu->FinishSpawning(T);
-		IFGDismantleInterface::Execute_Upgrade(Alt, Neu);
-		Alt->Destroy();
-		++B;
 	}
 	for (AFGBuildableConveyorLift* Alt : Lifte)
 	{
 		const FTransform T = Alt->GetActorTransform();
-		IFGDismantleInterface::Execute_PreUpgrade(Alt);
-		AFGBuildableConveyorLift* Neu = Cast<AFGBuildableConveyorLift>(Bau->BeginSpawnBuildable(LiftKlasse, T));
-		if (!Neu)
+		if (AFGBuildableConveyorLift* Neu = Cast<AFGBuildableConveyorLift>(Bau->BeginSpawnBuildable(LiftKlasse, T)))
+		{
+			// Hoehe, Richtung und Durchfuehrungen sind geschuetzte Felder -> ueber die Reflexion kopieren
+			for (const TCHAR* Feld : { TEXT("mTopTransform"), TEXT("mIsReversed"), TEXT("mIsBeltUsingInputRotation"), TEXT("mSnappedPassthroughs") })
+			{
+				TDKopiereFeld(AFGBuildableConveyorLift::StaticClass(), Feld, Alt, Neu);
+			}
+			Neu->SetBuiltWithRecipe(LiftRezept);
+			Neu->SetCustomizationData_Native(Alt->GetCustomizationData_Implementation());
+			Neue.Add(Alt, Neu);
+		}
+	}
+	auto Ende = [](AFGBuildable* Eigner, FName Name) -> UFGFactoryConnectionComponent*
+	{
+		TInlineComponentArray<UFGFactoryConnectionComponent*> Enden(Eigner);
+		for (UFGFactoryConnectionComponent* E : Enden)
+		{
+			if (E->GetFName() == Name)
+			{
+				return E;
+			}
+		}
+		return nullptr;
+	};
+	int32 Verbunden = 0, Fehlt = 0;
+	for (const FVerbindung& V : Verbindungen)
+	{
+		AFGBuildable* const* NeuA = Neue.Find(V.Eigner);
+		AFGBuildable* const* NeuB = V.Partner ? Neue.Find(V.Partner) : nullptr;
+		UFGFactoryConnectionComponent* A = NeuA ? Ende(*NeuA, V.Name) : nullptr;
+		UFGFactoryConnectionComponent* G = V.Partner ? Ende(NeuB ? *NeuB : V.Partner, V.PartnerName) : nullptr;
+		if (!A || !G)
+		{
+			++Fehlt;
+			continue;
+		}
+		if (!A->IsConnected() && !G->IsConnected())
+		{
+			A->SetConnection(G);
+			++Verbunden;
+		}
+	}
+	int32 B = 0, L = 0;
+	for (const TPair<AFGBuildable*, AFGBuildable*>& P : Neue)
+	{
+		P.Value->FinishSpawning(P.Value->GetActorTransform());
+	}
+	for (const TPair<AFGBuildable*, AFGBuildable*>& P : Neue)
+	{
+		IFGDismantleInterface::Execute_Upgrade(P.Key, P.Value);
+		(P.Key->IsA<AFGBuildableConveyorLift>() ? L : B)++;
+		P.Key->Destroy();
+	}
+	UE_LOG(LogFicsitTD, Log, TEXT("Band-Upgrade Mk%d: %d Verbindungen gemerkt, %d wiederhergestellt (je Paar einmal), %d ohne Gegenstueck"),
+		Stufe, Verbindungen.Num(), Verbunden, Fehlt);
+	UE_LOG(LogFicsitTD, Log, TEXT("Band-Upgrade Mk%d: %d Baender, %d Lifte aufgeruestet"), Stufe, B, L);
+	return FString::Printf(TEXT("FICSIT-Logistik: %d Foerderbaender und %d Lifte automatisch auf Mk%d aufgeruestet."), B, L, Stufe);
+}
+
+
+int32 UTDBandUpgrade::VerbindeOffeneEnden(UWorld* World, bool bNurZaehlen, FString* OutBericht)
+{
+	int32 Offen = 0, Verbunden = 0;
+	TArray<FString> Beispiele;
+	for (TActorIterator<AFGBuildable> It(World); It; ++It)
+	{
+		if (!It->IsA<AFGBuildableConveyorBelt>() && !It->IsA<AFGBuildableConveyorLift>())
 		{
 			continue;
 		}
-		// Hoehe, Richtung und Durchfuehrungen sind geschuetzte Felder -> ueber die Reflexion kopieren
-		for (const TCHAR* Feld : { TEXT("mTopTransform"), TEXT("mIsReversed"), TEXT("mIsBeltUsingInputRotation"), TEXT("mSnappedPassthroughs") })
+		TInlineComponentArray<UFGFactoryConnectionComponent*> Enden(*It);
+		for (UFGFactoryConnectionComponent* E : Enden)
 		{
-			TDKopiereFeld(AFGBuildableConveyorLift::StaticClass(), Feld, Alt, Neu);
+			if (E->IsConnected())
+			{
+				continue;
+			}
+			// dieselbe Suche wie beim Einrasten im Bau-Assistenten: passendes Ende (Richtung, Art) an derselben Stelle
+			UFGFactoryConnectionComponent* G = UFGFactoryConnectionComponent::FindCompatibleOverlappingConnections(E, E->GetComponentLocation(), nullptr, 50.f);
+			if (!G || G->IsConnected() || G->GetOwner() == *It)
+			{
+				continue;
+			}
+			++Offen;
+			if (Beispiele.Num() < 5)
+			{
+				Beispiele.Add(FString::Printf(TEXT("%s/%s -> %s/%s bei %s"), *It->GetName(), *E->GetName(), *G->GetOwner()->GetName(), *G->GetName(), *E->GetComponentLocation().ToCompactString()));
+			}
+			if (!bNurZaehlen)
+			{
+				E->SetConnection(G);
+				++Verbunden;
+			}
 		}
-		Neu->SetBuiltWithRecipe(LiftRezept);
-		Neu->SetCustomizationData_Native(Alt->GetCustomizationData_Implementation());
-		Neu->FinishSpawning(T);
-		IFGDismantleInterface::Execute_Upgrade(Alt, Neu);
-		Alt->Destroy();
-		++L;
 	}
-	UE_LOG(LogFicsitTD, Log, TEXT("Band-Upgrade Mk%d: %d Baender, %d Lifte aufgeruestet"), Stufe, B, L);
-	return FString::Printf(TEXT("FICSIT-Logistik: %d Foerderbaender und %d Lifte automatisch auf Mk%d aufgeruestet."), B, L, Stufe);
+	const FString Bericht = bNurZaehlen
+		? FString::Printf(TEXT("%d offene Band-Enden mit Gegenstueck%s"), Offen, Beispiele.Num() ? *(TEXT(": ") + FString::Join(Beispiele, TEXT("; "))) : TEXT(""))
+		: FString::Printf(TEXT("%d offene Band-Enden wieder verbunden. Jetzt speichern und den Spielstand neu laden, dann baut das Spiel die Bandketten neu auf."), Verbunden);
+	UE_LOG(LogFicsitTD, Log, TEXT("Band-Verbindungen: %s"), *Bericht);
+	if (OutBericht)
+	{
+		*OutBericht = Bericht;
+	}
+	return Offen;
 }

@@ -52,7 +52,7 @@ static void Antwort(UCommandSender* Sender, const FString& Text)
 ATDDebugCommand::ATDDebugCommand()
 {
 	CommandName = TEXT("td");
-	Usage = NSLOCTEXT("FicsitTD", "TD.Usage", "/td umgebung|instanzen [Radius_m] - Objekte bzw. Instanzen um dich auflisten | /td koeder - alle Koeder entfernen | /td reichweite [an|aus] - Reichweitenkreise | /td turmlevel <1-5> - naechsten Turm auf Level setzen (Test) | /td teil [Name] - Turmteil ein-/ausblenden | /td probe gewehr|flamme|weg - Effekt-Vorschau | /td fuellen [art] [m3] - Puffer/Flammenwerfer fuellen | /td kern start [erkundung|normal|hart|albtraum] [Wellen] [Min] [Min]|weiter|stop|status|fronten [neu]|wege [aus]|stufen|tempo [Faktor]|stress [N ...] [lp=20] [s=20] [mix|art=<Gegner>] [anim=immer|sichtbar] [kollision=an|aus] [ragdoll=an|aus] [tuerme=aus] [geschoss=aus] [angriff=aus] [drehen=aus] [schatten=aus] [effekte=aus] [df=aus] [drehtakt=N] [toeten=N/s]|stress stop - Kern-Verteidigung | /td test [karte|gegner|marsch] - automatischer Test | /td einsatz start [stufe] [wellen]|frei [an|aus]|status|stop - Einsatz mit Kontingenten | /td laden, /td kaufe <Gebaeude> [n] - Laden | /td freischalten - alles frei | /td balance - Balance-Datei neu lesen | /td platz [liste|scan <Biom>|scan stop|pruefen <Id|S1..S8|hier [Biom]>|merken <Biom> [Notiz]|gemerkt|zurueck|bauen <Biom> [1-3]] - Kernplaetze suchen, pruefen, merken und bauen | /td szenario [liste|<1-5>|pruefen [Nr]|fertig|leeren] - Testszenarien | /td ada [bank] - ADA-Begruessung | /td baender <2-6> - alle Baender aufruesten");
+	Usage = NSLOCTEXT("FicsitTD", "TD.Usage", "/td umgebung|instanzen [Radius_m] - Objekte bzw. Instanzen um dich auflisten | /td koeder - alle Koeder entfernen | /td reichweite [an|aus] - Reichweitenkreise | /td turmlevel <1-5> - naechsten Turm auf Level setzen (Test) | /td teil [Name] - Turmteil ein-/ausblenden | /td probe gewehr|flamme|weg - Effekt-Vorschau | /td fuellen [art] [m3] - Puffer/Flammenwerfer fuellen | /td kern start [erkundung|normal|hart|albtraum] [Wellen] [Min] [Min]|weiter|stop|status|fronten [neu]|wege [aus]|stufen|tempo [Faktor]|stress [N ...] [lp=20] [s=20] [mix|art=<Gegner>] [anim=immer|sichtbar] [kollision=an|aus] [ragdoll=an|aus] [tuerme=aus] [geschoss=aus] [angriff=aus] [drehen=aus] [schatten=aus] [effekte=aus] [df=aus] [drehtakt=N] [toeten=N/s]|stress stop - Kern-Verteidigung | /td test [karte|gegner|marsch] - automatischer Test | /td einsatz start [stufe] [wellen]|frei [an|aus]|status|stop - Einsatz mit Kontingenten | /td laden, /td kaufe <Gebaeude> [n] - Laden | /td freischalten - alles frei | /td balance - Balance-Datei neu lesen | /td platz [liste|scan <Biom>|scan stop|pruefen <Id|S1..S8|hier [Biom]>|merken <Biom> [Notiz]|gemerkt|zurueck|bauen <Biom> [1-3]] - Kernplaetze suchen, pruefen, merken und bauen | /td szenario [liste|<1-5>|pruefen [Nr]|fertig|leeren] - Testszenarien | /td ada [bank] - ADA-Begruessung | /td baender <2-6>|pruefen|reparieren - alle Baender aufruesten, offene Band-Enden pruefen oder verbinden");
 	MinNumberOfArguments = 1;
 	bOnlyUsableByPlayer = true;
 }
@@ -752,6 +752,14 @@ EExecutionStatus ATDDebugCommand::ExecuteCommand_Implementation(UCommandSender* 
 	// /td baender <2|3>: alle Foerderbaender und Lifte von Hand aufruesten (0.71, sonst automatisch nach MAM-Forschung)
 	if (Arguments[0].Equals(TEXT("baender"), ESearchCase::IgnoreCase) || Arguments[0].Equals(TEXT("bänder"), ESearchCase::IgnoreCase))
 	{
+		// 0.78.3: /td baender pruefen|reparieren - offene Enden mit Gegenstueck zaehlen bzw. verbinden (Spielstaende, die 0.71-0.78.2 aufgeruestet haben)
+		if (Arguments.Num() > 1 && (Arguments[1].Equals(TEXT("reparieren"), ESearchCase::IgnoreCase) || Arguments[1].Equals(TEXT("pruefen"), ESearchCase::IgnoreCase)))
+		{
+			FString Bericht;
+			UTDBandUpgrade::VerbindeOffeneEnden(GetWorld(), Arguments[1].Equals(TEXT("pruefen"), ESearchCase::IgnoreCase), &Bericht);
+			Antwort(Sender, Bericht);
+			return EExecutionStatus::COMPLETED;
+		}
 		UTDBandUpgrade* Upgrade = UTDBandUpgrade::Get(this);
 		Antwort(Sender, Upgrade ? Upgrade->RuesteUm(FMath::Clamp(Arguments.Num() > 1 ? FCString::Atoi(*Arguments[1]) : 2, 2, 6)) : TEXT("nicht verfuegbar"));
 		return EExecutionStatus::COMPLETED;

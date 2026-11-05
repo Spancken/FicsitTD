@@ -1,0 +1,85 @@
+{
+  "Name": "Baender",
+  "_Hinweis": "0.78.3 (Marius 05.11.: nach dem Band-Upgrade hingen Baender nicht mehr an Gebaeuden, Tuerme ohne Munition): T2 laden, alle Baender auf Mk2 und Mk3 ruesten, Verbindungen pruefen, speichern, laden, erneut pruefen, eine Welle abwehren.",
+  "Spielstand": "Autotest_FicsitTD_T2",
+  "Quelle": "FicsitTD_T2.sav",
+  "ErweiterteEinstellungen": true,
+  "WarteNachLaden": 20,
+  "MaxMinuten": 15,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "pruefe": "BandVerbindungen",
+      "text": "vor dem Aufrüsten: kein Band-Ende offen"
+    },
+    {
+      "befehl": "td baender 2"
+    },
+    {
+      "warte": 3
+    },
+    {
+      "pruefe": "BandVerbindungen",
+      "text": "nach Mk2: kein Band-Ende offen"
+    },
+    {
+      "befehl": "td baender 3"
+    },
+    {
+      "warte": 3
+    },
+    {
+      "pruefe": "BandVerbindungen",
+      "text": "nach Mk3: kein Band-Ende offen"
+    },
+    {
+      "speichere": "Autotest_Baender"
+    },
+    {
+      "lade": "Autotest_Baender"
+    },
+    {
+      "pruefe": "BandVerbindungen",
+      "text": "nach Speichern und Laden: kein Band-Ende offen"
+    },
+    {
+      "foto": "01_Baender_Mk3"
+    },
+    {
+      "zeitraffer": 3
+    },
+    {
+      "befehl": "td kern weiter"
+    },
+    {
+      "warteBis": "WelleLaeuft",
+      "max": 30
+    },
+    {
+      "warteBis": "WelleVorbei",
+      "max": 420
+    },
+    {
+      "zeitraffer": 1
+    },
+    {
+      "warte": 3
+    },
+    {
+      "pruefe": "WelleAbgewehrt",
+      "text": "Welle abgewehrt"
+    },
+    {
+      "pruefe": "SchadenJeTurmart",
+      "text": "jede Turmart hat Schaden gemacht (Munition kommt über die Bänder an)"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}

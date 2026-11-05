@@ -220,6 +220,14 @@ namespace TDForschung
 			case ETDForschungZustand::Ausgeschlossen:
 				Titel = FString::Printf(TEXT("%s (ausgeschlossen: %s gewählt)"), *K.Name, *NameVon(GewaehlteAndere(WorldContext, K), K.Baum));
 				break;
+			// 0.78.3 (Marius 05.11.: "immer noch nicht transparent, was kann ich schon und was nicht"): jeder Zustand steht im Titel,
+			// auch erforscht und jetzt erforschbar (vorher nur der blanke Name)
+			case ETDForschungZustand::Erforscht:
+				Titel = FString::Printf(TEXT("%s (erforscht)"), *K.Name);
+				break;
+			case ETDForschungZustand::Moeglich:
+				Titel = FString::Printf(TEXT("%s (jetzt erforschbar)"), *K.Name);
+				break;
 			default:
 				break;
 			}

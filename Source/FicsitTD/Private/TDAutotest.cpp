@@ -16,6 +16,7 @@
 #include "TDEinsatz.h"
 #include "TDGegnerHirn.h"
 #include "TDSicherheitsnetz.h"
+#include "TDBandUpgrade.h"
 #include "Creature/FGCreature.h"
 #include "FGHealthComponent.h"
 #include "FGSaveManagerInterface.h"
@@ -898,6 +899,12 @@ bool UTDAutotest::Pruefe(UWorld* World, const TSharedPtr<FJsonObject>& S, FStrin
 		}
 		OutIst = Ohne.Num() ? FString::Printf(TEXT("%d von %d ohne Strom: %s"), Ohne.Num(), Alle, *FString::Join(Ohne, TEXT(", "))) : FString::Printf(TEXT("alle %d mit Strom"), Alle);
 		return Ohne.Num() == 0;
+	}
+	if (Name == TEXT("BandVerbindungen"))
+	{
+		// 0.78.3: kein Band- oder Lift-Ende offen, an dem ein passendes Gegenstueck liegt (nach dem Aufruesten)
+		const int32 Offen = UTDBandUpgrade::VerbindeOffeneEnden(World, true, &OutIst);
+		return Offen == 0;
 	}
 	if (Name == TEXT("Sicherheitsnetze"))
 	{
