@@ -90,6 +90,8 @@ public:
 	/** Reichweitenkreis am fertigen Turm ein-/ausblenden (/td reichweite) */
 	void ZeigeReichweite(bool bAn);
 	FString GetTurmName() const { return mTurmName; }
+	/** 0.78.1 Pruefstand-Diagnose: worauf zielt der Turm gerade */
+	AFGCreature* GetAktuellesZiel() const { return mAktuellesZiel.Get(); }
 	/** 0.75 Selbsttest (UTDAutotest, Pruefung TurmWert): SchadenBonus, TaktBonus, Uebertakt, NennDPS, LevelPreis, LevelMax, Level,
 	 *  Doktrin (0/1), KannUebertakten (0/1), SplitterPlaetze, StromLaden (MW beim Aufladen/Produzieren); unbekannt = -1 */
 	float TestWert(const FString& Name) const;

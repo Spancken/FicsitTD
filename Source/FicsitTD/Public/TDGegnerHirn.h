@@ -119,6 +119,10 @@ private:
 	float mZielSuche = 0.f;
 	float mAngriffTakt = 0.f;
 	int32 mVersetzt = 0;
+	/** 0.78.1: aus der Welt gefallen und zurueckgesetzt (Pruefstand: Gegner fielen bis -100 km und griffen den Kern von unten an) */
+	int32 mAbgestuerzt = 0;
+	/** 0.78.1: Sekunden mit 0 LP ohne Tod (Zombie-Hog) */
+	float mOhneLeben = 0.f;
 	/** Weg fuehrt bis zum Kern (false = versperrt, er endet an einer Mauer) */
 	bool mWegVoll = true;
 	/** Sekunden bis zur naechsten Neuberechnung des Weges */

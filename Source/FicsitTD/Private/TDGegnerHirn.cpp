@@ -375,6 +375,42 @@ void UTDGegnerHirn::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 		{
 			Steuerung->Stillegen();
 		}
+		// 0.78.1 (Paketlauf 12:41: Hog mit 0 LP lebte weiter und biss den Kern, 16 Tuerme zielten darauf): ohne LP sterben
+		if (UFGHealthComponent* Rest = Kreatur->GetHealthComponent(); Rest && Rest->GetCurrentHealth() <= 0.f)
+		{
+			if (mOhneLeben += 1.f; mOhneLeben >= 2.f)
+			{
+				UE_LOG(LogFicsitTD, Log, TEXT("Hirn: %s lebt mit 0 LP seit %.0f s, wird getoetet"), *Kreatur->GetClass()->GetName(), mOhneLeben);
+				Rest->Kill();
+				return;
+			}
+		}
+		// 0.78.1 (Pruefstand 05.11.: drei Niederlagen der Mischbasis durch Gegner, die nach dem Versetzen durch die Welt fielen):
+		// im freien Fall und mehr als Gegner.AbsturzGrenze m unter dem Kern -> zurueck auf den Weg; beim dritten Mal sterben.
+		// (Paketlauf 12:41: mit 30 m und ohne Fallbedingung wurden Gegner in einem Tal 35-50 m unter dem Kern zurueckgesetzt)
+		if (mKern.IsValid() && Bewegung && Bewegung->MovementMode == MOVE_Falling
+			&& Kreatur->GetActorLocation().Z < mKern->GetActorLocation().Z - TDBalance::Wert(TEXT("Gegner.AbsturzGrenze"), 150.f) * 100.f)
+		{
+			++mAbgestuerzt;
+			const FVector Vorher = Kreatur->GetActorLocation();
+			if (mAbgestuerzt >= 3 || mWeg.Num() < 2)
+			{
+				UE_LOG(LogFicsitTD, Log, TEXT("Hirn: %s zum %d. Mal aus der Welt gefallen (%s), entfernt"), *Kreatur->GetClass()->GetName(), mAbgestuerzt, *Vorher.ToCompactString());
+				if (UFGHealthComponent* Leben = Kreatur->GetHealthComponent())
+				{
+					Leben->Kill();
+				}
+				return;
+			}
+			const FVector Zurueck = TDHirn::PunktAufWeg(mWeg, FMath::Max(0.f, mBester - 1000.f)) + FVector(0.f, 0.f, 300.f);
+			if (Bewegung)
+			{
+				Bewegung->StopMovementImmediately();
+			}
+			Kreatur->TeleportTo(Zurueck, Kreatur->GetActorRotation(), false, true);
+			UE_LOG(LogFicsitTD, Log, TEXT("Hirn: %s aus der Welt gefallen (%s), zurueck auf den Weg %s"), *Kreatur->GetClass()->GetName(),
+				*Vorher.ToCompactString(), *Zurueck.ToCompactString());
+		}
 		// Logistik: durch sie hindurchlaufen (Marius 02.11.: Baender duerfen keine Wege lenken); nur bei neuer Liste uebernehmen
 		const UTDWaveSubsystem* Wellen = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
 		UCapsuleComponent* Kapsel = Kreatur->GetCapsuleComponent();
@@ -601,9 +637,22 @@ void UTDGegnerHirn::Marschiere(AFGCreature* Kreatur, float DeltaTime)
 			return;
 		}
 		const FVector Vorher = Kreatur->GetActorLocation();
-		const FVector Ziel = TDHirn::PunktAufWeg(mWeg, mBester + 1000.f) + FVector(0.f, 0.f, 150.f);
+		FVector Ziel = TDHirn::PunktAufWeg(mWeg, mBester + 1000.f) + FVector(0.f, 0.f, 150.f);
 		const FString Zustand = Diagnose();
-		if (Kreatur->TeleportTo(Ziel, Kreatur->GetActorRotation()))
+		// 0.78.1 (Pruefstand: versetzte Gegner fielen bis -100 km): nur auf echten Boden versetzen - von 5 m ueber dem Wegpunkt
+		// nach unten suchen; ohne Boden in 20 m bleibt er stehen und wird beim naechsten Mal weiter vorn versucht
+		FHitResult Boden;
+		FCollisionQueryParams Abfrage(TEXT("TDVersetzen"), false, Kreatur);
+		const bool bBoden = GetWorld()->LineTraceSingleByChannel(Boden, Ziel + FVector(0.f, 0.f, 500.f), Ziel - FVector(0.f, 0.f, 2000.f), ECC_WorldStatic, Abfrage);
+		if (bBoden)
+		{
+			Ziel = Boden.ImpactPoint + FVector(0.f, 0.f, 150.f);
+		}
+		else
+		{
+			UE_LOG(LogFicsitTD, Log, TEXT("Hirn: %s festgefahren, kein Boden am Wegpunkt %s - nicht versetzt"), *Kreatur->GetClass()->GetName(), *Ziel.ToCompactString());
+		}
+		if (bBoden && Kreatur->TeleportTo(Ziel, Kreatur->GetActorRotation()))
 		{
 			++mVersetzt;
 			UE_LOG(LogFicsitTD, Log, TEXT("Hirn: %s festgefahren bei %s, versetzt | %s"), *Kreatur->GetClass()->GetName(), *Vorher.ToCompactString(), *Zustand);
@@ -644,7 +693,9 @@ void UTDGegnerHirn::Greife(AFGCreature* Kreatur, float DeltaTime)
 	{
 		mGedraenge = false;
 	}
-	if (Zu.Size2D() > mWerte.Reichweite && !bAmKern && !bGedraenge)
+	// 0.78.1: nur angreifen, wenn er auf Hoehe des Ziels steht (vorher zaehlte nur der waagerechte Abstand)
+	const bool bHoehe = FMath::Abs(Zu.Z) <= TDBalance::Wert(TEXT("Gegner.AngriffHoehe"), 12.f) * 100.f;
+	if ((Zu.Size2D() > mWerte.Reichweite && !bAmKern && !bGedraenge) || !bHoehe)
 	{
 		if (mPhase != ETDHirnPhase::Anlauf)
 		{
@@ -771,7 +822,7 @@ FString UTDGegnerHirn::Diagnose() const
 		Bewegung ? *UEnum::GetValueAsString(Bewegung->MovementMode.GetValue()) : TEXT("?"),
 		Kreatur && Kreatur->GetIsEnabled() ? TEXT("ja") : TEXT("NEIN"),
 		Kreatur && GetWorld() ? GetWorld()->GetTimeSeconds() - Kreatur->GetLastRenderTime() : 0.f,
-		mVersetzt, mZiel.IsValid() && mZiel->GetActiveTarget() ? *mZiel->GetActiveTarget()->GetName() : TEXT("-"), ZielAbstand,
+		mVersetzt + 100 * mAbgestuerzt, mZiel.IsValid() && mZiel->GetActiveTarget() ? *mZiel->GetActiveTarget()->GetName() : TEXT("-"), ZielAbstand,
 		mSchaden, mLetztesOpfer.IsEmpty() ? TEXT("-") : *mLetztesOpfer);
 }
 

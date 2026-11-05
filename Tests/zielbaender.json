@@ -1,16 +1,38 @@
 {
-  "_Hinweis": "Zielbänder des Prüfstands (M1). Startwerte aus der Bewertung 7.1, werden mit Marius' Spielgefühl abgeglichen. Bild_p95_ms 22 entspricht etwa 45 FPS.",
+  "_Hinweis": "Zielbänder des Prüfstands (M1), je Stufe und Phase. Startwerte; sie werden mit Marius' Spielgefühl abgeglichen (Fragebogen je Fenster). Bild_p95_ms 22 entspricht etwa 45 FPS, im Zeitraffer zu hoch gemessen.",
   "Normal": {
-    "Q": [
-      0.3,
-      0.75
-    ],
-    "Q_Boss": [
-      0.5,
-      1.0
-    ],
     "Kern_Proz_min": 50,
     "Hungrig_Anteil_max": 0.2,
-    "Bild_p95_ms_max": 22
+    "Bild_p95_ms_max": 22,
+    "Phase1": {
+      "Q": [
+        0.05,
+        0.6
+      ],
+      "Q_Boss": [
+        0.3,
+        0.9
+      ]
+    },
+    "Phase2": {
+      "Q": [
+        0.25,
+        0.75
+      ],
+      "Q_Boss": [
+        0.5,
+        1.0
+      ]
+    },
+    "Phase3": {
+      "Q": [
+        0.35,
+        0.85
+      ],
+      "Q_Boss": [
+        0.6,
+        1.1
+      ]
+    }
   }
 }

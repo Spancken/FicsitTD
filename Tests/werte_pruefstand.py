@@ -29,19 +29,26 @@ def main():
     zeilen = [z for z in csv.DictReader(open(METRIKEN, encoding="utf-8"), delimiter=";") if z["Zeit"] >= start]
     if not zeilen:
         return
+    namen = sys.argv[3].split(",") if len(sys.argv) > 3 else []
+    kopf = ["| Welle | Stufe | Gegner | Türme | Q | Kern % | Verlust % | Munitionsnot | ohne Strom s | Dauer s | Bild p95 | Hinweis |",
+            "|---|---|---|---|---|---|---|---|---|---|---|---|"]
     aus = ["", "## Prüfstand: Kennzahlen je Welle", "",
-           "Munitionsnot = Turm-Sekunden mit Ziel ohne Munition ÷ (Türme × Wellendauer). Bild p95 in ms (22 ms ≈ 45 FPS).", "",
-           "| Welle | Stufe | Gegner | Türme | Q | Kern % | Verlust % | Munitionsnot | ohne Strom s | Dauer s | Bild p95 | Hinweis |",
-           "|---|---|---|---|---|---|---|---|---|---|---|---|"]
+           "Munitionsnot = Turm-Sekunden mit Ziel ohne Munition ÷ (Türme × Wellendauer). Bild p95 in ms (22 ms ≈ 45 FPS)."]
     verletzungen = 0
+    lauf, vorher = 0, 10 ** 6
     for z in zeilen:
+        if int(zahl(z["Welle"])) <= vorher:   # Wellennummer beginnt neu: naechster Plan im Paket
+            lauf += 1
+            aus += ["", f"### {namen[lauf - 1] if lauf <= len(namen) else f'Lauf {lauf}'}", ""] + kopf
+        vorher = int(zahl(z["Welle"]))
         stufe = STUFEN.get(int(zahl(z["Stufe"])), z["Stufe"])
         b = baender.get(stufe, {})
         welle = int(zahl(z["Welle"]))
         q, kern, dauer, tuerme = zahl(z["Q"]), zahl(z["Kern_Proz"]), max(zahl(z["Dauer_s"]), 1.0), max(int(zahl(z["Tuerme"])), 1)
         not_ = zahl(z["Hungrig_s"]) / (tuerme * dauer)
         hinweise = []
-        qband = b.get("Q_Boss" if welle % 10 == 0 else "Q")
+        phase = b.get(f"Phase{(welle - 1) // 10 + 1}", {})
+        qband = phase.get("Q_Boss" if welle % 10 == 0 else "Q", b.get("Q_Boss" if welle % 10 == 0 else "Q"))
         if qband and not (qband[0] <= q <= qband[1]):
             hinweise.append("Q unter Band" if q < qband[0] else "Q über Band")
         if "Kern_Proz_min" in b and kern < b["Kern_Proz_min"]:

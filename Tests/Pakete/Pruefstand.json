@@ -1,7 +1,9 @@
 {
   "Name": "Pruefstand",
-  "_Hinweis": "Referenzläufe (M1). Dauert lange (bis 40 min je Plan).",
+  "_Hinweis": "Referenzläufe bis Welle 30 (M1), je Plan etwa 15 min.",
   "Plaene": [
-    "Referenz-Misch"
+    "Referenz-Misch",
+    "Referenz-Faul",
+    "Referenz-Gewehr"
   ]
 }

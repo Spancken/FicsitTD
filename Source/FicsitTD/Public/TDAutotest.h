@@ -44,6 +44,7 @@ public:
  *   Pruefstand (0.78, Roadmap M1):
  *   {"stromfrei": true}                    Cheat ohne Strom (Fabrik und Netz sind nicht Teil des Pruefstands)
  *   {"baue": "Gewehrturm", "anzahl": 2, "level": 2, "rezept": "Recipe_TD_Gun_Standard"}  Tuerme auf freie Plaetze der Plattform
+ *        optional "ring": "innen" -> 8 m um den Kern (kurze Reichweite: Flamme, Tesla), sonst 16-m-Ring
  *   {"versorgung": {"Bolzenturm": 30, "Gewehrturm": 8}}  Munition je Turm und Minute in den Eingang (ersetzt die Fabrik)
  *   {"wellenlauf": 10, "zeitraffer": 4, "max": 400}  Wellen nacheinander starten, bis Welle 10 vorbei ist (max s je Welle)
  *   {"klick": [x, y]}                     Mausklick im Spielfenster, Anteil 0..1 von links oben (0.75)
@@ -94,6 +95,14 @@ private:
 	TMap<FString, float> mVersorgung;
 	TMap<TWeakObjectPtr<class ATDTurretBase>, float> mVersorgtRest;
 	int32 mBauplatz = 0;
+	int32 mBauplatzInnen = 0;
+	/** 0.78.1: Kern im Wellenlauf gefallen -> weitere Wellenlaeufe des Plans ueberspringen (keine Folgefehler) */
+	bool mKernGefallen = false;
+	/** 0.78.1: Nachzuegler-Diagnose (hoechstens 3 Gegner leben lange): Uhr, Meldungen je Welle, Welle der letzten Meldung */
+	float mNachzueglerUhr = 0.f;
+	int32 mNachzueglerMeldungen = 0;
+	int32 mNachzueglerWelle = 0;
+	void MeldeNachzuegler(UWorld* World, const TArray<class AFGCreature*>& Lebende, int32 Welle);
 	void Versorge(UWorld* World, float Dt);
 	bool mSchrittBegonnen = false;
 	FTSTicker::FDelegateHandle mTicker;

@@ -14,6 +14,9 @@
 #include "FGGameState.h"
 #include "FGBuildableSubsystem.h"
 #include "TDEinsatz.h"
+#include "TDGegnerHirn.h"
+#include "Creature/FGCreature.h"
+#include "FGHealthComponent.h"
 #include "FGSaveManagerInterface.h"
 #include "EngineUtils.h"
 #include "Engine/GameInstance.h"
@@ -159,6 +162,11 @@ void UTDAutotest::StartePlan()
 	mSchrittBegonnen = false;
 	mKlickUnten = false;
 	mBauplatz = 0;
+	mBauplatzInnen = 0;
+	mKernGefallen = false;
+	mNachzueglerUhr = 0.f;
+	mNachzueglerMeldungen = 0;
+	mNachzueglerWelle = 0;
 	mVersorgung.Reset();
 	mVersorgtRest.Reset();
 	mPlanZeit = 0.f;
@@ -451,13 +459,19 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		AFGBuildableSubsystem* Bau = AFGBuildableSubsystem::Get(World);
 		const int32 Anzahl = S->HasField(TEXT("anzahl")) ? static_cast<int32>(S->GetNumberField(TEXT("anzahl"))) : 1;
 		const int32 Level = S->HasField(TEXT("level")) ? static_cast<int32>(S->GetNumberField(TEXT("level"))) : 1;
-		// Plaetze: Ring um den Kern im 8-m-Raster, abwechselnd die Seiten, damit sich die Tuerme verteilen
-		static const FVector2D Raster[] = { {16, 0}, {-16, 0}, {0, 16}, {0, -16}, {16, 16}, {-16, -16}, {16, -16}, {-16, 16}, {8, 16}, {-8, -16}, {16, 8}, {-16, -8},
-			{-8, 16}, {8, -16}, {-16, 8}, {16, -8}, {0, 8}, {0, -8}, {8, 0}, {-8, 0} };
+		// Plaetze: Ring um den Kern im 8-m-Raster, abwechselnd die Seiten, damit sich die Tuerme verteilen.
+		// 0.78.1 (Pruefstand: Flammenwerfer auf 16 m hatte nur 32 % Zeit mit Ziel): "ring": "innen" nimmt den 8-m-Ring
+		static const FVector2D Aussen[] = { {16, 0}, {-16, 0}, {0, 16}, {0, -16}, {16, 16}, {-16, -16}, {16, -16}, {-16, 16}, {8, 16}, {-8, -16}, {16, 8}, {-16, -8},
+			{-8, 16}, {8, -16}, {-16, 8}, {16, -8} };
+		static const FVector2D Innen[] = { {0, 8}, {0, -8}, {8, 0}, {-8, 0}, {8, 8}, {-8, -8}, {8, -8}, {-8, 8} };
+		const bool bInnen = S->HasField(TEXT("ring")) && S->GetStringField(TEXT("ring")) == TEXT("innen");
+		const FVector2D* Raster = bInnen ? Innen : Aussen;
+		const int32 Plaetze = bInnen ? UE_ARRAY_COUNT(Innen) : UE_ARRAY_COUNT(Aussen);
+		int32& Platz = bInnen ? mBauplatzInnen : mBauplatz;
 		int32 Gebaut = 0;
-		for (int32 i = 0; i < Anzahl && Kern && Klasse && Bau && mBauplatz < UE_ARRAY_COUNT(Raster); ++i, ++mBauplatz)
+		for (int32 i = 0; i < Anzahl && Kern && Klasse && Bau && Platz < Plaetze; ++i, ++Platz)
 		{
-			const FVector Ort = Kern->GetActorLocation() + FVector(Raster[mBauplatz].X * 100.f, Raster[mBauplatz].Y * 100.f, 0.f);
+			const FVector Ort = Kern->GetActorLocation() + FVector(Raster[Platz].X * 100.f, Raster[Platz].Y * 100.f, 0.f);
 			const FTransform T(FRotator::ZeroRotator, Ort);
 			if (AFGBuildable* Neu = Bau->BeginSpawnBuildable(Klasse, T))
 			{
@@ -496,6 +510,12 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		// Pruefstand: Wellen nacheinander starten, bis die Zielwelle vorbei ist; Kern tot oder Welle haengt -> Abbruch
 		UTDWaveSubsystem* Waves = World->GetSubsystem<UTDWaveSubsystem>();
 		const int32 Ziel = static_cast<int32>(S->GetNumberField(TEXT("wellenlauf")));
+		if (mKernGefallen)
+		{
+			// 0.78.1: nach dem Kernverlust keine weiteren Wellen; der erste Abbruch steht schon im Bericht
+			UE_LOG(LogFicsitTD, Log, TEXT("Autotest: Wellenlauf bis %d uebersprungen (Kern schon gefallen)"), Ziel);
+			return true;
+		}
 		if (mSchrittUhr <= Dt + 0.01f)
 		{
 			UGameplayStatics::SetGlobalTimeDilation(World, S->HasField(TEXT("zeitraffer")) ? FMath::Clamp(static_cast<float>(S->GetNumberField(TEXT("zeitraffer"))), 1.f, 8.f) : 4.f);
@@ -510,12 +530,52 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		if (!Waves || !bKern || mUhr > Max)
 		{
 			UGameplayStatics::SetGlobalTimeDilation(World, 1.f);
+			// 0.78 (Pruefstand: Mischbasis fiel in W21, Ursache unsichtbar): Schaden und Munitionsmangel je Turmart, lebende Gegner
+			TMap<FString, FVector2D> JeArt;
+			for (TActorIterator<ATDTurretBase> It(World); It; ++It)
+			{
+				FVector2D& W = JeArt.FindOrAdd(It->GetTurmName());
+				W.X += It->GetBilanz().Schaden;
+				W.Y += It->GetBilanz().ZeitHungrig;
+			}
+			TMap<FString, int32> Lebend;
+			if (Waves)
+			{
+				for (const AFGCreature* C : Waves->GetLivingWaveCreatures())
+				{
+					FString Name = C->GetClass()->GetName();
+					Name.RemoveFromStart(TEXT("Char_"));
+					Name.RemoveFromEnd(TEXT("_C"));
+					++Lebend.FindOrAdd(Name);
+				}
+			}
+			TArray<FString> Teile;
+			for (const TPair<FString, FVector2D>& A : JeArt)
+			{
+				Teile.Add(FString::Printf(TEXT("%s %.0f Schaden, %.0f s ohne Munition"), *A.Key, A.Value.X, A.Value.Y));
+			}
+			for (const TPair<FString, int32>& L : Lebend)
+			{
+				Teile.Add(FString::Printf(TEXT("lebend %s x%d"), *L.Key, L.Value));
+			}
+			UE_LOG(LogFicsitTD, Log, TEXT("Autotest Niederlage-Diagnose: %s"), *FString::Join(Teile, TEXT("; ")));
+			mKernGefallen = !bKern;
+			Ergebnis(TEXT("Diagnose"), TEXT("Welle bei Abbruch"), true, FString::Join(Teile, TEXT("; ")));
 			Ergebnis(TEXT("Wellenlauf"), FString::Printf(TEXT("bis Welle %d"), Ziel), false,
 				!bKern ? FString::Printf(TEXT("Kern zerstört in Welle %d"), Waves ? Waves->GetWelle() : 0) : FString::Printf(TEXT("Welle %d hängt (%.0f s)"), Waves ? Waves->GetWelle() : 0, mUhr));
 			return true;
 		}
 		if (Waves->LaeuftWelle())
 		{
+			// 0.78.1 (Pruefstand: ein einzelner Gegner zerstoerte vor 14 feuernden Tuermen den Kern, Art unbekannt):
+			// leben 20 s lang hoechstens 3 Gegner, wird jeder mit LP, Abstand, Hirn und Zielstand der Tuerme gemeldet
+			const TArray<AFGCreature*> Lebende = Waves->GetLivingWaveCreatures();
+			mNachzueglerUhr = Lebende.Num() > 0 && Lebende.Num() <= 3 ? mNachzueglerUhr + Dt : 0.f;
+			if (mNachzueglerUhr > 20.f)
+			{
+				mNachzueglerUhr = 0.f;
+				MeldeNachzuegler(World, Lebende, Waves->GetWelle());
+			}
 			return false;
 		}
 		if (Waves->GetWelle() >= Ziel)
@@ -849,6 +909,55 @@ void UTDAutotest::Ergebnis(const FString& Art, const FString& Text, bool bOk, co
 	mErgebnisse.Add(MakeShared<FJsonValueObject>(E));
 	mFehler += bOk ? 0 : 1;
 	UE_LOG(LogFicsitTD, Log, TEXT("Autotest %s: %s %s%s"), bOk ? TEXT("OK") : TEXT("FEHLER"), *Art, *Text, Ist.IsEmpty() ? TEXT("") : *(TEXT(" = ") + Ist));
+}
+
+void UTDAutotest::MeldeNachzuegler(UWorld* World, const TArray<AFGCreature*>& Lebende, int32 Welle)
+{
+	if (Welle != mNachzueglerWelle)
+	{
+		mNachzueglerWelle = Welle;
+		mNachzueglerMeldungen = 0;
+	}
+	if (++mNachzueglerMeldungen > 3)
+	{
+		return;
+	}
+	FVector Mitte = FVector::ZeroVector;
+	for (TActorIterator<ATDDefenseCore> It(World); It; ++It)
+	{
+		Mitte = It->GetActorLocation();
+	}
+	TArray<FString> Teile;
+	for (AFGCreature* C : Lebende)
+	{
+		if (!C)
+		{
+			continue;
+		}
+		FString Name = C->GetClass()->GetName();
+		Name.RemoveFromStart(TEXT("Char_"));
+		Name.RemoveFromEnd(TEXT("_C"));
+		const UFGHealthComponent* Leben = C->GetHealthComponent();
+		int32 Zielen = 0;
+		FString Grund;
+		for (TActorIterator<ATDTurretBase> It(World); It; ++It)
+		{
+			if (It->GetAktuellesZiel() == C)
+			{
+				++Zielen;
+			}
+			else if (Grund.IsEmpty())
+			{
+				Grund = It->GetTurmName() + TEXT(": ") + It->KeinZielGrund();
+			}
+		}
+		const UTDGegnerHirn* Hirn = UTDGegnerHirn::Von(C);
+		Teile.Add(FString::Printf(TEXT("%s LP %.0f/%.0f, %.0f m vom Kern (Hoehe %+.1f m), %d Tuerme zielen darauf%s | %s"), *Name,
+			Leben ? Leben->GetCurrentHealth() : -1.f, Leben ? Leben->GetMaxHealth() : -1.f, FVector::Dist2D(C->GetActorLocation(), Mitte) / 100.f,
+			(C->GetActorLocation().Z - Mitte.Z) / 100.f, Zielen, Grund.IsEmpty() ? TEXT("") : *(TEXT(", sonst ") + Grund), Hirn ? *Hirn->Diagnose() : TEXT("-")));
+	}
+	UE_LOG(LogFicsitTD, Log, TEXT("Autotest Nachzuegler Welle %d: %s"), Welle, *FString::Join(Teile, TEXT(" || ")));
+	Ergebnis(TEXT("Diagnose"), FString::Printf(TEXT("Nachzügler Welle %d"), Welle), true, FString::Join(Teile, TEXT(" || ")));
 }
 
 void UTDAutotest::Versorge(UWorld* World, float Dt)

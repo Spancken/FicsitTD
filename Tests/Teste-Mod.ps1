@@ -115,7 +115,7 @@ if ($bilder) {
 }
 [IO.File]::WriteAllLines($bericht, $zeilen, (New-Object Text.UTF8Encoding $false))
 # Pruefstand (M1): Kennzahlen je Welle seit dem Start gegen die Zielbaender
-& python (Join-Path $hier "werte_pruefstand.py") $start.ToString("yyyy-MM-dd HH:mm:ss") $bericht
+& python (Join-Path $hier "werte_pruefstand.py") $start.ToString("yyyy-MM-dd HH:mm:ss") $bericht ($planNamen -join ",")
 Write-Host "== Bericht: $bericht"
 Write-Host $zeilen[4]
 if (-not $bestanden) { exit 1 }

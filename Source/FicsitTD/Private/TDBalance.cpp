@@ -87,7 +87,10 @@ namespace TDBalanceIntern
 		{ TEXT("Tuerme.Level.Nobelisk-Werfer.L2.Schaden"), 0.2f }, { TEXT("Tuerme.Level.Nobelisk-Werfer.L3.Takt"), 0.25f }, { TEXT("Tuerme.Level.Nobelisk-Werfer.L4.Reichweite"), 0.15f }, { TEXT("Tuerme.Level.Nobelisk-Werfer.L4.Radius"), 0.2f },
 		{ TEXT("Tuerme.Level.Teslaspule.L2.Reichweite"), 0.1f }, { TEXT("Tuerme.Level.Teslaspule.L3.Spruenge"), 1.0f }, { TEXT("Tuerme.Level.Teslaspule.L3.Schaden"), 0.2f }, { TEXT("Tuerme.Level.Teslaspule.L4.Takt"), 0.3f },
 		{ TEXT("Tuerme.Level.Flammenwerfer.L2.Schaden"), 0.2f }, { TEXT("Tuerme.Level.Flammenwerfer.L3.Kegel"), 0.5f }, { TEXT("Tuerme.Level.Flammenwerfer.L4.Reichweite"), 0.15f }, { TEXT("Tuerme.Level.Flammenwerfer.L4.Nachbrennen"), 0.5f },
-		{ TEXT("Tuerme.Bolzenturm.Startmunition"), 20.f }, { TEXT("Tuerme.Gewehrturm.Startmunition"), 20.f },   // 0.65: Gewehrturm hatte keine
+		{ TEXT("Tuerme.Bolzenturm.Startmunition"), 20.f }, { TEXT("Tuerme.Gewehrturm.Startmunition"), 20.f },
+		// 0.78 (Pruefstand: "Schluessel fehlt"): Startmunition der uebrigen Tuerme, Flammen-Eigenschaften des Treibstoffs
+		{ TEXT("Tuerme.Teslaspule.Startmunition"), 0.f }, { TEXT("Tuerme.Nobelisk-Werfer.Startmunition"), 0.f }, { TEXT("Tuerme.Flammenwerfer.Startmunition"), 0.f },
+		{ TEXT("Munition.Treibstoff.Treibstoff.Kegel"), 1.f }, { TEXT("Munition.Treibstoff.Treibstoff.Betaeubung"), 0.f },   // 0.65: Gewehrturm hatte keine
 
 		// ---- Munition ----
 		{ TEXT("Munition.Bolzen.Armierungsbolzen.Schaden"), 40.f },
@@ -239,7 +242,7 @@ namespace TDBalanceIntern
 		// Spielstand vor und nach jeder Welle (FicsitTD_W05_Start / _Ende), 0 = aus
 		{ TEXT("Lauf.Spielstaende"), 1.f },
 		// Abstand von der Kernmitte (m), ab dem ein Gegner zusaetzlich zur eigenen Reichweite den Kern angreift (Tiefbohrer 0.61: Sockel 4,1 m)
-		{ TEXT("Kern.AngriffsAbstand"), 6.f }, { TEXT("Kern.Gedraenge"), 16.f }, { TEXT("Kern.GedraengeSekunden"), 3.f },
+		{ TEXT("Kern.AngriffsAbstand"), 6.f }, { TEXT("Gegner.AbsturzGrenze"), 150.f }, { TEXT("Gegner.AngriffHoehe"), 12.f }, { TEXT("Kern.Gedraenge"), 16.f }, { TEXT("Kern.GedraengeSekunden"), 3.f },
 		// 0.65 (Lauf 04.11.: Kern 82 % -> 10 % bis W10): Grundreparatur nach jeder Welle, Warnung mit Hinweis auf die Kernreparatur im Laden
 		{ TEXT("Kern.Grundreparatur"), 0.05f }, { TEXT("Kern.Warnung"), 50.f },
 		// 0.58 Forschung: Kern-Ausbau, Logistik/Befestigung, Spezialisierung
