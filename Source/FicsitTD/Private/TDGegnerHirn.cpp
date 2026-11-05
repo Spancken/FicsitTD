@@ -93,11 +93,20 @@ namespace TDHirn
 		FCollisionObjectQueryParams Objekte;
 		Objekte.AddObjectTypesToQuery(ECC_WorldStatic);
 		Objekte.AddObjectTypesToQuery(ECC_WorldDynamic);
+		// 0.78.3 (Prueflauf 18:25: 94 Festgefahrene mit Antrieb, aber Tempo 0 vor Felsen/Pflanzen mit 30-35 Grad): mit der echten
+		// Kapsel tasten (ohne die Stufe, die er hinaufsteigt) und die Neigungsgrenze der Bewegung nehmen statt Kugel in Koerpermitte und 45 Grad
+		const ACharacter* Figur = Cast<ACharacter>(Kreatur);
+		const UCapsuleComponent* Kapsel = Figur ? Figur->GetCapsuleComponent() : nullptr;
+		const UCharacterMovementComponent* Bewegung = Figur ? Figur->GetCharacterMovement() : nullptr;
+		const float Stufe = Bewegung ? Bewegung->MaxStepHeight : 45.f;
+		const float Halb = Kapsel ? FMath::Max(Kapsel->GetScaledCapsuleHalfHeight() - Stufe * 0.5f, Radius) : Radius;
+		const FVector Hoch(0.f, 0.f, Stufe * 0.5f);
+		const float Begehbar = Bewegung ? Bewegung->GetWalkableFloorZ() : 0.7f;
 		TArray<FHitResult> Treffer;
-		World->SweepMultiByObjectType(Treffer, Start, Ende, FQuat::Identity, Objekte, FCollisionShape::MakeSphere(Radius), Query);
+		World->SweepMultiByObjectType(Treffer, Start + Hoch, Ende + Hoch, FQuat::Identity, Objekte, FCollisionShape::MakeCapsule(Radius, Halb), Query);
 		for (const FHitResult& Hit : Treffer)
 		{
-			if (Hit.bBlockingHit && Hit.ImpactNormal.Z < 0.7f)
+			if (Hit.bBlockingHit && Hit.ImpactNormal.Z < Begehbar)
 			{
 				return false;
 			}
@@ -682,7 +691,17 @@ void UTDGegnerHirn::Marschiere(AFGCreature* Kreatur, float DeltaTime)
 			const bool bBodenVorn = GetWorld()->LineTraceSingleByChannel(Boden, Voraus + FVector(0.f, 0.f, 100.f), Voraus - FVector(0.f, 0.f, 400.f), ECC_WorldStatic, Sonde);
 			Vorn += bBodenVorn ? FString::Printf(TEXT(", Boden 2 m voraus %+.1f m"), (Boden.ImpactPoint.Z - Vorher.Z) / 100.f) : FString(TEXT(", 2 m voraus KEIN Boden (Kante)"));
 		}
-		const FString Zustand = Diagnose() + TEXT(" | vorn: ") + Vorn;
+		// 0.78.2 (Prueflauf 17:44: 81 Festgefahrene mit Tempo 0, vorn frei, nicht in Geometrie): setzt die Bewegung die Eingabe um?
+		FString Antrieb;
+		{
+			const UCharacterMovementComponent* B = Kreatur->GetCharacterMovement();
+			const AController* C = Kreatur->GetController();
+			Antrieb = FString::Printf(TEXT("Controller %s, Bewegung tickt %s, ohne Controller %s, Eingabe %.2f, Boden begehbar %s, Beschleunigung %.0f"),
+				C ? *C->GetClass()->GetName() : TEXT("KEINER"), B && B->IsComponentTickEnabled() && B->IsActive() ? TEXT("ja") : TEXT("NEIN"),
+				B && B->bRunPhysicsWithNoController ? TEXT("ja") : TEXT("nein"), Kreatur->GetLastMovementInputVector().Size(),
+				B && B->CurrentFloor.IsWalkableFloor() ? TEXT("ja") : TEXT("NEIN"), B ? B->GetCurrentAcceleration().Size() : -1.f);
+		}
+		const FString Zustand = Diagnose() + TEXT(" | vorn: ") + Vorn + TEXT(" | Antrieb: ") + Antrieb;
 		// 0.78.1 (Pruefstand: versetzte Gegner fielen bis -100 km): nur auf echten Boden versetzen - von 5 m ueber dem Wegpunkt
 		// nach unten suchen; ohne Boden in 20 m bleibt er stehen und wird beim naechsten Mal weiter vorn versucht
 		FHitResult Boden;
