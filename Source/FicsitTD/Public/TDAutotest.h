@@ -47,7 +47,7 @@ public:
  *        optional "ring": "innen" -> 8 m um den Kern (kurze Reichweite: Flamme, Tesla), sonst 16-m-Ring
  *   {"versorgung": {"Bolzenturm": 30, "Gewehrturm": 8}}  Munition je Turm und Minute in den Eingang (ersetzt die Fabrik)
  *   {"wellenlauf": 10, "zeitraffer": 4, "max": 400}  Wellen nacheinander starten, bis Welle 10 vorbei ist (max s je Welle)
- *   {"balance": {"Kern.Ladequelle": 0}}  0.78.2: Balance-Werte fuer einen A/B-Versuch setzen (vor dem Kernbau wirksam)
+ *   {"balance": {"Wellen.SpawnBreite": 20}}  0.78.2: Balance-Werte fuer einen A/B-Versuch setzen (gelten bis zum naechsten Laden)
  *   {"pruefe": "Sicherheitsnetze"}  0.78.2: kein Sicherheitsnetz (Versetzen, Absturz, 0 LP) hat seit Planbeginn ausgeloest
  *   {"klick": [x, y]}                     Mausklick im Spielfenster, Anteil 0..1 von links oben (0.75)
  */

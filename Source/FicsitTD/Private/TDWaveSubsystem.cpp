@@ -755,6 +755,19 @@ static bool NaheVerteidigung(UWorld* World, const FVector& Ort)
 	return false;
 }
 
+/** 0.78.2: liegt der Punkt (Fuesse + 0,5 m) in einem Wasservolumen? */
+static bool PunktImWasser(UWorld* World, const FVector& P)
+{
+	for (TActorIterator<AFGWaterVolume> It(World); It; ++It)
+	{
+		if (It->EncompassesPoint(P + FVector(0.f, 0.f, 50.f)))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 /** Fuehrt der Weg durch ein Wasservolumen? Stichproben alle 5 m (falls das Netz Wasser nicht als eigenen Bereich kennt) */
 static bool WegDurchWasser(UWorld* World, const TArray<FVector>& Punkte)
 {
@@ -1601,9 +1614,29 @@ int32 UTDWaveSubsystem::SpawneGruppe(TSubclassOf<AFGCreature> Klasse, int32 Anza
 		FNavLocation NavOrt;
 		const FVector Quer = FVector::CrossProduct((FrontOrt - Mitte).GetSafeNormal2D(), FVector::UpVector);
 		const FVector Teilort = FrontOrt + Quer * FMath::FRandRange(-1.f, 1.f) * TDBalance::Wert(TEXT("Wellen.SpawnBreite"), 40.f) * 100.f;
-		if (Nav && (Nav->GetRandomReachablePointInRadius(Teilort, 1000.f, NavOrt) || Nav->GetRandomReachablePointInRadius(FrontOrt, 1500.f, NavOrt)))
+		// 0.78.2 Ursache der "Abstuerze" (Paket Ursache 14:54): Spawnpunkte lagen im See - die Gegner schwammen, wurden versetzt
+		// und sanken bis -180 m. Gesucht wird deshalb mit dem Filter der Wege (ohne Wasserbereich) und der Punkt zusaetzlich
+		// gegen die Wasservolumen geprueft (das Netz kennt nicht jedes Wasser als eigenen Bereich)
+		ANavigationData* NavDaten = Nav ? Nav->GetDefaultNavDataInstance(FNavigationSystem::DontCreate) : nullptr;
+		const FSharedConstNavQueryFilter Filter = NavDaten ? UNavigationQueryFilter::GetQueryFilter(*NavDaten, this, UTDNavFilter::StaticClass()) : nullptr;
+		bool bTrocken = false;
+		for (int32 Versuch = 0; Versuch < 10 && Nav && !bTrocken; ++Versuch)
+		{
+			const FVector& Mittelpunkt = Versuch < 6 ? Teilort : FrontOrt;
+			// 0.78.2 (Prueflauf 15:31: 507 Nachzuegler am Spawn, beim Versetzen im Median 62 m hoeher): der seitlich versetzte
+			// Suchpunkt rastete auf eine tiefere Ebene des Netzes ein (Senke, Schlucht) - nur Punkte auf Hoehe der Front
+			bTrocken = Nav->GetRandomReachablePointInRadius(Mittelpunkt, Versuch < 6 ? 1000.f : 1500.f, NavOrt, NavDaten, Filter)
+				&& FMath::Abs(NavOrt.Location.Z - FrontOrt.Z) <= TDBalance::Wert(TEXT("Wellen.SpawnHoehe"), 4.f) * 100.f
+				&& !PunktImWasser(World, NavOrt.Location);
+		}
+		if (bTrocken)
 		{
 			Ort = NavOrt.Location + FVector(0, 0, 150.f);
+		}
+		else if (Nav && !PunktImWasser(World, FrontOrt))
+		{
+			// die Front selbst ist bei der Wahl als trocken geprueft (FrontenFuer)
+			Ort = FrontOrt + FVector(0, 0, 150.f);
 		}
 		else
 		{

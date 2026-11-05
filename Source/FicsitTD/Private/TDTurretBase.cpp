@@ -1280,6 +1280,18 @@ void ATDTurretBase::TrefferArt(AFGCreature* Ziel, float Schaden, const FVector& 
 			FHitResult Hit;
 			Hit.ImpactPoint = Z->GetActorLocation();
 			UGameplayStatics::ApplyPointDamage(Z, Schaden, Richtung, Hit, nullptr, T, UDamageType::StaticClass());
+			// 0.78.2 Ursachensuche Zombie (Spucker mit 0,00 von 240 LP lebte 160 s unter 12 Tuermen): Treffer ohne Wirkung melden
+			const float Nachher = Leben ? Leben->GetCurrentHealth() : 0.f;
+			if (Leben && Schaden >= 1.f && Nachher >= RestLP - 0.01f && Z->IsAliveAndWell())
+			{
+				static int32 Gemeldet = 0;
+				if (Gemeldet++ < 20)
+				{
+					UE_LOG(LogFicsitTD, Log, TEXT("Treffer ohne Wirkung: %s %s, Schaden %.1f, LP vorher %.6f nachher %.6f von %.0f, tot-Flag %s, betaeubt %s, Verursacher %s"),
+						*Z->GetClass()->GetName(), *Z->GetName(), Schaden, RestLP, Nachher, Leben->GetMaxHealth(), Leben->IsDead() ? TEXT("ja") : TEXT("nein"),
+						Z->IsStunned() ? TEXT("ja") : TEXT("nein"), T ? *T->GetTurmName() : TEXT("-"));
+				}
+			}
 			if (Betaeubung > 0.f && Z->IsAliveAndWell() && Z->CanBeStunned())
 			{
 				Z->BeginStun(Betaeubung);

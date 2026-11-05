@@ -1,8 +1,0 @@
-{
-  "Name": "Ursache",
-  "_Hinweis": "A/B-Versuch Absturz: Mischbasis ohne und mit Ladequelle am Kern, etwa 30 min.",
-  "Plaene": [
-    "Ursache-Ladequelle-aus",
-    "Referenz-Misch"
-  ]
-}

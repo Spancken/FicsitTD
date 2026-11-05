@@ -23,8 +23,6 @@ public:
 	ATDDefenseCore();
 
 	virtual void BeginPlay() override;
-	/** 0.78.2: Ladequelle nach Kern.Ladequelle / Kern.LadeRadius ein- oder ausschalten (BeginPlay und Selbsttest-Schritt "balance") */
-	void AktualisiereLadequelle();
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual float TakeDamage(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 	virtual void GetClearanceData_Implementation(TArray<FFGClearanceData>& out_data) const override;
@@ -164,7 +162,4 @@ private:
 	float mBohrHoehe = 150.f;
 	UPROPERTY(Transient)
 	TObjectPtr<class UMaterialInstanceDynamic> mRingMaterial;
-private:
-	UPROPERTY(Transient)
-	TObjectPtr<class UWorldPartitionStreamingSourceComponent> mLadequelle;
 };

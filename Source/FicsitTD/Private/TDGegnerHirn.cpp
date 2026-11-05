@@ -102,6 +102,15 @@ namespace TDHirn
 				return false;
 			}
 		}
+		// 0.78.2 (Prueflauf 15:31: 56 Abstuerze an einer Klippe 130 m tief): Abgrund voraus zaehlt als versperrt, dann weicht er aus.
+		// Die Engine-Sperre bCanWalkOffLedges blockierte schon Gefaelle von 1 m (Prueflauf 16:40: 132 Festgefahrene) - deshalb nur
+		// Abbrueche tiefer als Gegner.Abgrund m
+		FHitResult Boden;
+		const FVector Voraus = Start + Richtung * (200.f + Radius);
+		if (!World->LineTraceSingleByChannel(Boden, Voraus + FVector(0.f, 0.f, 200.f), Voraus - FVector(0.f, 0.f, TDBalance::Wert(TEXT("Gegner.Abgrund"), 6.f) * 100.f), ECC_WorldStatic, Query))
+		{
+			return false;
+		}
 		return true;
 	}
 }
@@ -377,12 +386,12 @@ void UTDGegnerHirn::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 			Steuerung->Stillegen();
 		}
 		// 0.78.1 (Paketlauf 12:41: Hog mit 0 LP lebte weiter und biss den Kern, 16 Tuerme zielten darauf): ohne LP sterben
-		if (UFGHealthComponent* Rest = Kreatur->GetHealthComponent(); Rest && Rest->GetCurrentHealth() <= 0.f)
+		if (UFGHealthComponent* Rest = Kreatur->GetHealthComponent(); Rest && Rest->GetCurrentHealth() < 1.f)
 		{
 			if (mOhneLeben += 1.f; mOhneLeben >= 2.f)
 			{
 				// 0.78.2: Zustand mitschreiben, um die Ursache zu finden (warum kein Tod bei 0 LP?)
-				UE_LOG(LogFicsitTD, Log, TEXT("Hirn: %s lebt mit 0 LP (genau %.4f von %.0f) seit %.0f s, wird getoetet | tot-Flag %s, betaeubt %s, Bewegung %s, Zustand %s"),
+				UE_LOG(LogFicsitTD, Log, TEXT("Hirn: %s lebt mit unter 1 LP (genau %.6f von %.0f) seit %.0f s, wird getoetet | tot-Flag %s, betaeubt %s, Bewegung %s, Zustand %s"),
 					*Kreatur->GetClass()->GetName(), Rest->GetCurrentHealth(), Rest->GetMaxHealth(), mOhneLeben, Rest->IsDead() ? TEXT("ja") : TEXT("nein"), Kreatur->IsStunned() ? TEXT("ja") : TEXT("nein"),
 					Bewegung ? *UEnum::GetValueAsString(Bewegung->MovementMode.GetValue()) : TEXT("?"), *Diagnose());
 				TDNetz::Melde(TDNetz::EArt::OhneLeben);
@@ -650,7 +659,30 @@ void UTDGegnerHirn::Marschiere(AFGCreature* Kreatur, float DeltaTime)
 		}
 		const FVector Vorher = Kreatur->GetActorLocation();
 		FVector Ziel = TDHirn::PunktAufWeg(mWeg, mBester + 1000.f) + FVector(0.f, 0.f, 150.f);
-		const FString Zustand = Diagnose();
+		// 0.78.2 Ursachensuche (Prueflauf 16:10: 226 von 306 Festgefahrenen standen, meist an einer Stelle): was steht vor ihm?
+		FString Vorn = TEXT("frei");
+		{
+			const FVector Richtung = (TDHirn::PunktAufWeg(mWeg, mFortschritt + 600.f) - Vorher).GetSafeNormal2D();
+			FCollisionQueryParams Sonde(TEXT("TDFestgefahren"), false, Kreatur);
+			FHitResult Hindernis, Boden;
+			if (GetWorld()->SweepSingleByChannel(Hindernis, Vorher, Vorher + Richtung * 250.f, FQuat::Identity, ECC_Pawn, FCollisionShape::MakeSphere(40.f), Sonde))
+			{
+				// 0.78.2 (Prueflauf 17:12: 156 von 241 "Festgefahrenen" standen hinter anderen Wellengegnern): Stau in der Kolonne ist
+				// kein Festhaengen - nicht versetzen, weiter warten (der Vordermann laeuft weiter oder greift an)
+				if (const AFGCreature* Vordermann = Cast<AFGCreature>(Hindernis.GetActor()); Vordermann && Vordermann->Tags.Contains(TEXT("FicsitTD")))
+				{
+					mStill = 0.f;
+					return;
+				}
+				Vorn = FString::Printf(TEXT("Hindernis %s/%s in %.1f m, Neigung %.0f Grad"), Hindernis.GetActor() ? *Hindernis.GetActor()->GetClass()->GetName() : TEXT("-"),
+					Hindernis.GetComponent() ? *Hindernis.GetComponent()->GetName() : TEXT("-"), Hindernis.Distance / 100.f,
+					FMath::RadiansToDegrees(FMath::Acos(FMath::Clamp(Hindernis.ImpactNormal.Z, -1.f, 1.f))));
+			}
+			const FVector Voraus = Vorher + Richtung * 200.f;
+			const bool bBodenVorn = GetWorld()->LineTraceSingleByChannel(Boden, Voraus + FVector(0.f, 0.f, 100.f), Voraus - FVector(0.f, 0.f, 400.f), ECC_WorldStatic, Sonde);
+			Vorn += bBodenVorn ? FString::Printf(TEXT(", Boden 2 m voraus %+.1f m"), (Boden.ImpactPoint.Z - Vorher.Z) / 100.f) : FString(TEXT(", 2 m voraus KEIN Boden (Kante)"));
+		}
+		const FString Zustand = Diagnose() + TEXT(" | vorn: ") + Vorn;
 		// 0.78.1 (Pruefstand: versetzte Gegner fielen bis -100 km): nur auf echten Boden versetzen - von 5 m ueber dem Wegpunkt
 		// nach unten suchen; ohne Boden in 20 m bleibt er stehen und wird beim naechsten Mal weiter vorn versucht
 		FHitResult Boden;

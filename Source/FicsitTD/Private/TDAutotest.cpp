@@ -445,10 +445,6 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 			bAlle &= bOk;
 			Teile.Add(FString::Printf(TEXT("%s=%g%s"), *V.Key, V.Value->AsNumber(), bOk ? TEXT("") : TEXT(" (unbekannt)")));
 		}
-		for (TActorIterator<ATDDefenseCore> It(World); It; ++It)
-		{
-			It->AktualisiereLadequelle();
-		}
 		Ergebnis(TEXT("Pruefstand"), TEXT("Balance ") + FString::Join(Teile, TEXT(", ")), bAlle);
 		return true;
 	}

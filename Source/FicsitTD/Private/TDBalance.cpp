@@ -242,7 +242,7 @@ namespace TDBalanceIntern
 		// Spielstand vor und nach jeder Welle (FicsitTD_W05_Start / _Ende), 0 = aus
 		{ TEXT("Lauf.Spielstaende"), 1.f },
 		// Abstand von der Kernmitte (m), ab dem ein Gegner zusaetzlich zur eigenen Reichweite den Kern angreift (Tiefbohrer 0.61: Sockel 4,1 m)
-		{ TEXT("Kern.AngriffsAbstand"), 6.f }, { TEXT("Kern.Ladequelle"), 1.f }, { TEXT("Kern.LadeRadius"), 0.f }, { TEXT("Gegner.AbsturzGrenze"), 150.f }, { TEXT("Gegner.AngriffHoehe"), 12.f }, { TEXT("Kern.Gedraenge"), 16.f }, { TEXT("Kern.GedraengeSekunden"), 3.f },
+		{ TEXT("Kern.AngriffsAbstand"), 6.f }, { TEXT("Gegner.AbsturzGrenze"), 150.f }, { TEXT("Wellen.SpawnHoehe"), 4.f }, { TEXT("Gegner.Abgrund"), 6.f }, { TEXT("Gegner.AngriffHoehe"), 12.f }, { TEXT("Kern.Gedraenge"), 16.f }, { TEXT("Kern.GedraengeSekunden"), 3.f },
 		// 0.65 (Lauf 04.11.: Kern 82 % -> 10 % bis W10): Grundreparatur nach jeder Welle, Warnung mit Hinweis auf die Kernreparatur im Laden
 		{ TEXT("Kern.Grundreparatur"), 0.05f }, { TEXT("Kern.Warnung"), 50.f },
 		// 0.58 Forschung: Kern-Ausbau, Logistik/Befestigung, Spezialisierung
