@@ -41,6 +41,11 @@ public:
  *   {"oeffne": "MAM"|"<Turmtyp>"}, {"schliesse": true}  Fenster fuer Fotos (0.75)
  *   {"speichere": "Name"}, {"lade": "Name"}  Spielstand speichern bzw. mitten im Plan laden (0.77)
  *   Plan-Feld "NeuesSpiel": {"Startort": "..."} statt "Spielstand": neues Spiel mit Tower-Defense-Schalter (0.77)
+ *   Pruefstand (0.78, Roadmap M1):
+ *   {"stromfrei": true}                    Cheat ohne Strom (Fabrik und Netz sind nicht Teil des Pruefstands)
+ *   {"baue": "Gewehrturm", "anzahl": 2, "level": 2, "rezept": "Recipe_TD_Gun_Standard"}  Tuerme auf freie Plaetze der Plattform
+ *   {"versorgung": {"Bolzenturm": 30, "Gewehrturm": 8}}  Munition je Turm und Minute in den Eingang (ersetzt die Fabrik)
+ *   {"wellenlauf": 10, "zeitraffer": 4, "max": 400}  Wellen nacheinander starten, bis Welle 10 vorbei ist (max s je Welle)
  *   {"klick": [x, y]}                     Mausklick im Spielfenster, Anteil 0..1 von links oben (0.75)
  */
 UCLASS()
@@ -85,6 +90,11 @@ private:
 	bool mKlickUnten = false;
 	/** 0.77: Laden mitten im Plan (Schritt "lade"): danach mit dem naechsten Schritt weiter statt von vorn */
 	bool mLadenImPlan = false;
+	/** Pruefstand: Munition je Turmtyp und Minute, Rest je Turm, belegte Bauplaetze */
+	TMap<FString, float> mVersorgung;
+	TMap<TWeakObjectPtr<class ATDTurretBase>, float> mVersorgtRest;
+	int32 mBauplatz = 0;
+	void Versorge(UWorld* World, float Dt);
 	bool mSchrittBegonnen = false;
 	FTSTicker::FDelegateHandle mTicker;
 	TArray<TSharedPtr<FJsonValue>> mErgebnisse;

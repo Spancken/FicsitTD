@@ -11,6 +11,9 @@
 #include "FGSaveSystem.h"
 #include "FGSaveSession.h"
 #include "FGGameMode.h"
+#include "FGGameState.h"
+#include "FGBuildableSubsystem.h"
+#include "TDEinsatz.h"
 #include "FGSaveManagerInterface.h"
 #include "EngineUtils.h"
 #include "Engine/GameInstance.h"
@@ -155,6 +158,9 @@ void UTDAutotest::StartePlan()
 	mIndex = 0;
 	mSchrittBegonnen = false;
 	mKlickUnten = false;
+	mBauplatz = 0;
+	mVersorgung.Reset();
+	mVersorgtRest.Reset();
 	mPlanZeit = 0.f;
 	mUhr = 0.f;
 	if (mLog)
@@ -288,6 +294,7 @@ bool UTDAutotest::Tick(float /*BildDt*/)
 		{
 			break;
 		}
+		Versorge(World, Dt);
 		if (mIndex >= mSchritte.Num())
 		{
 			Beende(TEXT("alle Schritte"));
@@ -362,7 +369,7 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 	{
 		return mSchrittUhr >= Zahl;
 	}
-	if (S->TryGetNumberField(TEXT("zeitraffer"), Zahl))
+	if (!S->HasField(TEXT("wellenlauf")) && S->TryGetNumberField(TEXT("zeitraffer"), Zahl))   // 0.78: "zeitraffer" ist auch Feld des Wellenlaufs
 	{
 		UGameplayStatics::SetGlobalTimeDilation(World, FMath::Clamp(static_cast<float>(Zahl), 0.25f, 8.f));
 		Ergebnis(TEXT("Zeitraffer"), FString::Printf(TEXT("x%.1f"), Zahl), true);
@@ -396,6 +403,132 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		const bool bOk = Pruefe(World, S, Ist);
 		Ergebnis(TEXT("Pruefung"), S->HasField(TEXT("text")) ? S->GetStringField(TEXT("text")) : Wort, bOk, Ist);
 		return true;
+	}
+	if (S->HasField(TEXT("ueberblick")))
+	{
+		// 0.78: fuer Fotos die Figur schraeg ueber den Kern stellen und auf ihn blicken (Test 0.78: Turm stand im Bild)
+		ATDDefenseCore* Kern = nullptr;
+		for (TActorIterator<ATDDefenseCore> It(World); It && !Kern; ++It)
+		{
+			Kern = *It;
+		}
+		APlayerController* PC = World->GetFirstPlayerController();
+		APawn* Figur = PC ? PC->GetPawn() : nullptr;
+		if (Kern && Figur)
+		{
+			const FVector Ort = Kern->GetActorLocation() + FVector(-3500.f, -1500.f, 2500.f);
+			Figur->SetActorLocation(Ort, false, nullptr, ETeleportType::TeleportPhysics);
+			PC->SetControlRotation((Kern->GetActorLocation() - Ort).Rotation());
+		}
+		Ergebnis(TEXT("Ueberblick"), TEXT("Figur über dem Kern"), Kern && Figur);
+		return true;
+	}
+	if (S->HasField(TEXT("stromfrei")))
+	{
+		AFGGameState* Zustand = World->GetGameState<AFGGameState>();
+		if (Zustand)
+		{
+			Zustand->SetCheatNoPower(S->GetBoolField(TEXT("stromfrei")));
+		}
+		Ergebnis(TEXT("Pruefstand"), TEXT("Strom frei"), Zustand != nullptr);
+		return true;
+	}
+	if (S->TryGetStringField(TEXT("baue"), Wort))
+	{
+		// Pruefstand: Tuerme direkt auf freie Plaetze der Plattform setzen (8-m-Raster um den Kern, ohne Kontingent)
+		ATDDefenseCore* Kern = nullptr;
+		for (TActorIterator<ATDDefenseCore> It(World); It && !Kern; ++It)
+		{
+			Kern = *It;
+		}
+		static const TMap<FString, FString> Ordner = { { TEXT("Bolzenturm"), TEXT("BoltTurret") }, { TEXT("Gewehrturm"), TEXT("GunTurret") },
+			{ TEXT("Teslaspule"), TEXT("TeslaCoil") }, { TEXT("Flammenwerfer"), TEXT("FlameTurret") }, { TEXT("Nobelisk-Werfer"), TEXT("NobeliskLauncher") } };
+		const FString* O = Ordner.Find(Wort);
+		UClass* Klasse = O ? LoadClass<AFGBuildable>(nullptr, *FString::Printf(TEXT("/FicsitTD/Buildings/%s/Build_TD_%s.Build_TD_%s_C"), **O, **O, **O)) : nullptr;
+		UClass* BauRezept = O ? LoadClass<UFGRecipe>(nullptr, *FString::Printf(TEXT("/FicsitTD/Buildings/%s/Recipe_TD_%s.Recipe_TD_%s_C"), **O, **O, **O)) : nullptr;
+		UClass* Munition = O && S->HasField(TEXT("rezept")) ? LoadClass<UFGRecipe>(nullptr, *FString::Printf(TEXT("/FicsitTD/Buildings/%s/%s.%s_C"), **O,
+			*S->GetStringField(TEXT("rezept")), *S->GetStringField(TEXT("rezept")))) : nullptr;
+		AFGBuildableSubsystem* Bau = AFGBuildableSubsystem::Get(World);
+		const int32 Anzahl = S->HasField(TEXT("anzahl")) ? static_cast<int32>(S->GetNumberField(TEXT("anzahl"))) : 1;
+		const int32 Level = S->HasField(TEXT("level")) ? static_cast<int32>(S->GetNumberField(TEXT("level"))) : 1;
+		// Plaetze: Ring um den Kern im 8-m-Raster, abwechselnd die Seiten, damit sich die Tuerme verteilen
+		static const FVector2D Raster[] = { {16, 0}, {-16, 0}, {0, 16}, {0, -16}, {16, 16}, {-16, -16}, {16, -16}, {-16, 16}, {8, 16}, {-8, -16}, {16, 8}, {-16, -8},
+			{-8, 16}, {8, -16}, {-16, 8}, {16, -8}, {0, 8}, {0, -8}, {8, 0}, {-8, 0} };
+		int32 Gebaut = 0;
+		for (int32 i = 0; i < Anzahl && Kern && Klasse && Bau && mBauplatz < UE_ARRAY_COUNT(Raster); ++i, ++mBauplatz)
+		{
+			const FVector Ort = Kern->GetActorLocation() + FVector(Raster[mBauplatz].X * 100.f, Raster[mBauplatz].Y * 100.f, 0.f);
+			const FTransform T(FRotator::ZeroRotator, Ort);
+			if (AFGBuildable* Neu = Bau->BeginSpawnBuildable(Klasse, T))
+			{
+				Neu->SetBuiltWithRecipe(BauRezept);
+				Neu->FinishSpawning(T);
+				if (ATDTurretBase* Turm = Cast<ATDTurretBase>(Neu))
+				{
+					if (Munition)
+					{
+						Turm->SetRecipe(Munition);
+					}
+					Turm->SetzeLevelTest(Level);
+					++Gebaut;
+				}
+			}
+		}
+		Ergebnis(TEXT("Pruefstand"), FString::Printf(TEXT("baue %d %s (Level %d)"), Anzahl, *Wort, Level), Gebaut == Anzahl,
+			FString::Printf(TEXT("%d gebaut%s"), Gebaut, Munition || !S->HasField(TEXT("rezept")) ? TEXT("") : TEXT(", Rezept nicht gefunden")));
+		return true;
+	}
+	const TSharedPtr<FJsonObject>* Liefern = nullptr;
+	if (S->TryGetObjectField(TEXT("versorgung"), Liefern))
+	{
+		mVersorgung.Reset();
+		TArray<FString> Teile;
+		for (const TPair<FString, TSharedPtr<FJsonValue>>& V : (*Liefern)->Values)
+		{
+			mVersorgung.Add(V.Key, static_cast<float>(V.Value->AsNumber()));
+			Teile.Add(FString::Printf(TEXT("%s %.0f/min"), *V.Key, V.Value->AsNumber()));
+		}
+		Ergebnis(TEXT("Pruefstand"), TEXT("Versorgung je Turm: ") + FString::Join(Teile, TEXT(", ")), true);
+		return true;
+	}
+	if (S->HasField(TEXT("wellenlauf")))
+	{
+		// Pruefstand: Wellen nacheinander starten, bis die Zielwelle vorbei ist; Kern tot oder Welle haengt -> Abbruch
+		UTDWaveSubsystem* Waves = World->GetSubsystem<UTDWaveSubsystem>();
+		const int32 Ziel = static_cast<int32>(S->GetNumberField(TEXT("wellenlauf")));
+		if (mSchrittUhr <= Dt + 0.01f)
+		{
+			UGameplayStatics::SetGlobalTimeDilation(World, S->HasField(TEXT("zeitraffer")) ? FMath::Clamp(static_cast<float>(S->GetNumberField(TEXT("zeitraffer"))), 1.f, 8.f) : 4.f);
+			mUhr = 0.f;
+		}
+		bool bKern = false;
+		for (TActorIterator<ATDDefenseCore> It(World); It; ++It)
+		{
+			bKern |= It->IsTDIntact();
+		}
+		const double Max = S->HasField(TEXT("max")) ? S->GetNumberField(TEXT("max")) : 400.0;
+		if (!Waves || !bKern || mUhr > Max)
+		{
+			UGameplayStatics::SetGlobalTimeDilation(World, 1.f);
+			Ergebnis(TEXT("Wellenlauf"), FString::Printf(TEXT("bis Welle %d"), Ziel), false,
+				!bKern ? FString::Printf(TEXT("Kern zerstört in Welle %d"), Waves ? Waves->GetWelle() : 0) : FString::Printf(TEXT("Welle %d hängt (%.0f s)"), Waves ? Waves->GetWelle() : 0, mUhr));
+			return true;
+		}
+		if (Waves->LaeuftWelle())
+		{
+			return false;
+		}
+		if (Waves->GetWelle() >= Ziel)
+		{
+			UGameplayStatics::SetGlobalTimeDilation(World, 1.f);
+			Ergebnis(TEXT("Wellenlauf"), FString::Printf(TEXT("bis Welle %d"), Ziel), true, FString::Printf(TEXT("%.0f s"), mSchrittUhr));
+			return true;
+		}
+		if (mUhr > 2.f && Waves->NaechsteWelleJetzt())
+		{
+			mUhr = 0.f;
+		}
+		return false;
 	}
 	if (S->TryGetStringField(TEXT("speichere"), Wort))
 	{
@@ -716,6 +849,39 @@ void UTDAutotest::Ergebnis(const FString& Art, const FString& Text, bool bOk, co
 	mErgebnisse.Add(MakeShared<FJsonValueObject>(E));
 	mFehler += bOk ? 0 : 1;
 	UE_LOG(LogFicsitTD, Log, TEXT("Autotest %s: %s %s%s"), bOk ? TEXT("OK") : TEXT("FEHLER"), *Art, *Text, Ist.IsEmpty() ? TEXT("") : *(TEXT(" = ") + Ist));
+}
+
+void UTDAutotest::Versorge(UWorld* World, float Dt)
+{
+	// Pruefstand: Munition je Turm und Minute in den Eingang legen (Zutat des gewaehlten Rezepts); Spielzeit mit Zeitraffer
+	if (mVersorgung.Num() == 0)
+	{
+		return;
+	}
+	const float Spielzeit = Dt * UGameplayStatics::GetGlobalTimeDilation(World);
+	for (TActorIterator<ATDTurretBase> It(World); It; ++It)
+	{
+		const float* Rate = mVersorgung.Find(It->GetTurmName());
+		const TSubclassOf<UFGRecipe> Rezept = It->GetCurrentRecipe();
+		UFGInventoryComponent* Eingang = It->GetInputInventory();
+		if (!Rate || !Rezept || !Eingang)
+		{
+			continue;
+		}
+		const TArray<FItemAmount> Zutaten = UFGRecipe::GetIngredients(*It, Rezept);
+		if (Zutaten.Num() == 0 || !Zutaten[0].ItemClass)
+		{
+			continue;
+		}
+		float& Rest = mVersorgtRest.FindOrAdd(*It);
+		Rest += *Rate * Spielzeit / 60.f;
+		const int32 Ganz = FMath::FloorToInt(Rest);
+		if (Ganz > 0)
+		{
+			Rest -= Eingang->AddStack(FInventoryStack(Ganz, Zutaten[0].ItemClass), true);
+			Rest = FMath::Min(Rest, 5.f);   // voller Eingang: nicht ansparen
+		}
+	}
 }
 
 void UTDAutotest::Beende(const FString& Grund)

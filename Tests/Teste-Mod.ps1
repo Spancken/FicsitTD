@@ -114,6 +114,8 @@ if ($bilder) {
     $zeilen += "", "## Bilder", ""; $zeilen += (Get-ChildItem $bildOrdner -Filter *.jpg | ForEach-Object { "![$($_.BaseName)](${stempel}_$name/$($_.Name))" })
 }
 [IO.File]::WriteAllLines($bericht, $zeilen, (New-Object Text.UTF8Encoding $false))
+# Pruefstand (M1): Kennzahlen je Welle seit dem Start gegen die Zielbaender
+& python (Join-Path $hier "werte_pruefstand.py") $start.ToString("yyyy-MM-dd HH:mm:ss") $bericht
 Write-Host "== Bericht: $bericht"
 Write-Host $zeilen[4]
 if (-not $bestanden) { exit 1 }

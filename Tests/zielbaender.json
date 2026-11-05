@@ -1,0 +1,16 @@
+{
+  "_Hinweis": "Zielbänder des Prüfstands (M1). Startwerte aus der Bewertung 7.1, werden mit Marius' Spielgefühl abgeglichen. Bild_p95_ms 22 entspricht etwa 45 FPS.",
+  "Normal": {
+    "Q": [
+      0.3,
+      0.75
+    ],
+    "Q_Boss": [
+      0.5,
+      1.0
+    ],
+    "Kern_Proz_min": 50,
+    "Hungrig_Anteil_max": 0.2,
+    "Bild_p95_ms_max": 22
+  }
+}

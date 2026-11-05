@@ -1,0 +1,113 @@
+{
+  "Name": "Referenz-Misch",
+  "_Hinweis": "Prüfstand M1 (0.78): neues Spiel in der Felsenwüste, Einsatz Normal neu, Strom frei, Munition per Versorgung statt Fabrik. Feste Basis, die nach Wellen wächst. Ausgewertet wird Metriken.csv gegen Tests\\zielbaender.json.",
+  "NeuesSpiel": {
+    "Startort": "Rocky Desert"
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 40,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warte": 15
+    },
+    {
+      "befehl": "td einsatz stop"
+    },
+    {
+      "befehl": "td kern stop"
+    },
+    {
+      "befehl": "td einsatz start normal 50"
+    },
+    {
+      "befehl": "td einsatz frei an"
+    },
+    {
+      "stromfrei": true
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 2,
+      "level": 1,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "versorgung": {
+        "Bolzenturm": 30,
+        "Gewehrturm": 10
+      }
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "R1_Basis"
+    },
+    {
+      "wellenlauf": 4,
+      "zeitraffer": 4
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 1,
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 1,
+      "level": 2,
+      "rezept": "Recipe_TD_Gun_Standard"
+    },
+    {
+      "wellenlauf": 8,
+      "zeitraffer": 4
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 1,
+      "level": 2,
+      "rezept": "Recipe_TD_Gun_Standard"
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 1,
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_Durchschlag"
+    },
+    {
+      "wellenlauf": 12,
+      "zeitraffer": 4
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 2,
+      "level": 3,
+      "rezept": "Recipe_TD_Gun_Standard"
+    },
+    {
+      "wellenlauf": 15,
+      "zeitraffer": 4
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "R2_Welle15"
+    },
+    {
+      "pruefe": "KernLebt",
+      "text": "Kern hat Welle 15 überstanden"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}
