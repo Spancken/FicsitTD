@@ -17,6 +17,9 @@ struct FTDPlatzKandidat
 	int32 Stufe;
 };
 
+/** 0.69.2/0.78.6: faellbaren Bewuchs (Baeume, Bueschel) im Radius entfernen wie die Kettensaege; Rueckgabe: Anzahl */
+FICSITTD_API int32 TDRaeumeBewuchs(class UWorld* World, const FVector& Mitte, float Radius);
+
 /** 0.67 (Kernplaetze S1): /td platz pruefen <Kandidat|hier [Biom]> - Gelaende, Fronten, Rohstoffe pruefen; /td platz merken <Biom> - Platz speichern */
 UCLASS()
 class FICSITTD_API UTDKernplatz : public UWorldSubsystem

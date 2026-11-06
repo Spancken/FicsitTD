@@ -683,8 +683,14 @@ void UTDGegnerHirn::Marschiere(AFGCreature* Kreatur, float DeltaTime)
 					mStill = 0.f;
 					return;
 				}
+				// 0.78.6: Modell des Hindernisses (welche Pflanze, welcher Fels?)
+				FString Modell = Hindernis.GetComponent() ? Hindernis.GetComponent()->GetName() : FString(TEXT("-"));
+				if (const UStaticMeshComponent* Netz = Cast<UStaticMeshComponent>(Hindernis.GetComponent()); Netz && Netz->GetStaticMesh())
+				{
+					Modell = Netz->GetStaticMesh()->GetName();
+				}
 				Vorn = FString::Printf(TEXT("Hindernis %s/%s in %.1f m, Neigung %.0f Grad"), Hindernis.GetActor() ? *Hindernis.GetActor()->GetClass()->GetName() : TEXT("-"),
-					Hindernis.GetComponent() ? *Hindernis.GetComponent()->GetName() : TEXT("-"), Hindernis.Distance / 100.f,
+					*Modell, Hindernis.Distance / 100.f,
 					FMath::RadiansToDegrees(FMath::Acos(FMath::Clamp(Hindernis.ImpactNormal.Z, -1.f, 1.f))));
 			}
 			const FVector Voraus = Vorher + Richtung * 200.f;

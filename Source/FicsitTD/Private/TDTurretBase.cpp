@@ -1245,6 +1245,17 @@ void ATDTurretBase::Treffer(AFGCreature* Ziel, float Schaden, const FVector& Ric
 	TrefferArt(Ziel, Schaden, Richtung, Betaeubung, Verzoegerung, mSchadensart);
 }
 
+/** 0.78.6 Ursachensuche Zombie: was macht die Schadensanpassung des Spiels aus einem Treffer? (AdjustDamage ist geschuetzt;
+ *  Zugriff ueber einen Zeiger auf das Mitglied, benannt ueber eine abgeleitete Klasse - erlaubt, ohne Objekt dieser Klasse) */
+struct FTDGesundheitZugang : public UFGHealthComponent
+{
+	static float Angepasst(UFGHealthComponent* H, AActor* Ziel, float Menge, const UDamageType* Art, AActor* Verursacher)
+	{
+		float (UFGHealthComponent::*Anpassen)(AActor*, float, const UDamageType*, AController*, AActor*) = &FTDGesundheitZugang::AdjustDamage;
+		return (H->*Anpassen)(Ziel, Menge, Art, nullptr, Verursacher);
+	}
+};
+
 void ATDTurretBase::TrefferArt(AFGCreature* Ziel, float Schaden, const FVector& Richtung, float Betaeubung, float Verzoegerung, ETDSchadensart Art)
 {
 	const float Roh = Schaden;
@@ -1282,13 +1293,21 @@ void ATDTurretBase::TrefferArt(AFGCreature* Ziel, float Schaden, const FVector& 
 			UGameplayStatics::ApplyPointDamage(Z, Schaden, Richtung, Hit, nullptr, T, UDamageType::StaticClass());
 			// 0.78.2 Ursachensuche Zombie (Spucker mit 0,00 von 240 LP lebte 160 s unter 12 Tuermen): Treffer ohne Wirkung melden
 			const float Nachher = Leben ? Leben->GetCurrentHealth() : 0.f;
+			// 0.78.6 Ursache Zombie (Pruefstand 06.11. 07:35): der toedliche Treffer liess einen Rundungsrest (0,000049 von 360 LP) stehen,
+			// danach nahm der Gegner keinen Schaden mehr an (Anpassung des Spiels liess den Treffer unveraendert, die LP blieben trotzdem),
+			// das Tot-Signal kam nie. Ein Rest unter Treffer.Rundungsrest LP nach unserem Treffer ist der toedliche Treffer.
+			if (Leben && Nachher > 0.f && Nachher < TDBalance::Wert(TEXT("Treffer.Rundungsrest"), 0.01f) && Z->IsAliveAndWell())
+			{
+				const_cast<UFGHealthComponent*>(Leben)->Kill();
+			}
 			if (Leben && Schaden >= 1.f && Nachher >= RestLP - 0.01f && Z->IsAliveAndWell())
 			{
 				static int32 Gemeldet = 0;
 				if (Gemeldet++ < 20)
 				{
-					UE_LOG(LogFicsitTD, Log, TEXT("Treffer ohne Wirkung: %s %s, Schaden %.1f, LP vorher %.6f nachher %.6f von %.0f, tot-Flag %s, betaeubt %s, Verursacher %s"),
-						*Z->GetClass()->GetName(), *Z->GetName(), Schaden, RestLP, Nachher, Leben->GetMaxHealth(), Leben->IsDead() ? TEXT("ja") : TEXT("nein"),
+					const float Anpassung = FTDGesundheitZugang::Angepasst(const_cast<UFGHealthComponent*>(Leben), Z, Schaden, GetDefault<UDamageType>(), T);
+					UE_LOG(LogFicsitTD, Log, TEXT("Treffer ohne Wirkung: %s %s, Schaden %.1f, nach Anpassung des Spiels %.3f, LP vorher %.6f nachher %.6f von %.0f, tot-Flag %s, betaeubt %s, Verursacher %s"),
+						*Z->GetClass()->GetName(), *Z->GetName(), Schaden, Anpassung, RestLP, Nachher, Leben->GetMaxHealth(), Leben->IsDead() ? TEXT("ja") : TEXT("nein"),
 						Z->IsStunned() ? TEXT("ja") : TEXT("nein"), T ? *T->GetTurmName() : TEXT("-"));
 				}
 			}

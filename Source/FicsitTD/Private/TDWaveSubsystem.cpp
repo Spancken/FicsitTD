@@ -1,5 +1,6 @@
 ﻿#include "TDWaveSubsystem.h"
 #include "TDSicherheitsnetz.h"
+#include "TDKernplatz.h"
 #include "TDLaufProtokoll.h"
 #include "FGItemPickup.h"
 #include "TDBalance.h"
@@ -2091,6 +2092,27 @@ void UTDWaveSubsystem::SpawneKernWelle(int32 Nummer)
 	for (const FVector& O : Orte)
 	{
 		mNachschubWege.Add(UTDGegnerHirn::BerechneWeg(GetWorld(), O, mKern.Get()));
+	}
+	// 0.78.6 (Pruefstand 06.11.: 44 von 101 Festgefahrenen standen an Pflanzen, die das Navigationsnetz nicht kennt): faellbaren
+	// Bewuchs entlang der Frontwege raeumen, wie beim Kernplatz und der Kettensaege. Wellen.WegRaeumen = halbe Breite in m, 0 = aus
+	if (const float Halb = TDBalance::Wert(TEXT("Wellen.WegRaeumen"), 3.f) * 100.f; Halb > 0.f)
+	{
+		int32 Geraeumt = 0;
+		for (const TArray<FVector>& Weg : mNachschubWege)
+		{
+			for (int32 i = 1; i < Weg.Num(); ++i)
+			{
+				const int32 Schritte = FMath::Max(1, FMath::CeilToInt(FVector::Dist(Weg[i - 1], Weg[i]) / Halb));
+				for (int32 k = 0; k < Schritte; ++k)
+				{
+					Geraeumt += TDRaeumeBewuchs(GetWorld(), FMath::Lerp(Weg[i - 1], Weg[i], float(k) / Schritte), Halb);
+				}
+			}
+		}
+		if (Geraeumt > 0)
+		{
+			UE_LOG(LogFicsitTD, Log, TEXT("Frontwege: %d Pflanzen im %.0f-m-Streifen geraeumt"), Geraeumt, 2.f * Halb / 100.f);
+		}
 	}
 	TArray<FTDNachschub> Normal, Neue, Bosse;
 	int32 Reihum = 0;

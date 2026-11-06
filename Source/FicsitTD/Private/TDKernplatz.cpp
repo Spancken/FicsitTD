@@ -1193,7 +1193,7 @@ static bool TDEckHoehen(UClass* Klasse, float Out[4])
 }
 
 /** 0.69.2 (Marius: Baeume um den Kern weg): Bewuchs (Baeume, Bueschel, kleine Felsen) im Radius entfernen wie die Kettensaege */
-static int32 TDRaeumeBewuchs(UWorld* World, const FVector& Mitte, float Radius)
+int32 TDRaeumeBewuchs(UWorld* World, const FVector& Mitte, float Radius)
 {
 	AFGFoliageRemovalSubsystem* Foliage = AFGFoliageRemovalSubsystem::Get(World);
 	if (!Foliage)
