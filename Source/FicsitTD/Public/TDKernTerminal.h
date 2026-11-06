@@ -318,6 +318,9 @@ private:
 	TArray<TObjectPtr<UTextBlock>> mWerte;
 	UPROPERTY()
 	TObjectPtr<UBorder> mModusPanel;
+	/** 0.78.5: Seitenfeld links neben dem Maschinenfenster (Kopfleiste und Koerper wie ein Spielfenster) */
+	UPROPERTY()
+	TObjectPtr<UBorder> mSeite;
 	UPROPERTY()
 	TObjectPtr<UBorder> mFamilienPanel;
 	UPROPERTY()

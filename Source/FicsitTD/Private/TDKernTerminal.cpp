@@ -1837,11 +1837,14 @@ namespace TDTurmInfo
 	// Weisses Ausgabe-Feld im Maschinenfenster, Anteil an der Fenstergroesse (gemessen an den Screenshots 0.21/0.22)
 	static const FVector2D FeldVon(0.41f, 0.134f);
 	static const FVector2D FeldBis(0.65f, 0.516f);
-	// Die beiden gesperrten Inventarfelder darunter (gemessen am Screenshot 0.53): links breit, rechts schmal
-	static const FVector2D LinksVon(0.050f, 0.580f);
-	static const FVector2D LinksBis(0.468f, 0.770f);
-	static const FVector2D RechtsVon(0.488f, 0.580f);
-	static const FVector2D RechtsBis(0.614f, 0.770f);
+	// 0.78.5 (Marius 05.11.: die Fenster fuer Energiesplitter und Somersloop lagen unter Zielwahl/Bevorzugt): beide Karten in einem
+	// eigenen Seitenfeld links neben dem Maschinenfenster, x negativ = links vom Fenster. Kopfleiste oben buendig mit dem Fenster.
+	static const FVector2D SeiteVon(-0.400f, 0.000f);
+	static const FVector2D SeiteBis(-0.012f, 0.800f);
+	static const FVector2D LinksVon(-0.385f, 0.075f);
+	static const FVector2D LinksBis(-0.027f, 0.420f);
+	static const FVector2D RechtsVon(-0.385f, 0.440f);
+	static const FVector2D RechtsBis(-0.027f, 0.785f);
 }
 
 void UTDZielKnopf::Geklickt()
@@ -2154,13 +2157,32 @@ TSharedRef<SWidget> UTDTurmInfo::RebuildWidget()
 		}
 		// Zielwahl (Marius 03.11.2026) in den beiden fuer Tuerme gesperrten Feldern unten: links Reihenfolge, rechts Vorzug
 		UPanelWidget* Inhalt = nullptr;
+		// 0.78.5: Seitenfeld wie ein Spielfenster - dunkle Kopfleiste mit Titel, darunter der Fensterkoerper
+		mSeite = WidgetTree->ConstructWidget<UBorder>();
+		mSeite->SetBrush(FSlateRoundedBoxBrush(TDUI::Fenster, 2.f, TDUI::Kopfleiste, 2.f));
+		mSeite->SetPadding(FMargin(0.f));
+		{
+			UVerticalBox* Aufbau = WidgetTree->ConstructWidget<UVerticalBox>();
+			mSeite->AddChild(Aufbau);
+			UBorder* Kopf = WidgetTree->ConstructWidget<UBorder>();
+			Kopf->SetBrush(FSlateRoundedBoxBrush(TDUI::Kopfleiste, 0.f));
+			Kopf->SetPadding(FMargin(14.f, 8.f));
+			Kopf->AddChild(TDUI::Text(WidgetTree, TEXT("Turmsteuerung"), 18, TDUI::Hell));
+			Aufbau->AddChildToVerticalBox(Kopf);
+			if (UCanvasPanelSlot* S = Cast<UCanvasPanel>(Flaeche)->AddChildToCanvas(mSeite))
+			{
+				S->SetAnchors(FAnchors(0.f, 0.f));
+				S->SetPosition(FVector2D(-5000.f, -5000.f));
+				S->SetSize(FVector2D(200.f, 150.f));
+			}
+		}
 		mModusPanel = NeuesZielPanel(Flaeche, TEXT("Zielwahl:"), Inhalt);
 		UUniformGridPanel* Raster = WidgetTree->ConstructWidget<UUniformGridPanel>();
 		Raster->SetSlotPadding(FMargin(2.f));
 		Inhalt->AddChild(Raster);
 		for (int32 i = 0; i < ATDTurretBase::ZielModusAnzahl; ++i)
 		{
-			Raster->AddChildToUniformGrid(ZielZeile(WidgetTree, this, this, i, FString(), false, mModusTexte, mZielKnoepfe, mModusPunkte), i / 2, i % 2);
+			Raster->AddChildToUniformGrid(ZielZeile(WidgetTree, this, this, i, FString(), false, mModusTexte, mZielKnoepfe, mModusPunkte), i, 0);
 		}
 		mFamilienPanel = NeuesZielPanel(Flaeche, TEXT("Bevorzugt:"), Inhalt);
 		UVerticalBox* Liste = WidgetTree->ConstructWidget<UVerticalBox>();
@@ -2275,6 +2297,7 @@ void UTDTurmInfo::Platziere(const FGeometry& Eigene)
 	const FVector2D Bis = Eigene.AbsoluteToLocal(Bezug.LocalToAbsolute(Groesse * TDTurmInfo::FeldBis));
 	PanelSlot->SetPosition(Von);
 	PanelSlot->SetSize(Bis - Von);
+	SetzeFeld(mSeite, Eigene, Bezug, TDTurmInfo::SeiteVon, TDTurmInfo::SeiteBis);
 	SetzeFeld(mModusPanel, Eigene, Bezug, TDTurmInfo::LinksVon, TDTurmInfo::LinksBis);
 	SetzeFeld(mFamilienPanel, Eigene, Bezug, TDTurmInfo::RechtsVon, TDTurmInfo::RechtsBis);
 	if (!mGemeldet && Groesse.X > 100.f)
