@@ -1,0 +1,10 @@
+{
+  "Name": "Breite",
+  "_Hinweis": "A/B Breite Front: Referenz-Misch ohne und mit Option, je 2-mal, etwa 1 h.",
+  "Plaene": [
+    "Referenz-Misch",
+    "Referenz-Misch-Breit",
+    "Referenz-Misch",
+    "Referenz-Misch-Breit"
+  ]
+}

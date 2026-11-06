@@ -115,6 +115,17 @@ private:
 	/** geglaettete Laufrichtung (keine Spruenge beim Ausweichen) */
 	FVector mRichtung = FVector::ZeroVector;
 	float mAusweichZeit = 0.f;
+	/** 0.79 "Breite Front" (Option Wellen.BreiteFront, Konzept-Wellen-und-Spielvarianten A1-A3): fester Querversatz zum Weg (cm),
+	 *  aktuelle Skala (halbiert, wenn der versetzte Punkt nicht auf dem Netz liegt), Takt der Netzpruefung, Abstossung von Nachbarn */
+	float mVersatz = 0.f;
+	float mVersatzSkala = 1.f;
+	float mVersatzTakt = 0.f;
+	FVector mAbstoss = FVector::ZeroVector;
+	float mAbstossTakt = 0.f;
+	/** Ziel 6 m voraus mit Querversatz (ohne Option: der Wegpunkt selbst) */
+	FVector WegZiel(const AFGCreature* Kreatur, float Voraus);
+	/** Abstossung von nahen Wellengegnern (ohne Option: null) */
+	FVector Abstossung(const AFGCreature* Kreatur, float DeltaTime);
 	float mSeite = 1.f;
 	float mZielSuche = 0.f;
 	float mAngriffTakt = 0.f;

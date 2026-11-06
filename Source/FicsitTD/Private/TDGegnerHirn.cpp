@@ -306,6 +306,16 @@ AFGCreature* UTDGegnerHirn::Spawne(UWorld* World, UClass* Klasse, const FVector&
 	// Gas aus der Umgebung (Gassaeulen, Sporenblumen) sperrt ein Hook in FicsitTDModule - Gas-Nobelisken wirken weiter
 	Hirn->mMontage = Hirn->mWerte.Montage ? LoadObject<UAnimMontage>(nullptr, Hirn->mWerte.Montage) : nullptr;
 	Hirn->mWeg = Weg;
+	// 0.79 Breite Front (Option): Querversatz = seitliche Lage im Spawnfeld relativ zum Frontweg, begrenzt; Tempo leicht gestreut
+	if (TDBalance::Wert(TEXT("Wellen.BreiteFront"), 0.f) > 0.5f && Weg.Num() >= 2)
+	{
+		const FVector Laufrichtung = (Weg[1] - Weg[0]).GetSafeNormal2D();
+		const FVector Quer(-Laufrichtung.Y, Laufrichtung.X, 0.f);
+		const float Grenze = TDBalance::Wert(TEXT("Wellen.BreiteVersatz"), 12.f) * 100.f;
+		Hirn->mVersatz = FMath::Clamp(FVector::DotProduct(Kreatur->GetActorLocation() - Weg[0], Quer) + FMath::FRandRange(-200.f, 200.f), -Grenze, Grenze);
+		const float Streuung = TDBalance::Wert(TEXT("Wellen.BreiteTempo"), 0.12f);
+		Hirn->mLaufTempo *= 1.f + FMath::FRandRange(-Streuung, Streuung);
+	}
 	if (Hirn->mWeg.Num() >= 2)
 	{
 		Hirn->mWeg[0] = Kreatur->GetActorLocation();
@@ -732,7 +742,7 @@ void UTDGegnerHirn::Marschiere(AFGCreature* Kreatur, float DeltaTime)
 		mStill = 0.f;
 	}
 	// 6 m voraus anpeilen: folgt den Ecken des Netz-Weges, schneidet sie aber weich an
-	const FVector Wunsch = (TDHirn::PunktAufWeg(mWeg, mFortschritt + 600.f) - Kreatur->GetActorLocation()).GetSafeNormal2D();
+	const FVector Wunsch = ((WegZiel(Kreatur, 600.f) - Kreatur->GetActorLocation()).GetSafeNormal2D() + Abstossung(Kreatur, DeltaTime)).GetSafeNormal2D();
 	if (!Wunsch.IsNearlyZero())
 	{
 		Laufe(Kreatur, Wunsch, DeltaTime);
@@ -794,9 +804,10 @@ void UTDGegnerHirn::Greife(AFGCreature* Kreatur, float DeltaTime)
 		FVector Richtung = Zu.GetSafeNormal2D();
 		if (Koeder != mBlockade.Get() && mWegVoll && mWeg.Num() >= 2 && GetRestweg() > 800.f)
 		{
-			const FVector AufWeg = (TDHirn::PunktAufWeg(mWeg, mFortschritt + 600.f) - Kreatur->GetActorLocation()).GetSafeNormal2D();
+			const FVector AufWeg = (WegZiel(Kreatur, 600.f) - Kreatur->GetActorLocation()).GetSafeNormal2D();
 			Richtung = AufWeg.IsNearlyZero() ? Richtung : AufWeg;
 		}
+		Richtung = (Richtung + Abstossung(Kreatur, DeltaTime)).GetSafeNormal2D();
 		Laufe(Kreatur, Richtung, DeltaTime);
 		return;
 	}
@@ -833,6 +844,75 @@ void UTDGegnerHirn::Greife(AFGCreature* Kreatur, float DeltaTime)
 			}
 		}
 	}
+}
+
+FVector UTDGegnerHirn::WegZiel(const AFGCreature* Kreatur, float Voraus)
+{
+	const FVector Punkt = TDHirn::PunktAufWeg(mWeg, mFortschritt + Voraus);
+	if (FMath::IsNearlyZero(mVersatz) || mWeg.Num() < 2)
+	{
+		return Punkt;
+	}
+	// Querrichtung des Weges an dieser Stelle; Versatz schrumpft auf den letzten Wellen.BreiteKern m (Ankunft im Bogen, kein Abdraengen am Kern)
+	const FVector Tangente = (TDHirn::PunktAufWeg(mWeg, mFortschritt + Voraus + 100.f) - Punkt).GetSafeNormal2D();
+	const FVector Quer(-Tangente.Y, Tangente.X, 0.f);
+	const float Kernnah = FMath::Clamp(GetRestweg() / (TDBalance::Wert(TEXT("Wellen.BreiteKern"), 40.f) * 100.f), 0.35f, 1.f);
+	// zweimal je Sekunde pruefen, ob der versetzte Punkt auf dem Navigationsnetz liegt; sonst Versatz halbieren, sonst langsam zurueck
+	FVector Ziel = Punkt + Quer * mVersatz * mVersatzSkala * Kernnah;
+	if (UWorld* Welt = GetWorld(); Welt && Welt->GetTimeSeconds() >= mVersatzTakt)
+	{
+		mVersatzTakt = Welt->GetTimeSeconds() + 0.5f;
+		const UNavigationSystemV1* Nav = FNavigationSystem::GetCurrent<UNavigationSystemV1>(Welt);
+		FNavLocation Auf;
+		if (Nav && !Nav->ProjectPointToNavigation(Ziel, Auf, FVector(150.f, 150.f, 300.f)))
+		{
+			mVersatzSkala = FMath::Max(0.f, mVersatzSkala * 0.5f);
+		}
+		else
+		{
+			mVersatzSkala = FMath::Min(1.f, mVersatzSkala + 0.1f);
+		}
+		Ziel = Punkt + Quer * mVersatz * mVersatzSkala * Kernnah;
+	}
+	return Ziel;
+}
+
+FVector UTDGegnerHirn::Abstossung(const AFGCreature* Kreatur, float DeltaTime)
+{
+	if (TDBalance::Wert(TEXT("Wellen.BreiteFront"), 0.f) <= 0.5f)
+	{
+		return FVector::ZeroVector;
+	}
+	// fuenfmal je Sekunde: von Wellengegnern im Umkreis Wellen.BreiteAbstand m wegdruecken (Gewicht 1 - d/R), Summe begrenzt
+	mAbstossTakt -= DeltaTime;
+	if (mAbstossTakt > 0.f)
+	{
+		return mAbstoss;
+	}
+	mAbstossTakt = 0.2f;
+	mAbstoss = FVector::ZeroVector;
+	const UTDWaveSubsystem* Wellen = GetWorld() ? GetWorld()->GetSubsystem<UTDWaveSubsystem>() : nullptr;
+	if (!Wellen)
+	{
+		return mAbstoss;
+	}
+	const float R = TDBalance::Wert(TEXT("Wellen.BreiteAbstand"), 4.f) * 100.f;
+	const FVector Ich = Kreatur->GetActorLocation();
+	for (const AFGCreature* Andere : Wellen->GetLivingWaveCreatures())
+	{
+		if (!Andere || Andere == Kreatur)
+		{
+			continue;
+		}
+		const FVector Weg = (Ich - Andere->GetActorLocation()) * FVector(1.f, 1.f, 0.f);
+		const float D = Weg.Size();
+		if (D > 1.f && D < R)
+		{
+			mAbstoss += Weg / D * (1.f - D / R);
+		}
+	}
+	mAbstoss = mAbstoss.GetClampedToMaxSize(1.f) * TDBalance::Wert(TEXT("Wellen.BreiteAbstandGewicht"), 0.6f);
+	return mAbstoss;
 }
 
 void UTDGegnerHirn::Laufe(AFGCreature* Kreatur, const FVector& Wunsch, float DeltaTime)

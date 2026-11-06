@@ -86,16 +86,22 @@ def main():
         plan("Referenz-Gewehr", "Nur Gewehrtürme (nach dem Start), ab Welle 15 mit Doktrin Gewehrturm. Zeigt, ob eine Linie allein trägt.", GEWEHR, SATT,
              extra={15: [{"erforsche": "DoktrinGewehr"}]}),
     ]
+    # 0.79 Breite Front (Option, Standard aus): gleiche Mischbasis mit eingeschalteter Option, fuer den A/B-Vergleich
+    plaene.append(plan("Referenz-Misch-Breit", "Wie Referenz-Misch, aber mit der Option Breite Front (Querversatz, Tempo-Streuung, Abstand halten).",
+                       MISCH, SATT, extra={0: [{"balance": {"Wellen.BreiteFront": 1}}]}))
     for p in plaene:
         with open(os.path.join(HIER, "Plaene", p["Name"] + ".json"), "w", encoding="utf-8") as f:
             json.dump(p, f, ensure_ascii=False, indent=2)
     with open(os.path.join(HIER, "Pakete", "Pruefstand.json"), "w", encoding="utf-8") as f:
         json.dump({"Name": "Pruefstand", "_Hinweis": "Referenzläufe bis Welle 30 (M1), je Plan etwa 15 min.",
-                   "Plaene": [p["Name"] for p in plaene if p["Name"].startswith("Referenz")]}, f, ensure_ascii=False, indent=2)
+                   "Plaene": [p["Name"] for p in plaene if p["Name"].startswith("Referenz") and not p["Name"].endswith("-Breit")]}, f, ensure_ascii=False, indent=2)
+    with open(os.path.join(HIER, "Pakete", "Breite.json"), "w", encoding="utf-8") as f:
+        json.dump({"Name": "Breite", "_Hinweis": "A/B Breite Front: Referenz-Misch ohne und mit Option, je 2-mal, etwa 1 h.",
+                   "Plaene": ["Referenz-Misch", "Referenz-Misch-Breit"] * 2}, f, ensure_ascii=False, indent=2)
     # 0.78.2 Streuung: jeder Plan 5-mal (Ziel: Kern-Tiefpunkt schwankt um hoechstens 25 Punkte), etwa 3 h
     with open(os.path.join(HIER, "Pakete", "Streuung.json"), "w", encoding="utf-8") as f:
         json.dump({"Name": "Streuung", "_Hinweis": "Jeder Referenzplan 5-mal (Streuung der Wellen), etwa 3 h ohne Aufsicht.",
-                   "Plaene": [p["Name"] for p in plaene if p["Name"].startswith("Referenz")] * 5}, f, ensure_ascii=False, indent=2)
+                   "Plaene": [p["Name"] for p in plaene if p["Name"].startswith("Referenz") and not p["Name"].endswith("-Breit")] * 5}, f, ensure_ascii=False, indent=2)
     print("Referenzen:", ", ".join(f"{p['Name']} ({len(p['Schritte'])} Schritte)" for p in plaene))
 
 
