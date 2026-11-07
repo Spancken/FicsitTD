@@ -1,0 +1,156 @@
+{
+  "Name": "BautenP2",
+  "_Hinweis": "0.83: Bauten P2/P3 im Einsatz (frei bauen, Strom frei, Versorgung fest). Im Log: Schildgenerator, Singularitaet, Dimensionslager. Himmelsturm ohne Flieger nur gebaut.",
+  "NeuesSpiel": {
+    "Startort": "Rocky Desert"
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 25,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warte": 15
+    },
+    {
+      "befehl": "td einsatz stop"
+    },
+    {
+      "befehl": "td kern stop"
+    },
+    {
+      "befehl": "td einsatz start normal 30"
+    },
+    {
+      "befehl": "td einsatz frei an"
+    },
+    {
+      "stromfrei": true
+    },
+    {
+      "versorgung": {
+        "Bolzenturm": 50,
+        "Stoerfeld": 2,
+        "Singularitaet": 8,
+        "Himmelsturm": 30
+      }
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 3,
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "baue": "Funkmast",
+      "anzahl": 1,
+      "rezept": "Recipe_TD_Funk_Strom",
+      "ring": "innen"
+    },
+    {
+      "baue": "Schildgenerator",
+      "anzahl": 1,
+      "rezept": "Recipe_TD_Schild_Strom",
+      "ring": "innen"
+    },
+    {
+      "baue": "Stoerfeld",
+      "anzahl": 1,
+      "rezept": "Recipe_TD_Feld_SAM"
+    },
+    {
+      "baue": "Singularitaet",
+      "anzahl": 1,
+      "rezept": "Recipe_TD_Singularitaet_Ficsonium"
+    },
+    {
+      "baue": "Himmelsturm",
+      "anzahl": 1,
+      "rezept": "Recipe_TD_Flak_Shoot"
+    },
+    {
+      "baue": "Elektrozaun",
+      "anzahl": 2,
+      "rezept": "Recipe_TD_Zaun_Strom"
+    },
+    {
+      "baue": "Dimensionslager",
+      "anzahl": 1
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "BautenP2_W00"
+    },
+    {
+      "pruefe": "TurmWert",
+      "turm": "Funkmast",
+      "wert": "Sendet",
+      "soll": 1,
+      "text": "Funkmast sendet"
+    },
+    {
+      "pruefe": "TurmWert",
+      "turm": "Bolzenturm",
+      "wert": "FunkFaktor",
+      "soll": 1.1,
+      "text": "Bolzenturm im Sendekreis: Reichweite x1,1"
+    },
+    {
+      "wellenlauf": 10,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "BautenP2_W10"
+    },
+    {
+      "pruefe": "KernLebt",
+      "text": "Kern hat Welle 10 überstanden"
+    },
+    {
+      "pruefe": "TurmWert",
+      "turm": "Stoerfeld",
+      "wert": "Gebremst",
+      "min": 1,
+      "text": "Störfeld hat Gegner gebremst"
+    },
+    {
+      "pruefe": "TurmWert",
+      "turm": "Singularitaet",
+      "wert": "Getroffen",
+      "min": 1,
+      "text": "Singularität hat Gegner gesprengt"
+    },
+    {
+      "pruefe": "TurmWert",
+      "turm": "Schildgenerator",
+      "wert": "Geschluckt",
+      "min": 0,
+      "text": "Schildgenerator (Schaden geschluckt, Info)"
+    },
+    {
+      "pruefe": "TurmWert",
+      "turm": "Elektrozaun",
+      "wert": "Schlaege",
+      "min": 0,
+      "text": "Elektrozaun (Schläge, Info)"
+    },
+    {
+      "pruefe": "Sicherheitsnetze",
+      "text": "kein Sicherheitsnetz ausgelöst"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}

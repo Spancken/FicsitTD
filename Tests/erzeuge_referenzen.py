@@ -12,7 +12,7 @@ HIER = os.path.dirname(os.path.abspath(__file__))
 FORSCHUNG = {
     5: ["Assembler", "Kupfer", "Durchschlagbolzen", "Gewehrturm", "Kohlekraft", "Teslaspule", "Giesserei"],
     10: ["NobeliskWerfer", "Turmfertigung2"],
-    15: ["Raffinerie", "Flammenwerfer", "Treibstoff"],
+    15: ["Raffinerie", "Flammenwerfer"],   # 0.82: Knoten Treibstoff entfaellt, der Flammenwerfer bringt den Treibstoff
     20: ["Turmfertigung3"],
 }
 
@@ -37,6 +37,31 @@ GEWEHR = {
     20: [("Gewehrturm", 2, 4, "Recipe_TD_Gun_Standard")],
     25: [("Gewehrturm", 2, 4, "Recipe_TD_Gun_Standard")],
 }
+# 0.79 Gegenpruefung Strategie-Pruefstand (06.11.): reine Tesla- und Flammenbasis, jeweils mit Doktrin ab W15
+TESLA = {
+    0: [("Bolzenturm", 2, 1, "Recipe_TD_Shoot_SpikedRebar")],
+    4: [("Bolzenturm", 1, 2, "Recipe_TD_Shoot_Durchschlag")],
+    8: [("Teslaspule", 2, 2, "Recipe_TD_Tesla_Discharge")],
+    12: [("Teslaspule", 2, 3, "Recipe_TD_Tesla_Discharge")],
+    16: [("Teslaspule", 2, 3, "Recipe_TD_Tesla_Discharge")],
+    20: [("Teslaspule", 2, 4, "Recipe_TD_Tesla_Discharge")],
+    25: [("Teslaspule", 2, 4, "Recipe_TD_Tesla_Discharge")],
+}
+FLAMME = {
+    0: [("Bolzenturm", 2, 1, "Recipe_TD_Shoot_SpikedRebar")],
+    4: [("Bolzenturm", 1, 2, "Recipe_TD_Shoot_Durchschlag")],
+    8: [("Bolzenturm", 1, 2, "Recipe_TD_Shoot_Durchschlag")],
+    12: [("Bolzenturm", 1, 3, "Recipe_TD_Shoot_Durchschlag")],
+    16: [("Flammenwerfer", 3, 2, "Recipe_TD_Flame_Fuel", "innen")],
+    20: [("Flammenwerfer", 2, 3, "Recipe_TD_Flame_Fuel", "innen")],
+    25: [("Flammenwerfer", 2, 4, "Recipe_TD_Flame_Fuel", "innen")],
+}
+# Vorschlag aus Notizen/Balance-Vorschlag-2026-11-06.md (Tesla-Strom ist im Pruefstand frei, deshalb nur der Schaden)
+STANDARD = {"Munition.Tesla.Schaden": 300, "Munition.Treibstoff.Biotreibstoff.SchadenProSekunde": 35,
+            "Munition.Treibstoff.Treibstoff.SchadenProSekunde": 80, "Munition.Treibstoff.Turbotreibstoff.SchadenProSekunde": 80}
+VORSCHLAG = {"Munition.Tesla.Schaden": 150, "Munition.Treibstoff.Biotreibstoff.SchadenProSekunde": 52,
+             "Munition.Treibstoff.Treibstoff.SchadenProSekunde": 120, "Munition.Treibstoff.Turbotreibstoff.SchadenProSekunde": 120}
+
 # Munition je Turm und Minute. Satt: Fabrik deckt den Bedarf. Faul: Fabrik wird nach dem Start nicht ausgebaut.
 # Pruefstand 05.11.: 10 Patronen/min reichten in Phase 3 nicht (Gewehr 738 s ohne Munition) -> Dauerbedarf: Bolzen 1/1,2 s = 50/min,
 # Gewehr 15 Schuss je Patrone bei 6/s = 24/min, Nobelisk 1/4 s = 15/min, Flamme 100 je s = 6000/min
@@ -83,9 +108,14 @@ def main():
     plaene = [
         plan("Referenz-Misch", "Ausgewogene Basis aller Turmarten, Munition reicht.", MISCH, SATT),
         plan("Referenz-Faul", "Gleiche Basis wie Misch, aber die Fabrik wird nach dem Start nicht ausgebaut (wenig Munition). Zeigt, ob Munitionsmangel bindet.", MISCH, FAUL),
-        plan("Referenz-Gewehr", "Nur Gewehrtürme (nach dem Start), ab Welle 15 mit Doktrin Gewehrturm. Zeigt, ob eine Linie allein trägt.", GEWEHR, SATT,
-             extra={15: [{"erforsche": "DoktrinGewehr"}]}),
+        plan("Referenz-Gewehr", "Nur Gewehrtürme (nach dem Start), ab Welle 16 mit Doktrin Gewehrturm (bis 0.79 nie ausgeführt: 15 war kein Abschnitt). Zeigt, ob eine Linie allein trägt.", GEWEHR, SATT,
+             extra={16: [{"erforsche": "DoktrinGewehr"}]}),
     ]
+    for name, ausbau, dok in (("Tesla", TESLA, "DoktrinTesla"), ("Flamme", FLAMME, "DoktrinFlamme")):
+        plaene.append(plan(f"Gegen-{name}", f"Gegenpruefung Strategie-Pruefstand: nur {name} (Bolzen bis zur Freigabe), Doktrin ab W15, Balance-Stand.",
+                           ausbau, SATT, extra={0: [{"balance": STANDARD}], 16: [{"erforsche": dok}]}))
+        plaene.append(plan(f"Gegen-{name}-Vorschlag", f"Wie Gegen-{name}, mit dem Balance-Vorschlag vom 06.11. (Tesla-Schaden 150, Flamme +50 %).",
+                           ausbau, SATT, extra={0: [{"balance": VORSCHLAG}], 16: [{"erforsche": dok}]}))
     # 0.79 Breite Front (Option, Standard aus): gleiche Mischbasis mit eingeschalteter Option, fuer den A/B-Vergleich
     plaene.append(plan("Referenz-Misch-Breit", "Wie Referenz-Misch, aber mit der Option Breite Front (Querversatz, Tempo-Streuung, Abstand halten).",
                        MISCH, SATT, extra={0: [{"balance": {"Wellen.BreiteFront": 1}}]}))
@@ -98,6 +128,9 @@ def main():
     with open(os.path.join(HIER, "Pakete", "Breite.json"), "w", encoding="utf-8") as f:
         json.dump({"Name": "Breite", "_Hinweis": "A/B Breite Front: Referenz-Misch ohne und mit Option, je 2-mal, etwa 1 h.",
                    "Plaene": ["Referenz-Misch", "Referenz-Misch-Breit"] * 2}, f, ensure_ascii=False, indent=2)
+    with open(os.path.join(HIER, "Pakete", "Gegenpruefung.json"), "w", encoding="utf-8") as f:
+        json.dump({"Name": "Gegenpruefung", "_Hinweis": "Strategie-Pruefstand gegen das Spiel: Tesla und Flamme, Stand gegen Vorschlag, etwa 50 min.",
+                   "Plaene": ["Gegen-Tesla", "Gegen-Tesla-Vorschlag", "Gegen-Flamme", "Gegen-Flamme-Vorschlag"]}, f, ensure_ascii=False, indent=2)
     # 0.78.2 Streuung: jeder Plan 5-mal (Ziel: Kern-Tiefpunkt schwankt um hoechstens 25 Punkte), etwa 3 h
     with open(os.path.join(HIER, "Pakete", "Streuung.json"), "w", encoding="utf-8") as f:
         json.dump({"Name": "Streuung", "_Hinweis": "Jeder Referenzplan 5-mal (Streuung der Wellen), etwa 3 h ohne Aufsicht.",

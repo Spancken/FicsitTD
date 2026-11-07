@@ -1,0 +1,272 @@
+{
+  "Name": "Strat-MonoTesla-Vor-W50",
+  "_Hinweis": "Beste Modellstrategie der Linie Mono Tesla (Nr. 181, Doktrin Teslaspule, Stil Level, Kern ja, Gabel Explosivbolzen/Zielsuchmunition/GasNobelisk/Kettenblitz/KernGeschuetz): Plan bei der Auswahl 75 % bis W30, Vorhersage 76 %, 16 Türme. Erzeugt von Werkzeuge\\FicsitTD-Simulator\\strategie_plaene.py.",
+  "NeuesSpiel": {
+    "Startort": "Rocky Desert"
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 130,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warte": 15
+    },
+    {
+      "befehl": "td einsatz stop"
+    },
+    {
+      "befehl": "td kern stop"
+    },
+    {
+      "befehl": "td einsatz start normal 50"
+    },
+    {
+      "befehl": "td einsatz frei an"
+    },
+    {
+      "stromfrei": true
+    },
+    {
+      "versorgung": {
+        "Bolzenturm": 50,
+        "Gewehrturm": 25,
+        "Nobelisk-Werfer": 15,
+        "Flammenwerfer": 6000
+      }
+    },
+    {
+      "erforsche": "Assembler"
+    },
+    {
+      "erforsche": "KernPanzer"
+    },
+    {
+      "erforsche": "Kupfer"
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 3,
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "Strat-MonoTesla-Vor-W50_W00"
+    },
+    {
+      "wellenlauf": 4,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "KernNotrep"
+    },
+    {
+      "erforsche": "Kohlekraft"
+    },
+    {
+      "erforsche": "Teslaspule"
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 1,
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "wellenlauf": 8,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "KernGeschuetz"
+    },
+    {
+      "erforsche": "Kettenblitz"
+    },
+    {
+      "erforsche": "Munitionspuffer"
+    },
+    {
+      "erforsche": "Turmfertigung2"
+    },
+    {
+      "baue": "Teslaspule",
+      "anzahl": 2,
+      "level": 3,
+      "rezept": "Recipe_TD_Tesla_Discharge"
+    },
+    {
+      "wellenlauf": 12,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Akkubank"
+    },
+    {
+      "erforsche": "DoktrinTesla"
+    },
+    {
+      "baue": "Teslaspule",
+      "anzahl": 3,
+      "level": 3,
+      "rezept": "Recipe_TD_Tesla_Discharge"
+    },
+    {
+      "wellenlauf": 16,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Turmfertigung3"
+    },
+    {
+      "baue": "Teslaspule",
+      "anzahl": 1,
+      "level": 4,
+      "rezept": "Recipe_TD_Tesla_Discharge"
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "Strat-MonoTesla-Vor-W50_W16"
+    },
+    {
+      "wellenlauf": 20,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "baue": "Teslaspule",
+      "anzahl": 2,
+      "level": 5,
+      "rezept": "Recipe_TD_Tesla_Discharge"
+    },
+    {
+      "wellenlauf": 25,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "BandMk2"
+    },
+    {
+      "erforsche": "BandMk3"
+    },
+    {
+      "erforsche": "Brandmunition"
+    },
+    {
+      "erforsche": "Durchschlagbolzen"
+    },
+    {
+      "erforsche": "Flammenwerfer"
+    },
+    {
+      "erforsche": "Gewehrturm"
+    },
+    {
+      "erforsche": "Giesserei"
+    },
+    {
+      "erforsche": "MauerMk2"
+    },
+    {
+      "erforsche": "NobeliskWerfer"
+    },
+    {
+      "erforsche": "Raffinerie"
+    },
+    {
+      "erforsche": "Reparaturstation"
+    },
+    {
+      "erforsche": "Schockbolzen"
+    },
+    {
+      "erforsche": "Stachelmauer"
+    },
+    {
+      "erforsche": "StreuNobelisk"
+    },
+    {
+      "erforsche": "Treibstoff"
+    },
+    {
+      "erforsche": "Treibstoffkraft"
+    },
+    {
+      "erforsche": "Turbomunition"
+    },
+    {
+      "erforsche": "Turbotreibstoff"
+    },
+    {
+      "erforsche": "Turmfertigung4"
+    },
+    {
+      "baue": "Teslaspule",
+      "anzahl": 2,
+      "level": 5,
+      "rezept": "Recipe_TD_Tesla_Discharge"
+    },
+    {
+      "wellenlauf": 30,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "baue": "Teslaspule",
+      "anzahl": 2,
+      "level": 5,
+      "rezept": "Recipe_TD_Tesla_Discharge"
+    },
+    {
+      "wellenlauf": 35,
+      "zeitraffer": 4,
+      "max": 1200
+    },
+    {
+      "wellenlauf": 40,
+      "zeitraffer": 4,
+      "max": 1200
+    },
+    {
+      "wellenlauf": 45,
+      "zeitraffer": 4,
+      "max": 1200
+    },
+    {
+      "wellenlauf": 50,
+      "zeitraffer": 4,
+      "max": 1200
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "Strat-MonoTesla-Vor-W50_W50"
+    },
+    {
+      "pruefe": "KernLebt",
+      "text": "Kern hat Welle 50 überstanden"
+    },
+    {
+      "pruefe": "Sicherheitsnetze",
+      "text": "kein Sicherheitsnetz ausgelöst (Versetzen, Absturz, 0 LP)"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}

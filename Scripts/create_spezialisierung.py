@@ -63,11 +63,12 @@ for ziel, name, text in PATRONEN:
 
 STAHLROHR = f"{P}/SteelPipe/Desc_SteelPipe"
 KOHLE = f"{G}/Resource/RawResources/Coal/Desc_Coal"
+SCHWEFEL = f"{G}/Resource/RawResources/Sulfur/Desc_Sulfur"
 STANDARD = VORLAGE_PATRONE
 REZEPTE = [
     # (Pfad, Zutaten, Produkt, Gebaeude, Dauer, Name, Prioritaet)
     ("/FicsitTD/Recipes/Recipe_TD_PatronePanzer", [(STANDARD, 2), (STAHLROHR, 1)], (PANZER, 2), ASSEMBLER, 8.0, "Panzerbrechende Munition (FICSIT)", None),
-    ("/FicsitTD/Recipes/Recipe_TD_PatroneBrand", [(STANDARD, 2), (KOHLE, 2)], (BRAND, 2), ASSEMBLER, 8.0, "Brandmunition (FICSIT)", None),
+    ("/FicsitTD/Recipes/Recipe_TD_PatroneBrand", [(STANDARD, 2), (SCHWEFEL, 1)], (BRAND, 2), ASSEMBLER, 8.0, "Brandmunition (FICSIT)", None),   # 0.82: Schwefel statt Kohle
     ("/FicsitTD/Buildings/GunTurret/Recipe_TD_Gun_Panzer", [(PANZER, 1)], (AKTION, 1), GEWEHR, 0.6, "Panzerbrechende Munition laden (15 Schuss)", 2.5),
     ("/FicsitTD/Buildings/GunTurret/Recipe_TD_Gun_Brand", [(BRAND, 1)], (AKTION, 1), GEWEHR, 0.6, "Brandmunition laden (15 Schuss)", 2.7),
 ]

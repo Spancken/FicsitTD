@@ -1,0 +1,14 @@
+{
+  "Name": "Nachweis0831",
+  "_Hinweis": "0.83.1: Stau- und Bewuchs-Fix der Festgefahrenen, Mono-Plaene mit Abschnitten W1-3, Bauten P2. Etwa 1,5 h.",
+  "Plaene": [
+    "Grundtest",
+    "BautenP2",
+    "Strat-MonoBolzen",
+    "Strat-MonoGewehr",
+    "Strat-MonoNobelisk",
+    "Strat-MonoTesla",
+    "Strat-MonoFlamme",
+    "Strat-MonoTesla-Vor-W50"
+  ]
+}

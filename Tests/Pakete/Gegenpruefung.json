@@ -1,0 +1,10 @@
+{
+  "Name": "Gegenpruefung",
+  "_Hinweis": "Strategie-Pruefstand gegen das Spiel: Tesla und Flamme, Stand gegen Vorschlag, etwa 50 min.",
+  "Plaene": [
+    "Gegen-Tesla",
+    "Gegen-Tesla-Vorschlag",
+    "Gegen-Flamme",
+    "Gegen-Flamme-Vorschlag"
+  ]
+}

@@ -97,6 +97,25 @@ static const TCHAR* SandkastenRezepte[] = {
 	TEXT("/FicsitTD/Buildings/NobeliskLauncher/Recipe_TD_Nobelisk_Cluster.Recipe_TD_Nobelisk_Cluster_C"),
 	TEXT("/FicsitTD/Buildings/NobeliskLauncher/Recipe_TD_Nobelisk_Nuke.Recipe_TD_Nobelisk_Nuke_C"),
 	TEXT("/FicsitTD/Buildings/RepairStation/Recipe_TD_RepairStation.Recipe_TD_RepairStation_C"),
+	TEXT("/FicsitTD/Buildings/Gate/Recipe_TD_Gate.Recipe_TD_Gate_C"),
+	TEXT("/FicsitTD/Buildings/LureBeacon/Recipe_TD_LureBeacon.Recipe_TD_LureBeacon_C"),
+	TEXT("/FicsitTD/Buildings/LureBeacon/Recipe_TD_Lure_Coal.Recipe_TD_Lure_Coal_C"),
+	TEXT("/FicsitTD/Buildings/SlickPlate/Recipe_TD_SlickPlate.Recipe_TD_SlickPlate_C"),
+	TEXT("/FicsitTD/Buildings/SlickPlate/Recipe_TD_Slick_HeavyOil.Recipe_TD_Slick_HeavyOil_C"),
+	TEXT("/FicsitTD/Buildings/ConductorWall/Recipe_TD_ConductorWall.Recipe_TD_ConductorWall_C"),
+	TEXT("/FicsitTD/Buildings/ConductorWall/Recipe_TD_Zaun_Strom.Recipe_TD_Zaun_Strom_C"),
+	TEXT("/FicsitTD/Buildings/RadioMast/Recipe_TD_RadioMast.Recipe_TD_RadioMast_C"),
+	TEXT("/FicsitTD/Buildings/RadioMast/Recipe_TD_Funk_Strom.Recipe_TD_Funk_Strom_C"),
+	TEXT("/FicsitTD/Buildings/ShieldGenerator/Recipe_TD_ShieldGenerator.Recipe_TD_ShieldGenerator_C"),
+	TEXT("/FicsitTD/Buildings/ShieldGenerator/Recipe_TD_Schild_Strom.Recipe_TD_Schild_Strom_C"),
+	TEXT("/FicsitTD/Buildings/FlakTurret/Recipe_TD_FlakTurret.Recipe_TD_FlakTurret_C"),
+	TEXT("/FicsitTD/Buildings/FlakTurret/Recipe_TD_Flak_Shoot.Recipe_TD_Flak_Shoot_C"),
+	TEXT("/FicsitTD/Buildings/FieldProjector/Recipe_TD_FieldProjector.Recipe_TD_FieldProjector_C"),
+	TEXT("/FicsitTD/Buildings/FieldProjector/Recipe_TD_Feld_SAM.Recipe_TD_Feld_SAM_C"),
+	TEXT("/FicsitTD/Buildings/SingularityLauncher/Recipe_TD_SingularityLauncher.Recipe_TD_SingularityLauncher_C"),
+	TEXT("/FicsitTD/Buildings/SingularityLauncher/Recipe_TD_Singularitaet_Ficsonium.Recipe_TD_Singularitaet_Ficsonium_C"),
+	TEXT("/FicsitTD/Buildings/DimensionalDepot/Recipe_TD_DimensionalDepot.Recipe_TD_DimensionalDepot_C"),
+	TEXT("/FicsitTD/Recipes/Recipe_TD_FlakKanister.Recipe_TD_FlakKanister_C"),
 	TEXT("/FicsitTD/Buildings/GunTurret/Recipe_TD_Gun_Panzer.Recipe_TD_Gun_Panzer_C"),
 	TEXT("/FicsitTD/Buildings/GunTurret/Recipe_TD_Gun_Brand.Recipe_TD_Gun_Brand_C"),
 	TEXT("/FicsitTD/Recipes/Recipe_TD_PatronePanzer.Recipe_TD_PatronePanzer_C"),
@@ -2098,6 +2117,7 @@ void UTDWaveSubsystem::SpawneKernWelle(int32 Nummer)
 	if (const float Halb = TDBalance::Wert(TEXT("Wellen.WegRaeumen"), 3.f) * 100.f; Halb > 0.f)
 	{
 		int32 Geraeumt = 0;
+		TSet<FString> Uebrig;
 		for (const TArray<FVector>& Weg : mNachschubWege)
 		{
 			for (int32 i = 1; i < Weg.Num(); ++i)
@@ -2105,13 +2125,17 @@ void UTDWaveSubsystem::SpawneKernWelle(int32 Nummer)
 				const int32 Schritte = FMath::Max(1, FMath::CeilToInt(FVector::Dist(Weg[i - 1], Weg[i]) / Halb));
 				for (int32 k = 0; k < Schritte; ++k)
 				{
-					Geraeumt += TDRaeumeBewuchs(GetWorld(), FMath::Lerp(Weg[i - 1], Weg[i], float(k) / Schritte), Halb);
+					Geraeumt += TDRaeumeBewuchs(GetWorld(), FMath::Lerp(Weg[i - 1], Weg[i], float(k) / Schritte), Halb, true, &Uebrig);
 				}
 			}
 		}
 		if (Geraeumt > 0)
 		{
 			UE_LOG(LogFicsitTD, Log, TEXT("Frontwege: %d Pflanzen im %.0f-m-Streifen geraeumt"), Geraeumt, 2.f * Halb / 100.f);
+		}
+		if (Uebrig.Num() > 0)
+		{
+			UE_LOG(LogFicsitTD, Log, TEXT("Frontwege: nicht faellbar, bleibt stehen: %s"), *FString::Join(Uebrig.Array(), TEXT(", ")));
 		}
 	}
 	TArray<FTDNachschub> Normal, Neue, Bosse;
@@ -2602,7 +2626,8 @@ void UTDWaveSubsystem::PruefeNachzuegler(FTDWellenGegner& G, float Abstand, floa
 	AFGCreature* Kreatur = G.Kreatur.Get();
 	UTDGegnerHirn* Hirn = UTDGegnerHirn::Von(Kreatur);
 	// wer am Kern oder an einer Mauer kaempft, haengt nicht fest
-	if (Abstand < 4000.f || (Hirn && Hirn->GetPhase() != ETDHirnPhase::Marsch))
+	// 0.83.1: wer im Stau hinter einem Wellengegner wartet, ebenfalls nicht (das Hirn versetzt ihn nach Gegner.StauGeduld selbst)
+	if (Abstand < 4000.f || (Hirn && (Hirn->GetPhase() != ETDHirnPhase::Marsch || Hirn->StehtImStau())))
 	{
 		G.BesterAbstand = Abstand;
 		return;

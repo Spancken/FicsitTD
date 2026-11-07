@@ -211,7 +211,9 @@ float ATDTeslaCoil::GetIdlePowerConsumption() const
 
 float ATDTeslaCoil::GetProducingPowerConsumptionBase() const
 {
-	return Super::GetProducingPowerConsumptionBase() * (TDForschung::Hat(this, TEXT("Akkubank")) ? TDBalance::Wert(TEXT("Forschung.Akkubank.Faktor"), 0.5f) : 1.f);
+	// 0.80: Ladestrom aus der Balance (Tuerme.Teslaspule.Ladeverbrauch), Asset-Wert nur noch Ersatz
+	const float Laden = TDBalance::Wert(TEXT("Tuerme.Teslaspule.Ladeverbrauch"), Super::GetProducingPowerConsumptionBase());
+	return FMath::Max(0.f, Laden) * (TDForschung::Hat(this, TEXT("Akkubank")) ? TDBalance::Wert(TEXT("Forschung.Akkubank.Faktor"), 0.5f) : 1.f);
 }
 
 float ATDTeslaCoil::NennDPS() const

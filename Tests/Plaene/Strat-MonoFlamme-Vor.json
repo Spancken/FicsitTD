@@ -1,0 +1,240 @@
+{
+  "Name": "Strat-MonoFlamme-Vor",
+  "_Hinweis": "Beste Modellstrategie der Linie Mono Flamme (Nr. 196, Doktrin keine, Stil Tuerme, Kern ja, Gabel Streubolzen/Zielsuchmunition/PulsNobelisk/Kettenblitz/KernGeschuetz): Plan bei der Auswahl 100 % bis W30, Vorhersage 99 %, 17 Türme. Erzeugt von Werkzeuge\\FicsitTD-Simulator\\strategie_plaene.py.",
+  "NeuesSpiel": {
+    "Startort": "Rocky Desert"
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 45,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warte": 15
+    },
+    {
+      "befehl": "td einsatz stop"
+    },
+    {
+      "befehl": "td kern stop"
+    },
+    {
+      "befehl": "td einsatz start normal 50"
+    },
+    {
+      "befehl": "td einsatz frei an"
+    },
+    {
+      "stromfrei": true
+    },
+    {
+      "versorgung": {
+        "Bolzenturm": 50,
+        "Gewehrturm": 25,
+        "Nobelisk-Werfer": 15,
+        "Flammenwerfer": 6000
+      }
+    },
+    {
+      "erforsche": "Assembler"
+    },
+    {
+      "erforsche": "Giesserei"
+    },
+    {
+      "erforsche": "Kupfer"
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 4,
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "Strat-MonoFlamme-Vor_W00"
+    },
+    {
+      "wellenlauf": 4,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "KernNotrep"
+    },
+    {
+      "erforsche": "KernPanzer"
+    },
+    {
+      "erforsche": "Kohlekraft"
+    },
+    {
+      "erforsche": "Munitionspuffer"
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 2,
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "wellenlauf": 8,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "KernGeschuetz"
+    },
+    {
+      "erforsche": "Turmfertigung2"
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 5,
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "wellenlauf": 12,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Flammenwerfer"
+    },
+    {
+      "erforsche": "Raffinerie"
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 2,
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "wellenlauf": 16,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Turmfertigung3"
+    },
+    {
+      "baue": "Flammenwerfer",
+      "anzahl": 1,
+      "level": 4,
+      "rezept": "Recipe_TD_Flame_Fuel",
+      "ring": "innen"
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "Strat-MonoFlamme-Vor_W16"
+    },
+    {
+      "wellenlauf": 20,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Turbotreibstoff"
+    },
+    {
+      "baue": "Flammenwerfer",
+      "anzahl": 2,
+      "level": 4,
+      "rezept": "Recipe_TD_Flame_Turbo",
+      "ring": "innen"
+    },
+    {
+      "wellenlauf": 25,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Akkubank"
+    },
+    {
+      "erforsche": "BandMk2"
+    },
+    {
+      "erforsche": "BandMk3"
+    },
+    {
+      "erforsche": "Brandmunition"
+    },
+    {
+      "erforsche": "Durchschlagbolzen"
+    },
+    {
+      "erforsche": "Gewehrturm"
+    },
+    {
+      "erforsche": "MauerMk2"
+    },
+    {
+      "erforsche": "NobeliskWerfer"
+    },
+    {
+      "erforsche": "Reparaturstation"
+    },
+    {
+      "erforsche": "Schockbolzen"
+    },
+    {
+      "erforsche": "Stachelmauer"
+    },
+    {
+      "erforsche": "StreuNobelisk"
+    },
+    {
+      "erforsche": "Teslaspule"
+    },
+    {
+      "erforsche": "Treibstoffkraft"
+    },
+    {
+      "erforsche": "Turbomunition"
+    },
+    {
+      "erforsche": "Turmfertigung4"
+    },
+    {
+      "baue": "Flammenwerfer",
+      "anzahl": 1,
+      "level": 5,
+      "rezept": "Recipe_TD_Flame_Turbo",
+      "ring": "innen"
+    },
+    {
+      "wellenlauf": 30,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "Strat-MonoFlamme-Vor_W30"
+    },
+    {
+      "pruefe": "KernLebt",
+      "text": "Kern hat Welle 30 überstanden"
+    },
+    {
+      "pruefe": "Sicherheitsnetze",
+      "text": "kein Sicherheitsnetz ausgelöst (Versetzen, Absturz, 0 LP)"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}

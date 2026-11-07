@@ -3,6 +3,7 @@
 # Foerderband-Eingang an die Rueckseite (nur Tuerme mit Bandmunition), Stromanschluss auf den Isolator, Modelle fuer Drehteil/Kanzel.
 # Effekt-Modelle (Muendungsfeuer, Blitz, Flamme) laedt der Code zur Laufzeit, damit das Hologramm sie nicht zeigt.
 # Nach create_building.py ausfuehren.
+import os
 import unreal
 
 LOG = []
@@ -26,7 +27,29 @@ TUERME = {
     "RepairStation": dict(modelle={"TurretYaw": mesh("RepairStation", "Yaw")}, strom=10.0, band=True),
     # Abwehrkern: kein Strom, keine Anschluesse
     "DefenseCore": dict(modelle={"KernAufbau": mesh("DefenseCore", "Top"), "KernKristall": mesh("DefenseCore", "Core")}, strom=None, band=False),
+    # 0.81 passive Bauten P1: Tor (Aussichtsturm-Kopie, Teile laedt der Code), Lockfeuer und Oelschlick (Konstruktor-Kopien)
+    "Gate": dict(modelle={}, strom=None, band=False, ohne_gemeinsam=True),
+    "LureBeacon": dict(modelle={"TurretYaw": mesh("LureBeacon", "Horn")}, strom=5.0, band=True,
+                       eingang=(-102.0, 0.0, 45.0), strom_ort=(90.0, -90.0, 92.0)),
+    "SlickPlate": dict(modelle={"TurretYaw": mesh("SlickPlate", "Valve")}, strom=2.0, band=False,
+                       strom_ort=(430.0, -150.0, 58.0), ausgang=(0.0, 0.0, 15.0)),
+    # 0.83 Bauten P2/P3: Lage der Anschluesse aus den Blender-Skripten (Stromdose, Band-Eingang hinten -X)
+    "ConductorWall": dict(modelle={"TurretYaw": mesh("ConductorWall", "Door0")}, strom=2.0, band=False,
+                          strom_ort=(330.0, -45.0, 60.0), ausgang=(0.0, 0.0, 40.0)),
+    "RadioMast": dict(modelle={"TurretYaw": mesh("RadioMast", "Dish")}, strom=15.0, band=False,
+                      strom_ort=(119.0, -30.0, 70.0), ausgang=(0.0, 0.0, 40.0)),
+    "ShieldGenerator": dict(modelle={"TurretYaw": mesh("ShieldGenerator", "Ring0")}, strom=60.0, band=False,
+                            strom_ort=(250.0, -250.0, 70.0), ausgang=(0.0, 0.0, 30.0)),
+    "FlakTurret": dict(modelle={"TurretYaw": mesh("FlakTurret", "Yaw"), "TurretHead": mesh("FlakTurret", "Pitch")}, strom=25.0, band=True),
+    "FieldProjector": dict(modelle={"TurretYaw": mesh("FieldProjector", "Core")}, strom=80.0, band=True),
+    "SingularityLauncher": dict(modelle={"TurretYaw": mesh("SingularityLauncher", "Yaw"), "TurretHead": mesh("SingularityLauncher", "Pitch")},
+                                strom=150.0, band=True, eingang=(-336.0, 0.0, 125.0), strom_ort=(250.0, -280.0, 120.0)),
+    # Lager: Kugel laedt der Code, Band-Eingang am Kern-Anschluss hinten, Ausgang versteckt
+    "DimensionalDepot": dict(modelle={}, strom=None, band=True, ohne_gemeinsam=True, eingang=(-220.0, 0.0, 70.0), ausgang=(0.0, 0.0, 40.0)),
 }
+_NUR = [n for n in os.environ.get("FICSITTD_NUR", "").split(",") if n]
+if _NUR:
+    TUERME = {k: v for k, v in TUERME.items() if k in _NUR}
 GEMEINSAM = {
     "RangeRing": "/FicsitTD/Buildings/BoltTurret/Mesh/SM_TD_RangeRing",     # im Bauplan sichtbar -> Hologramm zeigt die Reichweite
     "StatusLampe": "/FicsitTD/Buildings/BoltTurret/Mesh/SM_TD_StatusLight",
@@ -39,7 +62,7 @@ def richte_ein(turm, cfg):
     lib = unreal.SubobjectDataBlueprintFunctionLibrary
     handles = sub.k2_gather_subobject_data_for_blueprint(bp)
     root_handle = handles[0]
-    modelle = dict(GEMEINSAM, **cfg["modelle"])
+    modelle = dict({} if cfg.get("ohne_gemeinsam") else GEMEINSAM, **cfg["modelle"])
     weg = []
     for h in handles:
         obj = lib.get_object(lib.get_data(h))
@@ -55,7 +78,7 @@ def richte_ein(turm, cfg):
             log(f"  Sockel: {mesh(turm, 'Base').rsplit('/', 1)[1]}")
         elif c == "FGFactoryConnectionComponent" and n.startswith("Input"):
             if cfg["band"]:
-                obj.set_editor_property("relative_location", unreal.Vector(-198.0, 0.0, 100.0))
+                obj.set_editor_property("relative_location", unreal.Vector(*cfg.get("eingang", (-198.0, 0.0, 100.0))))
                 # Achtung: unreal.Rotator(roll, pitch, yaw) - deshalb mit Schluesselwoertern
                 obj.set_editor_property("relative_rotation", unreal.Rotator(roll=0.0, pitch=0.0, yaw=180.0))
                 log(f"  Band-Eingang {n} -> (-198, 0, 100), Blick -X")
@@ -63,11 +86,11 @@ def richte_ein(turm, cfg):
                 weg.append((h, n))
         elif c == "FGFactoryConnectionComponent" and n.startswith("Output"):
             # Rezepte mit Produkt brauchen einen Ausgang ("not enough factory outputs"); unerreichbar mitten im Sockel
-            obj.set_editor_property("relative_location", unreal.Vector(0.0, 0.0, 60.0))
+            obj.set_editor_property("relative_location", unreal.Vector(*cfg.get("ausgang", (0.0, 0.0, 60.0))))
             obj.set_editor_property("relative_rotation", unreal.Rotator(roll=0.0, pitch=-90.0, yaw=0.0))
         elif c == "FGPowerConnectionComponent":
             # Oben auf dem Isolator des Strom-Auslegers (wie beim Konstruktor)
-            obj.set_editor_property("relative_location", unreal.Vector(-160.0, -160.0, 301.0))
+            obj.set_editor_property("relative_location", unreal.Vector(*cfg.get("strom_ort", (-160.0, -160.0, 301.0))))
         elif c == "FGPipeConnectionFactory":
             try:
                 obj.set_editor_property("mFluidBoxVolume", 4.0)

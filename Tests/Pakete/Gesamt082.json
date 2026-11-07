@@ -1,0 +1,19 @@
+{
+  "Name": "Gesamt082",
+  "_Hinweis": "07.11.2026: ein Durchgang fuer 0.82 (Marius: erst alles bauen, dann einmal testen). Regeln und MAM, passive Bauten, Munitionsstufen an den Strategieplaenen bis W30 und W50. Etwa 3 h. Danach: balance_kreislauf.py auswerten.",
+  "Plaene": [
+    "Grundtest",
+    "Spezialisierung",
+    "Stufen",
+    "BautenP1",
+    "Strat-MonoBolzen",
+    "Strat-MonoGewehr",
+    "Strat-MonoNobelisk",
+    "Strat-MonoTesla",
+    "Strat-MonoFlamme",
+    "Strat-MonoGewehr-Vor-W50",
+    "Strat-MonoNobelisk-Vor-W50",
+    "Strat-MonoTesla-Vor-W50",
+    "Strat-MonoFlamme-Vor-W50"
+  ]
+}

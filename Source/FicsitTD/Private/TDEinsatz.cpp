@@ -1,4 +1,6 @@
 ﻿#include "TDEinsatz.h"
+#include "TDGate.h"
+#include "TDDimensionalDepot.h"
 #include "TDWellenStatistik.h"
 #include "TDForschung.h"
 #include "TDPionier.h"
@@ -100,6 +102,18 @@ static const FTDLadenEintrag LadenListe[] = {
 	{ TEXT("Mauer"), 3, 0.2f, 5, TEXT("/FicsitTD/Buildings/DefenseWall/Recipe_TD_DefenseWall.Recipe_TD_DefenseWall_C") },
 	{ TEXT("Panzersperre"), 3, 0.2f, 5, TEXT("/FicsitTD/Buildings/Barrier/Recipe_TD_Barrier.Recipe_TD_Barrier_C") },
 	{ TEXT("Reparaturstation"), 8, 0.4f, 1, TEXT("/FicsitTD/Buildings/RepairStation/Recipe_TD_RepairStation.Recipe_TD_RepairStation_C") },
+	// 0.81 passive Bauten P1 (Konzept-Rohstoffe-Tuerme-Bauten-2026-11-07): Tor ab Mauern Mk2, Lockfeuer, Oelschlick-Feld ab Raffinerie
+	{ TEXT("Tor"), 4, 0.3f, 1, TEXT("/FicsitTD/Buildings/Gate/Recipe_TD_Gate.Recipe_TD_Gate_C") },
+	{ TEXT("Lockfeuer"), 6, 0.4f, 1, TEXT("/FicsitTD/Buildings/LureBeacon/Recipe_TD_LureBeacon.Recipe_TD_LureBeacon_C") },
+	{ TEXT("Oelschlick"), 4, 0.3f, 1, TEXT("/FicsitTD/Buildings/SlickPlate/Recipe_TD_SlickPlate.Recipe_TD_SlickPlate_C") },
+	// 0.83 Bauten P2/P3 (Konzept-Rohstoffe-Tuerme-Bauten-2026-11-07)
+	{ TEXT("Elektrozaun"), 5, 0.3f, 1, TEXT("/FicsitTD/Buildings/ConductorWall/Recipe_TD_ConductorWall.Recipe_TD_ConductorWall_C") },
+	{ TEXT("Funkmast"), 8, 0.5f, 1, TEXT("/FicsitTD/Buildings/RadioMast/Recipe_TD_RadioMast.Recipe_TD_RadioMast_C") },
+	{ TEXT("Schildgenerator"), 12, 0.5f, 1, TEXT("/FicsitTD/Buildings/ShieldGenerator/Recipe_TD_ShieldGenerator.Recipe_TD_ShieldGenerator_C") },
+	{ TEXT("Himmelsturm"), 10, 0.4f, 1, TEXT("/FicsitTD/Buildings/FlakTurret/Recipe_TD_FlakTurret.Recipe_TD_FlakTurret_C") },
+	{ TEXT("Stoerfeld"), 14, 0.5f, 1, TEXT("/FicsitTD/Buildings/FieldProjector/Recipe_TD_FieldProjector.Recipe_TD_FieldProjector_C") },
+	{ TEXT("Singularitaet"), 20, 0.6f, 1, TEXT("/FicsitTD/Buildings/SingularityLauncher/Recipe_TD_SingularityLauncher.Recipe_TD_SingularityLauncher_C") },
+	{ TEXT("Dimensionslager"), 12, 0.5f, 1, TEXT("/FicsitTD/Buildings/DimensionalDepot/Recipe_TD_DimensionalDepot.Recipe_TD_DimensionalDepot_C") },
 	// Wellen-Progression P2: Leiter L4 (Feuer, Chemie, Raffinerie)
 	{ TEXT("Flammenturm"), 8, 0.3f, 1, TEXT("/FicsitTD/Buildings/FlameTurret/Recipe_TD_FlameTurret.Recipe_TD_FlameTurret_C") },
 	{ TEXT("Nobelisk-Werfer"), 10, 0.3f, 1, TEXT("/FicsitTD/Buildings/NobeliskLauncher/Recipe_TD_NobeliskLauncher.Recipe_TD_NobeliskLauncher_C") },
@@ -328,24 +342,25 @@ void UTDEinsatzSubsystem::SchalteScannerFrei()
 
 void UTDEinsatzSubsystem::PruefeForschungsbaeume()
 {
+	// 0.83.1 (Marius 07.11.: eine neue Seite wie Ballistik erschien erst nach Schliessen und Oeffnen des MAM): das offene MAM baut
+	// die Liste der Baeume nicht neu auf. Deshalb sind alle vier Baeume ab Start freigeschaltet (create_research.py ohne
+	// Baum-Voraussetzung); ihre Wurzeln bleiben grau, bis die Voraussetzung erforscht ist. Hier nur noch fuer alte Spielstaende,
+	// in denen Ballistik oder Elementar noch gesperrt sind - vor dem ersten Oeffnen des MAM, ohne Meldung.
 	AFGResearchManager* Forschung = AFGResearchManager::Get(GetWorld());
-	const AFGSchematicManager* Schemata = AFGSchematicManager::Get(GetWorld());
-	if (!Forschung || !Schemata)
+	if (!Forschung)
 	{
 		return;
 	}
-	static const TPair<const TCHAR*, const TCHAR*> BaumNach[] = {
-		// 0.72 Forschung 2.0: Ballistik nach dem Assembler, Elementar (Tesla, Feuer) nach dem Kohlekraftwerk
-		{ TEXT("/FicsitTD/Research/BPD_ResearchTree_TD_Ballistik.BPD_ResearchTree_TD_Ballistik_C"),
-		  TEXT("/FicsitTD/Research/Produktion/Research_TD_Assembler.Research_TD_Assembler_C") },
-		{ TEXT("/FicsitTD/Research/BPD_ResearchTree_TD_Elementar.BPD_ResearchTree_TD_Elementar_C"),
-		  TEXT("/FicsitTD/Research/Energie/Research_TD_Kohlekraft.Research_TD_Kohlekraft_C") },
+	static const TCHAR* Baeume[] = {
+		TEXT("/FicsitTD/Research/BPD_ResearchTree_TD_Industrie.BPD_ResearchTree_TD_Industrie_C"),
+		TEXT("/FicsitTD/Research/BPD_ResearchTree_TD_Ballistik.BPD_ResearchTree_TD_Ballistik_C"),
+		TEXT("/FicsitTD/Research/BPD_ResearchTree_TD_Elementar.BPD_ResearchTree_TD_Elementar_C"),
+		TEXT("/FicsitTD/Research/BPD_ResearchTree_TD_Festung.BPD_ResearchTree_TD_Festung_C"),
 	};
-	for (const TPair<const TCHAR*, const TCHAR*>& Paar : BaumNach)
+	for (const TCHAR* Pfad : Baeume)
 	{
-		UClass* Baum = LoadClass<UFGResearchTree>(nullptr, Paar.Key);
-		UClass* Noetig = LoadClass<UFGSchematic>(nullptr, Paar.Value);
-		if (!Baum || !Noetig || Forschung->IsResesearchTreeUnlocked(Baum) || !Schemata->IsSchematicPurchased(Noetig))
+		UClass* Baum = LoadClass<UFGResearchTree>(nullptr, Pfad);
+		if (!Baum || Forschung->IsResesearchTreeUnlocked(Baum))
 		{
 			continue;
 		}
@@ -354,8 +369,6 @@ void UTDEinsatzSubsystem::PruefeForschungsbaeume()
 		{
 			Forschung->UnlockResearchTree(Baum);
 		}
-		// Test 0.53: das offene MAM zeigt den neuen Baum erst nach Schliessen und Oeffnen
-		Melde(FString::Printf(TEXT("Neuer Forschungsbaum im MAM: %s (MAM einmal schließen und wieder öffnen)."), *UFGResearchTree::GetDisplayName(Baum).ToString()));
 		UE_LOG(LogFicsitTD, Log, TEXT("MAM: Baum %s freigeschaltet (%s)"), *Baum->GetName(), Forschung->IsResesearchTreeUnlocked(Baum) ? TEXT("ok") : TEXT("FEHLGESCHLAGEN"));
 	}
 }
@@ -403,14 +416,25 @@ FString UTDEinsatzSubsystem::Schluessel(const UClass* BauKlasse)
 	if (Name.Contains(TEXT("ConveyorAttachmentMerger"))) return TEXT("Verbinder");
 	if (BauKlasse->IsChildOf(ATDDefenseWall::StaticClass())) return TEXT("Mauer");
 	if (BauKlasse->IsChildOf(ATDBarrier::StaticClass())) return TEXT("Panzersperre");
+	if (BauKlasse->IsChildOf(ATDGate::StaticClass())) return TEXT("Tor");
+	if (BauKlasse->IsChildOf(ATDDimensionalDepot::StaticClass())) return TEXT("Dimensionslager");   // vor dem allgemeinen Lager
 	if (BauKlasse->IsChildOf(ATDTurretBase::StaticClass()))
 	{
+		// 0.83 Bauten P2/P3 zuerst (FlakTurret enthaelt sonst nichts Passendes, aber sicher ist sicher)
+		if (Name.Contains(TEXT("ConductorWall"))) return TEXT("Elektrozaun");
+		if (Name.Contains(TEXT("RadioMast"))) return TEXT("Funkmast");
+		if (Name.Contains(TEXT("ShieldGenerator"))) return TEXT("Schildgenerator");
+		if (Name.Contains(TEXT("FlakTurret"))) return TEXT("Himmelsturm");
+		if (Name.Contains(TEXT("FieldProjector"))) return TEXT("Stoerfeld");
+		if (Name.Contains(TEXT("SingularityLauncher"))) return TEXT("Singularitaet");
 		if (Name.Contains(TEXT("Bolt"))) return TEXT("Bolzenturm");
 		if (Name.Contains(TEXT("Gun"))) return TEXT("Gewehrturm");
 		if (Name.Contains(TEXT("Flame"))) return TEXT("Flammenturm");
 		if (Name.Contains(TEXT("Tesla"))) return TEXT("Teslaspule");
 		if (Name.Contains(TEXT("Nobelisk"))) return TEXT("Nobelisk-Werfer");
 		if (Name.Contains(TEXT("Repair"))) return TEXT("Reparaturstation");
+		if (Name.Contains(TEXT("Lure"))) return TEXT("Lockfeuer");
+		if (Name.Contains(TEXT("Slick"))) return TEXT("Oelschlick");
 		return Name;
 	}
 	if (BauKlasse->IsChildOf(AFGBuildableResourceExtractor::StaticClass()))

@@ -45,6 +45,9 @@ ZEIT = 3.0   # Marius 02.11.: keine Forschung laenger als 3 s
 DURCH = "/FicsitTD/Items/Desc_TD_Durchschlagbolzen"
 TDR = "/FicsitTD/Recipes"
 STAHL = [f"{R}/Buildings/Recipe_SmelterMk1", f"{R}/Smelter/Recipe_IngotSteel", f"{R}/Constructor/Recipe_SteelPipe", f"{R}/Constructor/Recipe_SteelBeam"]
+# 0.83.1 (Marius 07.11.: "soll sich je Seite von 2-3 Ursprungsknoten raus entwickeln", gesperrt ohne Icon und mit Verbindung):
+# jede Seite hat 2-3 Wurzeln, alle anderen Knoten haengen mit Linie an einem Elternknoten. Das MAM zeigt Kinder grau ohne Icon,
+# bis der Elternknoten erforscht ist. Eltern so gewaehlt, dass Freigabe-Welle und FP-Preis jedes Knotens gleich bleiben.
 # 0.72 Forschung 2.0 (Konzept-Forschung-2.md, Marius 04.11.2026: "lieber weniger Fenster mit komplexen Baeumen und Entscheidungswegen"):
 # 4 Baeume statt 9, Zeilen nach Phasen (oben frueh, unten spaet), Gabelungen je Linie. Die Schematics behalten ihren alten Ordner
 # (ORDNER), damit alte Spielstaende ihre Forschung behalten. Kosten je Knoten aus der Phase (preis), nicht mehr fest.
@@ -60,21 +63,30 @@ BAEUME = [
         ("Assembler", "Assembler und Eisenteile", "Assembler, Eisenplatten, Schrauben, verstärkte Eisenplatten und Rotoren. Grundlage für fast jede bessere Munition. Öffnet den Baum Ballistik.",
          (1, 0), [], [], ZEIT, EISEN2, f"{P}/IronPlateReinforced/Desc_IronPlateReinforced"),
         ("Kupfer", "Kupferverarbeitung", "Kupferbarren, Draht, Kabel und Kupferblech: der zweite Rohstoff. Für Gewehrmunition, Schockbolzen und Stromtechnik.",
-         (2, 0), [], [], ZEIT, KUPFER, KUPFERBARREN),
+         (3, 0), [], [], ZEIT, KUPFER, KUPFERBARREN),
         ("BandMk2", "Förderband Mk2", "Bänder und Lifte mit 120 statt 60 Teilen pro Minute. Alle vorhandenen Bänder und Lifte werden automatisch aufgerüstet.",
-         (3, 0), [], [], ZEIT, [f"{R}/Buildings/Recipe_ConveyorBeltMk2", f"{R}/Buildings/Recipe_ConveyorLiftMk2"], f"{P}/IronPlateReinforced/Desc_IronPlateReinforced"),
+         (3, 1), ["Kupfer"], [], ZEIT, [f"{R}/Buildings/Recipe_ConveyorBeltMk2", f"{R}/Buildings/Recipe_ConveyorLiftMk2"], f"{P}/IronPlateReinforced/Desc_IronPlateReinforced"),
         ("Munitionspuffer", "Munitionspuffer", "Der Munitionseingang jedes Turms fasst doppelt so viel. Türme halten länger durch, wenn das Band stockt.",
-         (4, 0), [], [], ZEIT, [], BOLZEN),
+         (4, 2), ["BandMk2"], [], ZEIT, [], BOLZEN),
         ("Giesserei", "Gießerei und Stahl", "Gießerei (im Laden kaufbar), Stahlbarren aus Eisenerz und Kohle, Stahlrohre und Stahlträger. Für Nobelisken, Turbomunition und Band Mk3.",
          (1, 1), ["Assembler"], [], ZEIT, STAHL, f"{P}/SteelIngot/Desc_SteelIngot"),
         ("BandMk3", "Förderband Mk3", "Bänder und Lifte mit 270 Teilen pro Minute (Baumaterial: Stahlträger). Alle Bänder und Lifte werden automatisch aufgerüstet.",
-         (3, 1), ["BandMk2"], [], ZEIT, [f"{R}/Buildings/Recipe_ConveyorBeltMk3", f"{R}/Buildings/Recipe_ConveyorLiftMk3"], f"{P}/SteelPlate/Desc_SteelPlate"),
+         (3, 2), ["BandMk2"], [], ZEIT, [f"{R}/Buildings/Recipe_ConveyorBeltMk3", f"{R}/Buildings/Recipe_ConveyorLiftMk3"], f"{P}/SteelPlate/Desc_SteelPlate"),
         ("Raffinerie", "Raffinerie und Öl", "Ölpumpe und Raffinerie (beide im Laden kaufbar), Kunststoff und Gummi. Voraussetzung für Flammenwerfer und Treibstoffkraftwerk.",
          (1, 2), ["Giesserei"], [], ZEIT,
          [f"{R}/Buildings/Recipe_OilPump", f"{R}/Buildings/Recipe_OilRefinery", f"{R}/OilRefinery/Recipe_Plastic", f"{R}/OilRefinery/Recipe_Rubber"], f"{P}/Plastic/Desc_Plastic"),
         ("Treibstoffkraft", "Treibstoffkraftwerk", "Treibstoffkraftwerk (150 MW, im Laden kaufbar): verbrennt Treibstoff oder Biotreibstoff aus der Raffinerie.",
-         (0, 2), ["Kohlekraft"], [], ZEIT,
+         (2, 3), ["Raffinerie"], [], ZEIT,
          [f"{R}/Buildings/Recipe_GeneratorFuel", f"{R}/OilRefinery/Recipe_LiquidFuel"], f"{P}/Fuel/Desc_LiquidFuel"),
+        # 0.82 Rohstoff-Knoten (Konzept-Rohstoffe-Tuerme-Bauten-2026-11-07): jede Gabelung der Munition braucht einen davon
+        ("Schwefel", "Schwefel", "Schwefel-Vorkommen abbauen (Miner). Schwarzpulver wie im Originalspiel aus Kohle und Schwefel. Grundlage für Nobelisk, Brandmunition, Gas-Nobelisk und Kompaktkohle.",
+         (0, 2), ["Giesserei"], [], ZEIT, [], f"{G}/Resource/RawResources/Sulfur/Desc_Sulfur"),
+        ("Quarz", "Quarzverarbeitung", "Rohquarz abbauen (Miner) und im Konstruktor zu Quarzkristall verarbeiten. Für Streubolzen und Puls-Nobelisk.",
+         (2, 1), ["Assembler"], [], ZEIT, [f"{R}/Constructor/Recipe_QuartzCrystal"], f"{P}/QuartzCrystal/Desc_QuartzCrystal"),
+        ("Caterium", "Caterium", "Caterium-Erz abbauen, Caterium-Barren im Schmelzofen, Turbodraht im Konstruktor. Für Schockbolzen und Zielsuchmunition.",
+         (5, 1), ["Kupfer"], [], ZEIT, [f"{R}/Smelter/Recipe_IngotCaterium", f"{R}/Constructor/Recipe_Quickwire"], f"{P}/HighSpeedWire/Desc_HighSpeedWire"),
+        ("Bauxit", "Bauxit und Aluminium", "Bauxit abbauen, Aluminiumbarren in der Gießerei aus Bauxit und Kohle (FICSIT-Feldrezept, ohne Wasser), Aluminiumgehäuse im Konstruktor. Für Turbomunition.",
+         (1, 3), ["Raffinerie"], [], ZEIT, [f"{TDR}/Recipe_TD_Aluminiumbarren", f"{R}/Constructor/Recipe_AluminumCasing"], f"{P}/AluminumCasing/Desc_AluminumCasing"),
     ]),
     # 0.73 Spezialisierung, 0.78.3 schmaler (Marius: MAM scrollt nicht nach rechts): Bolzenturm 0-2 | Gewehrturm 3-5 | Nobelisk-Werfer 0-2 ab Zeile 3
     ("Ballistik", "FICSIT-Abwehr: Ballistik", "Türme und Munition, die Projektile verschießen: Bolzenturm, Gewehrturm, Nobelisk-Werfer. Jede Linie hat eine Gabelung.", BOLZEN, [
@@ -83,39 +95,44 @@ BAEUME = [
         ("Gewehrturm", "Gewehrturm", "Neuer Turm mit Dauerfeuer, stark gegen flinke Gegner. Munition: Kupferblech + Eisenstange im Assembler. Level 2 im Turmfenster ist damit freigeschaltet.",
          (4, 0), [], [], ZEIT,
          [f"{TD}/GunTurret/Recipe_TD_GunTurret", f"{TD}/GunTurret/Recipe_TD_Gun_Standard", f"{TDR}/Recipe_TD_Patrone"], f"{P}/CartridgeStandard/Desc_CartridgeStandard"),
-        ("Explosivbolzen", "Explosivbolzen", GABEL + "Bolzenturm Stufe 3: Durchschlagbolzen + Kohle. 60 Flächenschaden (Explosion) in 4,5 m, stark gegen Hogs und Gruppen.",
+        ("Explosivbolzen", "Explosivbolzen", "Bolzenturm Stufe 3 (spät): Durchschlagbolzen + rauchschwaches Pulver (Raffinerie: Schwarzpulver + Schwerölrückstand). Großer Flächenschaden (Explosion), stark gegen Hogs und Gruppen.",
+         (1, 2), ["Durchschlagbolzen"], [], ZEIT,
+         [f"{TD}/BoltTurret/Recipe_TD_Shoot_Explosive", f"{TDR}/Recipe_TD_Explosivbolzen", f"{R}/Equipment/Recipe_GunpowderMK2"], f"{G}/Equipment/RebarGun/Ammo/Desc_Rebar_Explosive"),
+        ("Streubolzen", "Streubolzen", GABEL + "Bolzenturm Stufe 2: Durchschlagbolzen + Quarzkristall. Zerfällt in 3 Splitter auf weitere Ziele, stark gegen Schwärme.",
          (0, 1), ["Durchschlagbolzen"], [], ZEIT,
-         [f"{TD}/BoltTurret/Recipe_TD_Shoot_Explosive", f"{TDR}/Recipe_TD_Explosivbolzen"], f"{G}/Equipment/RebarGun/Ammo/Desc_Rebar_Explosive"),
-        ("Streubolzen", "Streubolzen", GABEL + "Bolzenturm Stufe 3: Durchschlagbolzen + Eisenplatte. Zerfällt in 3 Splitter auf weitere Ziele, stark gegen Schwärme.",
-         (2, 1), ["Durchschlagbolzen"], [], ZEIT,
          [f"{TD}/BoltTurret/Recipe_TD_Shoot_Spreadshot", f"{TDR}/Recipe_TD_Streubolzen"], f"{G}/Equipment/RebarGun/Ammo/Desc_Rebar_Spreadshot"),
-        ("Zielsuchmunition", "Zielsuchmunition", GABEL + "Gewehrturm Stufe 2: Gewehrmunition + Kabel. Trifft immer, auch schnelle Ziele.",
+        ("Zielsuchmunition", "Zielsuchmunition", GABEL + "Gewehrturm Stufe 2: Gewehrmunition + Turbodraht (Caterium). Trifft immer, auch schnelle Ziele, doppelter Schaden je Schuss.",
          (3, 1), ["Gewehrturm"], [], ZEIT,
          [f"{TD}/GunTurret/Recipe_TD_Gun_Homing", f"{TDR}/Recipe_TD_Zielsuchmunition"], f"{G}/Equipment/Rifle/Ammo/Desc_CartridgeSmartProjectile"),
         ("Panzerbrechend", "Panzerbrechende Munition", GABEL + "Gewehrturm Stufe 2: 2 Gewehrmunition + Stahlrohr im Assembler. Durchschlag-Schaden statt Kugel: geht durch die Panzerung der Hogs.",
          (5, 1), ["Gewehrturm"], [], ZEIT,
          [f"{TD}/GunTurret/Recipe_TD_Gun_Panzer", f"{TDR}/Recipe_TD_PatronePanzer"], f"{P}/CartridgeStandard/Desc_CartridgeStandard"),
-        ("NobeliskWerfer", "Nobelisk-Werfer", "Neuer Turm: wirft Nobelisken im Bogen, großer Flächenschaden (Explosion). Schwarzpulver: 2 Kohle + 2 Biomasse; Nobelisk: 2 Schwarzpulver + Stahlrohr (Assembler). Level 2 im Turmfenster ist damit freigeschaltet.",
+        ("NobeliskWerfer", "Nobelisk-Werfer", "Neuer Turm: wirft Nobelisken im Bogen, großer Flächenschaden (Explosion). Schwarzpulver: Kohle + Schwefel; Nobelisk: 2 Schwarzpulver + Stahlrohr (Assembler). Level 2 im Turmfenster ist damit freigeschaltet.",
          (1, 3), [], [], ZEIT,
          [f"{TD}/NobeliskLauncher/Recipe_TD_NobeliskLauncher", f"{TD}/NobeliskLauncher/Recipe_TD_Nobelisk_Explosive", f"{TDR}/Recipe_TD_Schwarzpulver", f"{TDR}/Recipe_TD_Nobelisk"], f"{P}/NobeliskExplosive/Desc_NobeliskExplosive"),
-        ("Schockbolzen", "Schockbolzen", "Bolzenturm Stufe 4: Durchschlagbolzen + Draht. Strom-Schaden statt Durchschlag und betäubt jeden Getroffenen 3 Sekunden: die Antwort des Bolzenturms auf Stinger.",
-         (1, 2), ["Durchschlagbolzen"], [], ZEIT,
+        ("Schockbolzen", "Schockbolzen", GABEL + "Bolzenturm Stufe 2: Durchschlagbolzen + Turbodraht (Caterium). Strom-Schaden statt Durchschlag und betäubt jeden Getroffenen 3 Sekunden: die Antwort des Bolzenturms auf Stinger.",
+         (2, 1), ["Durchschlagbolzen"], [], ZEIT,
          [f"{TD}/BoltTurret/Recipe_TD_Shoot_Stunshot", f"{TDR}/Recipe_TD_Schockbolzen"], f"{G}/Equipment/RebarGun/Ammo/Desc_Rebar_Stunshot"),
-        ("Brandmunition", "Brandmunition", "Gewehrturm Stufe 3: 2 Gewehrmunition + 2 Kohle im Assembler. Jeder Treffer setzt das Ziel kurz in Brand (zusätzlicher Feuer-Schaden).",
+        ("Brandmunition", "Brandmunition", "Gewehrturm Stufe 2: 2 Gewehrmunition + Schwefel im Assembler. Jeder Treffer setzt das Ziel kurz in Brand (zusätzlicher Feuer-Schaden).",
          (4, 2), ["Gewehrturm"], [], ZEIT,
          [f"{TD}/GunTurret/Recipe_TD_Gun_Brand", f"{TDR}/Recipe_TD_PatroneBrand"], f"{P}/CartridgeStandard/Desc_CartridgeStandard"),
-        ("GasNobelisk", "Gas-Nobelisk", GABEL + "Nobelisk + 10 Biomasse: Giftwolke, die Gegner darin über Zeit schädigt. Gift-Schaden, gegen den keine Gegnerart geschützt ist.",
+        ("GasNobelisk", "Gas-Nobelisk", GABEL + "Nobelisk + 2 Schwefel: Giftwolke, die Gegner darin über Zeit schädigt. Gift-Schaden, gegen den keine Gegnerart geschützt ist.",
          (0, 4), ["NobeliskWerfer"], [], ZEIT,
          [f"{TD}/NobeliskLauncher/Recipe_TD_Nobelisk_Gas", f"{TDR}/Recipe_TD_NobeliskGas"], f"{G}/Equipment/NobeliskDetonator/Ammo/Desc_NobeliskGas"),
-        ("PulsNobelisk", "Puls-Nobelisk", GABEL + "Nobelisk + 2 Kabel: Druckwelle, die Gegner zurückwirft.",
+        ("PulsNobelisk", "Puls-Nobelisk", GABEL + "Nobelisk + 2 Quarzkristall: Druckwelle, die Gegner zurückwirft und betäubt.",
          (2, 4), ["NobeliskWerfer"], [], ZEIT,
          [f"{TD}/NobeliskLauncher/Recipe_TD_Nobelisk_Pulse", f"{TDR}/Recipe_TD_NobeliskPuls"], f"{G}/Equipment/NobeliskDetonator/Ammo/Desc_NobeliskShockwave"),
-        ("Turbomunition", "Turbomunition", "Gewehrturm Stufe 4: 2 Gewehrmunition + Stahlrohr. Doppelte Feuerrate, Magazin mit 75 Schuss.",
+        ("Turbomunition", "Turbomunition", "Gewehrturm Stufe 3 (spät): 2 Gewehrmunition + Aluminiumgehäuse. Doppelte Feuerrate, Magazin mit 75 Schuss.",
          (4, 3), ["Brandmunition"], [], ZEIT,
          [f"{TD}/GunTurret/Recipe_TD_Gun_Turbo", f"{TDR}/Recipe_TD_Turbomunition"], f"{G}/Equipment/Rifle/Ammo/Desc_CartridgeChaos"),
-        ("StreuNobelisk", "Streu-Nobelisk", "Nobelisk-Werfer Stufe 3: 2 Nobelisken + 2 Schwarzpulver. Zerfällt in kleine Sprengsätze über eine große Fläche.",
+        ("StreuNobelisk", "Streu-Nobelisk", "Nobelisk-Werfer Stufe 3 (spät): 2 Nobelisken + 2 rauchschwaches Pulver (Raffinerie). Zerfällt in kleine Sprengsätze über eine große Fläche.",
          (1, 5), ["NobeliskWerfer"], [], ZEIT,
-         [f"{TD}/NobeliskLauncher/Recipe_TD_Nobelisk_Cluster", f"{TDR}/Recipe_TD_NobeliskStreu"], f"{G}/Equipment/NobeliskDetonator/Ammo/Desc_NobeliskCluster"),
+         [f"{TD}/NobeliskLauncher/Recipe_TD_Nobelisk_Cluster", f"{TDR}/Recipe_TD_NobeliskStreu", f"{R}/Equipment/Recipe_GunpowderMK2"], f"{G}/Equipment/NobeliskDetonator/Ammo/Desc_NobeliskCluster"),
+        # 0.83 Bauten P3
+        ("Himmelsturm", "Himmelsturm", "Neuer Turm: Flugabwehr gegen fliegende Krabben (60 m, 200 Schaden in 6 m). Munition: Flak-Kanister = Aluminiumgehäuse + 2 Schwarzpulver im Assembler. Greift keine Bodengegner an.",
+         (3, 4), ["NobeliskWerfer"], [], ZEIT, [f"{TD}/FlakTurret/Recipe_TD_FlakTurret", f"{TD}/FlakTurret/Recipe_TD_Flak_Shoot", f"{TDR}/Recipe_TD_FlakKanister"], f"{P}/AluminumCasing/Desc_AluminumCasing"),
+        ("Singularitaet", "Singularitätswerfer", "Neuer Turm (Endspiel): Ficsonium-Ladung hält alle Gegner in 12 m fest und sprengt sie nach 1,5 s mit 1500 Explosionsschaden. Ficsonium aus dem Teilchenbeschleuniger.",
+         (3, 5), ["Himmelsturm"], [], ZEIT, [f"{TD}/SingularityLauncher/Recipe_TD_SingularityLauncher", f"{TD}/SingularityLauncher/Recipe_TD_Singularitaet_Ficsonium"], f"{P}/Ficsonium/Desc_Ficsonium"),
     ]),
     # Spalten: Teslaspule 0-2 | Flammenwerfer 4
     ("Elementar", "FICSIT-Abwehr: Elementar", "Türme ohne Projektile: Strom (Teslaspule) und Feuer (Flammenwerfer). Erscheint mit dem Kohlekraftwerk.", DRAHT, [
@@ -128,62 +145,80 @@ BAEUME = [
          (2, 1), ["Teslaspule"], [], ZEIT, [], DRAHT),
         ("Akkubank", "Akkubank", "Teslaspulen laden aus einem Puffer: beim Aufladen ziehen sie nur noch die Hälfte der Leistung aus dem Netz.",
          (1, 2), ["Teslaspule"], [], ZEIT, [], KABEL),
-        ("Flammenwerfer", "Flammenwerfer", "Neuer Turm: Flammenkegel mit Nachbrennen, trifft alles im Kegel. Treibstoff: flüssiger Biotreibstoff (Biomasse, fester Biotreibstoff, Raffinerie mit Wasser). Level 2 im Turmfenster ist damit freigeschaltet.",
-         (4, 1), [], [], ZEIT,
-         [f"{TD}/FlameTurret/Recipe_TD_FlameTurret", f"{TD}/FlameTurret/Recipe_TD_Flame_Biofuel", f"{R}/Constructor/Recipe_Biofuel", f"{R}/OilRefinery/Recipe_LiquidBiofuel"], f"{P}/BioFuel/Desc_LiquidBiofuel"),
-        ("Treibstoff", "Treibstoff", "Flammenwerfer Stufe 2: Treibstoff aus Rohöl in der Raffinerie. Heißere Flamme, längeres Nachbrennen.",
-         (4, 2), ["Flammenwerfer"], [], ZEIT,
-         [f"{TD}/FlameTurret/Recipe_TD_Flame_Fuel", f"{R}/OilRefinery/Recipe_LiquidFuel"], f"{P}/Fuel/Desc_LiquidFuel"),
-        ("Turbotreibstoff", "Turbotreibstoff", "Flammenwerfer Stufe 3: Treibstoff + Kompaktkohle in der Raffinerie. Kompaktkohle: 3 Kohle + 2 Biomasse im Assembler.",
-         (4, 3), ["Treibstoff"], [], ZEIT,
+        # 0.82 (Marius 07.11.): Flamme startet mit Oel, kein Biotreibstoff mehr (Biomasse kommt im Einsatz nicht aus der Fabrik)
+        ("Flammenwerfer", "Flammenwerfer", "Neuer Turm: Flammenkegel mit Nachbrennen, trifft alles im Kegel. Treibstoff aus Rohöl (Ölpumpe, Raffinerie) per Rohr. Level 2 im Turmfenster ist damit freigeschaltet.",
+         (4, 0), [], [], ZEIT,
+         [f"{TD}/FlameTurret/Recipe_TD_FlameTurret", f"{TD}/FlameTurret/Recipe_TD_Flame_Fuel", f"{R}/OilRefinery/Recipe_LiquidFuel"], f"{P}/Fuel/Desc_LiquidFuel"),
+        ("Turbotreibstoff", "Turbotreibstoff", "Flammenwerfer Stufe 2: Treibstoff + Kompaktkohle in der Raffinerie, 50 % mehr Schaden. Kompaktkohle: 5 Kohle + 5 Schwefel im Assembler.",
+         (4, 3), ["Flammenwerfer"], [], ZEIT,
          [f"{TD}/FlameTurret/Recipe_TD_Flame_Turbo", f"{R}/AlternateRecipes/Parts/Recipe_Alternate_Turbofuel", f"{TDR}/Recipe_TD_Kompaktkohle"], f"{P}/Turbofuel/Desc_LiquidTurboFuel"),
+        # 0.81 passive Bauten P1
+        ("Oelschlick", "Ölschlick-Feld", "Neues Gebäude: Bodenplatte 8 x 8 m, per Rohr mit Schwerölrückstand aus der Raffinerie versorgt. Gegner darauf laufen 35 % langsamer; trifft ein Flammenwerfer einen Gegner darauf, brennt die Platte 5 s.",
+         (5, 2), ["Flammenwerfer"], [], ZEIT, [f"{TD}/SlickPlate/Recipe_TD_SlickPlate", f"{TD}/SlickPlate/Recipe_TD_Slick_HeavyOil"], f"{P}/HeavyOilResidue/Desc_HeavyOilResidue"),
+        # 0.83 Bauten P2 (Gabel G mit dem Oelschlick: Kontrolle durch Feuer oder durch Strom)
+        ("Elektrozaun", "Elektrozaun", GABEL + "Neues Gebäude: Mauerstück 8 x 4 m mit Kupferstäben. Für Gegner eine Mauer; wer ihn angreift, bekommt einen Stromschlag (15 Schaden, 1 s Betäubung). Braucht 2 MW.",
+         (3, 2), ["Teslaspule"], [], ZEIT, [f"{TD}/ConductorWall/Recipe_TD_ConductorWall", f"{TD}/ConductorWall/Recipe_TD_Zaun_Strom"], f"{P}/CopperSheet/Desc_CopperSheet"),
     ]),
     # 0.78.3 fuenf Spalten: Kern 0-3 | Mauern 4 (Zeilen 0-1) | Reparaturstation 3 und Turmfertigung 4 ab Zeile 2 | Doktrinen Zeile 5
     ("Festung", "FICSIT-Abwehr: Festung", "Kern, Doktrin, Turmfertigung und Mauern: aushalten, reparieren, eine Hauptlinie wählen, Türme auf höhere Level bringen.", f"{P}/ModularFrame/Desc_ModularFrame", [
         ("KernPanzer", "Kern-Panzerung", "Der Kern hält 30 % mehr aus (höchste Lebenspunkte x1,3).",
          (1, 0), [], [], ZEIT, [], f"{P}/ModularFrame/Desc_ModularFrame"),
         ("KernNotrep", "Notreparatur", "Nach jeder abgewehrten Welle repariert sich der Kern um 10 % seiner Lebenspunkte.",
-         (3, 0), [], [], ZEIT, [], EISENPLATTE),
+         (1, 1), ["KernPanzer"], [], ZEIT, [], EISENPLATTE),
         ("MauerMk2", "Verstärkte Mauern", "Alle Mauern haben doppelte Lebenspunkte.",
          (4, 0), [], [], ZEIT, [], f"{P}/Cement/Desc_Cement"),
         ("Reparaturstation", "Reparaturstation", "Neues Gebäude: repariert Mauern, Türme und Kern im Umkreis von 25 m. Verbraucht Eisenplatten oder verstärkte Platten.",
-         (3, 2), [], [], ZEIT,
+         (1, 2), ["KernNotrep"], [], ZEIT,
          [f"{TD}/RepairStation/Recipe_TD_RepairStation", f"{TD}/RepairStation/Recipe_TD_Repair_IronPlate", f"{TD}/RepairStation/Recipe_TD_Repair_Reinforced"], EISENPLATTE),
         ("KernSchild", "Kern-Schild", GABEL + "Ein Schild fängt in jeder Welle die ersten 2000 Schaden am Kern ab und lädt sich zum Start der nächsten Welle neu.",
          (0, 1), ["KernPanzer"], [], ZEIT, [], f"{P}/IronPlateReinforced/Desc_IronPlateReinforced"),
         ("KernGeschuetz", "Kern-Geschütz", GABEL + "Der Kern schießt selbst: alle 1,5 s ein Bolzen mit 60 Schaden auf den nächsten Gegner in 30 m. Die letzte Linie, kein Ersatz für Türme.",
          (2, 1), ["KernPanzer"], [], ZEIT, [], BOLZEN),
         ("Turmfertigung2", "Turmfertigung II", "Alle Türme können auf Level 3 gebracht werden (im Turmfenster, 15 EP je Turm).",
-         (4, 2), [], [], ZEIT, [], f"{P}/IronPlateReinforced/Desc_IronPlateReinforced"),
+         (5, 4), [], [], ZEIT, [], f"{P}/IronPlateReinforced/Desc_IronPlateReinforced"),
         ("Stachelmauer", "Stachelmauern", "Gegner, die eine Mauer angreifen, nehmen ein Viertel ihres Schadens selbst (mindestens 15).",
          (4, 1), ["MauerMk2"], [], ZEIT, [], f"{P}/SteelPlate/Desc_SteelPlate"),
         ("Turmfertigung3", "Turmfertigung III", "Alle Türme können auf Level 4 gebracht werden (im Turmfenster, 25 EP je Turm). Die Türme der Doktrin bekommen schon Level 5.",
-         (4, 3), ["Turmfertigung2"], [], ZEIT, [], f"{P}/ModularFrame/Desc_ModularFrame"),
+         (5, 5), ["Turmfertigung2"], [], ZEIT, [], f"{P}/ModularFrame/Desc_ModularFrame"),
         ("DoktrinBolzen", "Doktrin: Bolzenturm", DOKTRIN + "Bolzentürme machen 25 % mehr Schaden, ihre Level kosten 25 % weniger EP und Level 5 gibt es schon mit Turmfertigung III.",
-         (0, 5), [], [], ZEIT, [], BOLZEN),
+         (0, 5), ["Turmfertigung2"], [], ZEIT, [], BOLZEN),
         ("DoktrinGewehr", "Doktrin: Gewehrturm", DOKTRIN + "Gewehrtürme machen 25 % mehr Schaden, ihre Level kosten 25 % weniger EP und Level 5 gibt es schon mit Turmfertigung III.",
-         (1, 5), [], [], ZEIT, [], f"{P}/CartridgeStandard/Desc_CartridgeStandard"),
+         (1, 5), ["Turmfertigung2"], [], ZEIT, [], f"{P}/CartridgeStandard/Desc_CartridgeStandard"),
         ("DoktrinNobelisk", "Doktrin: Nobelisk-Werfer", DOKTRIN + "Nobelisk-Werfer machen 25 % mehr Schaden, ihre Level kosten 25 % weniger EP und Level 5 gibt es schon mit Turmfertigung III.",
-         (2, 5), [], [], ZEIT, [], f"{P}/NobeliskExplosive/Desc_NobeliskExplosive"),
+         (2, 5), ["Turmfertigung2"], [], ZEIT, [], f"{P}/NobeliskExplosive/Desc_NobeliskExplosive"),
         ("DoktrinTesla", "Doktrin: Teslaspule", DOKTRIN + "Teslaspulen machen 25 % mehr Schaden, ihre Level kosten 25 % weniger EP und Level 5 gibt es schon mit Turmfertigung III.",
-         (3, 5), [], [], ZEIT, [], DRAHT),
+         (3, 5), ["Turmfertigung2"], [], ZEIT, [], DRAHT),
         ("DoktrinFlamme", "Doktrin: Flammenwerfer", DOKTRIN + "Flammenwerfer machen 25 % mehr Schaden, ihre Level kosten 25 % weniger EP und Level 5 gibt es schon mit Turmfertigung III.",
-         (4, 5), [], [], ZEIT, [], f"{P}/BioFuel/Desc_LiquidBiofuel"),
+         (4, 5), ["Turmfertigung2"], [], ZEIT, [], f"{P}/BioFuel/Desc_LiquidBiofuel"),
         ("Turmfertigung4", "Turmfertigung IV: Meisterstufe", "Alle Türme können auf Level 5 gebracht werden (40 EP je Turm). Jeder Turm bekommt eine eigene Fähigkeit: Bolzenturm Doppellauf, Gewehrturm Dauerfeuer, Nobelisk-Werfer Streuschuss, Teslaspule Spannungsfeld, Flammenwerfer Feuerteppich.",
-         (4, 4), ["Turmfertigung3"], [], ZEIT, [], f"{P}/ModularFrame/Desc_ModularFrame"),
+         (5, 6), ["Turmfertigung3"], [], ZEIT, [], f"{P}/ModularFrame/Desc_ModularFrame"),
+        # 0.81 passive Bauten P1 (Konzept-Rohstoffe-Tuerme-Bauten-2026-11-07)
+        ("Tor", "Tor", "Neues Gebäude: Tor für die Mauerlinie (8 m breit, Öffnung 4 x 4 m). Öffnet sich für dich und Fahrzeuge, Gegner kommen nie durch und greifen es wie eine Mauer an. Ein Förderband passt unten durch.",
+         (3, 1), ["MauerMk2"], [], ZEIT, [f"{TD}/Gate/Recipe_TD_Gate"], f"{P}/Cement/Desc_Cement"),
+        ("Lockfeuer", "Lockfeuer", "Neues Gebäude: verbrennt Kohle und lockt dabei 15 s lang alle Gegner in 40 m an, danach 30 s Pause. Lenkt Wellen auf eine Turmgruppe. Braucht Strom.",
+         (3, 2), ["Tor"], [], ZEIT, [f"{TD}/LureBeacon/Recipe_TD_LureBeacon", f"{TD}/LureBeacon/Recipe_TD_Lure_Coal", f"{TD}/LureBeacon/Recipe_TD_Lure_CompactedCoal"], KOHLE),
+        # 0.83 Bauten P2/P3 (Gabel H: Schildgenerator oder Stoerfeld-Projektor)
+        ("Funkmast", "Funkmast", "Neues Gebäude: Radarmast mit Leitsender. Türme in 30 m bekommen +10 % Reichweite. Braucht dauernd 15 MW.",
+         (5, 1), ["MauerMk2"], [], ZEIT, [f"{TD}/RadioMast/Recipe_TD_RadioMast", f"{TD}/RadioMast/Recipe_TD_Funk_Strom"], f"{P}/CrystalOscillator/Desc_CrystalOscillator"),
+        ("Schildgenerator", "Schildgenerator", GABEL + "Neues Gebäude: Kuppel 20 m schluckt Schaden an Mauern, Türmen und Bauten (nicht am Kern), 3000 Schildpunkte, gebrochen 20 s Ladezeit. Braucht dauernd 60 MW.",
+         (1, 3), ["Reparaturstation"], [], ZEIT, [f"{TD}/ShieldGenerator/Recipe_TD_ShieldGenerator", f"{TD}/ShieldGenerator/Recipe_TD_Schild_Strom"], f"{P}/Battery/Desc_Battery"),
+        ("Stoerfeld", "Störfeld-Projektor", GABEL + "Neues Gebäude: verbraucht reanimiertes SAM (1 Barren je 60 s), solange Gegner in 15 m sind, und bremst sie alle um 40 %.",
+         (4, 7), ["Turmfertigung4"], [], ZEIT, [f"{TD}/FieldProjector/Recipe_TD_FieldProjector", f"{TD}/FieldProjector/Recipe_TD_Feld_SAM", f"{R}/Smelter/Recipe_IngotSAM"], f"{P}/SAMIngot/Desc_SAMIngot"),
+        ("Dimensionslager", "Dimensionslager", "Neues Gebäude: Lager mit Mercer-Kugel, versorgt alle Türme in 30 m direkt mit der passenden Munition aus seinem Inhalt. Kostet eine Mercer-Kugel.",
+         (3, 7), ["Turmfertigung4"], [], ZEIT, [f"{TD}/DimensionalDepot/Recipe_TD_DimensionalDepot"], "/Game/FactoryGame/Prototype/WAT/Desc_WAT2"),
     ]),
 ]
 
 # Alter Ordner je Knoten: Pfad des Schematics bleibt gleich (Spielstaende)
 ORDNER = {}
 for _o, _ks in {
-    "Produktion": ["Assembler", "Kupfer", "Giesserei", "BandMk2", "Raffinerie"],
+    "Produktion": ["Assembler", "Kupfer", "Giesserei", "BandMk2", "Raffinerie", "Schwefel", "Quarz", "Caterium", "Bauxit"],
     "Ballistik": ["Durchschlagbolzen", "Gewehrturm", "Explosivbolzen", "Streubolzen", "Zielsuchmunition", "Schockbolzen", "Turbomunition", "Panzerbrechend", "Brandmunition"],
     "Energie": ["Kohlekraft", "Teslaspule", "Treibstoffkraft", "Kettenblitz", "Ueberlast", "Akkubank"],
     "Doktrin": ["DoktrinBolzen", "DoktrinGewehr", "DoktrinNobelisk", "DoktrinTesla", "DoktrinFlamme"],
-    "Befestigung": ["Reparaturstation"],
-    "Feuer": ["Flammenwerfer", "Treibstoff", "Turbotreibstoff"],
-    "Chemie": ["NobeliskWerfer", "GasNobelisk", "PulsNobelisk", "StreuNobelisk"],
+    "Befestigung": ["Reparaturstation", "Tor", "Lockfeuer", "Elektrozaun", "Funkmast", "Schildgenerator", "Stoerfeld", "Dimensionslager"],
+    "Feuer": ["Flammenwerfer", "Turbotreibstoff", "Oelschlick"],
+    "Chemie": ["NobeliskWerfer", "GasNobelisk", "PulsNobelisk", "StreuNobelisk", "Himmelsturm", "Singularitaet"],
     "Upgrades": ["Turmfertigung2", "Turmfertigung3", "Turmfertigung4"],
     "Kern": ["KernPanzer", "KernNotrep", "KernSchild", "KernGeschuetz"],
     "Logistik": ["Munitionspuffer", "BandMk3", "MauerMk2", "Stachelmauer"],
@@ -196,11 +231,12 @@ KURZ = {
     "Kohlekraft": "Kohlekraftwerk 75 MW", "Assembler": "Assembler, Eisenplatten, Rotoren", "Kupfer": "Kupfer, Draht, Kabel",
     "BandMk2": "Bänder Mk2 (120/min), Umbau automatisch", "Munitionspuffer": "Turmeingang fasst doppelt", "Giesserei": "Gießerei und Stahl",
     "BandMk3": "Bänder Mk3 (270/min), Umbau automatisch", "Raffinerie": "Ölpumpe, Raffinerie, Kunststoff", "Treibstoffkraft": "Treibstoffkraftwerk 150 MW",
-    "Durchschlagbolzen": "Bolzen St. 2: trifft 3 in Reihe", "Gewehrturm": "Neuer Turm: Dauerfeuer", "Explosivbolzen": "Bolzen St. 3: 60 Flächenschaden",
-    "Streubolzen": "Bolzen St. 3: 3 Splitter", "Zielsuchmunition": "Gewehr St. 2: trifft immer", "Schockbolzen": "Bolzen St. 4: Strom, betäubt 3 s",
+    "Durchschlagbolzen": "Bolzen St. 2: trifft 3 in Reihe", "Gewehrturm": "Neuer Turm: Dauerfeuer", "Explosivbolzen": "Bolzen St. 3: großer Flächenschaden",
+    "Streubolzen": "Bolzen St. 2: 3 Splitter (Quarz)", "Zielsuchmunition": "Gewehr St. 2: trifft immer (Caterium)", "Schockbolzen": "Bolzen St. 2: Strom, betäubt 3 s (Caterium)",
+    "Schwefel": "Schwefel: Schwarzpulver, Kompaktkohle", "Quarz": "Quarzkristall", "Caterium": "Caterium, Turbodraht", "Bauxit": "Aluminiumgehäuse",
     "NobeliskWerfer": "Neuer Turm: Nobelisk im Bogen", "Turbomunition": "Gewehr St. 4: doppelte Feuerrate", "GasNobelisk": "Giftwolke, Schaden über Zeit",
     "PulsNobelisk": "Druckwelle wirft zurück", "StreuNobelisk": "Nobelisk St. 3: Streusprengsätze", "Teslaspule": "Neuer Turm: Kettenblitz, 75 MW",
-    "Flammenwerfer": "Neuer Turm: Flammenkegel", "Treibstoff": "Flamme St. 2: heißer, länger", "Turbotreibstoff": "Flamme St. 3: Turbotreibstoff",
+    "Flammenwerfer": "Neuer Turm: Flammenkegel", "Turbotreibstoff": "Flamme St. 2: Turbotreibstoff",
     "KernPanzer": "Kern +30 % Lebenspunkte", "KernNotrep": "Kern heilt 10 % je Welle", "Panzersperre": "Sperre lenkt Gegnerwege",
     "KernSchild": "Schild fängt 2000 Schaden je Welle", "KernGeschuetz": "Kern schießt selbst (30 m)", "Turmfertigung2": "Alle Türme bis Level 3",
     "MauerMk2": "Mauern LP x2", "Reparaturstation": "Repariert alles in 25 m", "Turmfertigung3": "Alle Türme bis Level 4",
@@ -210,6 +246,10 @@ KURZ = {
     "DoktrinBolzen": "Hauptlinie Bolzenturm: +25 % Schaden", "DoktrinGewehr": "Hauptlinie Gewehrturm: +25 % Schaden",
     "DoktrinNobelisk": "Hauptlinie Nobelisk-Werfer: +25 % Schaden", "DoktrinTesla": "Hauptlinie Teslaspule: +25 % Schaden",
     "DoktrinFlamme": "Hauptlinie Flammenwerfer: +25 % Schaden",
+    "Tor": "Tor: du kommst durch, Gegner nicht", "Lockfeuer": "Lockt Gegner in 40 m an", "Oelschlick": "Bodenplatte bremst um 35 %, brennt",
+    "Elektrozaun": "Mauer mit Stromschlag", "Funkmast": "Türme in 30 m +10 % Reichweite", "Schildgenerator": "Kuppel schluckt 3000 Schaden",
+    "Stoerfeld": "Bremst alles in 15 m um 40 % (SAM)", "Dimensionslager": "Munition ohne Band in 30 m", "Himmelsturm": "Neuer Turm: Flugabwehr",
+    "Singularitaet": "Neuer Turm: Ficsonium-Singularität",
 }
 
 # 0.58: einheitlicher Aufbau der Beschreibung (Marius: MAM nicht transparent genug). Laden = was danach im Laden kaufbar ist,
@@ -218,14 +258,17 @@ LADEN = {
     "Assembler": "Assembler", "Giesserei": "Gießerei", "Raffinerie": "Ölpumpe, Raffinerie", "Gewehrturm": "Gewehrturm",
     "Kohlekraft": "Kohlekraftwerk, Wasserpumpe", "Teslaspule": "Teslaspule", "Treibstoffkraft": "Treibstoffkraftwerk",
     "Panzersperre": "Panzersperre", "Reparaturstation": "Reparaturstation", "Flammenwerfer": "Flammenwerfer", "NobeliskWerfer": "Nobelisk-Werfer",
+    "Tor": "Tor", "Lockfeuer": "Lockfeuer", "Oelschlick": "Ölschlick-Feld",
+    "Elektrozaun": "Elektrozaun", "Funkmast": "Funkmast", "Schildgenerator": "Schildgenerator", "Stoerfeld": "Störfeld-Projektor",
+    "Dimensionslager": "Dimensionslager", "Himmelsturm": "Himmelsturm", "Singularitaet": "Singularitätswerfer",
 }
 GEGEN = {
     "Durchschlagbolzen": "Gegner in einer Reihe (Hogs)", "Gewehrturm": "schnelle Gegner (Stinger)", "Explosivbolzen": "Hogs und Gruppen",
     "Streubolzen": "Schwärme", "Zielsuchmunition": "schnelle Stinger", "Schockbolzen": "Stinger, Wasserspucker (Strom)", "Panzerbrechend": "Hogs (Panzer)", "Brandmunition": "Waldspucker (Feuer)", "Kettenblitz": "Brut und Schwärme", "Ueberlast": "Elite und Bosse", "Turbomunition": "Massen",
-    "Teslaspule": "Gruppen, Wasserspucker", "Flammenwerfer": "Schwärme, Waldspucker", "Treibstoff": "Schwärme", "Turbotreibstoff": "Schwärme",
+    "Teslaspule": "Gruppen, Wasserspucker", "Flammenwerfer": "Schwärme, Waldspucker", "Turbotreibstoff": "Schwärme",
     "NobeliskWerfer": "Gruppen auf Entfernung", "GasNobelisk": "dichte Pulks, Stinger (Gift)", "PulsNobelisk": "Durchbrüche (zurückwerfen)", "StreuNobelisk": "große Wellen",
     "Panzersperre": "Wege lenken", "Reparaturstation": "lange Wellen", "KernSchild": "Durchbrüche am Kern", "KernGeschuetz": "einzelne Durchbrüche",
-    "Stachelmauer": "Gegner an Mauern", "MauerMk2": "Angriffe auf Mauern", "Turmfertigung2": "stärkere Wellen", "Turmfertigung3": "späte Wellen", "Turmfertigung4": "Bosse und Endwellen",
+    "Stachelmauer": "Gegner an Mauern", "MauerMk2": "Angriffe auf Mauern", "Tor": "eingemauerte Basis", "Lockfeuer": "Wellen auf die Türme lenken", "Oelschlick": "Massen vor Flammenwerfern", "Elektrozaun": "Gegner an Mauern (Strom)", "Funkmast": "Türme mit knapper Reichweite", "Schildgenerator": "Spucker und Durchbrüche an Bauten", "Stoerfeld": "Bosse und Massen", "Dimensionslager": "Türme ohne Bandanschluss", "Himmelsturm": "fliegende Krabben", "Singularitaet": "Endwellen", "Turmfertigung2": "stärkere Wellen", "Turmfertigung3": "späte Wellen", "Turmfertigung4": "Bosse und Endwellen",
 }
 
 # 0.72: Preis aus der Phase der effektiven Freigabe-Welle (Konzept-Forschung-2.md 4.1): P1 bis W4, P2 ab W5, P3 ab W15, P4 ab W25, P5 ab W35
@@ -233,21 +276,27 @@ PHASEN_WELLE = [0, 5, 15, 25, 35]
 PHASEN_PREIS = [3, 4, 6, 8, 10]
 
 # Baeume, die erst nach einem Knoten eines anderen Baums erscheinen (das MAM zeigt gesperrte Einzelknoten trotzdem an)
-BAUM_VORAUSSETZUNG = {
-    "Ballistik": [("Industrie", "Assembler")],
-    "Elementar": [("Industrie", "Kohlekraft")],
-}
+# 0.83.1 (Marius 07.11.: neue Seite erst nach Schliessen und Oeffnen des MAM sichtbar): das offene MAM baut die Liste der Baeume
+# nicht neu auf. Alle Baeume sind deshalb ab Start da; ihre Wurzeln bleiben grau ohne Icon, bis die Voraussetzung erforscht ist
+# (Durchschlagbolzen/Gewehrturm <- Assembler, Teslaspule <- Kohlekraftwerk, siehe VORAUSSETZUNGEN).
+BAUM_VORAUSSETZUNG = {}
 
 # Voraussetzungen ausserhalb der Eltern im Baum: (Baum, Knoten) -> [(Baum, Knoten)]. Der Knoten bleibt verborgen, bis sie erforscht sind.
 VORAUSSETZUNGEN = {
-    ("Industrie", "BandMk2"): [("Industrie", "Kupfer")],
     ("Industrie", "BandMk3"): [("Industrie", "Giesserei")],
-    ("Industrie", "Treibstoffkraft"): [("Industrie", "Raffinerie")],
+    ("Industrie", "Treibstoffkraft"): [("Industrie", "Kohlekraft")],
     ("Ballistik", "Durchschlagbolzen"): [("Industrie", "Assembler")],
     ("Ballistik", "Gewehrturm"): [("Industrie", "Assembler"), ("Industrie", "Kupfer")],
-    ("Ballistik", "NobeliskWerfer"): [("Industrie", "Giesserei")],
-    ("Ballistik", "Turbomunition"): [("Industrie", "Giesserei")],
-    ("Ballistik", "PulsNobelisk"): [("Industrie", "Kupfer")],
+    ("Ballistik", "NobeliskWerfer"): [("Industrie", "Giesserei"), ("Industrie", "Schwefel")],
+    ("Ballistik", "Streubolzen"): [("Industrie", "Quarz")],
+    ("Ballistik", "Schockbolzen"): [("Industrie", "Caterium")],
+    ("Ballistik", "Zielsuchmunition"): [("Industrie", "Caterium")],
+    ("Ballistik", "Brandmunition"): [("Industrie", "Schwefel")],
+    ("Ballistik", "Explosivbolzen"): [("Industrie", "Raffinerie")],
+    ("Ballistik", "StreuNobelisk"): [("Industrie", "Raffinerie")],
+    ("Elementar", "Turbotreibstoff"): [("Industrie", "Schwefel")],
+    ("Ballistik", "Turbomunition"): [("Industrie", "Bauxit")],
+    ("Ballistik", "PulsNobelisk"): [("Industrie", "Quarz")],
     ("Ballistik", "Panzerbrechend"): [("Industrie", "Giesserei")],
     ("Festung", "DoktrinGewehr"): [("Ballistik", "Gewehrturm")],
     ("Festung", "DoktrinNobelisk"): [("Ballistik", "NobeliskWerfer")],
@@ -256,10 +305,26 @@ VORAUSSETZUNGEN = {
     ("Elementar", "Teslaspule"): [("Industrie", "Kohlekraft")],
     ("Elementar", "Flammenwerfer"): [("Industrie", "Kohlekraft"), ("Industrie", "Raffinerie")],
     ("Festung", "Reparaturstation"): [("Industrie", "Assembler")],
+    ("Elementar", "Oelschlick"): [("Industrie", "Raffinerie")],
+    # 0.83 Bauten P2/P3
+    ("Festung", "Funkmast"): [("Industrie", "Quarz")],
+    ("Festung", "Schildgenerator"): [("Elementar", "Akkubank")],
+    ("Ballistik", "Himmelsturm"): [("Industrie", "Bauxit")],
+    ("Ballistik", "Singularitaet"): [("Festung", "Turmfertigung4")],   # 0.81: als Voraussetzung statt Elternlinie (die Linie liefe durch Notreparatur)
 }
 
 # Freigabe-Welle (unveraendert gegenueber 0.71, ueberschreibbar mit Forschung.<Knoten>.AbWelle in Balance.json)
 AB_WELLE = {
+    ("Industrie", "Schwefel"): 5,
+    ("Industrie", "Quarz"): 10,
+    ("Industrie", "Caterium"): 12,
+    ("Industrie", "Bauxit"): 25,
+    ("Ballistik", "Explosivbolzen"): 25,
+    ("Festung", "Tor"): 6,
+    ("Festung", "Lockfeuer"): 8,
+    ("Elementar", "Oelschlick"): 15,
+    ("Elementar", "Elektrozaun"): 12, ("Festung", "Funkmast"): 12, ("Festung", "Schildgenerator"): 25, ("Ballistik", "Himmelsturm"): 25,
+    ("Festung", "Stoerfeld"): 40, ("Ballistik", "Singularitaet"): 45, ("Festung", "Dimensionslager"): 45,
     ("Industrie", "Kohlekraft"): 6,
     ("Industrie", "Raffinerie"): 15,
     ("Industrie", "Treibstoffkraft"): 15,
@@ -275,7 +340,6 @@ AB_WELLE = {
     ("Elementar", "Teslaspule"): 5,
     ("Elementar", "Akkubank"): 15,
     ("Elementar", "Flammenwerfer"): 15,
-    ("Elementar", "Treibstoff"): 15,
     ("Elementar", "Turbotreibstoff"): 25,
     ("Festung", "KernSchild"): 8,
     ("Festung", "KernGeschuetz"): 10,
@@ -289,8 +353,8 @@ AB_WELLE = {
 }
 
 # Gabelungen (nur eine Seite je Einsatz); dieselben Paare stehen in TDForschungVoraussetzungen.inl (TDForschungAbzweigungen)
-GRUPPEN = [("Ballistik", ["Explosivbolzen", "Streubolzen"]), ("Ballistik", ["Zielsuchmunition", "Panzerbrechend"]), ("Ballistik", ["GasNobelisk", "PulsNobelisk"]),
-           ("Elementar", ["Kettenblitz", "Ueberlast"]), ("Festung", ["KernSchild", "KernGeschuetz"]),
+GRUPPEN = [("Ballistik", ["Streubolzen", "Schockbolzen"]), ("Ballistik", ["Zielsuchmunition", "Panzerbrechend"]), ("Ballistik", ["GasNobelisk", "PulsNobelisk"]),
+           ("Elementar", ["Kettenblitz", "Ueberlast"]), ("Elementar", ["Oelschlick", "Elektrozaun"]), ("Festung", ["Schildgenerator", "Stoerfeld"]), ("Festung", ["KernSchild", "KernGeschuetz"]),
            ("Festung", ["DoktrinBolzen", "DoktrinGewehr", "DoktrinNobelisk", "DoktrinTesla", "DoktrinFlamme"])]
 def andere_von(b_key, k_key):
     for g_b, glieder in GRUPPEN:
@@ -378,10 +442,134 @@ KARTE_ALT = {
     "UpgFlammen": "Flammenwerfer: Level 2", "UpgNobelisk": "Nobelisk-Werfer: Level 2",
     "Turmfertigung2": "Alle Türme: Level 3", "Turmfertigung3": "Alle Türme: Level 4", "Turmfertigung4": "Alle Türme: Level 5 (Meisterstufe)",
 }
-GEBAEUDE_REZEPTE = ("Recipe_TD_GunTurret", "Recipe_TD_TeslaCoil", "Recipe_TD_FlameTurret", "Recipe_TD_NobeliskLauncher", "Recipe_TD_RepairStation", "Recipe_TD_Barrier", "Recipe_TD_BoltTurret")
+GEBAEUDE_REZEPTE = ("Recipe_TD_GunTurret", "Recipe_TD_TeslaCoil", "Recipe_TD_FlameTurret", "Recipe_TD_NobeliskLauncher", "Recipe_TD_RepairStation", "Recipe_TD_Barrier", "Recipe_TD_BoltTurret",
+                    "Recipe_TD_Gate", "Recipe_TD_LureBeacon", "Recipe_TD_SlickPlate",
+                    # 0.83: ohne diese Eintraege galten die Baurezepte als stille Aktionsrezepte, die Knoten zeigten "0 Rezepte"
+                    "Recipe_TD_ConductorWall", "Recipe_TD_RadioMast", "Recipe_TD_ShieldGenerator", "Recipe_TD_FlakTurret",
+                    "Recipe_TD_FieldProjector", "Recipe_TD_SingularityLauncher", "Recipe_TD_DimensionalDepot")
 def ist_aktion(r):
     return r.startswith(TD + "/") and r.rsplit("/", 1)[1] not in GEBAEUDE_REZEPTE
+# 0.83.1 (Marius 07.11.: "was brauche ich fuer die Herstellung der Munition, wo wird das gebaut und welche Forschung brauche ich
+# vorher - nicht transparent genug"): je Knoten bis zu drei Infokarten neben den Rezeptkarten, Text aus den Rezept-Assets selbst
+# (Zutaten, Maschine, Dauer) und den Voraussetzungen des Knotens. Deutsche Namen der Spielgegenstaende aus der Spieldoku de.json.
+import io as _io, json as _json
+_DOKU = r"C:\Program Files (x86)\Steam\steamapps\common\Satisfactory\CommunityResources\Docs\de.json"
+DE_NAMEN = {}
+try:
+    for _g in _json.load(_io.open(_DOKU, encoding="utf-16")):
+        for _c in _g.get("Classes", []):
+            if _c.get("mDisplayName"):
+                DE_NAMEN[_c["ClassName"]] = _c["mDisplayName"]
+except Exception as _e:
+    log(f"WARNUNG Spieldoku nicht lesbar: {_e}")
+MASCHINE_NAME = {"Build_AssemblerMk1_C": "Fabrikator (Assembler)", "BP_BuildGun_C": "Baupistole", "BP_WorkBenchComponent_C": "Werkbank"}
+
+def name_von(cls):
+    if cls is None:
+        return "?"
+    n = cls.get_name()
+    if n in MASCHINE_NAME:
+        return MASCHINE_NAME[n]
+    if DE_NAMEN.get(n):
+        return DE_NAMEN[n]
+    try:
+        t = str(unreal.get_default_object(cls).get_editor_property("mDisplayName"))
+        if t:
+            return t
+    except Exception:
+        pass
+    return n.replace("Desc_", "").replace("Build_", "").replace("_C", "")
+
+def rezept_daten(pfad):
+    cls = unreal.load_class(None, item(pfad))
+    if cls is None:
+        return None
+    d = unreal.get_default_object(cls)
+    menge = lambda liste: [(i.get_editor_property("item_class"), i.get_editor_property("amount")) for i in liste]
+    return {"zutaten": menge(d.get_editor_property("mIngredients")), "produkte": menge(d.get_editor_property("mProduct")),
+            "maschinen": [m for m in d.get_editor_property("mProducedIn") if m and "WorkBench" not in m.get_name() and "WorkBench" not in str(m)],
+            "dauer": d.get_editor_property("mManufactoringDuration")}
+
+def ist_fluessig(cls):
+    try:
+        form = str(unreal.get_default_object(cls).get_editor_property("mForm")).upper()
+        return "LIQUID" in form or "GAS" in form
+    except Exception:
+        return False
+
+def menge(c, n):
+    # Fluessigkeiten stehen in den Rezepten in Litern (1000 = 1 m3), das Spiel zeigt m3
+    return f"{n / 1000:g}".replace(".", ",") + f" m³ {name_von(c)}" if ist_fluessig(c) else f"{n} {name_von(c)}"
+
+def menge_text(liste):
+    return " + ".join(menge(c, n) for c, n in liste)
+
+ORT = {"Build_OilRefinery_C": "in der Raffinerie", "Build_FoundryMk1_C": "in der Gießerei", "Build_Packager_C": "in der Abfüllanlage",
+       "Build_Blender_C": "im Mischer", "Build_SmelterMk1_C": "im Schmelzofen", "Build_ConstructorMk1_C": "im Konstruktor",
+       "Build_AssemblerMk1_C": "im Fabrikator (Assembler)", "Build_ManufacturerMk1_C": "im Hersteller"}
+def ort(cls):
+    return ORT.get(cls.get_name(), "im " + name_von(cls)) if cls else "?"
+
+# Wer stellt welchen Gegenstand her (alle Rezepte der Baeume), fuer die Zutaten eine Stufe tiefer
+HERSTELLER = {}
+for _b in BAEUME:
+    for _k in _b[4]:
+        for _r in _k[7]:
+            if ist_aktion(_r):
+                continue
+            _d = rezept_daten(_r)
+            if _d and _d["maschinen"] and _d["maschinen"][0].get_name() != "BP_BuildGun_C":
+                for _c, _n in _d["produkte"]:
+                    HERSTELLER.setdefault(_c.get_name(), (_r, _d, _k[0]))
+
+def herstellungs_karten(b_key, k_key, k_name, rezepte, eltern, icon):
+    """Infokarten (Name, Text, Icon-Item) fuer Herstellung, Bauen und Vorher erforschen"""
+    karten = []
+    aktionen = [rezept_daten(r) for r in rezepte if ist_aktion(r)]
+    munition = []   # (Munitions-Klasse, Turmname)
+    for a in aktionen:
+        if a:
+            for c, n in a["zutaten"]:
+                munition.append((c, name_von(a["maschinen"][0]) if a["maschinen"] else "Turm"))
+    for c, turm in munition:
+        h = HERSTELLER.get(c.get_name())
+        if not h:
+            continue
+        r, d, von = h
+        m = d["maschinen"][0] if d["maschinen"] else None
+        prod = sum(n for cc, n in d["produkte"] if cc.get_name() == c.get_name())
+        pro_min = prod * 60.0 / d["dauer"] if d["dauer"] else 0
+        einheit = f"{pro_min / 1000:g}".replace(".", ",") + " m³" if ist_fluessig(c) else f"{pro_min:.0f}"
+        zeilen = [f"{menge_text(d['zutaten'])} ergibt {menge(c, prod)} in {d['dauer']:.0f} s ({einheit} pro Minute) {ort(m)}."]
+        for zc, zn in d["zutaten"]:
+            zh = HERSTELLER.get(zc.get_name())
+            if zh and zh[0] != r:
+                zm = zh[1]["maschinen"][0] if zh[1]["maschinen"] else None
+                zeilen.append(f"{name_von(zc)}: {menge_text(zh[1]['zutaten'])} {ort(zm)} (Forschung {NAMEN.get(_knoten_baum(zh[2]), zh[2])}).")
+        zeilen.append(f"Per Förderband oder Rohr in den {turm}.")
+        karten.append((f"Herstellung: {name_von(m) if m else '?'}", "\n".join(zeilen), icon))
+    for r in rezepte:
+        if ist_aktion(r) or r.rsplit("/", 1)[1] not in GEBAEUDE_REZEPTE:
+            continue
+        d = rezept_daten(r)
+        if d:
+            karten.append(("Bauen: " + ", ".join(f"{n} {name_von(c)}" for c, n in d["zutaten"]),
+                           f"Baukosten {menge_text(d['zutaten'])} (Baupistole), oder fertig im Laden am Kern.", icon))
+    vor = braucht(b_key, k_key, eltern)
+    welle = eff_welle(b_key, k_key)
+    if vor or welle:
+        namen = [NAMEN[(vb, vk)] for vb, vk in vor]
+        titel = ("Vorher: " + ", ".join(namen)) if namen else f"Ab Welle {welle}"
+        text = [f"{TITEL[vb]} > {NAMEN[(vb, vk)]}" for vb, vk in vor] + ([f"Erforschbar ab Welle {welle}."] if welle else [])
+        icon_vor = next((kk[8] for bb in BAEUME for kk in bb[4] if vor and kk[0] == vor[0][1]), icon)
+        karten.append((titel, "\n".join(text), icon_vor))
+    return karten
+
+def _knoten_baum(k_key):
+    return next(((bb[0], k_key) for bb in BAEUME for kk in bb[4] if kk[0] == k_key), None)
+
 STILL = []   # (Schematic-Pfad, Rezept-Pfad)
+NACHHOLEN = []   # (Asset, CDO, Knoten, Voraussetzungen), deren Voraussetzung erst in einem spaeteren Baum entsteht
 liste_baeume, liste_schemata = [], []
 for b_key, b_name, b_text, b_icon, knoten in BAEUME:
     try:
@@ -416,7 +604,10 @@ for b_key, b_name, b_text, b_icon, knoten in BAEUME:
             if vor:
                 noetig = [unreal.load_class(None, f"{ZIEL}/{ORDNER[vk]}/Research_TD_{vk}.Research_TD_{vk}_C") for vb, vk in vor]
                 if None in noetig:
-                    log(f"  WARNUNG Voraussetzung fehlt fuer {k_key}: {vor}")
+                    # 0.83: Voraussetzung in einem spaeter erzeugten Baum (Singularitaet <- Festung/Turmfertigung4, Festung braucht
+                    # aber Ballistik fuer die Doktrinen) - nach allen Baeumen nachholen
+                    NACHHOLEN.append((s, c, k_key, vor))
+                    log(f"  Voraussetzung fuer {k_key} noch nicht da, wird nachgeholt: {vor}")
                 else:
                     abh = unreal.new_object(unreal.load_class(None, "/Game/FactoryGame/AvailabilityDependencies/BP_SchematicPurchasedDependency.BP_SchematicPurchasedDependency_C"), outer=c)
                     abh.set_editor_property("mSchematics", noetig)
@@ -454,7 +645,15 @@ for b_key, b_name, b_text, b_icon, knoten in BAEUME:
                 karte.set_editor_property("mUnlockIconBig", textur)
                 karte.set_editor_property("mUnlockIconSmall", textur)
                 karten.append(karte)
-            c.set_editor_property("mUnlocks", karten + ([freischaltung] if klassen else []))
+            for t_name, t_text, t_icon in herstellungs_karten(b_key, k_key, k_name, rezepte, eltern, icon):
+                karte = unreal.new_object(INFO_KLASSE, outer=c)
+                karte.set_editor_property("mUnlockName", t_name)
+                karte.set_editor_property("mUnlockDescription", t_text)
+                karte.set_editor_property("mUnlockIconBig", icon_von(t_icon))
+                karte.set_editor_property("mUnlockIconSmall", icon_von(t_icon))
+                karten.append(karte)
+                log(f"  Karte {k_key}: {t_name} | {t_text}")
+            c.set_editor_property("mUnlocks", ([freischaltung] if klassen else []) + karten)
             pinsel = c.get_editor_property("mSchematicIcon")
             pinsel.set_editor_property("resource_object", icon_von(icon))
             c.set_editor_property("mSchematicIcon", pinsel)
@@ -504,6 +703,20 @@ for b_key, b_name, b_text, b_icon, knoten in BAEUME:
         log(f"{b_pfad}: {len(neue)} Knoten")
     except Exception as e:
         log(f"FEHLER Baum {b_key}: {e}")
+
+for s, c, k_key, vor in NACHHOLEN:
+    noetig = [unreal.load_class(None, f"{ZIEL}/{ORDNER[vk]}/Research_TD_{vk}.Research_TD_{vk}_C") for vb, vk in vor]
+    if None in noetig:
+        log(f"  WARNUNG Voraussetzung fehlt fuer {k_key}: {vor}")
+        continue
+    abh = unreal.new_object(unreal.load_class(None, "/Game/FactoryGame/AvailabilityDependencies/BP_SchematicPurchasedDependency.BP_SchematicPurchasedDependency_C"), outer=c)
+    abh.set_editor_property("mSchematics", noetig)
+    abh.set_editor_property("mRequireAllSchematicsToBePurchased", True)
+    c.set_editor_property("mSchematicDependencies", list(c.get_editor_property("mSchematicDependencies")) + [abh])
+    c.set_editor_property("mHiddenUntilDependenciesMet", True)
+    unreal.BlueprintEditorLibrary.compile_blueprint(s)
+    EAL.save_loaded_asset(s, False)
+    log(f"  Abhaengigkeit {k_key} <- {[v[1] for v in vor]} (nachgeholt)")
 
 # Pfadliste fuer TDWorldModule (Registrierung) und das Einsatz-Subsystem (Abzweigungen)
 inl = ["// Erzeugt von Scripts/create_research.py - nicht von Hand bearbeiten", "static const TCHAR* TDForschungsBaeume[] = {"]

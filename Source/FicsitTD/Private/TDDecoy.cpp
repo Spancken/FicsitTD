@@ -1,5 +1,6 @@
 ﻿#include "TDDecoy.h"
 #include "TDDamageable.h"
+#include "TDBautenErweitert.h"
 #include "FGHealthComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -136,7 +137,12 @@ void ATDDecoy::Weiterleiten(float DamageAmount, const AActor* DamageCauser)
 {
 	if (ITDDamageable* Damageable = Cast<ITDDamageable>(GetActiveTarget()))
 	{
-		Damageable->ApplyTDDamage(DamageAmount, DamageCauser);
+		// 0.83 Schildgenerator: auch Geschosse der Spucker gehen zuerst auf die Kuppel
+		const float Durch = ATDShieldGenerator::Schlucke(GetWorld(), GetActiveTarget(), DamageAmount);
+		if (Durch > 0.f)
+		{
+			Damageable->ApplyTDDamage(Durch, DamageCauser);
+		}
 	}
 }
 

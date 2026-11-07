@@ -78,6 +78,8 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	ETDHirnPhase GetPhase() const { return mPhase; }
+	/** 0.83.1: steht hinter einem anderen Wellengegner und wartet (das Nachzuegler-Netz laesst ihn dann in Ruhe) */
+	bool StehtImStau() const { return mStau > 0.f; }
 	int32 GetVersetzt() const { return mVersetzt; }
 	/** Bisher angerichteter Schaden und Name des zuletzt angegriffenen Ziels (Diagnose) */
 	float GetSchaden() const { return mSchaden; }
@@ -111,6 +113,7 @@ private:
 	float mFortschritt = 0.f;
 	float mBester = 0.f;
 	float mStill = 0.f;
+	float mStau = 0.f;   // 0.83.1: Sekunden im Stau hinter einem Wellengegner
 	FVector mAusweich = FVector::ZeroVector;
 	/** geglaettete Laufrichtung (keine Spruenge beim Ausweichen) */
 	FVector mRichtung = FVector::ZeroVector;

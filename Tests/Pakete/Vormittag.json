@@ -1,0 +1,20 @@
+{
+  "Name": "Vormittag",
+  "_Hinweis": "07.11.2026: Rauchtest 0.80 (Alles), starke Strategiepläne bis W50 (Endgame), Bolzen stark und normale Strategiepläne bis W30. Testplan 3.4/3.9.",
+  "Plaene": [
+    "Grundtest",
+    "Spezialisierung",
+    "Baender",
+    "Neustart",
+    "Strat-MonoGewehr-Vor-W50",
+    "Strat-MonoNobelisk-Vor-W50",
+    "Strat-MonoTesla-Vor-W50",
+    "Strat-MonoFlamme-Vor-W50",
+    "Strat-MonoBolzen-Vor",
+    "Strat-MonoBolzen",
+    "Strat-MonoGewehr",
+    "Strat-MonoNobelisk",
+    "Strat-MonoTesla",
+    "Strat-MonoFlamme"
+  ]
+}

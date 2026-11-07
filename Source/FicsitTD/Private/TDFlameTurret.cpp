@@ -1,4 +1,5 @@
 ﻿#include "TDFlameTurret.h"
+#include "TDSlickPlate.h"
 #include "TDBalance.h"
 #include "FicsitTDModule.h"
 #include "Components/StaticMeshComponent.h"
@@ -145,6 +146,7 @@ void ATDFlameTurret::Feuern(AFGCreature* Ziel)
 			continue;
 		}
 		++Getroffen;
+		ATDSlickPlate::Entzuende(GetWorld(), F->GetActorLocation());   // 0.81: nasses Oelschlick-Feld unter dem Ziel brennt
 		for (int32 t = 0; t < 4; ++t)   // Schaden ueber die Sekunde verteilt
 		{
 			Treffer(F, W.SchadenProSekunde * Faktor / 4.f, Zu.GetSafeNormal(), t == 0 ? W.Betaeubung : 0.f, 0.25f * t);

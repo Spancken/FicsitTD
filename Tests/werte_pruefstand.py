@@ -22,6 +22,16 @@ def zahl(x):
         return 0.0
 
 
+def spielt_wellen(name):
+    """Plaene ohne Welle (z. B. Neustart) liefern keine Metrik-Zeilen und duerfen die Zuordnung nicht verschieben"""
+    try:
+        plan = json.load(open(os.path.join(HIER, "Plaene", name + ".json"), encoding="utf-8"))
+    except (OSError, ValueError):
+        return True
+    schritte = plan.get("Schritte") or plan.get("schritte") or []
+    return any("wellenlauf" in s or "kern weiter" in str(s.get("befehl", "")) for s in schritte if isinstance(s, dict))
+
+
 def main():
     if len(sys.argv) < 3 or not os.path.exists(METRIKEN):
         return
@@ -31,6 +41,7 @@ def main():
     if not zeilen:
         return
     namen = sys.argv[3].split(",") if len(sys.argv) > 3 else []
+    namen = [n for n in namen if spielt_wellen(n)]   # 07.11.: Neustart verschob alle spaeteren Tabellen um einen Plan
     kopf = ["| Welle | Stufe | Gegner | Türme | Q | Kern % | Verlust % | Munitionsnot | ohne Strom s | Dauer s | Bild p95 | Hinweis |",
             "|---|---|---|---|---|---|---|---|---|---|---|---|"]
     aus = ["", "## Prüfstand: Kennzahlen je Welle", "",

@@ -1,0 +1,19 @@
+{
+  "Name": "LinienRest",
+  "_Hinweis": "07.11.2026: Rest von Linien nach Abbruch um 13:05 (erster Durchgang W30 fertig, Messung in E:\\Modding\\Logs\\Linien_teil1). Strat-MonoGewehr-Vor-W50 lief bis W26 und wird wiederholt.",
+  "Plaene": [
+    "Strat-MonoGewehr-Vor-W50",
+    "Strat-MonoNobelisk-Vor-W50",
+    "Strat-MonoTesla-Vor-W50",
+    "Strat-MonoFlamme-Vor-W50",
+    "Strat-MonoBolzen",
+    "Strat-MonoGewehr",
+    "Strat-MonoNobelisk",
+    "Strat-MonoTesla",
+    "Strat-MonoFlamme",
+    "Strat-MonoGewehr-Vor-W50",
+    "Strat-MonoNobelisk-Vor-W50",
+    "Strat-MonoTesla-Vor-W50",
+    "Strat-MonoFlamme-Vor-W50"
+  ]
+}

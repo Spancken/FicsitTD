@@ -14,7 +14,14 @@ ITEMS = [
     # (Ziel, Vorlage, Name, Beschreibung)
     ("/FicsitTD/Items/Desc_TD_Durchschlagbolzen", f"{G}/Resource/Parts/SpikedRebar/Desc_SpikedRebar", "Durchschlagbolzen",
      "Gehaerteter Bolzen mit Schraubspitze: durchschlaegt das erste Ziel und trifft bis zu zwei weitere Gegner in der Schusslinie. Munition fuer den Bolzenturm."),
+    # 0.83 Himmelsturm
+    ("/FicsitTD/Items/Desc_TD_FlakKanister", f"{G}/Resource/Parts/AluminumCasing/Desc_AluminumCasing", "Flak-Kanister",
+     "Aluminiumhuelse mit Schwarzpulver und Zeitzuender: zerplatzt in der Luft. Munition fuer den Himmelsturm (nur gegen Flieger)."),
 ]
+import os
+INHALT = r"E:\Modding\SatisfactoryModLoader\Mods\FicsitTD\Content"
+# 0.83: vorhandene Gegenstaende bleiben unveraendert, nur fehlende anlegen
+ITEMS = [i for i in ITEMS if not os.path.exists(os.path.join(INHALT, *i[0].replace("/FicsitTD/", "").split("/")) + ".uasset")]
 
 for ziel, vorlage, name, text in ITEMS:
     try:

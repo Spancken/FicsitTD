@@ -1,4 +1,9 @@
 ﻿#include "TDGegnerHirn.h"
+#include "TDGate.h"
+#include "TDLureBeacon.h"
+#include "TDBautenErweitert.h"
+#include "TDKernplatz.h"
+#include "Components/HierarchicalInstancedStaticMeshComponent.h"
 #include "TDForschung.h"
 #include "TDPionier.h"
 #include "GameFramework/DamageType.h"
@@ -255,6 +260,10 @@ AFGCreature* UTDGegnerHirn::Spawne(UWorld* World, UClass* Klasse, const FVector&
 		Bewegung->bUseControllerDesiredRotation = false;
 		Bewegung->RotationRate = FRotator(0.f, 300.f, 0.f);
 		Bewegung->MaxAcceleration = FMath::Max(Bewegung->MaxAcceleration, 2000.f);
+		// 0.83 (Gesamt082: 451 von 740 Festgefahrenen mit Tempo 0, Eingabe 1, vorn frei, Boden 2 m voraus 1-2 m tiefer): Verdacht
+		// Kantensperre. Widerlegt im Selbsttest BautenP2 0.83: die Diagnose zeigt in allen 175 Faellen "Kanten frei" schon vorher.
+		// Bleibt ausdruecklich gesetzt (tiefe Abgruende faengt die eigene Tastung ab Gegner.Abgrund ab), Ursache weiter offen.
+		Bewegung->bCanWalkOffLedges = true;
 		// Stinger laufen im Spiel im Modus NavWalking: ohne Kollision mit der Welt - sie glitten durch Mauern (Test 0.18.3)
 		Bewegung->DefaultLandMovementMode = MOVE_Walking;
 		if (Bewegung->MovementMode == MOVE_NavWalking)
@@ -493,7 +502,7 @@ void UTDGegnerHirn::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 /** Mauern und Sperren formen den Weg; Tuerme und der Kern sind keine Hindernisse */
 static bool IstHindernis(const AActor* Ziel)
 {
-	return Ziel && (Ziel->IsA<ATDDefenseWall>() || Ziel->IsA<ATDBarrier>() || Ziel->IsA<ATDTestWall>());
+	return Ziel && (Ziel->IsA<ATDDefenseWall>() || Ziel->IsA<ATDBarrier>() || Ziel->IsA<ATDTestWall>() || Ziel->IsA<ATDGate>() || Ziel->IsA<ATDConductorWall>());
 }
 
 ATDDecoy* UTDGegnerHirn::KoederNahe(const FVector& Ort, float MaxAbstand, bool bHindernis) const
@@ -634,6 +643,11 @@ ATDDecoy* UTDGegnerHirn::SucheZiel(const AFGCreature* Kreatur)
 	{
 		return Kern;
 	}
+	// 0.81 Lockfeuer: waehrend eines Lockrufs gehen Gegner in 40 m auf das Lockfeuer (nach Regel 1: am Kern bleibt der Kern Ziel)
+	if (ATDDecoy* Lock = ATDLureBeacon::LockKoeder(GetWorld(), Ort))
+	{
+		return Lock;
+	}
 	// Regel 2: Weg versperrt und an seinem Ende angekommen: die Mauer angreifen, die in Richtung Kern im Weg steht
 	// (Test 0.18.1: die naechste Mauer war oft die Wand einer Sackgasse, die nichts freigibt)
 	if (!mWegVoll && GetRestweg() < 1500.f)
@@ -666,6 +680,7 @@ void UTDGegnerHirn::Marschiere(AFGCreature* Kreatur, float DeltaTime)
 	{
 		mBester = mFortschritt;
 		mStill = 0.f;
+		mStau = 0.f;
 	}
 	else if (mStill >= 8.f && GetRestweg() > 4000.f)
 	{
@@ -712,12 +727,94 @@ void UTDGegnerHirn::Marschiere(AFGCreature* Kreatur, float DeltaTime)
 		{
 			const UCharacterMovementComponent* B = Kreatur->GetCharacterMovement();
 			const AController* C = Kreatur->GetController();
-			Antrieb = FString::Printf(TEXT("Controller %s, Bewegung tickt %s, ohne Controller %s, Eingabe %.2f, Boden begehbar %s, Beschleunigung %.0f"),
+			Antrieb = FString::Printf(TEXT("Controller %s, Bewegung tickt %s, ohne Controller %s, Eingabe %.2f, Boden begehbar %s, Beschleunigung %.0f, Kanten %s, Stufe %.0f"),
 				C ? *C->GetClass()->GetName() : TEXT("KEINER"), B && B->IsComponentTickEnabled() && B->IsActive() ? TEXT("ja") : TEXT("NEIN"),
 				B && B->bRunPhysicsWithNoController ? TEXT("ja") : TEXT("nein"), Kreatur->GetLastMovementInputVector().Size(),
-				B && B->CurrentFloor.IsWalkableFloor() ? TEXT("ja") : TEXT("NEIN"), B ? B->GetCurrentAcceleration().Size() : -1.f);
+				B && B->CurrentFloor.IsWalkableFloor() ? TEXT("ja") : TEXT("NEIN"), B ? B->GetCurrentAcceleration().Size() : -1.f,
+				B && B->bCanWalkOffLedges ? TEXT("frei") : TEXT("GESPERRT"), B ? B->MaxStepHeight : -1.f);
 		}
-		const FString Zustand = Diagnose() + TEXT(" | vorn: ") + Vorn + TEXT(" | Antrieb: ") + Antrieb;
+		// 0.83 (Selbsttest BautenP2): "Boden 2 m voraus -1,4 m" war von der Koerpermitte gemessen, also flacher Boden. Die Kugel in
+		// Koerpermitte sieht nichts, was nur die Beine aufhaelt. Deshalb mit der echten Kapsel und dem Kanal der Bewegung pruefen:
+		// steckt er in etwas (Start in Geometrie) oder was haelt die Kapsel 1 m voraus auf, in welcher Hoehe ueber den Fuessen?
+		FString Kapselprobe = TEXT("-");
+		const AFGCreature* KapselGegner = nullptr;   // Wellengegner, an dem die Kapsel haengt (Stau)
+		bool bKapselBewuchs = false;                 // Bewuchs (Foliage), an dem die Kapsel haengt
+		FVector BewuchsOrt = FVector::ZeroVector;
+		if (const UCapsuleComponent* Kapsel = Kreatur->GetCapsuleComponent())
+		{
+			const float Halb = Kapsel->GetScaledCapsuleHalfHeight();
+			const float R = Kapsel->GetScaledCapsuleRadius();
+			const FVector Fuss = Vorher - FVector(0.f, 0.f, Halb);
+			const FVector Richtung = (TDHirn::PunktAufWeg(mWeg, mFortschritt + 600.f) - Vorher).GetSafeNormal2D();
+			FCollisionQueryParams Sonde(TEXT("TDKapselprobe"), false, Kreatur);
+			FCollisionResponseParams Antwort;
+			Kapsel->InitSweepCollisionParams(Sonde, Antwort);
+			const FCollisionShape Form = FCollisionShape::MakeCapsule(R, Halb);
+			auto Beschreibe = [&](const FHitResult& H)
+			{
+				FString Modell = H.GetComponent() ? H.GetComponent()->GetName() : FString(TEXT("-"));
+				if (const UStaticMeshComponent* Netz = Cast<UStaticMeshComponent>(H.GetComponent()); Netz && Netz->GetStaticMesh())
+				{
+					Modell = Netz->GetStaticMesh()->GetName();
+				}
+				return FString::Printf(TEXT("%s/%s, %.2f m ueber Fuss, Neigung %.0f Grad"), H.GetActor() ? *H.GetActor()->GetClass()->GetName() : TEXT("-"), *Modell,
+					(H.ImpactPoint.Z - Fuss.Z) / 100.f, FMath::RadiansToDegrees(FMath::Acos(FMath::Clamp(H.ImpactNormal.Z, -1.f, 1.f))));
+			};
+			FHitResult Stecken;
+			const bool bStecken = GetWorld()->SweepSingleByChannel(Stecken, Vorher, Vorher + FVector(0.f, 0.f, 1.f), FQuat::Identity, Kapsel->GetCollisionObjectType(), Form, Sonde, Antwort) && Stecken.bStartPenetrating;
+			FHitResult Weg;
+			const bool bWeg = GetWorld()->SweepSingleByChannel(Weg, Vorher + FVector(0.f, 0.f, 2.f), Vorher + FVector(0.f, 0.f, 2.f) + Richtung * 100.f, FQuat::Identity, Kapsel->GetCollisionObjectType(), Form, Sonde, Antwort);
+			const FHitResult* Grund = bStecken ? &Stecken : (bWeg ? &Weg : nullptr);
+			if (Grund)
+			{
+				if (const AFGCreature* Andere = Cast<AFGCreature>(Grund->GetActor()); Andere && Andere->Tags.Contains(TEXT("FicsitTD")))
+				{
+					KapselGegner = Andere;
+				}
+				else if (Grund->GetComponent() && Grund->GetComponent()->IsA<UHierarchicalInstancedStaticMeshComponent>()
+					&& Grund->GetActor() && Grund->GetActor()->GetClass()->GetName().Contains(TEXT("Foliage")))
+				{
+					bKapselBewuchs = true;
+					BewuchsOrt = Grund->ImpactPoint;
+				}
+			}
+			Kapselprobe = FString::Printf(TEXT("Halbhoehe %.0f, Radius %.0f, steckt %s, 1 m voraus %s"), Halb, R,
+				bStecken ? *(TEXT("JA in ") + Beschreibe(Stecken)) : TEXT("nein"),
+				bWeg ? *(FString::Printf(TEXT("blockiert nach %.2f m durch "), Weg.Distance / 100.f) + Beschreibe(Weg)) : TEXT("frei"));
+			FHitResult BodenFuss;
+			if (GetWorld()->LineTraceSingleByChannel(BodenFuss, Fuss + Richtung * 200.f + FVector(0.f, 0.f, 150.f), Fuss + Richtung * 200.f - FVector(0.f, 0.f, 600.f), ECC_WorldStatic, Sonde))
+			{
+				Kapselprobe += FString::Printf(TEXT(", Boden 2 m voraus ab Fuss %+.1f m"), (BodenFuss.ImpactPoint.Z - Fuss.Z) / 100.f);
+			}
+		}
+		// 0.83.1 (Nachlauf 18:28: 89 von 174 Festgefahrenen hingen an anderen Wellengegnern, meist Spucker-Alphas in einer Kette,
+		// deren Kopf an Bewuchs hing): hinter einem Wellengegner warten statt versetzen - der Stau loest sich, wenn der Kopf frei ist.
+		// Nach Gegner.StauGeduld s (Standard 40) greift doch das Versetzen, damit sich zwei Gegner nicht ewig gegenseitig halten.
+		if (KapselGegner)
+		{
+			mStau += mStill;
+			if (mStau < TDBalance::Wert(TEXT("Gegner.StauGeduld"), 40.f))
+			{
+				mStill = 0.f;
+				return;
+			}
+			UE_LOG(LogFicsitTD, Log, TEXT("Hirn: %s steht %.0f s im Stau hinter %s, wird versetzt"), *Kreatur->GetClass()->GetName(), mStau, *KapselGegner->GetClass()->GetName());
+		}
+		// 0.83.1 (58 von 174 hingen an Palmen und Kakteen neben dem geraeumten Streifen, Treffer 0,8-1,8 m ueber dem Fuss):
+		// den Bewuchs vor ihm raeumen statt ihn zu versetzen - so ist das Hindernis auch fuer alle Folgenden weg
+		if (bKapselBewuchs)
+		{
+			TSet<FString> Uebrig;
+			const int32 Geraeumt = TDRaeumeBewuchs(GetWorld(), BewuchsOrt, TDBalance::Wert(TEXT("Gegner.BewuchsRaeumen"), 4.f) * 100.f, true, &Uebrig);
+			if (Geraeumt > 0)
+			{
+				UE_LOG(LogFicsitTD, Log, TEXT("Hirn: %s hing an Bewuchs bei %s, %d Pflanzen geraeumt"), *Kreatur->GetClass()->GetName(), *BewuchsOrt.ToCompactString(), Geraeumt);
+				mStill = 0.f;
+				return;
+			}
+			UE_LOG(LogFicsitTD, Log, TEXT("Hirn: Bewuchs bei %s nicht raeumbar: %s"), *BewuchsOrt.ToCompactString(), *FString::Join(Uebrig.Array(), TEXT(", ")));
+		}
+		const FString Zustand = Diagnose() + TEXT(" | vorn: ") + Vorn + TEXT(" | Antrieb: ") + Antrieb + TEXT(" | Kapsel: ") + Kapselprobe;
 		// 0.78.1 (Pruefstand: versetzte Gegner fielen bis -100 km): nur auf echten Boden versetzen - von 5 m ueber dem Wegpunkt
 		// nach unten suchen; ohne Boden in 20 m bleibt er stehen und wird beim naechsten Mal weiter vorn versucht
 		FHitResult Boden;
@@ -740,6 +837,7 @@ void UTDGegnerHirn::Marschiere(AFGCreature* Kreatur, float DeltaTime)
 		}
 		mBester += 1000.f;
 		mStill = 0.f;
+		mStau = 0.f;
 	}
 	// 6 m voraus anpeilen: folgt den Ecken des Netz-Weges, schneidet sie aber weich an
 	const FVector Wunsch = ((WegZiel(Kreatur, 600.f) - Kreatur->GetActorLocation()).GetSafeNormal2D() + Abstossung(Kreatur, DeltaTime)).GetSafeNormal2D();
@@ -834,7 +932,17 @@ void UTDGegnerHirn::Greife(AFGCreature* Kreatur, float DeltaTime)
 			mSchaden += mWerte.Schaden;
 			if (!UTDWaveSubsystem::bStressSchutz)   // Stresstest: angreifen ja, Schaden nein
 			{
-				Ziel->ApplyTDDamage(mWerte.Schaden, Kreatur);
+				// 0.83 Schildgenerator: Kuppel schluckt den Schaden an Bauten zuerst
+				const float Durch = ATDShieldGenerator::Schlucke(GetWorld(), ZielActor, mWerte.Schaden);
+				if (Durch > 0.f)
+				{
+					Ziel->ApplyTDDamage(Durch, Kreatur);
+				}
+				// 0.83 Elektrozaun: wer ihn angreift, bekommt einen Schlag (Ziel kann jetzt zerstoert sein, deshalb IsValid)
+				if (IsValid(ZielActor))
+				{
+					ATDConductorWall::Schlag(ZielActor, Kreatur);
+				}
 				// Forschung Stachelmauern: ein Viertel des Schadens zurueck (Mauern und Sperren)
 				if (IstHindernis(ZielActor) && TDForschung::Hat(Kreatur, TEXT("Stachelmauer")))
 				{

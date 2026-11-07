@@ -1,0 +1,10 @@
+{
+  "Name": "BautenP2",
+  "_Hinweis": "0.83 Bauten P2/P3 mit Nachtest BautenP1 und einem langen Lauf als Nachweis fuer den Kanten-Fix (Gesamt082: 207 Festgefahrene), etwa 40 min.",
+  "Plaene": [
+    "Grundtest",
+    "BautenP1",
+    "BautenP2",
+    "Strat-MonoTesla-Vor-W50"
+  ]
+}

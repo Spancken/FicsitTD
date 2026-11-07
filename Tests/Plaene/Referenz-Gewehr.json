@@ -1,6 +1,6 @@
 {
   "Name": "Referenz-Gewehr",
-  "_Hinweis": "Nur Gewehrtürme (nach dem Start), ab Welle 15 mit Doktrin Gewehrturm. Zeigt, ob eine Linie allein trägt. Erzeugt von Tests\\erzeuge_referenzen.py.",
+  "_Hinweis": "Nur Gewehrtürme (nach dem Start), ab Welle 16 mit Doktrin Gewehrturm (bis 0.79 nie ausgeführt: 15 war kein Abschnitt). Zeigt, ob eine Linie allein trägt. Erzeugt von Tests\\erzeuge_referenzen.py.",
   "NeuesSpiel": {
     "Startort": "Rocky Desert"
   },
@@ -112,9 +112,6 @@
       "erforsche": "Flammenwerfer"
     },
     {
-      "erforsche": "Treibstoff"
-    },
-    {
       "baue": "Gewehrturm",
       "anzahl": 2,
       "level": 3,
@@ -133,6 +130,9 @@
       "anzahl": 2,
       "level": 3,
       "rezept": "Recipe_TD_Gun_Standard"
+    },
+    {
+      "erforsche": "DoktrinGewehr"
     },
     {
       "wellenlauf": 20,

@@ -18,7 +18,9 @@ struct FTDPlatzKandidat
 };
 
 /** 0.69.2/0.78.6: faellbaren Bewuchs (Baeume, Bueschel) im Radius entfernen wie die Kettensaege; Rueckgabe: Anzahl */
-FICSITTD_API int32 TDRaeumeBewuchs(class UWorld* World, const FVector& Mitte, float Radius);
+/** 0.83: bAuchKakteen raeumt auf Frontwegen auch nicht faellbare Kakteen (BautenP1: Hogs hingen an SM_CoralCactus fest);
+ *  OutUebrig sammelt die Modelle, die stehen bleiben */
+FICSITTD_API int32 TDRaeumeBewuchs(class UWorld* World, const FVector& Mitte, float Radius, bool bAuchKakteen = false, TSet<FString>* OutUebrig = nullptr);
 
 /** 0.67 (Kernplaetze S1): /td platz pruefen <Kandidat|hier [Biom]> - Gelaende, Fronten, Rohstoffe pruefen; /td platz merken <Biom> - Platz speichern */
 UCLASS()
@@ -51,6 +53,9 @@ public:
 	FString StoppeScan();
 	/** 0.69 (S3): festen Platz des Bioms (zufaellig oder Nr) anfliegen, Plattform aus Fundamenten und Kern bauen, Einsatz starten */
 	FString BauePlatz(const FString& Biom, const FString& Nr, class APawn* Spieler);
+	/** 0.83.1 (Analyse 07.11.: Kernplatz je Selbsttest-Lauf zufaellig, Laeufe nicht vergleichbar): Platz-Nr. fuer den naechsten
+	 *  automatischen Bau beim neuen Spiel. Leer = zufaellig (normales Spiel); der Selbsttest setzt sie vor dem Neustart. */
+	static FString sVorgabePlatz;
 
 private:
 	void SucheBoden();

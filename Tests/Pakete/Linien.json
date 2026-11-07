@@ -1,0 +1,24 @@
+{
+  "Name": "Linien",
+  "_Hinweis": "07.11.2026 (Testplan 3.10): Pläne mit Verlustkurve und Mehrziel-Faktoren neu erzeugt, jede Linie 2-mal. Erster Durchgang endet nach etwa 2,4 h und ist allein schon auswertbar. Danach: balance_kreislauf.py auswerten.",
+  "Plaene": [
+    "Strat-MonoBolzen",
+    "Strat-MonoGewehr",
+    "Strat-MonoNobelisk",
+    "Strat-MonoTesla",
+    "Strat-MonoFlamme",
+    "Strat-MonoGewehr-Vor-W50",
+    "Strat-MonoNobelisk-Vor-W50",
+    "Strat-MonoTesla-Vor-W50",
+    "Strat-MonoFlamme-Vor-W50",
+    "Strat-MonoBolzen",
+    "Strat-MonoGewehr",
+    "Strat-MonoNobelisk",
+    "Strat-MonoTesla",
+    "Strat-MonoFlamme",
+    "Strat-MonoGewehr-Vor-W50",
+    "Strat-MonoNobelisk-Vor-W50",
+    "Strat-MonoTesla-Vor-W50",
+    "Strat-MonoFlamme-Vor-W50"
+  ]
+}

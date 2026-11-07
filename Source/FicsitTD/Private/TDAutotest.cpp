@@ -17,6 +17,7 @@
 #include "TDGegnerHirn.h"
 #include "TDSicherheitsnetz.h"
 #include "TDBandUpgrade.h"
+#include "TDKernplatz.h"
 #include "Creature/FGCreature.h"
 #include "FGHealthComponent.h"
 #include "FGSaveManagerInterface.h"
@@ -339,7 +340,11 @@ void UTDAutotest::StarteNeuesSpiel(UWorld* World)
 	{
 		Optionen += FString::Printf(TEXT("?%s=%s"), AFGGameMode::StartLocationOption, *Neu->GetStringField(TEXT("Startort")));
 	}
-	UE_LOG(LogFicsitTD, Log, TEXT("Autotest: neues Spiel %s"), *Optionen);
+	// 0.83.1 (Analyse 07.11.: der zufaellige Kernplatz streute die Laeufe staerker als jede Code-Aenderung): fester Platz,
+	// Standard 2 (Fels-S8, die meisten Messungen der Kalibrierung); "Kernplatz": "zufall" im Plan erlaubt die Zufallswahl
+	const FString Platz = Neu->HasField(TEXT("Kernplatz")) ? Neu->GetStringField(TEXT("Kernplatz")) : FString(TEXT("2"));
+	UTDKernplatz::sVorgabePlatz = Platz.Equals(TEXT("zufall"), ESearchCase::IgnoreCase) ? FString() : Platz;
+	UE_LOG(LogFicsitTD, Log, TEXT("Autotest: neues Spiel %s, Kernplatz %s"), *Optionen, *Platz);
 	mAlteWelt = TDIstSpielwelt(World) ? World : nullptr;
 	UGameplayStatics::SetGlobalTimeDilation(World, 1.f);
 	UGameplayStatics::OpenLevel(World, FName(TEXT("/Game/FactoryGame/Map/GameLevel01/Persistent_Level")), true, Optionen);
@@ -468,7 +473,9 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 			Kern = *It;
 		}
 		static const TMap<FString, FString> Ordner = { { TEXT("Bolzenturm"), TEXT("BoltTurret") }, { TEXT("Gewehrturm"), TEXT("GunTurret") },
-			{ TEXT("Teslaspule"), TEXT("TeslaCoil") }, { TEXT("Flammenwerfer"), TEXT("FlameTurret") }, { TEXT("Nobelisk-Werfer"), TEXT("NobeliskLauncher") } };
+			{ TEXT("Teslaspule"), TEXT("TeslaCoil") }, { TEXT("Flammenwerfer"), TEXT("FlameTurret") }, { TEXT("Nobelisk-Werfer"), TEXT("NobeliskLauncher") },
+			{ TEXT("Tor"), TEXT("Gate") }, { TEXT("Lockfeuer"), TEXT("LureBeacon") }, { TEXT("Oelschlick"), TEXT("SlickPlate") },   // 0.81 passive Bauten P1
+			{ TEXT("Elektrozaun"), TEXT("ConductorWall") }, { TEXT("Funkmast"), TEXT("RadioMast") }, { TEXT("Schildgenerator"), TEXT("ShieldGenerator") }, { TEXT("Himmelsturm"), TEXT("FlakTurret") }, { TEXT("Stoerfeld"), TEXT("FieldProjector") }, { TEXT("Singularitaet"), TEXT("SingularityLauncher") }, { TEXT("Dimensionslager"), TEXT("DimensionalDepot") } };   // 0.83 Bauten P2/P3
 		const FString* O = Ordner.Find(Wort);
 		UClass* Klasse = O ? LoadClass<AFGBuildable>(nullptr, *FString::Printf(TEXT("/FicsitTD/Buildings/%s/Build_TD_%s.Build_TD_%s_C"), **O, **O, **O)) : nullptr;
 		UClass* BauRezept = O ? LoadClass<UFGRecipe>(nullptr, *FString::Printf(TEXT("/FicsitTD/Buildings/%s/Recipe_TD_%s.Recipe_TD_%s_C"), **O, **O, **O)) : nullptr;
@@ -495,6 +502,7 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 			{
 				Neu->SetBuiltWithRecipe(BauRezept);
 				Neu->FinishSpawning(T);
+				++Gebaut;   // 0.81: auch Bauten ohne Turmlogik (Tor) zaehlen
 				if (ATDTurretBase* Turm = Cast<ATDTurretBase>(Neu))
 				{
 					if (Munition)
@@ -502,7 +510,6 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 						Turm->SetRecipe(Munition);
 					}
 					Turm->SetzeLevelTest(Level);
-					++Gebaut;
 				}
 			}
 		}
@@ -822,6 +829,13 @@ bool UTDAutotest::Pruefe(UWorld* World, const TSharedPtr<FJsonObject>& S, FStrin
 		const float Ist = Turm->TestWert(Wert);
 		const double Soll = S->GetNumberField(TEXT("soll"));
 		const double Tol = S->HasField(TEXT("toleranz")) ? S->GetNumberField(TEXT("toleranz")) : 0.01;
+		if (S->HasField(TEXT("min")))
+		{
+			// 0.83: Wirkung der Bauten nachweisen (mindestens so viel)
+			const double Min = S->GetNumberField(TEXT("min"));
+			OutIst = FString::Printf(TEXT("%s %s = %.3f (mindestens %.3f)"), *Typ, *Wert, Ist, Min);
+			return Ist >= Min;
+		}
 		OutIst = FString::Printf(TEXT("%s %s = %.3f (Soll %.3f)"), *Typ, *Wert, Ist, Soll);
 		return FMath::Abs(Ist - Soll) <= Tol;
 	}

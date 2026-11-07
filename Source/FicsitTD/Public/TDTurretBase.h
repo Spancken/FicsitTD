@@ -90,11 +90,15 @@ public:
 	/** Reichweitenkreis am fertigen Turm ein-/ausblenden (/td reichweite) */
 	void ZeigeReichweite(bool bAn);
 	FString GetTurmName() const { return mTurmName; }
+	/** Koeder des Gebaeudes (0.81: Lockfeuer zieht Gegner auf sie) */
+	const TArray<TObjectPtr<class ATDDecoy>>& GetKoederListe() const { return mDecoys; }
 	/** 0.78.1 Pruefstand-Diagnose: worauf zielt der Turm gerade */
 	AFGCreature* GetAktuellesZiel() const { return mAktuellesZiel.Get(); }
 	/** 0.75 Selbsttest (UTDAutotest, Pruefung TurmWert): SchadenBonus, TaktBonus, Uebertakt, NennDPS, LevelPreis, LevelMax, Level,
 	 *  Doktrin (0/1), KannUebertakten (0/1), SplitterPlaetze, StromLaden (MW beim Aufladen/Produzieren); unbekannt = -1 */
 	float TestWert(const FString& Name) const;
+	/** 0.83 Selbsttest: Messwerte der Bauten (Geschluckt, Schlaege, Gebremst ...), -1 = unbekannt */
+	virtual float ZusatzTestWert(const FString& Name) const { return -1.f; }
 	/** 0.77 Selbsttest Sichtlinie: freie Sicht von der Muendung zu einem Punkt? OutHindernis = was blockiert */
 	bool FreieSichtZuPunkt(const FVector& Nach, FString& OutHindernis) const;
 
@@ -239,6 +243,8 @@ protected:
 	FVector mLampenOrt = FVector(150.f, -150.f, 225.f);
 	/** Freiraum-Hoehe in cm */
 	float mKlarraumHoehe = 560.f;
+	/** Halbe Grundflaeche des Freiraums in cm (0.81: Lockfeuer 2 x 2 m, Oelschlick 8 x 8 m) */
+	FVector2D mKlarraumHalb = FVector2D(205.f, 205.f);
 	float mNeigungMin = -30.f;   // 0.64.1: vorher -10, Tuerme auf Felsen kamen nicht an Gegner direkt darunter
 	float mNeigungMax = 40.f;
 	/** false = feststehender Turm (Teslaspule): kein Drehen/Neigen, immer ausgerichtet */

@@ -1,0 +1,272 @@
+{
+  "Name": "Strat-MonoGewehr-Vor-W50",
+  "_Hinweis": "Beste Modellstrategie der Linie Mono Gewehr (Nr. 86, Doktrin Gewehrturm, Stil Level, Kern ja, Gabel Streubolzen/Zielsuchmunition/GasNobelisk/Ueberlast/KernSchild): Plan bei der Auswahl 0 % bis W30, Vorhersage 0 %, 16 Türme. Erzeugt von Werkzeuge\\FicsitTD-Simulator\\strategie_plaene.py.",
+  "NeuesSpiel": {
+    "Startort": "Rocky Desert"
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 130,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warte": 15
+    },
+    {
+      "befehl": "td einsatz stop"
+    },
+    {
+      "befehl": "td kern stop"
+    },
+    {
+      "befehl": "td einsatz start normal 50"
+    },
+    {
+      "befehl": "td einsatz frei an"
+    },
+    {
+      "stromfrei": true
+    },
+    {
+      "versorgung": {
+        "Bolzenturm": 50,
+        "Gewehrturm": 25,
+        "Nobelisk-Werfer": 15,
+        "Flammenwerfer": 6000
+      }
+    },
+    {
+      "erforsche": "Assembler"
+    },
+    {
+      "erforsche": "KernPanzer"
+    },
+    {
+      "erforsche": "Kupfer"
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 3,
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "Strat-MonoGewehr-Vor-W50_W00"
+    },
+    {
+      "wellenlauf": 4,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Gewehrturm"
+    },
+    {
+      "erforsche": "Kohlekraft"
+    },
+    {
+      "erforsche": "Zielsuchmunition"
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 1,
+      "level": 2,
+      "rezept": "Recipe_TD_Gun_Standard"
+    },
+    {
+      "wellenlauf": 8,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Giesserei"
+    },
+    {
+      "erforsche": "KernNotrep"
+    },
+    {
+      "erforsche": "KernSchild"
+    },
+    {
+      "erforsche": "Munitionspuffer"
+    },
+    {
+      "erforsche": "Turmfertigung2"
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 2,
+      "level": 3,
+      "rezept": "Recipe_TD_Gun_Homing"
+    },
+    {
+      "wellenlauf": 12,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Brandmunition"
+    },
+    {
+      "erforsche": "DoktrinGewehr"
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 2,
+      "level": 3,
+      "rezept": "Recipe_TD_Gun_Brand"
+    },
+    {
+      "wellenlauf": 16,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Turmfertigung3"
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 1,
+      "level": 5,
+      "rezept": "Recipe_TD_Gun_Brand"
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "Strat-MonoGewehr-Vor-W50_W16"
+    },
+    {
+      "wellenlauf": 20,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Turbomunition"
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 2,
+      "level": 5,
+      "rezept": "Recipe_TD_Gun_Turbo"
+    },
+    {
+      "wellenlauf": 25,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Akkubank"
+    },
+    {
+      "erforsche": "BandMk2"
+    },
+    {
+      "erforsche": "BandMk3"
+    },
+    {
+      "erforsche": "Durchschlagbolzen"
+    },
+    {
+      "erforsche": "Flammenwerfer"
+    },
+    {
+      "erforsche": "MauerMk2"
+    },
+    {
+      "erforsche": "NobeliskWerfer"
+    },
+    {
+      "erforsche": "Raffinerie"
+    },
+    {
+      "erforsche": "Reparaturstation"
+    },
+    {
+      "erforsche": "Schockbolzen"
+    },
+    {
+      "erforsche": "Stachelmauer"
+    },
+    {
+      "erforsche": "StreuNobelisk"
+    },
+    {
+      "erforsche": "Teslaspule"
+    },
+    {
+      "erforsche": "Treibstoff"
+    },
+    {
+      "erforsche": "Treibstoffkraft"
+    },
+    {
+      "erforsche": "Turmfertigung4"
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 4,
+      "level": 5,
+      "rezept": "Recipe_TD_Gun_Turbo"
+    },
+    {
+      "wellenlauf": 30,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Turbotreibstoff"
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 1,
+      "level": 5,
+      "rezept": "Recipe_TD_Gun_Turbo"
+    },
+    {
+      "wellenlauf": 35,
+      "zeitraffer": 4,
+      "max": 1200
+    },
+    {
+      "wellenlauf": 40,
+      "zeitraffer": 4,
+      "max": 1200
+    },
+    {
+      "wellenlauf": 45,
+      "zeitraffer": 4,
+      "max": 1200
+    },
+    {
+      "wellenlauf": 50,
+      "zeitraffer": 4,
+      "max": 1200
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "Strat-MonoGewehr-Vor-W50_W50"
+    },
+    {
+      "pruefe": "KernLebt",
+      "text": "Kern hat Welle 50 überstanden"
+    },
+    {
+      "pruefe": "Sicherheitsnetze",
+      "text": "kein Sicherheitsnetz ausgelöst (Versetzen, Absturz, 0 LP)"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}

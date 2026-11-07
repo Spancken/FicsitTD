@@ -1,5 +1,6 @@
 ﻿#include "TDTurretBase.h"
 #include "TDForschung.h"
+#include "TDBautenErweitert.h"
 #include "FGSchematicManager.h"
 #include "FGInventoryComponent.h"
 #include "FGRecipe.h"
@@ -85,7 +86,7 @@ void ATDTurretBase::ZeigeReichweite(bool bAn)
 void ATDTurretBase::GetClearanceData_Implementation(TArray<FFGClearanceData>& out_data) const
 {
 	FFGClearanceData Data;
-	Data.ClearanceBox = FBox(FVector(-205.f, -205.f, 0.f), FVector(205.f, 205.f, mKlarraumHoehe));
+	Data.ClearanceBox = FBox(FVector(-mKlarraumHalb.X, -mKlarraumHalb.Y, 0.f), FVector(mKlarraumHalb.X, mKlarraumHalb.Y, mKlarraumHoehe));
 	out_data.Add(Data);
 }
 
@@ -118,7 +119,8 @@ float ATDTurretBase::TestWert(const FString& Name) const
 	if (Name == TEXT("KannUebertakten")) return mCanChangePotential ? 1.f : 0.f;
 	if (Name == TEXT("SplitterPlaetze")) return mPotentialShardSlots;
 	if (Name == TEXT("StromLaden")) return GetProducingPowerConsumptionBase();
-	return -1.f;
+	if (Name == TEXT("FunkFaktor")) return ATDRadioMast::ReichweitenFaktor(this);   // 0.83
+	return ZusatzTestWert(Name);
 }
 
 bool ATDTurretBase::HatDoktrin() const
@@ -134,7 +136,8 @@ float ATDTurretBase::TaktBonus() const
 
 float ATDTurretBase::GetReichweite() const
 {
-	return TDBalance::Wert(BalanceTurm() + TEXT("Reichweite"), mRange / 100.f) * 100.f * (1.f + LevelWert(TEXT("Reichweite")));
+	// 0.83 Funkmast: +10 % fuer Tuerme in seinem Sendekreis
+	return TDBalance::Wert(BalanceTurm() + TEXT("Reichweite"), mRange / 100.f) * 100.f * (1.f + LevelWert(TEXT("Reichweite"))) * ATDRadioMast::ReichweitenFaktor(this);
 }
 
 // ---------------- Turmlevel (0.63, Marius 04.11.2026) ----------------

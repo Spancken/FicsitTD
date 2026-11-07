@@ -53,6 +53,21 @@ REZEPTE = {
     "TeslaCoil": [
         ("Tesla_Discharge", None, 0, "Entladung (Aufladen mit Strom)", 4.0, 1.0),
     ],
+    # 0.81 passive Bauten P1: Lockfeuer = 15 s Lockruf je 2 Kohle, Oelschlick = 1 m³ Schweroelrueckstand je 6 s (10 m³/min)
+    "LureBeacon": [
+        ("Lure_Coal", item(f"{G}/Resource/RawResources/Coal/Desc_Coal"), 2, "Lockruf mit Kohle (15 s)", 15.0, 1.0),
+        ("Lure_CompactedCoal", item(f"{PARTS}/CompactedCoal/Desc_CompactedCoal"), 1, "Lockruf mit Kompaktkohle (15 s)", 15.0, 2.0),
+    ],
+    "SlickPlate": [
+        ("Slick_HeavyOil", item(f"{PARTS}/HeavyOilResidue/Desc_HeavyOilResidue"), 1000, "Schwerölrückstand verteilen", 6.0, 1.0),
+    ],
+    # 0.83 Bauten P2/P3: Strom-Bauten ohne Zutat (Zyklus = Laufzeit), Flak-Kanister, reanimiertes SAM, Ficsonium
+    "ConductorWall": [("Zaun_Strom", None, 0, "Spannung halten", 1.0, 1.0)],
+    "RadioMast": [("Funk_Strom", None, 0, "Senden", 2.0, 1.0)],
+    "ShieldGenerator": [("Schild_Strom", None, 0, "Schild halten", 2.0, 1.0)],
+    "FlakTurret": [("Flak_Shoot", item("/FicsitTD/Items/Desc_TD_FlakKanister"), 1, "Flak-Kanister abfeuern", 2.0, 1.0)],
+    "FieldProjector": [("Feld_SAM", item(f"{PARTS}/SAMIngot/Desc_SAMIngot"), 1, "Störfeld mit reanimiertem SAM (60 s)", 60.0, 1.0)],
+    "SingularityLauncher": [("Singularitaet_Ficsonium", item(f"{PARTS}/Ficsonium/Desc_Ficsonium"), 1, "Ficsonium-Ladung abfeuern", 8.0, 1.0)],
     "FlameTurret": [
         ("Flame_Fuel", item(f"{PARTS}/Fuel/Desc_LiquidFuel"), 100, "Treibstoff verbrennen", 1.0, 1.0),
         ("Flame_Biofuel", item(f"{PARTS}/BioFuel/Desc_LiquidBiofuel"), 100, "Flüssigen Biotreibstoff verbrennen", 1.0, 2.0),

@@ -1193,7 +1193,7 @@ static bool TDEckHoehen(UClass* Klasse, float Out[4])
 }
 
 /** 0.69.2 (Marius: Baeume um den Kern weg): Bewuchs (Baeume, Bueschel, kleine Felsen) im Radius entfernen wie die Kettensaege */
-int32 TDRaeumeBewuchs(UWorld* World, const FVector& Mitte, float Radius)
+int32 TDRaeumeBewuchs(UWorld* World, const FVector& Mitte, float Radius, bool bAuchKakteen, TSet<FString>* OutUebrig)
 {
 	AFGFoliageRemovalSubsystem* Foliage = AFGFoliageRemovalSubsystem::Get(World);
 	if (!Foliage)
@@ -1206,9 +1206,21 @@ int32 TDRaeumeBewuchs(UWorld* World, const FVector& Mitte, float Radius)
 	int32 Weg = 0;
 	for (TPair<UHierarchicalInstancedStaticMeshComponent*, TArray<int32>>& T : Treffer)
 	{
-		if (!T.Key || T.Value.Num() == 0 || !AFGFoliageRemovalSubsystem::IsRemovable(Foliage->GetFoliageType(T.Key)))
+		if (!T.Key || T.Value.Num() == 0)
 		{
 			continue;
+		}
+		if (!AFGFoliageRemovalSubsystem::IsRemovable(Foliage->GetFoliageType(T.Key)))
+		{
+			const FString Modell = T.Key->GetStaticMesh() ? T.Key->GetStaticMesh()->GetName() : FString(TEXT("-"));
+			if (!bAuchKakteen || !Modell.Contains(TEXT("Cactus")))
+			{
+				if (OutUebrig)
+				{
+					OutUebrig->Add(Modell);
+				}
+				continue;
+			}
 		}
 		// hoechste Indizes zuerst, damit die anderen gueltig bleiben
 		T.Value.Sort([](int32 A, int32 B) { return A > B; });
@@ -1219,6 +1231,8 @@ int32 TDRaeumeBewuchs(UWorld* World, const FVector& Mitte, float Radius)
 	}
 	return Weg;
 }
+
+FString UTDKernplatz::sVorgabePlatz;
 
 FString UTDKernplatz::BauePlatz(const FString& Biom, const FString& Nr, APawn* Spieler)
 {
@@ -1703,5 +1717,8 @@ void UTDKernplatz::PruefeTDStart()
 	}
 	UE_LOG(LogFicsitTD, Log, TEXT("Kernplatz: Tower-Defense-Spielstand ohne Kern, Startort %s (%.0f m vom Startgebiet), baue den Kernplatz"), Biome[Bestes], Abstand / 100.f);
 	Melde(TEXT("FICSIT Tower Defense: Dein Einsatzort wird vorbereitet ..."));
-	Melde(BauePlatz(Biome[Bestes], FString(), Spieler));
+	// 0.83.1: der Selbsttest gibt den Platz vor (sonst zufaellig), gilt nur fuer diesen einen Bau
+	const FString Nr = sVorgabePlatz;
+	sVorgabePlatz.Reset();
+	Melde(BauePlatz(Biome[Bestes], Nr, Spieler));
 }

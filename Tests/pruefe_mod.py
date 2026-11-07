@@ -104,6 +104,18 @@ def pruefe_balance_schluessel(standard, forschung_ns):
             s = standard.get(f"Forschung.{kk[0]}.AbWelle")
             if w is not None and s is not None and int(s) != int(w):
                 FEHLER(f"Balance: Forschung.{kk[0]}.AbWelle {s:g} weicht vom Forschungsskript ({w}) ab")
+    # 0.83 (Selbsttest BautenP1: Startmunition fehlte): Schluessel, die ATDTurretBase je Turm aus BalanceTurm() + "<Name>" liest
+    basis = open(os.path.join(QUELLE, "Private", "TDTurretBase.cpp"), encoding="utf-8-sig", errors="replace").read()
+    endungen = sorted(set(re.findall(r'BalanceTurm\(\)\s*\+\s*TEXT\("([A-Za-z]+)"\)', basis)))
+    tuerme = set()
+    for wurzel, _, dateien in os.walk(QUELLE):
+        for d in dateien:
+            if d.endswith(".cpp"):
+                tuerme |= set(re.findall(r'mTurmName\s*=\s*TEXT\("([^"]+)"\)', open(os.path.join(wurzel, d), encoding="utf-8-sig", errors="replace").read()))
+    for t in sorted(tuerme):
+        for e in endungen:
+            if f"Tuerme.{t}.{e}" not in standard:
+                FEHLER(f"Balance: Schluessel Tuerme.{t}.{e} (ATDTurretBase je Turm) fehlt in der Standardtabelle")
     HINWEIS(f"Balance: {len(benutzt)} feste Schluessel im Code, {len(standard)} in der Standardtabelle")
 
 

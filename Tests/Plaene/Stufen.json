@@ -1,0 +1,171 @@
+{
+  "Name": "Stufen",
+  "_Hinweis": "0.82: MAM-Baum mit Rohstoff-Knoten, Gabel A Streu/Schock, Explosiv Stufe 3, Flamme ohne Biotreibstoff, passive Bauten.",
+  "NeuesSpiel": {
+    "Startort": "Rocky Desert"
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 10,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warte": 15
+    },
+    {
+      "befehl": "td einsatz stop"
+    },
+    {
+      "befehl": "td kern stop"
+    },
+    {
+      "befehl": "td einsatz start normal 30"
+    },
+    {
+      "pruefe": "RezeptFrei",
+      "rezept": "/FicsitTD/Recipes/Recipe_TD_Streubolzen.Recipe_TD_Streubolzen_C",
+      "erwartet": false,
+      "text": "Streubolzen vor der Forschung gesperrt"
+    },
+    {
+      "erforsche": "Assembler"
+    },
+    {
+      "erforsche": "Kupfer"
+    },
+    {
+      "erforsche": "Giesserei"
+    },
+    {
+      "erforsche": "Schwefel"
+    },
+    {
+      "erforsche": "Quarz"
+    },
+    {
+      "erforsche": "Caterium"
+    },
+    {
+      "pruefe": "RezeptFrei",
+      "rezept": "/Game/FactoryGame/Recipes/Constructor/Recipe_QuartzCrystal.Recipe_QuartzCrystal_C",
+      "erwartet": true,
+      "text": "Quarzkristall mit dem Knoten Quarz frei"
+    },
+    {
+      "pruefe": "RezeptFrei",
+      "rezept": "/Game/FactoryGame/Recipes/Constructor/Recipe_Quickwire.Recipe_Quickwire_C",
+      "erwartet": true,
+      "text": "Turbodraht mit dem Knoten Caterium frei"
+    },
+    {
+      "pruefe": "RezeptFrei",
+      "rezept": "/Game/FactoryGame/Recipes/Smelter/Recipe_IngotCaterium.Recipe_IngotCaterium_C",
+      "erwartet": true,
+      "text": "Caterium-Barren mit dem Knoten Caterium frei"
+    },
+    {
+      "erforsche": "Durchschlagbolzen"
+    },
+    {
+      "erforsche": "Streubolzen"
+    },
+    {
+      "pruefe": "RezeptFrei",
+      "rezept": "/FicsitTD/Recipes/Recipe_TD_Streubolzen.Recipe_TD_Streubolzen_C",
+      "erwartet": true,
+      "text": "Streubolzen (Quarz) frei"
+    },
+    {
+      "pruefe": "ForschungZustand",
+      "knoten": "Schockbolzen",
+      "soll": "Ausgeschlossen",
+      "text": "Gabel A: Streubolzen erforscht, Schockbolzen ausgeschlossen"
+    },
+    {
+      "pruefe": "RezeptFrei",
+      "rezept": "/FicsitTD/Recipes/Recipe_TD_Explosivbolzen.Recipe_TD_Explosivbolzen_C",
+      "erwartet": false,
+      "text": "Explosivbolzen (Stufe 3) noch gesperrt"
+    },
+    {
+      "erforsche": "NobeliskWerfer"
+    },
+    {
+      "pruefe": "RezeptFrei",
+      "rezept": "/FicsitTD/Recipes/Recipe_TD_Schwarzpulver.Recipe_TD_Schwarzpulver_C",
+      "erwartet": true,
+      "text": "Schwarzpulver (Kohle + Schwefel) mit dem Nobelisk-Werfer frei"
+    },
+    {
+      "erforsche": "Raffinerie"
+    },
+    {
+      "erforsche": "Flammenwerfer"
+    },
+    {
+      "pruefe": "RezeptFrei",
+      "rezept": "/FicsitTD/Buildings/FlameTurret/Recipe_TD_Flame_Fuel.Recipe_TD_Flame_Fuel_C",
+      "erwartet": true,
+      "text": "Flammenwerfer startet mit Treibstoff"
+    },
+    {
+      "pruefe": "RezeptFrei",
+      "rezept": "/FicsitTD/Buildings/FlameTurret/Recipe_TD_Flame_Biofuel.Recipe_TD_Flame_Biofuel_C",
+      "erwartet": false,
+      "text": "kein Biotreibstoff mehr freigeschaltet"
+    },
+    {
+      "erforsche": "Bauxit"
+    },
+    {
+      "pruefe": "RezeptFrei",
+      "rezept": "/FicsitTD/Recipes/Recipe_TD_Aluminiumbarren.Recipe_TD_Aluminiumbarren_C",
+      "erwartet": true,
+      "text": "Aluminiumbarren (Feldrezept) mit dem Knoten Bauxit frei"
+    },
+    {
+      "erforsche": "MauerMk2"
+    },
+    {
+      "erforsche": "Tor"
+    },
+    {
+      "erforsche": "Lockfeuer"
+    },
+    {
+      "erforsche": "Oelschlick"
+    },
+    {
+      "pruefe": "RezeptFrei",
+      "rezept": "/FicsitTD/Buildings/Gate/Recipe_TD_Gate.Recipe_TD_Gate_C",
+      "erwartet": true,
+      "text": "Tor freigeschaltet"
+    },
+    {
+      "pruefe": "RezeptFrei",
+      "rezept": "/FicsitTD/Buildings/LureBeacon/Recipe_TD_LureBeacon.Recipe_TD_LureBeacon_C",
+      "erwartet": true,
+      "text": "Lockfeuer freigeschaltet"
+    },
+    {
+      "pruefe": "RezeptFrei",
+      "rezept": "/FicsitTD/Buildings/SlickPlate/Recipe_TD_SlickPlate.Recipe_TD_SlickPlate_C",
+      "erwartet": true,
+      "text": "Oelschlick-Feld freigeschaltet"
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "Stufen_MAM"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}

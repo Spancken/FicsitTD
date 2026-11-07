@@ -1,0 +1,99 @@
+{
+  "Name": "BautenP1",
+  "_Hinweis": "0.81: Tor, Lockfeuer, Oelschlick-Feld im Einsatz (frei bauen, Strom frei, Versorgung fest). Im Log: Lockruf, entzuendet, Tor.",
+  "NeuesSpiel": {
+    "Startort": "Rocky Desert"
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 25,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warte": 15
+    },
+    {
+      "befehl": "td einsatz stop"
+    },
+    {
+      "befehl": "td kern stop"
+    },
+    {
+      "befehl": "td einsatz start normal 30"
+    },
+    {
+      "befehl": "td einsatz frei an"
+    },
+    {
+      "stromfrei": true
+    },
+    {
+      "versorgung": {
+        "Bolzenturm": 50,
+        "Flammenwerfer": 6000,
+        "Lockfeuer": 8,
+        "Oelschlick": 10000
+      }
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 4,
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "baue": "Flammenwerfer",
+      "anzahl": 2,
+      "level": 2,
+      "rezept": "Recipe_TD_Flame_Fuel",
+      "ring": "innen"
+    },
+    {
+      "baue": "Oelschlick",
+      "anzahl": 1,
+      "rezept": "Recipe_TD_Slick_HeavyOil"
+    },
+    {
+      "baue": "Lockfeuer",
+      "anzahl": 1,
+      "rezept": "Recipe_TD_Lure_Coal"
+    },
+    {
+      "baue": "Tor",
+      "anzahl": 1
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "BautenP1_W00"
+    },
+    {
+      "wellenlauf": 10,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "BautenP1_W10"
+    },
+    {
+      "pruefe": "KernLebt",
+      "text": "Kern hat Welle 10 überstanden"
+    },
+    {
+      "pruefe": "Sicherheitsnetze",
+      "text": "kein Sicherheitsnetz ausgelöst"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}
