@@ -4,6 +4,21 @@
 #include "Creature/FGCreature.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialInterface.h"
+#include "TDSprache.h"
+
+/** Anzeigename der Schadensart (SchadensartName bleibt Balance-Schluessel) */
+static FString TDGewehrSchadensart(ETDSchadensart Art)
+{
+	switch (Art)
+	{
+	case ETDSchadensart::Kugel:     return TDT(TEXT("Kugel"), TEXT("Bullet"));
+	case ETDSchadensart::Feuer:     return TDT(TEXT("Feuer"), TEXT("Fire"));
+	case ETDSchadensart::Strom:     return TDT(TEXT("Strom"), TEXT("Electric"));
+	case ETDSchadensart::Explosion: return TDT(TEXT("Explosion"), TEXT("Explosive"));
+	case ETDSchadensart::Gift:      return TDT(TEXT("Gift"), TEXT("Poison"));
+	default:                        return TDT(TEXT("Durchschlag"), TEXT("Piercing"));
+	}
+}
 
 // Masse aus Modelle\TD_GunTurret_Stufen.blend (0.62, flacher Sockel nach Marius' Stufenbildern), Unreal-cm
 static const FVector GewehrLaufNabe(150.f, 0.f, 0.f);       // Drehachse des Laufbuendels in der Kanzel
@@ -160,7 +175,7 @@ void ATDGunTurret::Animieren(float DeltaSeconds, AFGCreature* Ziel)
 
 FString ATDGunTurret::ZusatzInfo() const
 {
-	return FString::Printf(TEXT("Magazin %d Schuss (%s)"), mMagazin, *GetMunitionsName());
+	return TDF(TEXT("Magazin %d Schuss (%s)"), TEXT("Magazine %d rounds (%s)"), mMagazin, *GetMunitionsName());
 }
 
 float ATDGunTurret::NennDPS() const
@@ -174,9 +189,9 @@ void ATDGunTurret::Kampfwerte(TArray<FTDKennwert>& Out) const
 	const FTDPatronenWerte W = WerteFuer(AktuelleMunition());
 	const float Schaden = W.Schaden * SchadenBonus();
 	const float Rate = W.SchussProSekunde * TaktBonus() * Uebertakt();
-	Out.Add({ TEXT("Schaden je Treffer"), W.Brand > 0.f ? FString::Printf(TEXT("%.0f + %.0f Feuer"), Schaden, W.Brand * SchadenBonus())
-		: FString::Printf(TEXT("%.0f (%s)"), Schaden, SchadensartName(W.Art)), true });
-	Out.Add({ TEXT("Feuerrate"), FString::Printf(TEXT("%.1f Schuss/s"), Rate), true });
-	Out.Add({ TEXT("Schaden/s"), FString::Printf(TEXT("%.0f (ein Ziel, Dauerfeuer)"), Schaden * Rate), true });
-	Out.Add({ TEXT("Magazin"), FString::Printf(TEXT("%d / %d Schuss"), mMagazin, FMath::RoundToInt(W.Magazin * (1.f + LevelWert(TEXT("Magazin"))))), true });
+	Out.Add({ TDT(TEXT("Schaden je Treffer"), TEXT("Damage per hit")), W.Brand > 0.f ? TDF(TEXT("%.0f + %.0f Feuer"), TEXT("%.0f + %.0f fire"), Schaden, W.Brand * SchadenBonus())
+		: FString::Printf(TEXT("%.0f (%s)"), Schaden, *TDGewehrSchadensart(W.Art)), true });
+	Out.Add({ TDT(TEXT("Feuerrate"), TEXT("Fire rate")), TDF(TEXT("%.1f Schuss/s"), TEXT("%.1f shots/s"), Rate), true });
+	Out.Add({ TDT(TEXT("Schaden/s"), TEXT("Damage/s")), TDF(TEXT("%.0f (ein Ziel, Dauerfeuer)"), TEXT("%.0f (single target, sustained)"), Schaden * Rate), true });
+	Out.Add({ TDT(TEXT("Magazin"), TEXT("Magazine")), TDF(TEXT("%d / %d Schuss"), TEXT("%d / %d rounds"), mMagazin, FMath::RoundToInt(W.Magazin * (1.f + LevelWert(TEXT("Magazin"))))), true });
 }

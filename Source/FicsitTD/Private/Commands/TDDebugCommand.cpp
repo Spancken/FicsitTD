@@ -1,5 +1,7 @@
 ﻿#include "Commands/TDDebugCommand.h"
 #include "Command/CommandSender.h"
+#include "Misc/CommandLine.h"
+#include "Misc/Paths.h"
 #include "TDLaufProtokoll.h"
 #include "Components/PrimitiveComponent.h"
 #include "Components/InstancedStaticMeshComponent.h"
@@ -39,6 +41,7 @@
 #include "Materials/MaterialInstance.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
+#include "TDSprache.h"
 
 /** Chat-Antwort, zusaetzlich im Log - Testlaeufe lassen sich danach ohne Screenshots auswerten */
 static void Antwort(UCommandSender* Sender, const FString& Text)
@@ -49,10 +52,17 @@ static void Antwort(UCommandSender* Sender, const FString& Text)
 #include "Engine/World.h"
 #include "TDDecoy.h"
 
+/** Hilfetext in der Spielsprache (0.85); auch bei falscher Eingabe neu gesetzt, falls die Sprache nach dem Start wechselt */
+static FText TDUsage()
+{
+	return TDTX(TEXT("/td umgebung|instanzen [Radius_m] - Objekte bzw. Instanzen um dich auflisten | /td koeder - alle Koeder entfernen | /td reichweite [an|aus] - Reichweitenkreise | /td turmlevel <1-5> - naechsten Turm auf Level setzen (Test) | /td teil [Name] - Turmteil ein-/ausblenden | /td probe gewehr|flamme|weg - Effekt-Vorschau | /td fuellen [art] [m3] - Puffer/Flammenwerfer fuellen | /td kern start [erkundung|normal|hart|albtraum] [Wellen] [Min] [Min]|weiter|stop|status|fronten [neu]|wege [aus]|stufen|tempo [Faktor]|stress [N ...] [lp=20] [s=20] [mix|art=<Gegner>] [anim=immer|sichtbar] [kollision=an|aus] [ragdoll=an|aus] [tuerme=aus] [geschoss=aus] [angriff=aus] [drehen=aus] [schatten=aus] [effekte=aus] [df=aus] [drehtakt=N] [toeten=N/s]|stress stop - Kern-Verteidigung | /td test [karte|gegner|marsch] - automatischer Test | /td einsatz start [stufe] [wellen]|frei [an|aus]|status|stop - Einsatz mit Kontingenten | /td laden, /td kaufe <Gebaeude> [n] - Laden | /td freischalten - alles frei | /td balance - Balance-Datei neu lesen | /td platz [liste|scan <Biom>|scan stop|pruefen <Id|S1..S8|hier [Biom]>|merken <Biom> [Notiz]|gemerkt|zurueck|bauen <Biom> [1-3]] - Kernplaetze suchen, pruefen, merken und bauen | /td szenario [liste|<1-5>|pruefen [Nr]|fertig|leeren] - Testszenarien | /td ada [bank] - ADA-Begruessung | /td baender <2-6>|pruefen|reparieren - alle Baender aufruesten, offene Band-Enden pruefen oder verbinden"),
+		TEXT("/td umgebung|instanzen [radius_m] - list objects or instances around you | /td koeder - remove all decoys | /td reichweite [an|aus] - range circles | /td turmlevel <1-5> - set the nearest turret to a level (test) | /td teil [name] - show/hide a turret part | /td probe gewehr|flamme|weg - effect preview | /td fuellen [type] [m3] - fill buffer/flamethrower | /td kern start [erkundung|normal|hart|albtraum] [waves] [min] [min]|weiter|stop|status|fronten [neu]|wege [aus]|stufen|tempo [factor]|stress [N ...] [lp=20] [s=20] [mix|art=<enemy>] [anim=immer|sichtbar] [kollision=an|aus] [ragdoll=an|aus] [tuerme=aus] [geschoss=aus] [angriff=aus] [drehen=aus] [schatten=aus] [effekte=aus] [df=aus] [drehtakt=N] [toeten=N/s]|stress stop - core defense | /td test [karte|gegner|marsch] - automatic test | /td einsatz start [level] [waves]|frei [an|aus]|status|stop - Operation with quotas | /td laden, /td kaufe <building> [n] - Shop | /td freischalten - unlock everything | /td balance - reload the balance file | /td platz [liste|scan <biome>|scan stop|pruefen <Id|S1..S8|hier [biome]>|merken <biome> [note]|gemerkt|zurueck|bauen <biome> [1-3]] - find, check, save and build core sites | /td szenario [liste|<1-5>|pruefen [no]|fertig|leeren] - test scenarios | /td ada [bank] - ADA greeting | /td baender <2-6>|pruefen|reparieren - upgrade all belts, check or connect open belt ends"));
+}
+
 ATDDebugCommand::ATDDebugCommand()
 {
 	CommandName = TEXT("td");
-	Usage = NSLOCTEXT("FicsitTD", "TD.Usage", "/td umgebung|instanzen [Radius_m] - Objekte bzw. Instanzen um dich auflisten | /td koeder - alle Koeder entfernen | /td reichweite [an|aus] - Reichweitenkreise | /td turmlevel <1-5> - naechsten Turm auf Level setzen (Test) | /td teil [Name] - Turmteil ein-/ausblenden | /td probe gewehr|flamme|weg - Effekt-Vorschau | /td fuellen [art] [m3] - Puffer/Flammenwerfer fuellen | /td kern start [erkundung|normal|hart|albtraum] [Wellen] [Min] [Min]|weiter|stop|status|fronten [neu]|wege [aus]|stufen|tempo [Faktor]|stress [N ...] [lp=20] [s=20] [mix|art=<Gegner>] [anim=immer|sichtbar] [kollision=an|aus] [ragdoll=an|aus] [tuerme=aus] [geschoss=aus] [angriff=aus] [drehen=aus] [schatten=aus] [effekte=aus] [df=aus] [drehtakt=N] [toeten=N/s]|stress stop - Kern-Verteidigung | /td test [karte|gegner|marsch] - automatischer Test | /td einsatz start [stufe] [wellen]|frei [an|aus]|status|stop - Einsatz mit Kontingenten | /td laden, /td kaufe <Gebaeude> [n] - Laden | /td freischalten - alles frei | /td balance - Balance-Datei neu lesen | /td platz [liste|scan <Biom>|scan stop|pruefen <Id|S1..S8|hier [Biom]>|merken <Biom> [Notiz]|gemerkt|zurueck|bauen <Biom> [1-3]] - Kernplaetze suchen, pruefen, merken und bauen | /td szenario [liste|<1-5>|pruefen [Nr]|fertig|leeren] - Testszenarien | /td ada [bank] - ADA-Begruessung | /td baender <2-6>|pruefen|reparieren - alle Baender aufruesten, offene Band-Enden pruefen oder verbinden");
+	Usage = TDUsage();
 	MinNumberOfArguments = 1;
 	bOnlyUsableByPlayer = true;
 }
@@ -61,6 +71,26 @@ EExecutionStatus ATDDebugCommand::ExecuteCommand_Implementation(UCommandSender* 
 {
 	AFGPlayerController* Player = Sender->GetPlayer();
 	APawn* Pawn = Player ? Player->GetPawn() : nullptr;
+	// 0.9.0 Alpha: Entwickler- und Testbefehle nur mit Saved/FicsitTD/Entwickler.txt (oder -TDEntwickler); Spieler haben
+	// /td ada, /td kern status|weiter, /td baender pruefen|reparieren und die Hilfe
+	{
+		static int32 Entwickler = -1;
+		if (Entwickler < 0)
+		{
+			Entwickler = (FParse::Param(FCommandLine::Get(), TEXT("TDEntwickler"))
+				|| FPaths::FileExists(FPaths::ProjectSavedDir() / TEXT("FicsitTD") / TEXT("Entwickler.txt"))) ? 1 : 0;
+		}
+		const FString Befehl = Arguments.Num() > 0 ? Arguments[0].ToLower() : FString();
+		const FString Unter = Arguments.Num() > 1 ? Arguments[1].ToLower() : FString();
+		const bool bSpieler = Befehl == TEXT("ada") || Befehl == TEXT("baender") || Befehl == TEXT("hilfe") || Befehl == TEXT("help")
+			|| (Befehl == TEXT("kern") && (Unter == TEXT("status") || Unter == TEXT("weiter")));
+		if (Entwickler == 0 && !bSpieler)
+		{
+			Antwort(Sender, TDT(TEXT("Dieser Befehl ist nur im Entwicklermodus verfuegbar. Spielerbefehle: /td ada, /td kern status, /td kern weiter, /td baender reparieren."),
+				TEXT("This command is only available in developer mode. Player commands: /td ada, /td kern status, /td kern weiter, /td baender reparieren.")));
+			return EExecutionStatus::COMPLETED;
+		}
+	}
 	// /td optik: Knochen (mit Lage in der Grundhaltung), Sockel, Materialien und ihre Parameter aller Gegnerarten -
 	// Grundlage fuer Anbauteile aus Blender und fuer das Einfaerben (T4). Je Art eine Datei unter Saved/FicsitTD/Optik/.
 	if (Arguments[0].Equals(TEXT("optik"), ESearchCase::IgnoreCase))
@@ -328,13 +358,14 @@ EExecutionStatus ATDDebugCommand::ExecuteCommand_Implementation(UCommandSender* 
 		{
 			const bool bAn = Arguments.Num() > 2 ? !Arguments[2].Equals(TEXT("aus"), ESearchCase::IgnoreCase) : !Einsatz->IstFrei();
 			Einsatz->SetzeFrei(bAn);
-			Antwort(Sender, bAn ? TEXT("Freies Bauen AN: keine Kontingente, keine Bausperre (Rezepte: /td freischalten, Baukosten: Spieleinstellung 'Kostenloses Bauen').")
-				: TEXT("Freies Bauen AUS: Kontingente und Bausperre gelten wieder."));
+			Antwort(Sender, bAn ? TDT(TEXT("Freies Bauen AN: keine Kontingente, keine Bausperre (Rezepte: /td freischalten, Baukosten: Spieleinstellung 'Kostenloses Bauen')."),
+					TEXT("Free Build ON: no quotas, no build lock (recipes: /td freischalten, build costs: game setting 'No Build Cost')."))
+				: TDT(TEXT("Freies Bauen AUS: Kontingente und Bausperre gelten wieder."), TEXT("Free Build OFF: quotas and build lock apply again.")));
 		}
 		else if (Was == TEXT("stop"))
 		{
 			Einsatz->Beende();
-			Antwort(Sender, TEXT("Einsatz beendet, Kontingente aus."));
+			Antwort(Sender, TDT(TEXT("Einsatz beendet, Kontingente aus."), TEXT("Operation ended, quotas off.")));
 		}
 		else
 		{
@@ -413,7 +444,7 @@ EExecutionStatus ATDDebugCommand::ExecuteCommand_Implementation(UCommandSender* 
 		{
 			Waves->SchalteSandkastenFrei();
 		}
-		Antwort(Sender, TEXT("Alle FicsitTD-Gebaeude und -Rezepte freigeschaltet."));
+		Antwort(Sender, TDT(TEXT("Alle FicsitTD-Gebaeude und -Rezepte freigeschaltet."), TEXT("All FicsitTD buildings and recipes unlocked.")));
 		return EExecutionStatus::COMPLETED;
 	}
 	if (Arguments[0].Equals(TEXT("kern"), ESearchCase::IgnoreCase))
@@ -596,7 +627,7 @@ EExecutionStatus ATDDebugCommand::ExecuteCommand_Implementation(UCommandSender* 
 		{
 			if (!Waves->NaechsteWelleJetzt())
 			{
-				Antwort(Sender, TEXT("Gerade kein Aufbau-Countdown."));
+				Antwort(Sender, TDT(TEXT("Gerade kein Aufbau-Countdown."), TEXT("No build countdown running right now.")));
 			}
 		}
 		else if (Was == TEXT("stop"))
@@ -605,8 +636,8 @@ EExecutionStatus ATDDebugCommand::ExecuteCommand_Implementation(UCommandSender* 
 		}
 		else
 		{
-			Antwort(Sender, Kern ? FString::Printf(TEXT("Kern %.0f / %.0f LP - %s"), Kern->GetTDHealth(), Kern->GetTDMaxHealth(), *Waves->GetLaufText())
-				: FString(TEXT("Kein Abwehrkern gebaut.")));
+			Antwort(Sender, Kern ? TDF(TEXT("Kern %.0f / %.0f LP - %s"), TEXT("Core %.0f / %.0f HP - %s"), Kern->GetTDHealth(), Kern->GetTDMaxHealth(), *Waves->GetLaufText())
+				: TDT(TEXT("Kein Abwehrkern gebaut."), TEXT("No Defense Core built.")));
 		}
 		return EExecutionStatus::COMPLETED;
 	}
@@ -761,7 +792,7 @@ EExecutionStatus ATDDebugCommand::ExecuteCommand_Implementation(UCommandSender* 
 			return EExecutionStatus::COMPLETED;
 		}
 		UTDBandUpgrade* Upgrade = UTDBandUpgrade::Get(this);
-		Antwort(Sender, Upgrade ? Upgrade->RuesteUm(FMath::Clamp(Arguments.Num() > 1 ? FCString::Atoi(*Arguments[1]) : 2, 2, 6)) : TEXT("nicht verfuegbar"));
+		Antwort(Sender, Upgrade ? Upgrade->RuesteUm(FMath::Clamp(Arguments.Num() > 1 ? FCString::Atoi(*Arguments[1]) : 2, 2, 6)) : TDT(TEXT("nicht verfuegbar"), TEXT("not available")));
 		return EExecutionStatus::COMPLETED;
 	}
 	// /td szenario [liste|<1-5>|pruefen [Nr]|leeren]: Testszenarien (Konzept-Kernplaetze S5, 0.70)
@@ -803,7 +834,8 @@ EExecutionStatus ATDDebugCommand::ExecuteCommand_Implementation(UCommandSender* 
 			Antwort(Sender, UTDKernplatz::PruefeWwiseInitBank());
 			return EExecutionStatus::COMPLETED;
 		}
-		Antwort(Sender, UTDKernplatz::SpieleBegruessung(this, Pawn) ? TEXT("ADA spielt die Begruessung ab.") : TEXT("Begruessung nicht moeglich (siehe Log)."));
+		Antwort(Sender, UTDKernplatz::SpieleBegruessung(this, Pawn) ? TDT(TEXT("ADA spielt die Begruessung ab."), TEXT("ADA is playing the greeting."))
+			: TDT(TEXT("Begruessung nicht moeglich (siehe Log)."), TEXT("Greeting not possible (see log).")));
 		return EExecutionStatus::COMPLETED;
 	}
 	// /td platz pruefen <G1..D3|hier> | zurueck | liste: Kandidaten fuer feste Kernplaetze (Konzept-Kernplaetze.md, S1)
@@ -907,6 +939,7 @@ EExecutionStatus ATDDebugCommand::ExecuteCommand_Implementation(UCommandSender* 
 	const bool bInstanzen = Arguments[0].Equals(TEXT("instanzen"), ESearchCase::IgnoreCase);
 	if (!Pawn || !(bInstanzen || Arguments[0].Equals(TEXT("umgebung"), ESearchCase::IgnoreCase)))
 	{
+		Usage = TDUsage();
 		PrintCommandUsage(Sender);
 		return EExecutionStatus::BAD_ARGUMENTS;
 	}

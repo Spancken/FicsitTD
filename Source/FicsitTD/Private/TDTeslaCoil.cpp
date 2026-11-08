@@ -6,6 +6,7 @@
 #include "Creature/FGCreature.h"
 #include "Engine/StaticMesh.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "TDSprache.h"
 
 /** Blitz-Modelle im Vorrat: begrenzt die Spruenge aus der Balance-Datei */
 static constexpr int32 TeslaBlitzVorrat = 8;
@@ -228,7 +229,7 @@ void ATDTeslaCoil::Animieren(float DeltaSeconds, AFGCreature* Ziel)
 
 FString ATDTeslaCoil::ZusatzInfo() const
 {
-	return FString::Printf(TEXT("Ladung %.0f %%"), (IsProducing() ? GetProductionProgress() : 0.f) * 100.f);
+	return TDF(TEXT("Ladung %.0f %%"), TEXT("Charge %.0f %%"), (IsProducing() ? GetProductionProgress() : 0.f) * 100.f);
 }
 
 float ATDTeslaCoil::GetIdlePowerConsumption() const
@@ -253,12 +254,12 @@ void ATDTeslaCoil::Kampfwerte(TArray<FTDKennwert>& Out) const
 {
 	const float Schaden = TeslaSchaden() * SchadenBonus() * TeslaUeberlast(this);
 	const float Takt = Zykluszeit();
-	Out.Add({ TEXT("Schaden je Treffer"), FString::Printf(TEXT("%.0f"), Schaden), true });
+	Out.Add({ TDT(TEXT("Schaden je Treffer"), TEXT("Damage per hit")), FString::Printf(TEXT("%.0f"), Schaden), true });
 	if (Takt > 0.f)
 	{
-		Out.Add({ TEXT("Feuerrate"), FString::Printf(TEXT("%.2f Schuss/s (%.1f s Laden)"), 1.f / Takt, Takt), true });
-		Out.Add({ TEXT("Schaden/s"), FString::Printf(TEXT("%.0f (ein Ziel)"), Schaden / Takt), true });
+		Out.Add({ TDT(TEXT("Feuerrate"), TEXT("Fire rate")), TDF(TEXT("%.2f Schuss/s (%.1f s Laden)"), TEXT("%.2f shots/s (%.1f s charging)"), 1.f / Takt, Takt), true });
+		Out.Add({ TDT(TEXT("Schaden/s"), TEXT("Damage/s")), TDF(TEXT("%.0f (ein Ziel)"), TEXT("%.0f (single target)"), Schaden / Takt), true });
 	}
-	Out.Add({ TEXT("Sprünge"), FString::Printf(TEXT("+%d Gegner in %.0f m, je x%.2f"), TeslaZieleMit(this, TeslaZiele() + FMath::RoundToInt(LevelWert(TEXT("Spruenge")))) - 1, TeslaSprungweite() / 100.f, TDBalance::Wert(TEXT("Munition.Tesla.SprungFaktor"), 0.5f)), true });
-	Out.Add({ TEXT("Strombedarf"), FString::Printf(TEXT("%.0f MW Grundlast, %.0f MW beim Aufladen"), GetIdlePowerConsumption(), GetDefaultProducingPowerConsumption()), true });
+	Out.Add({ TDT(TEXT("Sprünge"), TEXT("Jumps")), TDF(TEXT("+%d Gegner in %.0f m, je x%.2f"), TEXT("+%d enemies within %.0f m, x%.2f each"), TeslaZieleMit(this, TeslaZiele() + FMath::RoundToInt(LevelWert(TEXT("Spruenge")))) - 1, TeslaSprungweite() / 100.f, TDBalance::Wert(TEXT("Munition.Tesla.SprungFaktor"), 0.5f)), true });
+	Out.Add({ TDT(TEXT("Strombedarf"), TEXT("Power use")), TDF(TEXT("%.0f MW Grundlast, %.0f MW beim Aufladen"), TEXT("%.0f MW idle, %.0f MW while charging"), GetIdlePowerConsumption(), GetDefaultProducingPowerConsumption()), true });
 }

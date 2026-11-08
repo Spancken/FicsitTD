@@ -1,6 +1,7 @@
 #include "TDPionier.h"
 #include "FicsitTDModule.h"
 #include "TDBalance.h"
+#include "TDSprache.h"
 #include "TDDefenseCore.h"
 #include "TDEinsatz.h"
 #include "TDWaveSubsystem.h"
@@ -21,7 +22,9 @@ namespace TDPionierWerte
 	static constexpr int32 Armierpistole = 0, Gewehr = 1, Nobelisk = 2, Ueberleben = 3, Mobilitaet = 4;
 }
 
-const TArray<FTDTalentZweig>& UTDPionier::Zweige()
+/** 0.85 (L1): Talenttabelle je Sprache. Key und Braucht (Laden-Schluessel) sind in beiden gleich und bleiben deutsch,
+ *  nur Name und Stufen-Texte sind uebersetzt. Das Log nimmt immer die deutsche Tabelle. */
+static const TArray<FTDTalentZweig>& TDZweigeDe()
 {
 	static const TArray<FTDTalentZweig> Liste = {
 		{ TEXT("Armierpistole"), TEXT("Armierpistole"), TEXT("Armierpistole"),
@@ -41,6 +44,46 @@ const TArray<FTDTalentZweig>& UTDPionier::Zweige()
 			  TEXT("Sprinter: Sprinttempo +20 %, Sprunghöhe +25 %") } },
 	};
 	return Liste;
+}
+
+static const TArray<FTDTalentZweig>& TDZweigeEn()
+{
+	static const TArray<FTDTalentZweig> Liste = {
+		{ TEXT("Armierpistole"), TEXT("Rebar Gun"), TEXT("Armierpistole"),
+			{ TEXT("Damage +25 %"), TEXT("Damage +25 %"), TEXT("Reload 30 % faster"), TEXT("Damage +25 %"),
+			  TEXT("Piercing: every hit also strikes the next enemy behind the target for half damage") } },
+		{ TEXT("Gewehr"), TEXT("Rifle"), TEXT("Gewehr"),
+			{ TEXT("Damage +20 %"), TEXT("Damage +20 %"), TEXT("Reload 30 % faster"), TEXT("Damage +20 %"),
+			  TEXT("Explosive rounds: every 5th hit explodes (120 damage in 4 m)") } },
+		{ TEXT("Nobelisk"), TEXT("Nobelisk"), TEXT("Nobelisken-Zünder"),
+			{ TEXT("Damage +25 %"), TEXT("Damage +25 %"), TEXT("Damage +25 %"), TEXT("Damage +25 %"),
+			  TEXT("Chain explosion: enemies within 8 m of the target take half damage") } },
+		{ TEXT("Ueberleben"), TEXT("Survival"), nullptr,
+			{ TEXT("+25 health"), TEXT("+25 health"), TEXT("Regeneration: 1 HP per second"), TEXT("Armor: 25 % less damage from creatures"),
+			  TEXT("Second chance: fully healed once per wave when below 25 % HP") } },
+		{ TEXT("Mobilitaet"), TEXT("Mobility"), nullptr,
+			{ TEXT("Walk speed +10 %"), TEXT("Walk speed +10 %"), TEXT("Jump height +25 %"), TEXT("Sprint speed +20 %"),
+			  TEXT("Sprinter: sprint speed +20 %, jump height +25 %") } },
+	};
+	return Liste;
+}
+
+const TArray<FTDTalentZweig>& UTDPionier::Zweige()
+{
+	return TDSprache::Englisch() ? TDZweigeEn() : TDZweigeDe();
+}
+
+/** Anzeigename eines Laden-Postens, den ein Waffen-Zweig braucht (der Schluessel selbst bleibt deutsch) */
+static FString TDPostenAnzeige(const FString& Posten)
+{
+	if (!TDSprache::Englisch())
+	{
+		return Posten;
+	}
+	if (Posten == TEXT("Armierpistole")) return TEXT("Rebar Gun");
+	if (Posten == TEXT("Gewehr")) return TEXT("Rifle");
+	if (Posten == TEXT("Nobelisken-Zünder")) return TEXT("Nobelisk Detonator");
+	return Posten;
 }
 
 UTDPionier* UTDPionier::Get(const UObject* WorldContext)
@@ -128,27 +171,27 @@ FString UTDPionier::Lerne(int32 Zweig)
 	ATDDefenseCore* K = Kern();
 	if (!K || !Zweige().IsValidIndex(Zweig))
 	{
-		return TEXT("Nur im Einsatz.");
+		return TDT(TEXT("Nur im Einsatz."), TEXT("Only during an operation."));
 	}
 	const FTDTalentZweig& Z = Zweige()[Zweig];
 	const int32 Stufe = GetStufe(Zweig);
 	if (Stufe >= MaxStufe)
 	{
-		return FString::Printf(TEXT("%s ist schon voll ausgebaut."), Z.Name);
+		return TDF(TEXT("%s ist schon voll ausgebaut."), TEXT("%s is already fully upgraded."), Z.Name);
 	}
 	const FString Fehlt = FehltFuer(Zweig);
 	if (!Fehlt.IsEmpty())
 	{
-		return FString::Printf(TEXT("%s: erst %s im Laden kaufen."), Z.Name, *Fehlt);
+		return TDF(TEXT("%s: erst %s im Laden kaufen."), TEXT("%s: buy the %s in the Shop first."), Z.Name, *TDPostenAnzeige(Fehlt));
 	}
 	if (FreiePunkte() <= 0)
 	{
-		return TEXT("Kein Talentpunkt frei. Nächster Rang bringt einen.");
+		return TDT(TEXT("Kein Talentpunkt frei. Nächster Rang bringt einen."), TEXT("No Talent Point free. The next rank gives you one."));
 	}
 	K->mTalente.FindOrAdd(Z.Key) = Stufe + 1;
-	UE_LOG(LogFicsitTD, Log, TEXT("Pionier: Talent %s Stufe %d (%s), Rang %d"), Z.Key, Stufe + 1, Z.Stufen[Stufe], GetRang());
+	UE_LOG(LogFicsitTD, Log, TEXT("Pionier: Talent %s Stufe %d (%s), Rang %d"), Z.Key, Stufe + 1, TDZweigeDe()[Zweig].Stufen[Stufe], GetRang());
 	Wirke();
-	return FString::Printf(TEXT("%s Stufe %d: %s"), Z.Name, Stufe + 1, Z.Stufen[Stufe]);
+	return TDF(TEXT("%s Stufe %d: %s"), TEXT("%s level %d: %s"), Z.Name, Stufe + 1, Z.Stufen[Stufe]);
 }
 
 int32 UTDPionier::NeuVerteilenPreis()
@@ -162,11 +205,11 @@ FString UTDPionier::NeuVerteilen()
 	UTDEinsatzSubsystem* Einsatz = GetWorld()->GetSubsystem<UTDEinsatzSubsystem>();
 	if (!K || !Einsatz)
 	{
-		return TEXT("Nur im Einsatz.");
+		return TDT(TEXT("Nur im Einsatz."), TEXT("Only during an operation."));
 	}
 	if (K->mTalente.Num() == 0)
 	{
-		return TEXT("Es sind noch keine Talente vergeben.");
+		return TDT(TEXT("Es sind noch keine Talente vergeben."), TEXT("No talents assigned yet."));
 	}
 	const FString Fehler = Einsatz->ZahleEP(NeuVerteilenPreis(), TEXT("Talente neu verteilen"), true);
 	if (!Fehler.IsEmpty())
@@ -175,7 +218,7 @@ FString UTDPionier::NeuVerteilen()
 	}
 	K->mTalente.Reset();
 	Wirke();
-	return FString::Printf(TEXT("Talente zurückgesetzt, %d Punkte frei."), FreiePunkte());
+	return TDF(TEXT("Talente zurückgesetzt, %d Punkte frei."), TEXT("Talents reset, %d points free."), FreiePunkte());
 }
 
 void UTDPionier::Melde(const FString& Text) const
@@ -186,7 +229,7 @@ void UTDPionier::Melde(const FString& Text) const
 		FChatMessageStruct Nachricht;
 		Nachricht.MessageText = FText::FromString(Text);
 		Nachricht.MessageType = EFGChatMessageType::CMT_CustomMessage;
-		Nachricht.MessageSender = FText::FromString(TEXT("PIONIER"));
+		Nachricht.MessageSender = TDTX(TEXT("PIONIER"), TEXT("PIONEER"));
 		Nachricht.MessageSenderColor = FLinearColor(0.45f, 0.8f, 1.f);
 		Chat->BroadcastChatMessage(Nachricht);
 	}
@@ -204,7 +247,8 @@ void UTDPionier::GibXP(int32 XP, const FString& Grund)
 	const int32 Nachher = GetRang();
 	if (Nachher > Vorher)
 	{
-		Melde(FString::Printf(TEXT("Rang %d erreicht! %d Talentpunkt%s frei: Kern-Menü, Reiter Pionier."), Nachher, FreiePunkte(), FreiePunkte() == 1 ? TEXT("") : TEXT("e")));
+		Melde(TDF(TEXT("Rang %d erreicht! %d Talentpunkt%s frei: Kern-Menü, Reiter Pionier."), TEXT("Rank %d reached! %d Talent Point%s free: Core Menu, Pioneer tab."),
+			Nachher, FreiePunkte(), FreiePunkte() == 1 ? TEXT("") : *TDT(TEXT("e"), TEXT("s"))));
 	}
 	UE_LOG(LogFicsitTD, Verbose, TEXT("Pionier: +%d XP (%s), %d XP, Rang %d"), XP, *Grund, K->mPionierXP, Nachher);
 }
@@ -404,7 +448,7 @@ void UTDPionier::Wirke()
 			{
 				mZweiteChanceGenutzt = true;
 				G->Heal(G->GetMaxHealth());
-				Melde(TEXT("Zweite Chance: voll geheilt (wieder bereit in der nächsten Welle)."));
+				Melde(TDT(TEXT("Zweite Chance: voll geheilt (wieder bereit in der nächsten Welle)."), TEXT("Second chance: fully healed (ready again next wave).")));
 			}
 		}
 	}

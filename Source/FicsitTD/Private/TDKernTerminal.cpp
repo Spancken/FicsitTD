@@ -9,6 +9,7 @@
 #include "TDBalance.h"
 #include "TDForschung.h"
 #include "TDPionier.h"
+#include "TDSprache.h"
 #include "Blueprint/WidgetTree.h"
 #include "Brushes/SlateRoundedBoxBrush.h"
 #include "Components/Border.h"
@@ -319,7 +320,8 @@ void UTDKernTerminal::BaueOberflaeche()
 	Aussen->AddChildToVerticalBox(Kopf);
 	UHorizontalBox* KopfZeile = WidgetTree->ConstructWidget<UHorizontalBox>();
 	Kopf->AddChild(KopfZeile);
-	static const TCHAR* ReiterNamen[] = { TEXT("Abwehrkern"), TEXT("Wellenvorschau"), TEXT("Forschung"), TEXT("Pionier"), TEXT("Statistik") };
+	const FString ReiterNamen[] = { TDT(TEXT("Abwehrkern"), TEXT("Defense Core")), TDT(TEXT("Wellenvorschau"), TEXT("Wave Preview")), TDT(TEXT("Forschung"), TEXT("Research")),
+		TDT(TEXT("Pionier"), TEXT("Pioneer")), TDT(TEXT("Statistik"), TEXT("Statistics")) };
 	for (int32 i = 0; i < 5; ++i)
 	{
 		UButton* Reiter = WidgetTree->ConstructWidget<UButton>();
@@ -349,7 +351,7 @@ void UTDKernTerminal::BaueOberflaeche()
 	ZuStil.SetNormalPadding(FMargin(20.f, 8.f));
 	ZuStil.SetPressedPadding(FMargin(20.f, 9.f, 20.f, 7.f));
 	Zu->SetStyle(ZuStil);
-	Zu->SetToolTipText(FText::FromString(TEXT("Schließen (Esc)")));
+	Zu->SetToolTipText(TDTX(TEXT("Schließen (Esc)"), TEXT("Close (Esc)")));
 	Zu->AddChild(NeuerText(TEXT("X"), 18, TDUI::Hell, true));
 	Zu->OnClicked.AddDynamic(this, &UTDKernTerminal::Schliessen);
 	KopfZeile->AddChildToHorizontalBox(Zu);
@@ -375,7 +377,8 @@ void UTDKernTerminal::BaueOberflaeche()
 	Status->AddChild(StatusSpalte);
 	UHorizontalBox* Zahlen = WidgetTree->ConstructWidget<UHorizontalBox>();
 	StatusSpalte->AddChildToVerticalBox(Zahlen);
-	const TCHAR* Beschriftungen[3] = { TEXT("Welle:"), TEXT("Kernzustand:"), TEXT("Konto: Coupons für Kontingente, FP für den MAM:") };
+	const FString Beschriftungen[3] = { TDT(TEXT("Welle:"), TEXT("Wave:")), TDT(TEXT("Kernzustand:"), TEXT("Core health:")),
+		TDT(TEXT("Konto: Coupons für Kontingente, FP für den MAM:"), TEXT("Balance: Coupons for quotas, RP for the MAM:")) };
 	TObjectPtr<UTextBlock>* Felder[3] = { &mWelle, &mKernLP, &mKonto };
 	for (int32 i = 0; i < 3; ++i)
 	{
@@ -412,24 +415,24 @@ void UTDKernTerminal::BaueOberflaeche()
 		}
 	};
 	UTextBlock* Knopftext = nullptr;
-	UButton* WelleKnopf = NeuerKnopf(TEXT("Welle starten"), Knopftext, true);
+	UButton* WelleKnopf = NeuerKnopf(TDT(TEXT("Welle starten"), TEXT("Start wave")), Knopftext, true);
 	mWelleText = Knopftext;
 	WelleKnopf->OnClicked.AddDynamic(this, &UTDKernTerminal::WelleStarten);
 	Aktion(WelleKnopf);
-	UButton* WegeKnopf = NeuerKnopf(TEXT("Wegvorschau an"), Knopftext);
+	UButton* WegeKnopf = NeuerKnopf(TDT(TEXT("Wegvorschau an"), TEXT("Path preview on")), Knopftext);
 	mWegeText = Knopftext;
 	WegeKnopf->OnClicked.AddDynamic(this, &UTDKernTerminal::WegeUmschalten);
 	Aktion(WegeKnopf);
-	UButton* FreiKnopf = NeuerKnopf(TEXT("Freies Bauen: aus"), Knopftext);
+	UButton* FreiKnopf = NeuerKnopf(TDT(TEXT("Freies Bauen: aus"), TEXT("Free Build: off")), Knopftext);
 	mFreiText = Knopftext;
 	FreiKnopf->OnClicked.AddDynamic(this, &UTDKernTerminal::FreiUmschalten);
 	Aktion(FreiKnopf);
 
-	mLaengeKnopf = NeuerKnopf(TEXT("Länge: Standard (50)"), Knopftext);
+	mLaengeKnopf = NeuerKnopf(TDT(TEXT("Länge: Standard (50)"), TEXT("Length: Standard (50)")), Knopftext);
 	mLaengeText = Knopftext;
 	mLaengeKnopf->OnClicked.AddDynamic(this, &UTDKernTerminal::LaengeWechseln);
 	Aktion(mLaengeKnopf);
-	mStartKnopf = NeuerKnopf(TEXT("Einsatz starten (Normal, 30 Wellen)"), Knopftext, true);
+	mStartKnopf = NeuerKnopf(TDT(TEXT("Einsatz starten (Normal, 30 Wellen)"), TEXT("Start operation (Normal, 30 waves)")), Knopftext, true);
 	mStartText = Knopftext;
 	mStartKnopf->OnClicked.AddDynamic(this, &UTDKernTerminal::EinsatzStarten);
 	Aktion(mStartKnopf);
@@ -440,7 +443,7 @@ void UTDKernTerminal::BaueOberflaeche()
 	Hoehe->SetHeightOverride(600.f);
 	UHorizontalBox* Spalten = WidgetTree->ConstructWidget<UHorizontalBox>();
 	Hoehe->AddChild(Spalten);
-	auto Block = [&](const TCHAR* Titel, float Anteil, float Rechts) -> UVerticalBox*
+	auto Block = [&](const FString& Titel, float Anteil, float Rechts) -> UVerticalBox*
 	{
 		UVerticalBox* B = WidgetTree->ConstructWidget<UVerticalBox>();
 		UBorder* BlockKopf = NeuesFeld(TDUI::Reiter, FMargin(12.f, 7.f));
@@ -472,14 +475,14 @@ void UTDKernTerminal::BaueOberflaeche()
 			S->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
 		}
 	};
-	Rollbar(Block(TEXT("Laden"), 1.3f, 12.f), mLaden);
+	Rollbar(Block(TDT(TEXT("Laden"), TEXT("Shop")), 1.3f, 12.f), mLaden);
 
-	UVerticalBox* Auswahl = Block(TEXT("Auswahl (Vorschau)"), 0.85f, 12.f);
+	UVerticalBox* Auswahl = Block(TDT(TEXT("Auswahl (Vorschau)"), TEXT("Selection (preview)")), 0.85f, 12.f);
 	Rollbar(Auswahl, mKorbListe);
 	UBorder* Fuss = NeuesFeld(TDUI::ZeileB, FMargin(12.f, 10.f));
 	UVerticalBox* FussSpalte = WidgetTree->ConstructWidget<UVerticalBox>();
 	Fuss->AddChild(FussSpalte);
-	mKorbSumme = NeuerText(TEXT("Summe: 0 Coupons"), 16, TDUI::Hell, true);
+	mKorbSumme = NeuerText(TDT(TEXT("Summe: 0 Coupons"), TEXT("Total: 0 Coupons")), 16, TDUI::Hell, true);
 	FussSpalte->AddChildToVerticalBox(mKorbSumme);
 	mKorbRest = NeuerText(TEXT(""), 13, TDUI::Grau);
 	if (UVerticalBoxSlot* S = FussSpalte->AddChildToVerticalBox(mKorbRest))
@@ -487,13 +490,13 @@ void UTDKernTerminal::BaueOberflaeche()
 		S->SetPadding(FMargin(0.f, 2.f, 0.f, 10.f));
 	}
 	UHorizontalBox* FussKnoepfe = WidgetTree->ConstructWidget<UHorizontalBox>();
-	mBestaetigen = NeuerKnopf(TEXT("Bestätigen"), Knopftext, true);
+	mBestaetigen = NeuerKnopf(TDT(TEXT("Bestätigen"), TEXT("Confirm")), Knopftext, true);
 	mBestaetigen->OnClicked.AddDynamic(this, &UTDKernTerminal::Bestaetigen);
 	if (UHorizontalBoxSlot* S = FussKnoepfe->AddChildToHorizontalBox(mBestaetigen))
 	{
 		S->SetPadding(FMargin(0.f, 0.f, 8.f, 0.f));
 	}
-	UButton* Weg = NeuerKnopf(TEXT("Verwerfen"), Knopftext);
+	UButton* Weg = NeuerKnopf(TDT(TEXT("Verwerfen"), TEXT("Discard")), Knopftext);
 	Weg->OnClicked.AddDynamic(this, &UTDKernTerminal::Verwerfen);
 	FussKnoepfe->AddChildToHorizontalBox(Weg);
 	FussSpalte->AddChildToVerticalBox(FussKnoepfe);
@@ -502,7 +505,7 @@ void UTDKernTerminal::BaueOberflaeche()
 		S->SetPadding(FMargin(0.f, 6.f, 0.f, 0.f));
 	}
 
-	Rollbar(Block(TEXT("Kontingent (belegt / erlaubt)"), 0.95f, 0.f), mKontingent);
+	Rollbar(Block(TDT(TEXT("Kontingent (belegt / erlaubt)"), TEXT("Quota (used / allowed)")), 0.95f, 0.f), mKontingent);
 	Zeile(Hoehe, 12.f);
 	mSpalten = Hoehe;
 
@@ -572,11 +575,11 @@ void UTDKernTerminal::NativeConstruct()
 	{
 		if (const int32 Nach = Einsatz->GibOffeneFP())
 		{
-			Melde(FString::Printf(TEXT("%d Forschungspunkte ins Inventar nachgereicht."), Nach));
+			Melde(TDF(TEXT("%d Forschungspunkte ins Inventar nachgereicht."), TEXT("%d Research Points added to your inventory."), Nach));
 		}
 		if (const int32 Teile = Einsatz->GibOffenesMaterial())
 		{
-			Melde(FString::Printf(TEXT("%d Teile Baumaterial vom Kern ins Inventar geholt."), Teile));
+			Melde(TDF(TEXT("%d Teile Baumaterial vom Kern ins Inventar geholt."), TEXT("%d building materials moved from the Core to your inventory."), Teile));
 		}
 	}
 	BaueListen();
@@ -634,36 +637,37 @@ void UTDKernTerminal::Aktualisiere()
 		return;
 	}
 	const bool bEinsatz = Einsatz->IstAktiv();
-	mTitel->SetText(FText::FromString(bEinsatz ? TEXT("Abwehrkern - Einsatz") : TEXT("Abwehrkern")));
+	mTitel->SetText(bEinsatz ? TDTX(TEXT("Abwehrkern - Einsatz"), TEXT("Defense Core - Operation")) : TDTX(TEXT("Abwehrkern"), TEXT("Defense Core")));
 	FString WelleText;
 	if (Waves->LaeuftWelle())
 	{
 		// ohne Richtungen, die stehen darunter bei den Fronten
 		WelleText = Waves->GetLaufText();
-		WelleText.Split(TEXT(", aus "), &WelleText, nullptr);
+		if (!WelleText.Split(TEXT(", aus "), &WelleText, nullptr)) { WelleText.Split(TEXT(", from "), &WelleText, nullptr); }
 	}
 	else if (Waves->LaeuftKernVerteidigung())
 	{
-		WelleText = FString::Printf(TEXT("%d / %d bereit"), Waves->GetWelle() + 1, Waves->mWellenGesamt);
+		WelleText = TDF(TEXT("%d / %d bereit"), TEXT("%d / %d ready"), Waves->GetWelle() + 1, Waves->mWellenGesamt);
 	}
 	else
 	{
-		WelleText = TEXT("kein Lauf");
+		WelleText = TDT(TEXT("kein Lauf"), TEXT("no run"));
 	}
 	mWelle->SetText(FText::FromString(WelleText));
 	mKernLP->SetText(FText::FromString(K ? FString::Printf(TEXT("%.0f %%"), 100.f * K->GetTDHealth() / FMath::Max(K->GetTDMaxHealth(), 1.f)) : TEXT("-")));
-	mKonto->SetText(FText::FromString(bEinsatz ? FString::Printf(TEXT("%d Coupons  ·  %d FP"), Einsatz->Konto(), Einsatz->FPImInventar()) : TEXT("-")));
-	mWelleText->SetText(FText::FromString(Waves->LaeuftWelle() ? TEXT("Welle läuft ...") : TEXT("Welle starten")));
-	mWegeText->SetText(FText::FromString(K && K->ZeigtWege() ? TEXT("Wegvorschau aus") : TEXT("Wegvorschau an")));
-	mFreiText->SetText(FText::FromString(Einsatz->IstFrei() ? TEXT("Freies Bauen: AN") : TEXT("Freies Bauen: aus")));
+	mKonto->SetText(FText::FromString(bEinsatz ? TDF(TEXT("%d Coupons  ·  %d FP"), TEXT("%d Coupons  ·  %d RP"), Einsatz->Konto(), Einsatz->FPImInventar()) : FString(TEXT("-"))));
+	mWelleText->SetText(Waves->LaeuftWelle() ? TDTX(TEXT("Welle läuft ..."), TEXT("Wave running ...")) : TDTX(TEXT("Welle starten"), TEXT("Start wave")));
+	mWegeText->SetText(K && K->ZeigtWege() ? TDTX(TEXT("Wegvorschau aus"), TEXT("Path preview off")) : TDTX(TEXT("Wegvorschau an"), TEXT("Path preview on")));
+	mFreiText->SetText(Einsatz->IstFrei() ? TDTX(TEXT("Freies Bauen: AN"), TEXT("Free Build: ON")) : TDTX(TEXT("Freies Bauen: aus"), TEXT("Free Build: off")));
 	mStartKnopf->SetVisibility(bEinsatz ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
 	if (mLaengeKnopf)
 	{
-		static const TCHAR* Namen[] = { TEXT("Kurz (20)"), TEXT("Mittel (30)"), TEXT("Standard (50)"), TEXT("Endlos") };   // 0.77 Marius: 50 Wellen sind Standard
-		static const TCHAR* Wellen[] = { TEXT("20 Wellen"), TEXT("30 Wellen"), TEXT("50 Wellen"), TEXT("endlos") };
+		const FString Namen[] = { TDT(TEXT("Kurz (20)"), TEXT("Short (20)")), TDT(TEXT("Mittel (30)"), TEXT("Medium (30)")), TDT(TEXT("Standard (50)"), TEXT("Standard (50)")),
+			TDT(TEXT("Endlos"), TEXT("Endless")) };   // 0.77 Marius: 50 Wellen sind Standard
+		const FString Wellen[] = { TDT(TEXT("20 Wellen"), TEXT("20 waves")), TDT(TEXT("30 Wellen"), TEXT("30 waves")), TDT(TEXT("50 Wellen"), TEXT("50 waves")), TDT(TEXT("endlos"), TEXT("endless")) };
 		mLaengeKnopf->SetVisibility(bEinsatz ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
-		mLaengeText->SetText(FText::FromString(FString::Printf(TEXT("Länge: %s"), Namen[mLaenge])));
-		mStartText->SetText(FText::FromString(FString::Printf(TEXT("Einsatz starten (Normal, %s)"), Wellen[mLaenge])));
+		mLaengeText->SetText(TDFX(TEXT("Länge: %s"), TEXT("Length: %s"), *Namen[mLaenge]));
+		mStartText->SetText(TDFX(TEXT("Einsatz starten (Normal, %s)"), TEXT("Start operation (Normal, %s)"), *Wellen[mLaenge]));
 	}
 	if (mZeigtVorschau && mVorschauCountdown)
 	{
@@ -675,12 +679,12 @@ void UTDKernTerminal::Aktualisiere()
 		}
 		else if (V.bGueltig && mAuswahlWelle > 0 && mAuswahlWelle != V.Welle)
 		{
-			mVorschauCountdown->SetText(FText::FromString(FString::Printf(TEXT("aktuell: Welle %d"), V.Welle)));
+			mVorschauCountdown->SetText(TDFX(TEXT("aktuell: Welle %d"), TEXT("current: wave %d"), V.Welle));
 		}
 		else if (V.bGueltig)
 		{
 			const int32 Sek = FMath::Max(0, FMath::CeilToInt(V.Countdown));
-			mVorschauCountdown->SetText(FText::FromString(V.bLaeuft ? TEXT("Welle läuft") : V.Countdown < 0.f ? TEXT("Start am Kern")
+			mVorschauCountdown->SetText(FText::FromString(V.bLaeuft ? TDT(TEXT("Welle läuft"), TEXT("Wave running")) : V.Countdown < 0.f ? TDT(TEXT("Start am Kern"), TEXT("Start at the Core"))
 				: FString::Printf(TEXT("Start in %d:%02d"), Sek / 60, Sek % 60)));
 		}
 	}
@@ -713,7 +717,7 @@ void UTDKernTerminal::Springen()
 				Lauf->Eingriff(FString::Printf(TEXT("Testsprung zu Welle %d"), mAuswahlWelle));
 			}
 		}
-		Melde(bOk ? FString::Printf(TEXT("Test: nächste Welle ist jetzt %d."), mAuswahlWelle) : TEXT("Springen geht nur in der Bauphase."));
+		Melde(bOk ? TDF(TEXT("Test: nächste Welle ist jetzt %d."), TEXT("Test: next wave is now %d."), mAuswahlWelle) : TDT(TEXT("Springen geht nur in der Bauphase."), TEXT("Jumping only works in the build phase.")));
 		mAuswahlWelle = -1;
 		BaueVorschau();
 	}
@@ -779,7 +783,7 @@ UWidget* UTDKernTerminal::NeueZeitleiste(int32 Gezeigt)
 				S->SetHorizontalAlignment(HAlign_Center);
 			}
 		}
-		FString Zeichen = Z.bBoss ? TEXT("BOSS") : Z.NeueArten.Num() > 0 ? TEXT("NEU") : Z.bNeueFront ? TEXT("+Front") : TEXT("");
+		FString Zeichen = Z.bBoss ? FString(TEXT("BOSS")) : Z.NeueArten.Num() > 0 ? TDT(TEXT("NEU"), TEXT("NEW")) : Z.bNeueFront ? FString(TEXT("+Front")) : FString();
 		if (Z.bNeueFront && (Z.bBoss || Z.NeueArten.Num() > 0))
 		{
 			Zeichen += TEXT(" +F");
@@ -800,8 +804,8 @@ UWidget* UTDKernTerminal::NeueZeitleiste(int32 Gezeigt)
 			continue;
 		}
 		UButton* Knopf = NeueKlickflaeche(Rahmen, FString(), Z.Welle);
-		Knopf->SetToolTipText(FText::FromString(FString::Printf(TEXT("Welle %d%s%s%s"), Z.Welle, Z.bBoss ? TEXT(" - Bosskampf") : TEXT(""),
-			Z.NeueArten.Num() > 0 ? TEXT(" - neue Gegnerart") : TEXT(""), Z.bNeueFront ? TEXT(" - neue Front") : TEXT(""))));
+		Knopf->SetToolTipText(TDFX(TEXT("Welle %d%s%s%s"), TEXT("Wave %d%s%s%s"), Z.Welle, Z.bBoss ? *TDT(TEXT(" - Bosskampf"), TEXT(" - boss fight")) : TEXT(""),
+			Z.NeueArten.Num() > 0 ? *TDT(TEXT(" - neue Gegnerart"), TEXT(" - new enemy type")) : TEXT(""), Z.bNeueFront ? *TDT(TEXT(" - neue Front"), TEXT(" - new front")) : TEXT("")));
 		if (UHorizontalBoxSlot* S = Reihe->AddChildToHorizontalBox(Knopf))
 		{
 			S->SetPadding(FMargin(0.f, 0.f, 6.f, 0.f));
@@ -938,15 +942,15 @@ void UTDKernTerminal::ZeigeAnsicht(int32 Ansicht)
 	}
 	if (mVorschauKnopfText)
 	{
-		mVorschauKnopfText->SetText(FText::FromString(Ansicht == 1 ? TEXT("Zurück zum Laden") : TEXT("Wellenvorschau")));
+		mVorschauKnopfText->SetText(Ansicht == 1 ? TDTX(TEXT("Zurück zum Laden"), TEXT("Back to shop")) : TDTX(TEXT("Wellenvorschau"), TEXT("Wave Preview")));
 	}
 	if (mForschungKnopfText)
 	{
-		mForschungKnopfText->SetText(FText::FromString(Ansicht == 2 ? TEXT("Zurück zum Laden") : TEXT("Forschung")));
+		mForschungKnopfText->SetText(Ansicht == 2 ? TDTX(TEXT("Zurück zum Laden"), TEXT("Back to shop")) : TDTX(TEXT("Forschung"), TEXT("Research")));
 	}
 	if (mPionierKnopfText)
 	{
-		mPionierKnopfText->SetText(FText::FromString(Ansicht == 3 ? TEXT("Zurück zum Laden") : TEXT("Pionier")));
+		mPionierKnopfText->SetText(Ansicht == 3 ? TDTX(TEXT("Zurück zum Laden"), TEXT("Back to shop")) : TDTX(TEXT("Pionier"), TEXT("Pioneer")));
 	}
 }
 
@@ -972,9 +976,11 @@ void UTDKernTerminal::BaueForschung()
 	{
 		++Anzahl[static_cast<int32>(TDForschung::Zustand(this, Kn))];
 	}
-	Abschnitt(NeuerText(FString::Printf(TEXT("Forschung im MAM, Bäume FICSIT-Abwehr. Im Inventar: %d FP. Nächste Welle: %d."),
+	Abschnitt(NeuerText(TDF(TEXT("Forschung im MAM, Bäume FICSIT-Abwehr. Im Inventar: %d FP. Nächste Welle: %d."),
+		TEXT("Research in the MAM, FICSIT Defense trees. In inventory: %d RP. Next wave: %d."),
 		Einsatz ? Einsatz->FPImInventar() : 0, Naechste), 16, TDUI::Hell, true), 4.f);
-	Abschnitt(NeuerText(FString::Printf(TEXT("%d erforscht  ·  %d jetzt erforschbar  ·  %d warten auf eine spätere Welle  ·  %d brauchen erst einen anderen Knoten"),
+	Abschnitt(NeuerText(TDF(TEXT("%d erforscht  ·  %d jetzt erforschbar  ·  %d warten auf eine spätere Welle  ·  %d brauchen erst einen anderen Knoten"),
+		TEXT("%d researched  ·  %d available now  ·  %d waiting for a later wave  ·  %d need another node first"),
 		Anzahl[0], Anzahl[1], Anzahl[2], Anzahl[3]), 13, TDUI::Grau), 14.f);
 	FString Baum;
 	UWrapBox* Raster = nullptr;
@@ -995,20 +1001,20 @@ void UTDKernTerminal::BaueForschung()
 		switch (Z)
 		{
 		case ETDForschungZustand::Erforscht:
-			Lage = TEXT("ERFORSCHT");
+			Lage = TDT(TEXT("ERFORSCHT"), TEXT("RESEARCHED"));
 			LageFarbe = TDUI::Gut;
 			Grund = TDUI::ChipGut;
 			break;
 		case ETDForschungZustand::Moeglich:
-			Lage = FString::Printf(TEXT("JETZT ERFORSCHBAR  ·  %d FP"), Kn.FP);
+			Lage = TDF(TEXT("JETZT ERFORSCHBAR  ·  %d FP"), TEXT("AVAILABLE NOW  ·  %d RP"), Kn.FP);
 			LageFarbe = TDUI::Akzent;
 			Grund = TDUI::ChipStark;
 			break;
 		case ETDForschungZustand::ZuFrueh:
-			Lage = FString::Printf(TEXT("AB WELLE %d  ·  %d FP"), TDForschung::AbWelle(Kn), Kn.FP);
+			Lage = TDF(TEXT("AB WELLE %d  ·  %d FP"), TEXT("FROM WAVE %d  ·  %d RP"), TDForschung::AbWelle(Kn), Kn.FP);
 			break;
 		case ETDForschungZustand::Ausgeschlossen:
-			Lage = TEXT("AUSGESCHLOSSEN: andere Seite der Abzweigung gewählt");
+			Lage = TDT(TEXT("AUSGESCHLOSSEN: andere Seite der Abzweigung gewählt"), TEXT("EXCLUDED: other side of the branch chosen"));
 			LageFarbe = TDUI::Fehler;
 			break;
 		default:
@@ -1022,7 +1028,7 @@ void UTDKernTerminal::BaueForschung()
 					Fehlt.Add(Vk ? Vk->Name : V);
 				}
 			}
-			Lage = TEXT("BRAUCHT ERST: ") + FString::Join(Fehlt, TEXT(", "));
+			Lage = TDT(TEXT("BRAUCHT ERST: "), TEXT("REQUIRES FIRST: ")) + FString::Join(Fehlt, TEXT(", "));
 			break;
 		}
 		}
@@ -1046,11 +1052,11 @@ void UTDKernTerminal::BaueForschung()
 		Zeile(Kn.Text, 12, TDUI::Hell, false, 3.f);
 		if (!Kn.Laden.IsEmpty())
 		{
-			Zeile(TEXT("Im Laden: ") + Kn.Laden, 12, TDUI::Gut, false, 1.f);
+			Zeile(TDT(TEXT("Im Laden: "), TEXT("In shop: ")) + Kn.Laden, 12, TDUI::Gut, false, 1.f);
 		}
 		if (!Kn.Gegen.IsEmpty())
 		{
-			Zeile(TEXT("Gut gegen: ") + Kn.Gegen, 12, TDUI::Grau, false, 1.f);
+			Zeile(TDT(TEXT("Gut gegen: "), TEXT("Good against: ")) + Kn.Gegen, 12, TDUI::Grau, false, 1.f);
 		}
 		Raster->AddChildToWrapBox(Breite);
 	}
@@ -1075,7 +1081,7 @@ void UTDKernTerminal::BauePionier()
 	const UTDEinsatzSubsystem* Einsatz = GetWorld() ? GetWorld()->GetSubsystem<UTDEinsatzSubsystem>() : nullptr;
 	if (!P || !Einsatz || !Einsatz->IstAktiv())
 	{
-		Abschnitt(NeuerText(TEXT("Rang und Talente gibt es im Einsatz. Starte am Kern einen Einsatz."), 15, TDUI::Grau), 0.f);
+		Abschnitt(NeuerText(TDT(TEXT("Rang und Talente gibt es im Einsatz. Starte am Kern einen Einsatz."), TEXT("Rank and talents come with an operation. Start an operation at the Core.")), 15, TDUI::Grau), 0.f);
 		return;
 	}
 	const int32 Rang = P->GetRang();
@@ -1083,14 +1089,15 @@ void UTDKernTerminal::BauePionier()
 	const int32 Frei = P->FreiePunkte();
 	UHorizontalBox* Kopf = WidgetTree->ConstructWidget<UHorizontalBox>();
 	UBorder* Marke = NeuesFeld(TDUI::Akzent, FMargin(12.f, 3.f));
-	Marke->AddChild(NeuerText(FString::Printf(TEXT("Pionier-Rang %d"), Rang), 18, TDUI::DunkelText, true));
+	Marke->AddChild(NeuerText(TDF(TEXT("Pionier-Rang %d"), TEXT("Pioneer Rank %d"), Rang), 18, TDUI::DunkelText, true));
 	if (UHorizontalBoxSlot* S = Kopf->AddChildToHorizontalBox(Marke))
 	{
 		S->SetPadding(FMargin(0.f, 0.f, 14.f, 0.f));
 		S->SetVerticalAlignment(VAlign_Center);
 	}
 	if (UHorizontalBoxSlot* S = Kopf->AddChildToHorizontalBox(NeuerText(Frei > 0
-		? FString::Printf(TEXT("%d Talentpunkt%s frei"), Frei, Frei == 1 ? TEXT("") : TEXT("e")) : FString(TEXT("Kein Talentpunkt frei")), 17, Frei > 0 ? TDUI::Gut : TDUI::Grau, true)))
+		? (Frei == 1 ? TDT(TEXT("1 Talentpunkt frei"), TEXT("1 Talent Point free")) : TDF(TEXT("%d Talentpunkte frei"), TEXT("%d Talent Points free"), Frei))
+		: TDT(TEXT("Kein Talentpunkt frei"), TEXT("No Talent Points free")), 17, Frei > 0 ? TDUI::Gut : TDUI::Grau, true)))
 	{
 		S->SetVerticalAlignment(VAlign_Center);
 	}
@@ -1105,10 +1112,12 @@ void UTDKernTerminal::BauePionier()
 	BalkenHoehe->SetHeightOverride(12.f);
 	BalkenHoehe->AddChild(Balken);
 	Abschnitt(BalkenHoehe, 4.f);
-	Abschnitt(NeuerText(bMax ? FString::Printf(TEXT("%d XP, Höchstrang erreicht"), XP)
-		: FString::Printf(TEXT("%d / %d XP bis Rang %d"), XP, Bis, Rang + 1), 13, TDUI::Grau), 4.f);
-	UTextBlock* Info = NeuerText(TEXT("XP gibt es für jede abgewehrte Welle (mehr bei vollem Kern, doppelt nach dem Boss) und für eigene Abschüsse: normal 3, Elite 10, Boss 50. "
-		"Jeder Rang bringt einen Talentpunkt. Rang und Talente gelten für diesen Einsatz. Die Waffen-Zweige brauchen die Waffe aus dem Laden."), 13, TDUI::Grau);
+	Abschnitt(NeuerText(bMax ? TDF(TEXT("%d XP, Höchstrang erreicht"), TEXT("%d XP, max rank reached"), XP)
+		: TDF(TEXT("%d / %d XP bis Rang %d"), TEXT("%d / %d XP to rank %d"), XP, Bis, Rang + 1), 13, TDUI::Grau), 4.f);
+	UTextBlock* Info = NeuerText(TDT(TEXT("XP gibt es für jede abgewehrte Welle (mehr bei vollem Kern, doppelt nach dem Boss) und für eigene Abschüsse: normal 3, Elite 10, Boss 50. "
+		"Jeder Rang bringt einen Talentpunkt. Rang und Talente gelten für diesen Einsatz. Die Waffen-Zweige brauchen die Waffe aus dem Laden."),
+		TEXT("You earn XP for every wave you repel (more with a full Core, double after the boss) and for your own kills: normal 3, Elite 10, Boss 50. "
+		"Each rank gives one Talent Point. Rank and talents apply to this operation. The weapon branches need the weapon from the shop.")), 13, TDUI::Grau);
 	Info->SetAutoWrapText(true);
 	Abschnitt(Info, 14.f);
 
@@ -1123,8 +1132,8 @@ void UTDKernTerminal::BauePionier()
 		UVerticalBox* Spalte = WidgetTree->ConstructWidget<UVerticalBox>();
 		Feld->AddChild(Spalte);
 		Spalte->AddChildToVerticalBox(NeuerText(FString::Printf(TEXT("%s  %d/%d"), Z.Name, Stufe, UTDPionier::MaxStufe), 16, TDUI::Hell, true));
-		UTextBlock* Bedingung = NeuerText(!Z.Braucht ? FString(TEXT("für jeden Pionier"))
-			: Fehlt.IsEmpty() ? FString::Printf(TEXT("%s vorhanden"), Z.Braucht) : FString::Printf(TEXT("braucht: %s aus dem Laden"), Z.Braucht),
+		UTextBlock* Bedingung = NeuerText(!Z.Braucht ? TDT(TEXT("für jeden Pionier"), TEXT("for every pioneer"))
+			: Fehlt.IsEmpty() ? TDF(TEXT("%s vorhanden"), TEXT("%s available"), Z.Braucht) : TDF(TEXT("braucht: %s aus dem Laden"), TEXT("requires: %s from the shop"), Z.Braucht),
 			12, !Fehlt.IsEmpty() ? TDUI::Fehler : TDUI::Gut);
 		Bedingung->SetAutoWrapText(true);
 		if (UVerticalBoxSlot* S = Spalte->AddChildToVerticalBox(Bedingung))
@@ -1133,12 +1142,12 @@ void UTDKernTerminal::BauePionier()
 		}
 		for (int32 s = 0; s < UTDPionier::MaxStufe; ++s)
 		{
-			const FString Text = FString::Printf(TEXT("Stufe %d: %s"), s + 1, Z.Stufen[s]);
+			const FString Text = TDF(TEXT("Stufe %d: %s"), TEXT("Tier %d: %s"), s + 1, Z.Stufen[s]);
 			UWidget* Eintrag = nullptr;
 			if (s == Stufe && Frei > 0 && Fehlt.IsEmpty())
 			{
 				UTextBlock* KnopfText = nullptr;
-				UButton* Knopf = NeuerKnopf(TEXT("Lernen · ") + Text, KnopfText, true);
+				UButton* Knopf = NeuerKnopf(TDT(TEXT("Lernen · "), TEXT("Learn · ")) + Text, KnopfText, true);
 				if (KnopfText)
 				{
 					KnopfText->SetAutoWrapText(true);
@@ -1171,7 +1180,7 @@ void UTDKernTerminal::BauePionier()
 	}
 	Abschnitt(Spalten, 14.f);
 	UTextBlock* NeuText = nullptr;
-	UButton* Neu = NeuerKnopf(FString::Printf(TEXT("Talente neu verteilen (%d Coupons)"), UTDPionier::NeuVerteilenPreis()), NeuText);
+	UButton* Neu = NeuerKnopf(TDF(TEXT("Talente neu verteilen (%d Coupons)"), TEXT("Reset talents (%d Coupons)"), UTDPionier::NeuVerteilenPreis()), NeuText);
 	Neu->OnClicked.AddDynamic(this, &UTDKernTerminal::TalenteNeu);
 	UHorizontalBox* Fuss = WidgetTree->ConstructWidget<UHorizontalBox>();
 	Fuss->AddChildToHorizontalBox(Neu);
@@ -1245,10 +1254,16 @@ static bool TestModus()
 	return !UTDLaufProtokoll::bBalancing && TDBalance::Ganz(TEXT("Test.WellenSprung"), 1) > 0;
 }
 
-static const TCHAR* RollenName(int32 Rolle)
+static FString RollenName(int32 Rolle)
 {
-	static const TCHAR* Namen[] = { TEXT("Ansturm"), TEXT("Panzer"), TEXT("Fernkampf"), TEXT("Schwarm"), TEXT("Boss") };
-	return Namen[FMath::Clamp(Rolle, 0, 4)];
+	switch (FMath::Clamp(Rolle, 0, 4))
+	{
+	case 0: return TDT(TEXT("Ansturm"), TEXT("Rusher"));
+	case 1: return TDT(TEXT("Panzer"), TEXT("Tank"));
+	case 2: return TDT(TEXT("Fernkampf"), TEXT("Ranged"));
+	case 3: return TDT(TEXT("Schwarm"), TEXT("Swarm"));
+	default: return TEXT("Boss");
+	}
 }
 
 UWidget* UTDKernTerminal::NeuerSteckbrief(const FTDPlanGruppe& G, bool bZahlen)
@@ -1259,7 +1274,7 @@ UWidget* UTDKernTerminal::NeuerSteckbrief(const FTDPlanGruppe& G, bool bZahlen)
 	UBorder* Karte = NeuesFeld(bBoss ? TDUI::BossFeld : G.bNeu ? TDUI::NeuFeld : TDUI::KarteDunkel, FMargin(12.f));
 	UHorizontalBox* Reihe = WidgetTree->ConstructWidget<UHorizontalBox>();
 	Karte->AddChild(Reihe);
-	if (UHorizontalBoxSlot* Sl = Reihe->AddChildToHorizontalBox(NeuesKreaturBild(S.Deskriptor, 128.f, bBoss ? TEXT("BOSS") : G.bNeu ? TEXT("NEU") : TEXT(""), Farbe)))
+	if (UHorizontalBoxSlot* Sl = Reihe->AddChildToHorizontalBox(NeuesKreaturBild(S.Deskriptor, 128.f, bBoss ? FString(TEXT("BOSS")) : G.bNeu ? TDT(TEXT("NEU"), TEXT("NEW")) : FString(), Farbe)))
 	{
 		Sl->SetPadding(FMargin(0.f, 0.f, 16.f, 0.f));
 		Sl->SetVerticalAlignment(VAlign_Top);
@@ -1272,7 +1287,7 @@ UWidget* UTDKernTerminal::NeuerSteckbrief(const FTDPlanGruppe& G, bool bZahlen)
 	// Name, Anzahl, Rolle
 	UHorizontalBox* Kopf = WidgetTree->ConstructWidget<UHorizontalBox>();
 	Kopf->AddChildToHorizontalBox(NeuerText(bBoss && !G.BossName.IsEmpty() ? G.BossName : S.Name, 20, TDUI::Hell, true));
-	const FString Neben = FString::Printf(TEXT("   %s%s"), bZahlen ? *FString::Printf(TEXT("× %d  ·  "), G.Anzahl) : TEXT(""), RollenName(bBoss ? 4 : S.Rolle));
+	const FString Neben = FString::Printf(TEXT("   %s%s"), bZahlen ? *FString::Printf(TEXT("× %d  ·  "), G.Anzahl) : TEXT(""), *RollenName(bBoss ? 4 : S.Rolle));
 	if (UHorizontalBoxSlot* Sl = Kopf->AddChildToHorizontalBox(NeuerText(Neben, 14, TDUI::Grau)))
 	{
 		Sl->SetVerticalAlignment(VAlign_Bottom);
@@ -1293,9 +1308,9 @@ UWidget* UTDKernTerminal::NeuerSteckbrief(const FTDPlanGruppe& G, bool bZahlen)
 		C->AddChild(NeuerText(T, 12, Schrift));
 		Chips->AddChildToWrapBox(C);
 	};
-	Chip(FString::Printf(TEXT("Tempo %.1f m/s"), S.Tempo), TDUI::ChipNeutral, TDUI::Hell);
-	Chip(S.Reichweite >= 8.f ? FString::Printf(TEXT("Fernkampf %.0f m"), S.Reichweite) : TEXT("Nahkampf"), TDUI::ChipNeutral, TDUI::Hell);
-	Chip(FString::Printf(TEXT("Schaden %.0f je Treffer"), S.Schaden), TDUI::ChipStark, TDUI::Akzent);
+	Chip(TDF(TEXT("Tempo %.1f m/s"), TEXT("Speed %.1f m/s"), S.Tempo), TDUI::ChipNeutral, TDUI::Hell);
+	Chip(S.Reichweite >= 8.f ? TDF(TEXT("Fernkampf %.0f m"), TEXT("Ranged %.0f m"), S.Reichweite) : TDT(TEXT("Nahkampf"), TEXT("Melee")), TDUI::ChipNeutral, TDUI::Hell);
+	Chip(TDF(TEXT("Schaden %.0f je Treffer"), TEXT("Damage %.0f per hit"), S.Schaden), TDUI::ChipStark, TDUI::Akzent);
 	FString Gut, Schlecht;
 	for (const TPair<FString, float>& W : S.Wirkung)
 	{
@@ -1310,11 +1325,11 @@ UWidget* UTDKernTerminal::NeuerSteckbrief(const FTDPlanGruppe& G, bool bZahlen)
 	}
 	if (!Gut.IsEmpty())
 	{
-		Chip(TEXT("Schwach gegen: ") + Gut, TDUI::ChipGut, TDUI::Gut);
+		Chip(TDT(TEXT("Schwach gegen: "), TEXT("Weak to: ")) + Gut, TDUI::ChipGut, TDUI::Gut);
 	}
 	if (!Schlecht.IsEmpty())
 	{
-		Chip(TEXT("Hält aus: ") + Schlecht, TDUI::ChipSchlecht, TDUI::Boss);
+		Chip(TDT(TEXT("Hält aus: "), TEXT("Resists: ")) + Schlecht, TDUI::ChipSchlecht, TDUI::Boss);
 	}
 	if (bZahlen && G.Elite > 0)
 	{
@@ -1337,7 +1352,7 @@ UWidget* UTDKernTerminal::NeueGegnerKarte(const FTDPlanGruppe& G, bool bZahlen)
 	Breite->AddChild(Karte);
 	UVerticalBox* Spalte = WidgetTree->ConstructWidget<UVerticalBox>();
 	Karte->AddChild(Spalte);
-	const FString Abzeichen = G.bBoss ? TEXT("BOSS") : G.bNeu ? TEXT("NEU") : TEXT("");
+	const FString Abzeichen = G.bBoss ? FString(TEXT("BOSS")) : G.bNeu ? TDT(TEXT("NEU"), TEXT("NEW")) : FString();
 	if (UVerticalBoxSlot* Sl = Spalte->AddChildToVerticalBox(NeuesKreaturBild(S.Deskriptor, 112.f, Abzeichen, G.bBoss ? TDUI::Boss : TDUI::Akzent)))
 	{
 		Sl->SetHorizontalAlignment(HAlign_Center);
@@ -1358,7 +1373,7 @@ UWidget* UTDKernTerminal::NeueGegnerKarte(const FTDPlanGruppe& G, bool bZahlen)
 	Zusatz->SetJustification(ETextJustify::Center);
 	Spalte->AddChildToVerticalBox(Zusatz);
 	UButton* Knopf = NeueKlickflaeche(Aussen, AuswahlSchluessel(G), -1);
-	Knopf->SetToolTipText(FText::FromString(TEXT("Steckbrief anzeigen")));
+	Knopf->SetToolTipText(TDTX(TEXT("Steckbrief anzeigen"), TEXT("Show profile")));
 	return Knopf;
 }
 
@@ -1392,19 +1407,20 @@ void UTDKernTerminal::BaueVorschau()
 	};
 	if (!V.bGueltig)
 	{
-		Abschnitt(NeuerText(TEXT("Keine Welle geplant. Starte am Kern einen Einsatz oder eine Kern-Verteidigung, dann steht hier die nächste Welle."), 15, TDUI::Grau), 0.f);
+		Abschnitt(NeuerText(TDT(TEXT("Keine Welle geplant. Starte am Kern einen Einsatz oder eine Kern-Verteidigung, dann steht hier die nächste Welle."),
+			TEXT("No wave planned. Start an operation or a core defense at the Core, then the next wave shows here.")), 15, TDUI::Grau), 0.f);
 		return;
 	}
 	// Kopf: Welle, Art, Countdown; darunter Fronten, Zahlen, Tipp
 	UHorizontalBox* Kopf = WidgetTree->ConstructWidget<UHorizontalBox>();
 	UBorder* Marke = NeuesFeld(TDUI::Akzent, FMargin(10.f, 2.f));
-	Marke->AddChild(NeuerText(V.WellenGesamt > 0 ? FString::Printf(TEXT("Welle %d / %d"), V.Welle, V.WellenGesamt) : FString::Printf(TEXT("Welle %d"), V.Welle), 16, TDUI::DunkelText, true));
+	Marke->AddChild(NeuerText(V.WellenGesamt > 0 ? TDF(TEXT("Welle %d / %d"), TEXT("Wave %d / %d"), V.Welle, V.WellenGesamt) : TDF(TEXT("Welle %d"), TEXT("Wave %d"), V.Welle), 16, TDUI::DunkelText, true));
 	if (UHorizontalBoxSlot* S = Kopf->AddChildToHorizontalBox(Marke))
 	{
 		S->SetPadding(FMargin(0.f, 0.f, 14.f, 0.f));
 		S->SetVerticalAlignment(VAlign_Center);
 	}
-	if (UHorizontalBoxSlot* S = Kopf->AddChildToHorizontalBox(NeuerText(FString::Printf(TEXT("%s: %s"), V.bLaeuft ? TEXT("Laufende Welle") : V.bAktuell ? TEXT("Vorschau") : TEXT("Ausblick"), *V.Art), 20, TDUI::Hell, true)))
+	if (UHorizontalBoxSlot* S = Kopf->AddChildToHorizontalBox(NeuerText(FString::Printf(TEXT("%s: %s"), *(V.bLaeuft ? TDT(TEXT("Laufende Welle"), TEXT("Current wave")) : V.bAktuell ? TDT(TEXT("Vorschau"), TEXT("Preview")) : TDT(TEXT("Ausblick"), TEXT("Outlook"))), *V.Art), 20, TDUI::Hell, true)))
 	{
 		S->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
 		S->SetVerticalAlignment(VAlign_Center);
@@ -1413,7 +1429,7 @@ void UTDKernTerminal::BaueVorschau()
 	if (!V.bAktuell && !Jetzt.bLaeuft && TestModus())
 	{
 		UTextBlock* SprungText = nullptr;
-		UButton* Sprung = NeuerKnopf(FString::Printf(TEXT("Test: zu Welle %d springen"), V.Welle), SprungText);
+		UButton* Sprung = NeuerKnopf(TDF(TEXT("Test: zu Welle %d springen"), TEXT("Test: jump to wave %d"), V.Welle), SprungText);
 		Sprung->OnClicked.AddDynamic(this, &UTDKernTerminal::Springen);
 		if (UHorizontalBoxSlot* S = Kopf->AddChildToHorizontalBox(Sprung))
 		{
@@ -1429,16 +1445,19 @@ void UTDKernTerminal::BaueVorschau()
 	Abschnitt(Kopf, 10.f);
 	// Zeitleiste aller Wellen: wo wir stehen, Bosse, neue Arten, neue Fronten; Klick zeigt die Welle
 	Abschnitt(NeueZeitleiste(V.Welle), 10.f);
+	// TDF nicht in TDF verschachteln (Makro expandiert sich im eigenen Argument nicht) -> Teile vorher bauen
+	const int32 MaxGleichzeitig = TDBalance::Ganz(TEXT("Wellen.MaxGleichzeitig"), 60);
+	const FString EliteTeil = V.Elite > 0 ? TDF(TEXT(", davon %d Elite"), TEXT(", %d of them Elite"), V.Elite) : FString();
+	const FString SchubTeil = V.Gegner > MaxGleichzeitig ? TDF(TEXT(" in Schüben (höchstens %d gleichzeitig)"), TEXT(" in batches (max %d at once)"), MaxGleichzeitig) : FString();
 	const FString Zahlen = V.bZusammensetzung
-		? FString::Printf(TEXT("Fronten: %s     ·     %d Gegner%s%s     ·     Bedrohung %d Punkte"), V.Fronten.IsEmpty() ? TEXT("-") : *V.Fronten, V.Gegner,
-			V.Elite > 0 ? *FString::Printf(TEXT(", davon %d Elite"), V.Elite) : TEXT(""),
-			V.Gegner > TDBalance::Ganz(TEXT("Wellen.MaxGleichzeitig"), 60) ? *FString::Printf(TEXT(" in Schüben (höchstens %d gleichzeitig)"), TDBalance::Ganz(TEXT("Wellen.MaxGleichzeitig"), 60)) : TEXT(""),
-			V.Punkte)
-		: FString::Printf(TEXT("Fronten: %s     ·     %d Gegner (Stufe zeigt keine Zusammensetzung)"), V.Fronten.IsEmpty() ? TEXT("-") : *V.Fronten, V.Gegner);
+		? TDF(TEXT("Fronten: %s     ·     %d Gegner%s%s     ·     Bedrohung %d Punkte"), TEXT("Fronts: %s     ·     %d enemies%s%s     ·     Threat %d points"),
+			V.Fronten.IsEmpty() ? TEXT("-") : *V.Fronten, V.Gegner, *EliteTeil, *SchubTeil, V.Punkte)
+		: TDF(TEXT("Fronten: %s     ·     %d Gegner (Stufe zeigt keine Zusammensetzung)"), TEXT("Fronts: %s     ·     %d enemies (difficulty hides the composition)"),
+			V.Fronten.IsEmpty() ? TEXT("-") : *V.Fronten, V.Gegner);
 	Abschnitt(NeuerText(Zahlen, 13, TDUI::Grau), 4.f);
 	if (V.bZusammensetzung)
 	{
-		Abschnitt(NeuerText(TEXT("Tipp: ") + V.Tipp, 13, TDUI::Gut), 14.f);
+		Abschnitt(NeuerText(TDT(TEXT("Tipp: "), TEXT("Tip: ")) + V.Tipp, 13, TDUI::Gut), 14.f);
 	}
 	// Genau ein Steckbrief (spart Platz, Marius 0.44): angeklickte Art, sonst die neue Art, sonst der Boss
 	const FTDPlanGruppe* Gezeigt = V.Gruppen.FindByPredicate([this](const FTDPlanGruppe& G) { return AuswahlSchluessel(G) == mAuswahlArt; });
@@ -1453,12 +1472,13 @@ void UTDKernTerminal::BaueVorschau()
 	}
 	if (Gezeigt)
 	{
-		const FString Titel = bGewaehlt ? TEXT("Steckbrief (nochmal anklicken zum Schließen)") : Gezeigt->bNeu ? TEXT("Neu in dieser Welle") : TEXT("Bosskampf");
+		const FString Titel = bGewaehlt ? TDT(TEXT("Steckbrief (nochmal anklicken zum Schließen)"), TEXT("Profile (click again to close)"))
+			: Gezeigt->bNeu ? TDT(TEXT("Neu in dieser Welle"), TEXT("New this wave")) : TDT(TEXT("Bosskampf"), TEXT("Boss fight"));
 		Abschnitt(NeuerText(Titel, 14, Gezeigt->bBoss ? TDUI::Boss : Gezeigt->bNeu ? TDUI::Akzent : TDUI::Hell, true), 6.f);
 		Abschnitt(NeuerSteckbrief(*Gezeigt, V.bZusammensetzung), 10.f);
 	}
 	// Alle Arten als Karten
-	Abschnitt(NeuerText(TEXT("Alle Gegner (anklicken für den Steckbrief)"), 14, TDUI::Hell, true), 8.f);
+	Abschnitt(NeuerText(TDT(TEXT("Alle Gegner (anklicken für den Steckbrief)"), TEXT("All enemies (click for the profile)")), 14, TDUI::Hell, true), 8.f);
 	UWrapBox* Raster = WidgetTree->ConstructWidget<UWrapBox>();
 	Raster->SetInnerSlotPadding(FVector2D(10.f, 10.f));
 	for (const FTDPlanGruppe& G : V.Gruppen)
@@ -1551,8 +1571,8 @@ void UTDKernTerminal::BaueListen()
 		mKorb.Reset();
 		UHorizontalBox* Reihe = nullptr;
 		NeueKarte(mLaden, TDUI::ZeileA, Reihe);
-		Fuellen(Reihe, NeuerText(TEXT("Erst einen Einsatz starten."), 13, TDUI::Grau));
-		mKorbSumme->SetText(FText::FromString(TEXT("Summe: 0 Coupons")));
+		Fuellen(Reihe, NeuerText(TDT(TEXT("Erst einen Einsatz starten."), TEXT("Start an operation first.")), 13, TDUI::Grau));
+		mKorbSumme->SetText(TDTX(TEXT("Summe: 0 Coupons"), TEXT("Total: 0 Coupons")));
 		mKorbRest->SetText(FText::GetEmpty());
 		mBestaetigen->SetIsEnabled(false);
 	}
@@ -1573,15 +1593,15 @@ void UTDKernTerminal::BaueListen()
 			{
 				UHorizontalBox* Unter = WidgetTree->ConstructWidget<UHorizontalBox>();
 				Unter->AddChildToHorizontalBox(NeuerText(FString::Printf(TEXT("%d Coupons"), Z.PreisNach(ImKorb)), 13, TDUI::KarteOrange, true));
-				const FString Einheit = !Z.Einheit.IsEmpty() ? Z.Einheit : Z.Paket == 1 ? TEXT("Gebäude") : TEXT("Stück");
+				const FString Einheit = !Z.Einheit.IsEmpty() ? Z.Einheit : Z.Paket == 1 ? TDT(TEXT("Gebäude"), TEXT("building")) : TDT(TEXT("Stück"), TEXT("pcs"));
 				Unter->AddChildToHorizontalBox(NeuerText(Z.Max > 0
-					? FString::Printf(TEXT("  für +%d %s (%d/%d)"), Z.Paket, *Einheit, Z.Gekauft, Z.Max)
-					: FString::Printf(TEXT("  für +%d %s"), Z.Paket, *Einheit), 13, TDUI::KarteGrau));
+					? TDF(TEXT("  für +%d %s (%d/%d)"), TEXT("  for +%d %s (%d/%d)"), Z.Paket, *Einheit, Z.Gekauft, Z.Max)
+					: TDF(TEXT("  für +%d %s"), TEXT("  for +%d %s"), Z.Paket, *Einheit), 13, TDUI::KarteGrau));
 				Texte->AddChildToVerticalBox(Unter);
 			}
 			else
 			{
-				Texte->AddChildToVerticalBox(NeuerText(TEXT("im MAM erforschen"), 13, TDUI::Grau));
+				Texte->AddChildToVerticalBox(NeuerText(TDT(TEXT("im MAM erforschen"), TEXT("research in the MAM")), 13, TDUI::Grau));
 			}
 			if (UHorizontalBoxSlot* S = Reihe->AddChildToHorizontalBox(Texte))
 			{
@@ -1627,7 +1647,7 @@ void UTDKernTerminal::BaueListen()
 			Mittig(Reihe, NeueKachel(Z.Symbol, 44.f, FString::Printf(TEXT("%d"), Anzahl * Z.Paket)), 0.f);
 			UVerticalBox* Texte = WidgetTree->ConstructWidget<UVerticalBox>();
 			Texte->AddChildToVerticalBox(NeuerText(FString::Printf(TEXT("%d x %s"), Anzahl, *Z.Key), 14, TDUI::KarteText, true));
-			Texte->AddChildToVerticalBox(NeuerText(FString::Printf(TEXT("+%d Kontingent, %s Coupons"), Anzahl * Z.Paket, *FString::Join(Preise, TEXT(" + "))), 12, TDUI::KarteGrau));
+			Texte->AddChildToVerticalBox(NeuerText(TDF(TEXT("+%d Kontingent, %s Coupons"), TEXT("+%d quota, %s Coupons"), Anzahl * Z.Paket, *FString::Join(Preise, TEXT(" + "))), 12, TDUI::KarteGrau));
 			if (UHorizontalBoxSlot* S = Reihe->AddChildToHorizontalBox(Texte))
 			{
 				S->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
@@ -1639,12 +1659,12 @@ void UTDKernTerminal::BaueListen()
 		{
 			UHorizontalBox* Reihe = nullptr;
 			NeueKarte(mKorbListe, TDUI::ZeileA, Reihe);
-			UTextBlock* Hinweis = NeuerText(TEXT("Mit + im Laden auswählen. Gekauft wird erst mit \"Bestätigen\"."), 13, TDUI::Grau);
+			UTextBlock* Hinweis = NeuerText(TDT(TEXT("Mit + im Laden auswählen. Gekauft wird erst mit \"Bestätigen\"."), TEXT("Select with + in the shop. Nothing is bought until \"Confirm\".")), 13, TDUI::Grau);
 			Hinweis->SetAutoWrapText(true);
 			Fuellen(Reihe, Hinweis);
 		}
-		mKorbSumme->SetText(FText::FromString(FString::Printf(TEXT("Summe: %d Coupons"), Summe)));
-		mKorbRest->SetText(FText::FromString(FString::Printf(TEXT("Konto %d Coupons  ->  danach %d Coupons"), Konto, Konto - Summe)));
+		mKorbSumme->SetText(TDFX(TEXT("Summe: %d Coupons"), TEXT("Total: %d Coupons"), Summe));
+		mKorbRest->SetText(TDFX(TEXT("Konto %d Coupons  ->  danach %d Coupons"), TEXT("Balance %d Coupons  ->  after %d Coupons"), Konto, Konto - Summe));
 		mKorbRest->SetColorAndOpacity(FSlateColor(Konto - Summe < 0 ? TDUI::Fehler : TDUI::Gut));
 		mBestaetigen->SetIsEnabled(mKorb.Num() > 0 && Summe <= Konto && !bWelle);
 	}
@@ -1699,7 +1719,7 @@ void UTDKernTerminal::AendereKorb(const FString& Key, int32 Schritt)
 	const UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
 	if (Waves && Waves->LaeuftWelle())
 	{
-		Melde(TEXT("Während der Welle ist der Laden geschlossen."));
+		Melde(TDT(TEXT("Während der Welle ist der Laden geschlossen."), TEXT("The shop is closed during a wave.")));
 		return;
 	}
 	int32& Anzahl = mKorb.FindOrAdd(Key);
@@ -1732,7 +1752,7 @@ void UTDKernTerminal::Bestaetigen()
 void UTDKernTerminal::Verwerfen()
 {
 	mKorb.Reset();
-	Melde(TEXT("Auswahl verworfen."));
+	Melde(TDT(TEXT("Auswahl verworfen."), TEXT("Selection discarded.")));
 	BaueListen();
 }
 
@@ -1741,17 +1761,17 @@ void UTDKernTerminal::WelleStarten()
 	UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
 	if (!Waves || !Waves->LaeuftKernVerteidigung())
 	{
-		Melde(TEXT("Es läuft kein Einsatz - zuerst \"Einsatz starten\"."));
+		Melde(TDT(TEXT("Es läuft kein Einsatz - zuerst \"Einsatz starten\"."), TEXT("No operation running - first \"Start operation\".")));
 		return;
 	}
 	if (Waves->NaechsteWelleJetzt())
 	{
-		Melde(TEXT("Welle gestartet."));
+		Melde(TDT(TEXT("Welle gestartet."), TEXT("Wave started.")));
 		Schliessen();   // ab zur Verteidigung
 	}
 	else
 	{
-		Melde(TEXT("Die Welle läuft bereits."));
+		Melde(TDT(TEXT("Die Welle läuft bereits."), TEXT("The wave is already running.")));
 	}
 }
 
@@ -1766,7 +1786,7 @@ void UTDKernTerminal::WegeUmschalten()
 	if (K->ZeigtWege())
 	{
 		K->VersteckeWege();
-		Melde(TEXT("Wegvorschau aus."));
+		Melde(TDT(TEXT("Wegvorschau aus."), TEXT("Path preview off.")));
 	}
 	else
 	{
@@ -1782,13 +1802,13 @@ void UTDKernTerminal::FreiUmschalten()
 	UTDEinsatzSubsystem* Einsatz = GetWorld()->GetSubsystem<UTDEinsatzSubsystem>();
 	if (!Einsatz || !Einsatz->IstAktiv())
 	{
-		Melde(TEXT("Freies Bauen gibt es nur im Einsatz."));
+		Melde(TDT(TEXT("Freies Bauen gibt es nur im Einsatz."), TEXT("Free Build is only available in an operation.")));
 		return;
 	}
 	const bool bAn = !Einsatz->IstFrei();
 	if (bAn && UTDLaufProtokoll::bBalancing)
 	{
-		Melde(TEXT("Im Balancing-Lauf ist Freies Bauen gesperrt (/td lauf balancing aus)."));
+		Melde(TDT(TEXT("Im Balancing-Lauf ist Freies Bauen gesperrt (/td lauf balancing aus)."), TEXT("Free Build is locked in a balancing run (/td lauf balancing aus).")));
 		return;
 	}
 	Einsatz->SetzeFrei(bAn);
@@ -1799,7 +1819,8 @@ void UTDKernTerminal::FreiUmschalten()
 			Lauf->Eingriff(TEXT("Freies Bauen"));
 		}
 	}
-	Melde(bAn ? TEXT("Freies Bauen AN: keine Kontingente, keine Bausperre. Forschung bleibt wie sie ist.") : TEXT("Freies Bauen aus: Kontingente gelten wieder."));
+	Melde(bAn ? TDT(TEXT("Freies Bauen AN: keine Kontingente, keine Bausperre. Forschung bleibt wie sie ist."), TEXT("Free Build ON: no quotas, no build lock. Research stays as it is."))
+		: TDT(TEXT("Freies Bauen aus: Kontingente gelten wieder."), TEXT("Free Build off: quotas apply again.")));
 	Aktualisiere();
 }
 
@@ -1896,7 +1917,7 @@ void UTDTurmInfo::FuelleUpgrades()
 	mUpgradeReihe->SetVisibility(ESlateVisibility::Visible);
 	if (mUpgradeTexte.IsValidIndex(0) && mUpgradeKnoepfe.IsValidIndex(0))
 	{
-		mUpgradeTexte[0]->SetText(FText::FromString(bMax ? FString(TEXT("max")) : Sperre.IsEmpty() ? FString::Printf(TEXT("%d Coupons"), Preis) : FString(TEXT("gesperrt"))));
+		mUpgradeTexte[0]->SetText(FText::FromString(bMax ? FString(TEXT("max")) : Sperre.IsEmpty() ? FString::Printf(TEXT("%d Coupons"), Preis) : TDT(TEXT("gesperrt"), TEXT("locked"))));
 		mUpgradeKnoepfe[0]->SetIsEnabled(!bMax && Sperre.IsEmpty() && Preis > 0 && Preis <= Konto);
 	}
 	for (int32 k = 0; k < mUpgradeStufenMax; ++k)
@@ -1913,10 +1934,10 @@ void UTDTurmInfo::FuelleUpgrades()
 		mUpgradeWirkung[0]->SetText(FText::GetEmpty());   // Test 0.64.2: "-> n" ueberlagerte den Knopf, Vorschau steht in der Hinweiszeile
 	}
 	// Test 0.64.2: "Level 2: ..." las sich wie das aktuelle Level -> ausdruecklich "Jetzt Level n, naechstes ..."
-	const FString Naechstes = bMax ? FString::Printf(TEXT("Jetzt Level %d (höchstes Level)"), Level)
-		: FString::Printf(TEXT("Jetzt Level %d. Upgrade auf %d: %s"), Level, Level + 1, *Turm->LevelText(Level + 1));
+	const FString Naechstes = bMax ? TDF(TEXT("Jetzt Level %d (höchstes Level)"), TEXT("Now level %d (max level)"), Level)
+		: TDF(TEXT("Jetzt Level %d. Upgrade auf %d: %s"), TEXT("Now level %d. Upgrade to %d: %s"), Level, Level + 1, *Turm->LevelText(Level + 1));
 	const FString Hinweis = mUpgradeMeldungZeit > 0.f ? mUpgradeMeldung
-		: Sperre.IsEmpty() || bMax ? FString::Printf(TEXT("%s · Konto %d Coupons"), *Naechstes, Konto)
+		: Sperre.IsEmpty() || bMax ? TDF(TEXT("%s · Konto %d Coupons"), TEXT("%s · Balance %d Coupons"), *Naechstes, Konto)
 		: FString::Printf(TEXT("%s · %s"), *Naechstes, *Sperre);
 	mUpgradeHinweis->SetText(FText::FromString(Hinweis));
 	mUpgradeHinweis->SetVisibility(ESlateVisibility::Visible);
@@ -2046,10 +2067,10 @@ TSharedRef<SWidget> UTDTurmInfo::RebuildWidget()
 		mPanel->SetPadding(FMargin(14.f, 10.f));
 		UVerticalBox* Spalte = WidgetTree->ConstructWidget<UVerticalBox>();
 		mPanel->AddChild(Spalte);
-		UTextBlock* Ueber = TDUI::Text(WidgetTree, TEXT("Turmwerte:"), 12, TDUI::KarteOrange);
+		UTextBlock* Ueber = TDUI::Text(WidgetTree, TDT(TEXT("Turmwerte:"), TEXT("Turret stats:")), 12, TDUI::KarteOrange);
 		Ueber->SetJustification(ETextJustify::Center);
 		Spalte->AddChildToVerticalBox(Ueber);
-		mKopf = TDUI::Text(WidgetTree, TEXT("Turm"), 16, TDUI::KarteText, true);
+		mKopf = TDUI::Text(WidgetTree, TDT(TEXT("Turm"), TEXT("Turret")), 16, TDUI::KarteText, true);
 		mKopf->SetJustification(ETextJustify::Center);
 		if (UVerticalBoxSlot* S = Spalte->AddChildToVerticalBox(mKopf))
 		{
@@ -2167,7 +2188,7 @@ TSharedRef<SWidget> UTDTurmInfo::RebuildWidget()
 			UBorder* Kopf = WidgetTree->ConstructWidget<UBorder>();
 			Kopf->SetBrush(FSlateRoundedBoxBrush(TDUI::Kopfleiste, 0.f));
 			Kopf->SetPadding(FMargin(14.f, 8.f));
-			Kopf->AddChild(TDUI::Text(WidgetTree, TEXT("Turmsteuerung"), 18, TDUI::Hell));
+			Kopf->AddChild(TDUI::Text(WidgetTree, TDT(TEXT("Turmsteuerung"), TEXT("Turret Control")), 18, TDUI::Hell));
 			Aufbau->AddChildToVerticalBox(Kopf);
 			if (UCanvasPanelSlot* S = Cast<UCanvasPanel>(Flaeche)->AddChildToCanvas(mSeite))
 			{
@@ -2176,7 +2197,7 @@ TSharedRef<SWidget> UTDTurmInfo::RebuildWidget()
 				S->SetSize(FVector2D(200.f, 150.f));
 			}
 		}
-		mModusPanel = NeuesZielPanel(Flaeche, TEXT("Zielwahl:"), Inhalt);
+		mModusPanel = NeuesZielPanel(Flaeche, *TDT(TEXT("Zielwahl:"), TEXT("Targeting:")), Inhalt);
 		UUniformGridPanel* Raster = WidgetTree->ConstructWidget<UUniformGridPanel>();
 		Raster->SetSlotPadding(FMargin(2.f));
 		Inhalt->AddChild(Raster);
@@ -2184,7 +2205,7 @@ TSharedRef<SWidget> UTDTurmInfo::RebuildWidget()
 		{
 			Raster->AddChildToUniformGrid(ZielZeile(WidgetTree, this, this, i, FString(), false, mModusTexte, mZielKnoepfe, mModusPunkte), i, 0);
 		}
-		mFamilienPanel = NeuesZielPanel(Flaeche, TEXT("Bevorzugt:"), Inhalt);
+		mFamilienPanel = NeuesZielPanel(Flaeche, *TDT(TEXT("Bevorzugt:"), TEXT("Preferred:")), Inhalt);
 		UVerticalBox* Liste = WidgetTree->ConstructWidget<UVerticalBox>();
 		Inhalt->AddChild(Liste);
 		for (const FString& Familie : ATDTurretBase::ZielFamilien())
@@ -2332,7 +2353,7 @@ void UTDTurmInfo::Fuelle()
 	}
 	FuelleZielwahl();
 	FuelleUpgrades();
-	mKopf->SetText(FText::FromString(Turm->GetTurmName()));
+	mKopf->SetText(FText::FromString(Turm->GetTurmAnzeige()));
 	TArray<FTDKennwert> Werte;
 	Turm->Kennwerte(Werte);
 	if (Werte.Num() != mWerte.Num())
@@ -2438,15 +2459,16 @@ void UTDHud::Aktualisiere()
 	}
 	const ATDDefenseCore* K = Einsatz->GetKern();
 	FString Lauf = Waves->GetLaufText();
-	Lauf.Split(TEXT(", aus "), &Lauf, nullptr);
+	if (!Lauf.Split(TEXT(", aus "), &Lauf, nullptr)) { Lauf.Split(TEXT(", from "), &Lauf, nullptr); }
 	const FString Welle = Waves->LaeuftWelle() ? Lauf
-		: Waves->LaeuftKernVerteidigung() ? FString::Printf(TEXT("Welle %d/%d bereit (Kern-Menü: E)"), Waves->GetWelle() + 1, Waves->mWellenGesamt)
-		: FString(TEXT("Kein Lauf"));
+		: Waves->LaeuftKernVerteidigung() ? TDF(TEXT("Welle %d/%d bereit (Kern-Menü: E)"), TEXT("Wave %d/%d ready (Core Menu: E)"), Waves->GetWelle() + 1, Waves->mWellenGesamt)
+		: TDT(TEXT("Kein Lauf"), TEXT("No run"));
 	const UTDPionier* Pionier = UTDPionier::Get(this);
 	const int32 Frei = Pionier ? Pionier->FreiePunkte() : 0;
-	mText->SetText(FText::FromString(FString::Printf(TEXT("%s  |  Kern %.0f %%  |  %d Coupons  |  %d FP  |  Rang %d%s"), *Welle,
+	const FString Punkte = Frei <= 0 ? FString() : Frei == 1 ? TDT(TEXT(" (1 Talentpunkt)"), TEXT(" (1 Talent Point)")) : TDF(TEXT(" (%d Talentpunkte)"), TEXT(" (%d Talent Points)"), Frei);
+	mText->SetText(TDFX(TEXT("%s  |  Kern %.0f %%  |  %d Coupons  |  %d FP  |  Rang %d%s"), TEXT("%s  |  Core %.0f %%  |  %d Coupons  |  %d RP  |  Rank %d%s"), *Welle,
 		K ? 100.f * K->GetTDHealth() / FMath::Max(K->GetTDMaxHealth(), 1.f) : 0.f, Einsatz->Konto(), Einsatz->FPImInventar(),
-		Pionier ? Pionier->GetRang() : 1, Frei > 0 ? *FString::Printf(TEXT(" (%d Talentpunkt%s)"), Frei, Frei == 1 ? TEXT("") : TEXT("e")) : TEXT(""))));
+		Pionier ? Pionier->GetRang() : 1, *Punkte));
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -2518,8 +2540,8 @@ void UTDBossBalken::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 		return;
 	}
 	mName->SetText(FText::FromString(TEXT("BOSS: ") + Name));
-	mWerte->SetText(FText::FromString(FString::Printf(TEXT("%s / %s LP   ·   %d / %d"), *FText::AsNumber(FMath::RoundToInt(LP)).ToString(),
-		*FText::AsNumber(FMath::RoundToInt(MaxLP)).ToString(), Lebend, Gesamt)));
+	mWerte->SetText(TDFX(TEXT("%s / %s LP   ·   %d / %d"), TEXT("%s / %s HP   ·   %d / %d"), *FText::AsNumber(FMath::RoundToInt(LP)).ToString(),
+		*FText::AsNumber(FMath::RoundToInt(MaxLP)).ToString(), Lebend, Gesamt));
 	mBalken->SetPercent(MaxLP > 0.f ? LP / MaxLP : 0.f);
 }
 
@@ -2549,7 +2571,7 @@ TSharedRef<SWidget> UTDWellenLeiste::RebuildWidget()
 		Rahmen->AddChild(Breite);
 		UVerticalBox* Spalte = WidgetTree->ConstructWidget<UVerticalBox>();
 		Breite->AddChild(Spalte);
-		mKopf = TDUI::Text(WidgetTree, TEXT("Welle"), 16, TDUI::Akzent, true);
+		mKopf = TDUI::Text(WidgetTree, TDT(TEXT("Welle"), TEXT("Wave")), 16, TDUI::Akzent, true);
 		Spalte->AddChildToVerticalBox(mKopf);
 		mBalken = WidgetTree->ConstructWidget<UProgressBar>();
 		FProgressBarStyle Stil;
@@ -2573,7 +2595,7 @@ TSharedRef<SWidget> UTDWellenLeiste::RebuildWidget()
 		mListe = WidgetTree->ConstructWidget<UVerticalBox>();
 		Spalte->AddChildToVerticalBox(mListe);
 		// 0.66: Schaden je Turmart in dieser Welle
-		UTextBlock* SchadenKopf = TDUI::Text(WidgetTree, TEXT("Schaden dieser Welle"), 14, TDUI::Akzent, true);
+		UTextBlock* SchadenKopf = TDUI::Text(WidgetTree, TDT(TEXT("Schaden dieser Welle"), TEXT("Damage this wave")), 14, TDUI::Akzent, true);
 		if (UVerticalBoxSlot* S = Spalte->AddChildToVerticalBox(SchadenKopf))
 		{
 			S->SetPadding(FMargin(0.f, 8.f, 0.f, 4.f));
@@ -2645,8 +2667,8 @@ void UTDWellenLeiste::FuelleSchaden()
 	for (int32 i = 0; i < Liste.Num() && i < mSchadenTexte.Num(); ++i)
 	{
 		const FTDTurmStat& T = Liste[i];
-		mSchadenTexte[i]->SetText(FText::FromString(FString::Printf(TEXT("%s (%d): %s Schaden · %.0f %% · %d Abschüsse"), *T.Art, T.Anzahl,
-			*FText::AsNumber(FMath::RoundToInt(T.Schaden)).ToString(), Summe > 0.f ? 100.f * T.Schaden / Summe : 0.f, T.Kills)));
+		mSchadenTexte[i]->SetText(TDFX(TEXT("%s (%d): %s Schaden · %.0f %% · %d Abschüsse"), TEXT("%s (%d): %s damage · %.0f %% · %d kills"), *T.Art, T.Anzahl,
+			*FText::AsNumber(FMath::RoundToInt(T.Schaden)).ToString(), Summe > 0.f ? 100.f * T.Schaden / Summe : 0.f, T.Kills));
 		mSchadenBalken[i]->SetPercent(T.Schaden / Hoechst);
 	}
 }
@@ -2659,10 +2681,10 @@ void UTDWellenLeiste::Fuelle()
 	{
 		return;
 	}
-	mKopf->SetText(FText::FromString(S.WellenGesamt > 0 ? FString::Printf(TEXT("Welle %d / %d · %s"), S.Welle, S.WellenGesamt, *S.Art)
-		: FString::Printf(TEXT("Welle %d · %s"), S.Welle, *S.Art)));
+	mKopf->SetText(FText::FromString(S.WellenGesamt > 0 ? TDF(TEXT("Welle %d / %d · %s"), TEXT("Wave %d / %d · %s"), S.Welle, S.WellenGesamt, *S.Art)
+		: TDF(TEXT("Welle %d · %s"), TEXT("Wave %d · %s"), S.Welle, *S.Art)));
 	mBalken->SetPercent(S.Groesse > 0 ? float(S.Besiegt) / S.Groesse : 0.f);
-	mZahlen->SetText(FText::FromString(FString::Printf(TEXT("%d von %d besiegt\n%d unterwegs · %d kommen noch"), S.Besiegt, S.Groesse, S.Lebend, S.Offen)));
+	mZahlen->SetText(TDFX(TEXT("%d von %d besiegt\n%d unterwegs · %d kommen noch"), TEXT("%d of %d defeated\n%d on the way · %d still coming"), S.Besiegt, S.Groesse, S.Lebend, S.Offen));
 	// Zeilen neu bauen, wenn sich die Arten aendern (neue Welle), sonst nur die Zahlen
 	TArray<FString> Arten;
 	for (const FTDArtStatus& A : S.Arten)
@@ -2714,8 +2736,8 @@ void UTDWellenLeiste::Fuelle()
 	{
 		const FTDArtStatus& A = S.Arten[i];
 		const int32 Weg = A.Gesamt - A.Lebend - A.Offen;
-		mZeilen[i]->SetText(FText::FromString(A.Lebend + A.Offen == 0 ? FString::Printf(TEXT("alle %d besiegt"), A.Gesamt)
-			: FString::Printf(TEXT("%d unterwegs · %d kommen · %d / %d besiegt"), A.Lebend, A.Offen, Weg, A.Gesamt)));
+		mZeilen[i]->SetText(FText::FromString(A.Lebend + A.Offen == 0 ? TDF(TEXT("alle %d besiegt"), TEXT("all %d defeated"), A.Gesamt)
+			: TDF(TEXT("%d unterwegs · %d kommen · %d / %d besiegt"), TEXT("%d on the way · %d coming · %d / %d defeated"), A.Lebend, A.Offen, Weg, A.Gesamt)));
 		mZeilen[i]->SetColorAndOpacity(FSlateColor(A.Lebend + A.Offen == 0 ? TDUI::Gut : TDUI::Grau));
 	}
 }
@@ -2811,10 +2833,11 @@ void UTDKernTerminal::BaueStatistik()
 		Abschnitt(Zeile, 6.f);
 	};
 
-	Abschnitt(NeuerText(TEXT("Statistik je Welle"), 20, TDUI::Akzent, true), 4.f);
+	Abschnitt(NeuerText(TDT(TEXT("Statistik je Welle"), TEXT("Statistics per wave")), 20, TDUI::Akzent, true), 4.f);
 	if (Verlauf.Num() == 0)
 	{
-		Abschnitt(NeuerText(TEXT("Noch keine abgeschlossene Welle in diesem Einsatz. Nach jeder Welle steht hier, welche Turmart wie viel Schaden gemacht hat, wie es um Munition und Strom stand und wie viel der Kern verloren hat."), 14, TDUI::Grau), 0.f);
+		Abschnitt(NeuerText(TDT(TEXT("Noch keine abgeschlossene Welle in diesem Einsatz. Nach jeder Welle steht hier, welche Turmart wie viel Schaden gemacht hat, wie es um Munition und Strom stand und wie viel der Kern verloren hat."),
+			TEXT("No completed wave in this operation yet. After each wave this shows how much damage each turret type dealt, how ammo and power held up and how much the Core lost.")), 14, TDUI::Grau), 0.f);
 		return;
 	}
 
@@ -2834,7 +2857,8 @@ void UTDKernTerminal::BaueStatistik()
 		HoechstSchaden = FMath::Max(HoechstSchaden, Summe);
 		HoechstStrom = FMath::Max3(HoechstStrom, W.StromKapazitaet, W.StromSpitze);
 	}
-	Ueberschrift(TEXT("Schaden"), TEXT("Wirksamer Schaden je Turmart (ohne Overkill), rechts der Kern vor und nach der Welle."));
+	Ueberschrift(TDT(TEXT("Schaden"), TEXT("Damage")), TDT(TEXT("Wirksamer Schaden je Turmart (ohne Overkill), rechts der Kern vor und nach der Welle."),
+		TEXT("Effective damage per turret type (without overkill), on the right the Core before and after the wave.")));
 	TArray<TPair<FString, FLinearColor>> ArtFarben;
 	for (const FString& Art : Arten)
 	{
@@ -2844,7 +2868,7 @@ void UTDKernTerminal::BaueStatistik()
 	for (const FTDWellenStat& W : Verlauf)
 	{
 		UHorizontalBox* Reihe = WidgetTree->ConstructWidget<UHorizontalBox>();
-		Spalte(Reihe, FString::Printf(TEXT("Welle %d"), W.Welle), 80.f, TDUI::Hell, true, false);
+		Spalte(Reihe, TDF(TEXT("Welle %d"), TEXT("Wave %d"), W.Welle), 80.f, TDUI::Hell, true, false);
 		// gestapelt: jede Ebene reicht bis zur Summe der Arten davor plus ihrer eigenen
 		TArray<FEbene> Ebenen;
 		float Summe = 0.f;
@@ -2861,72 +2885,78 @@ void UTDKernTerminal::BaueStatistik()
 		Balken(Reihe, Ebenen);
 		const float Verlust = W.KernStart - W.KernEnde;
 		Spalte(Reihe, Zahl(Summe), 70.f, TDUI::Hell, false, true);
-		Spalte(Reihe, FString::Printf(TEXT("Kern %.0f %% auf %.0f %%"), W.KernStart, W.KernEnde), 200.f,
+		Spalte(Reihe, TDF(TEXT("Kern %.0f %% auf %.0f %%"), TEXT("Core %.0f %% to %.0f %%"), W.KernStart, W.KernEnde), 200.f,
 			Verlust >= 15.f ? TDUI::Fehler : Verlust >= 5.f ? TDUI::Akzent : TDUI::Gut, false, false);
 		Abschnitt(Reihe, 4.f);
 	}
 
 	// ---------- 2. Energie ----------
 	const FLinearColor KapFarbe = TDUI::C(70, 70, 70), SpitzeFarbe = TDUI::C(110, 170, 250), MittelFarbe = TDUI::C(60, 110, 190);
-	Ueberschrift(TEXT("Energie"), TEXT("Kapazität aller Kraftwerke (grau), höchster Verbrauch in der Welle (hellblau) und Durchschnitt (dunkelblau). Rot: Überlast oder Sicherung."));
-	Legende({ { TEXT("Kapazität"), KapFarbe }, { TEXT("Spitze"), SpitzeFarbe }, { TEXT("Durchschnitt"), MittelFarbe }, { TEXT("Überlast"), TDUI::Fehler } });
+	Ueberschrift(TDT(TEXT("Energie"), TEXT("Power")), TDT(TEXT("Kapazität aller Kraftwerke (grau), höchster Verbrauch in der Welle (hellblau) und Durchschnitt (dunkelblau). Rot: Überlast oder Sicherung."),
+		TEXT("Capacity of all power plants (gray), peak consumption in the wave (light blue) and average (dark blue). Red: overload or fuse.")));
+	Legende({ { TDT(TEXT("Kapazität"), TEXT("Capacity")), KapFarbe }, { TDT(TEXT("Spitze"), TEXT("Peak")), SpitzeFarbe }, { TDT(TEXT("Durchschnitt"), TEXT("Average")), MittelFarbe },
+		{ TDT(TEXT("Überlast"), TEXT("Overload")), TDUI::Fehler } });
 	for (const FTDWellenStat& W : Verlauf)
 	{
 		UHorizontalBox* Reihe = WidgetTree->ConstructWidget<UHorizontalBox>();
-		Spalte(Reihe, FString::Printf(TEXT("Welle %d"), W.Welle), 80.f, TDUI::Hell, true, false);
+		Spalte(Reihe, TDF(TEXT("Welle %d"), TEXT("Wave %d"), W.Welle), 80.f, TDUI::Hell, true, false);
 		const bool bUeber = W.StromUeberlast > 0.f;
 		Balken(Reihe, { { W.StromKapazitaet / HoechstStrom, KapFarbe, 16.f }, { W.StromSpitze / HoechstStrom, bUeber ? TDUI::Fehler : SpitzeFarbe, 10.f },
 			{ W.StromMittel / HoechstStrom, MittelFarbe, 10.f } });
 		const float Reserve = W.StromKapazitaet > 0.f ? 100.f * (1.f - W.StromSpitze / W.StromKapazitaet) : 0.f;
-		Spalte(Reihe, FString::Printf(TEXT("Ø %.0f · Spitze %.0f von %.0f MW"), W.StromMittel, W.StromSpitze, W.StromKapazitaet), 270.f, TDUI::Hell, false, false);
-		Spalte(Reihe, bUeber ? FString::Printf(TEXT("%.0f s Überlast"), W.StromUeberlast) : FString::Printf(TEXT("Reserve %.0f %%"), Reserve), 150.f,
+		Spalte(Reihe, TDF(TEXT("Ø %.0f · Spitze %.0f von %.0f MW"), TEXT("Ø %.0f · peak %.0f of %.0f MW"), W.StromMittel, W.StromSpitze, W.StromKapazitaet), 270.f, TDUI::Hell, false, false);
+		Spalte(Reihe, bUeber ? TDF(TEXT("%.0f s Überlast"), TEXT("%.0f s overload"), W.StromUeberlast) : TDF(TEXT("Reserve %.0f %%"), TEXT("Reserve %.0f %%"), Reserve), 150.f,
 			bUeber || Reserve < 10.f ? TDUI::Fehler : Reserve < 25.f ? TDUI::Akzent : TDUI::Gut, false, false);
 		Abschnitt(Reihe, 4.f);
 	}
 
 	// ---------- 3. Munition ----------
 	const FLinearColor FabrikFarbe = TDUI::C(150, 215, 125), VorratFarbe = TDUI::C(80, 80, 80);
-	Ueberschrift(TEXT("Munition"), TEXT("Je Welle und Turmart: verschossen (Farbe der Turmart) gegen das, was die Fabrik in der Wellendauer liefern kann (grün), dahinter der Vorrat zu Beginn (grau). Ist verschossen länger als grün, zehren die Türme vom Vorrat."));
-	Legende({ { TEXT("Vorrat zu Beginn"), VorratFarbe }, { TEXT("Fabrik in der Welle"), FabrikFarbe }, { TEXT("verschossen"), TDUI::Akzent } });
+	Ueberschrift(TDT(TEXT("Munition"), TEXT("Ammo")), TDT(TEXT("Je Welle und Turmart: verschossen (Farbe der Turmart) gegen das, was die Fabrik in der Wellendauer liefern kann (grün), dahinter der Vorrat zu Beginn (grau). Ist verschossen länger als grün, zehren die Türme vom Vorrat."),
+		TEXT("Per wave and turret type: fired (turret type color) against what the factory can deliver during the wave (green), behind it the stock at the start (gray). If fired is longer than green, the turrets eat into their stock.")));
+	Legende({ { TDT(TEXT("Vorrat zu Beginn"), TEXT("Stock at start")), VorratFarbe }, { TDT(TEXT("Fabrik in der Welle"), TEXT("Factory during wave")), FabrikFarbe }, { TDT(TEXT("verschossen"), TEXT("fired")), TDUI::Akzent } });
 	for (const FTDWellenStat& W : Verlauf)
 	{
 		for (const FTDTurmStat& T : W.Tuerme)
 		{
 			UHorizontalBox* Reihe = WidgetTree->ConstructWidget<UHorizontalBox>();
-			Spalte(Reihe, FString::Printf(TEXT("Welle %d"), W.Welle), 80.f, TDUI::Hell, true, false);
+			Spalte(Reihe, TDF(TEXT("Welle %d"), TEXT("Wave %d"), W.Welle), 80.f, TDUI::Hell, true, false);
 			const float Fabrik = T.ProduktionMin * W.Dauer / 60.f;
 			Balken(Reihe, { { T.VorratStart / HoechstMunition, VorratFarbe, 18.f }, { Fabrik / HoechstMunition, FabrikFarbe, 11.f },
 				{ T.Schuesse / HoechstMunition, UTDWellenStatistik::Farbe(T.Art), 5.f } });
 			Spalte(Reihe, T.Art, 140.f, UTDWellenStatistik::Farbe(T.Art), true, false);
-			Spalte(Reihe, FString::Printf(TEXT("%d verschossen · Fabrik %.0f (%.0f/min) · Vorrat %d auf %d"), T.Schuesse, Fabrik, T.ProduktionMin, T.VorratStart, T.VorratEnde),
+			Spalte(Reihe, TDF(TEXT("%d verschossen · Fabrik %.0f (%.0f/min) · Vorrat %d auf %d"), TEXT("%d fired · factory %.0f (%.0f/min) · stock %d to %d"), T.Schuesse, Fabrik, T.ProduktionMin, T.VorratStart, T.VorratEnde),
 				420.f, T.Hungrig > 0.f || T.VorratEnde == 0 ? TDUI::Fehler : TDUI::Hell, false, false);
 			Abschnitt(Reihe, 4.f);
 		}
 	}
 
 	// ---------- 4. Details, neueste Welle zuerst ----------
-	Ueberschrift(TEXT("Wellen im Detail"), TEXT("Rot markiert: Engpässe (Vorrat leer, Zeit ohne Munition oder Strom)."));
+	Ueberschrift(TDT(TEXT("Wellen im Detail"), TEXT("Waves in detail")), TDT(TEXT("Rot markiert: Engpässe (Vorrat leer, Zeit ohne Munition oder Strom)."), TEXT("Marked red: bottlenecks (stock empty, time without ammo or power).")));
 	for (int32 i = Verlauf.Num() - 1; i >= 0; --i)
 	{
 		const FTDWellenStat& W = Verlauf[i];
 		UBorder* Karte = NeuesFeld(TDUI::KarteDunkel, FMargin(12.f, 10.f));
 		UVerticalBox* Inhalt = WidgetTree->ConstructWidget<UVerticalBox>();
 		Karte->AddChild(Inhalt);
-		UTextBlock* Kopfzeile = NeuerText(FString::Printf(TEXT("Welle %d · %.0f s · %d Gegner · Kern %.0f %% auf %.0f %% · +%d Coupons, +%d FP"),
+		UTextBlock* Kopfzeile = NeuerText(TDF(TEXT("Welle %d · %.0f s · %d Gegner · Kern %.0f %% auf %.0f %% · +%d Coupons, +%d FP"),
+			TEXT("Wave %d · %.0f s · %d enemies · Core %.0f %% to %.0f %% · +%d Coupons, +%d RP"),
 			W.Welle, W.Dauer, W.Gegner, W.KernStart, W.KernEnde, W.EP, W.FP), 16, TDUI::Akzent, true);
 		Kopfzeile->SetAutoWrapText(true);
 		Inhalt->AddChildToVerticalBox(Kopfzeile);
 		const bool bStromKnapp = W.StromUeberlast > 0.f || (W.StromKapazitaet > 0.f && W.StromSpitze > 0.9f * W.StromKapazitaet);
-		const FString Ueber = W.StromUeberlast > 0.f ? FString::Printf(TEXT(", %.0f s Überlast"), W.StromUeberlast) : FString();
-		if (UVerticalBoxSlot* S = Inhalt->AddChildToVerticalBox(NeuerText(FString::Printf(TEXT("Strom: Ø %.0f MW, Spitze %.0f MW von %.0f MW Kapazität%s"),
+		const FString Ueber = W.StromUeberlast > 0.f ? TDF(TEXT(", %.0f s Überlast"), TEXT(", %.0f s overload"), W.StromUeberlast) : FString();
+		if (UVerticalBoxSlot* S = Inhalt->AddChildToVerticalBox(NeuerText(TDF(TEXT("Strom: Ø %.0f MW, Spitze %.0f MW von %.0f MW Kapazität%s"), TEXT("Power: Ø %.0f MW, peak %.0f MW of %.0f MW capacity%s"),
 			W.StromMittel, W.StromSpitze, W.StromKapazitaet, *Ueber), 13, bStromKnapp ? TDUI::Fehler : TDUI::Grau)))
 		{
 			S->SetPadding(FMargin(0.f, 2.f, 0.f, 6.f));
 		}
 		// Spalten breit genug fuer die fetten Ueberschriften (Test 0.66: ueberlagert)
 		static const float Breiten[] = { 150.f, 60.f, 90.f, 70.f, 100.f, 80.f, 110.f, 110.f, 100.f, 130.f, 110.f };
-		static const TCHAR* Koepfe[] = { TEXT("Turmart"), TEXT("Türme"), TEXT("Schaden"), TEXT("Anteil"), TEXT("Abschüsse"), TEXT("Schüsse"),
-			TEXT("Vorrat Start"), TEXT("Vorrat Ende"), TEXT("Fabrik/min"), TEXT("ohne Munition"), TEXT("ohne Strom") };
+		const FString Koepfe[] = { TDT(TEXT("Turmart"), TEXT("Turret type")), TDT(TEXT("Türme"), TEXT("Turrets")), TDT(TEXT("Schaden"), TEXT("Damage")),
+			TDT(TEXT("Anteil"), TEXT("Share")), TDT(TEXT("Abschüsse"), TEXT("Kills")), TDT(TEXT("Schüsse"), TEXT("Shots")),
+			TDT(TEXT("Vorrat Start"), TEXT("Stock start")), TDT(TEXT("Vorrat Ende"), TEXT("Stock end")), TDT(TEXT("Fabrik/min"), TEXT("Factory/min")),
+			TDT(TEXT("ohne Munition"), TEXT("no ammo")), TDT(TEXT("ohne Strom"), TEXT("no power")) };
 		UHorizontalBox* Kopf = WidgetTree->ConstructWidget<UHorizontalBox>();
 		for (int32 k = 0; k < 11; ++k)
 		{
@@ -2957,7 +2987,8 @@ void UTDKernTerminal::BaueStatistik()
 			Spalte(Reihe, FString::Printf(TEXT("%.0f s"), T.OhneStrom), Breiten[10], T.OhneStrom > 0.f ? TDUI::Fehler : TDUI::Hell, false, true);
 			Inhalt->AddChildToVerticalBox(Zeile);
 		}
-		UTextBlock* Fuss = NeuerText(TEXT("Schüsse und Vorrat in Turm-Einheiten, Fabrik/min = Soll-Produktion der eingestellten Munition. \"ohne Munition\" zählt Turm-Sekunden mit Ziel, aber leerem Magazin."), 12, TDUI::Grau);
+		UTextBlock* Fuss = NeuerText(TDT(TEXT("Schüsse und Vorrat in Turm-Einheiten, Fabrik/min = Soll-Produktion der eingestellten Munition. \"ohne Munition\" zählt Turm-Sekunden mit Ziel, aber leerem Magazin."),
+			TEXT("Shots and stock in turret units, factory/min = target production of the selected ammo. \"no ammo\" counts turret seconds with a target but an empty magazine.")), 12, TDUI::Grau);
 		Fuss->SetAutoWrapText(true);
 		if (UVerticalBoxSlot* S = Inhalt->AddChildToVerticalBox(Fuss))
 		{

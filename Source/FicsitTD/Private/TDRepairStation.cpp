@@ -4,6 +4,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Materials/MaterialInterface.h"
 #include "EngineUtils.h"
+#include "TDSprache.h"
 
 static constexpr float ReparaturRadius = 2500.f;
 
@@ -135,16 +136,17 @@ void ATDRepairStation::Animieren(float DeltaSeconds, AFGCreature* Ziel)
 
 FString ATDRepairStation::ZusatzInfo() const
 {
-	return FString::Printf(TEXT("%s, insgesamt %.0f LP repariert"), mGibtArbeit ? TEXT("repariert") : TEXT("nichts zu reparieren"), mGeheilt);
+	return TDF(TEXT("%s, insgesamt %.0f LP repariert"), TEXT("%s, %.0f HP repaired in total"),
+		*(mGibtArbeit ? TDT(TEXT("repariert"), TEXT("repairing")) : TDT(TEXT("nichts zu reparieren"), TEXT("nothing to repair"))), mGeheilt);
 }
 
 void ATDRepairStation::Kampfwerte(TArray<FTDKennwert>& Out) const
 {
 	const float Takt = Zykluszeit();
-	Out.Add({ TEXT("Reparatur je Zyklus"), FString::Printf(TEXT("%.0f LP"), ReparaturFuer(AktuelleMunition()) * SchadenBonus()), true });
+	Out.Add({ TDT(TEXT("Reparatur je Zyklus"), TEXT("Repair per cycle")), TDF(TEXT("%.0f LP"), TEXT("%.0f HP"), ReparaturFuer(AktuelleMunition()) * SchadenBonus()), true });
 	if (Takt > 0.f)
 	{
-		Out.Add({ TEXT("Takt"), FString::Printf(TEXT("%.1f s"), Takt), true });
+		Out.Add({ TDT(TEXT("Takt"), TEXT("Cycle")), FString::Printf(TEXT("%.1f s"), Takt), true });
 	}
-	Out.Add({ TEXT("Umkreis"), FString::Printf(TEXT("%.0f m"), GetReichweite() / 100.f), true });
+	Out.Add({ TDT(TEXT("Umkreis"), TEXT("Radius")), FString::Printf(TEXT("%.0f m"), GetReichweite() / 100.f), true });
 }

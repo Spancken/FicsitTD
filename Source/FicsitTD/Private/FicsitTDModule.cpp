@@ -71,6 +71,7 @@ bool FFicsitTDModule::IstGemerkteWellenKreatur(const void* Adresse)
 #include "FGUnlockSubsystem.h"
 #include "FGRecipe.h"
 #include "TDForschung.h"
+#include "TDSprache.h"
 #include "TDForschungVoraussetzungen.inl"
 
 void TDForschung::GibStilleRezepte(const UObject* WorldContext)
@@ -160,7 +161,8 @@ static bool AndereSeiteGewaehlt(const AFGResearchManager* Forschung, UClass* Sch
 			|| (Schemata && Schemata->IsSchematicPurchased(AndereKlasse))))
 		{
 			// Test 0.53: Puls-Nobelisk liess sich ohne jede Rueckmeldung nicht erforschen
-			MeldeForschungGesperrt(Forschung, Schematic, FString::Printf(TEXT("%s ist gesperrt: Abzweigung, in diesem Einsatz ist schon %s gewählt."),
+			MeldeForschungGesperrt(Forschung, Schematic, TDF(TEXT("%s ist gesperrt: Abzweigung, in diesem Einsatz ist schon %s gewählt."),
+				TEXT("%s is locked: branch, %s is already chosen in this operation."),
 				*TDForschung::Basisname(Schematic), *TDForschung::Basisname(AndereKlasse)));
 			return true;
 		}
@@ -187,7 +189,8 @@ static bool WelleZuFrueh(const AFGResearchManager* Forschung, UClass* Schematic)
 		const int32 Naechste = Waves ? Waves->GetWelle() + 1 : 1;
 		if (Naechste < Ab)
 		{
-			MeldeForschungGesperrt(Forschung, Schematic, FString::Printf(TEXT("%s ist erst ab Welle %d erforschbar (nächste Welle: %d)."),
+			MeldeForschungGesperrt(Forschung, Schematic, TDF(TEXT("%s ist erst ab Welle %d erforschbar (nächste Welle: %d)."),
+				TEXT("%s can only be researched from wave %d (next wave: %d)."),
 				*TDForschung::Basisname(Schematic), Ab, Naechste));
 			return true;
 		}
@@ -213,7 +216,8 @@ static bool VoraussetzungFehlt(const AFGResearchManager* Forschung, UClass* Sche
 		UClass* Noetig = LoadClass<UFGSchematic>(nullptr, Paar.Value);
 		if (Noetig && !Forschung->IsResearchComplete(Noetig) && !(Schemata && Schemata->IsSchematicPurchased(Noetig)))
 		{
-			MeldeForschungGesperrt(Forschung, Schematic, FString::Printf(TEXT("%s ist noch gesperrt: zuerst %s im MAM erforschen."),
+			MeldeForschungGesperrt(Forschung, Schematic, TDF(TEXT("%s ist noch gesperrt: zuerst %s im MAM erforschen."),
+				TEXT("%s is still locked: research %s in the MAM first."),
 				*TDForschung::Basisname(Schematic), *TDForschung::Basisname(Noetig)));
 			return true;
 		}

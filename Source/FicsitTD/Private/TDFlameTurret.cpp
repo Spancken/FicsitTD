@@ -10,6 +10,7 @@
 #include "FGRecipe.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialInterface.h"
+#include "TDSprache.h"
 
 // Masse aus Modelle\TD_FlameTurret_Stufen.blend (0.62, nach Marius' Stufenbildern), Unreal-cm
 static const FVector FlammeDuese(150.f, 0.f, 0.f);           // Duesenspitze in der Kanzel
@@ -243,7 +244,7 @@ void ATDFlameTurret::Animieren(float DeltaSeconds, AFGCreature* Ziel)
 
 FString ATDFlameTurret::ZusatzInfo() const
 {
-	return FString::Printf(TEXT("Treibstoff %.1f m³ (%s)"), GetAmmo() / 1000.f, *GetMunitionsName());
+	return TDF(TEXT("Treibstoff %.1f m³ (%s)"), TEXT("Fuel %.1f m³ (%s)"), GetAmmo() / 1000.f, *GetMunitionsName());
 }
 
 float ATDFlameTurret::NennDPS() const
@@ -254,8 +255,8 @@ float ATDFlameTurret::NennDPS() const
 void ATDFlameTurret::Kampfwerte(TArray<FTDKennwert>& Out) const
 {
 	const FTDTreibstoffWerte W = WerteFuer(AktuelleMunition());
-	Out.Add({ TEXT("Feuerrate"), TEXT("Dauerstrahl"), true });
-	Out.Add({ TEXT("Schaden/s"), FString::Printf(TEXT("%.0f (je Gegner im Kegel)"), W.SchadenProSekunde * SchadenBonus()), true });
-	Out.Add({ TEXT("Nachbrennen"), FString::Printf(TEXT("%.0f Schaden/s für %.0f s"), W.BrennSchaden * SchadenBonus() * (1.f + LevelWert(TEXT("Nachbrennen"))), W.BrennDauer * (1.f + LevelWert(TEXT("Nachbrennen")))), true });
-	Out.Add({ TEXT("Kegel"), FString::Printf(TEXT("%.0f°, alle darin"), FlammeKegel * (1.f + LevelWert(TEXT("Kegel"))) * W.Kegel), true });
+	Out.Add({ TDT(TEXT("Feuerrate"), TEXT("Fire rate")), TDT(TEXT("Dauerstrahl"), TEXT("Continuous stream")), true });
+	Out.Add({ TDT(TEXT("Schaden/s"), TEXT("Damage/s")), TDF(TEXT("%.0f (je Gegner im Kegel)"), TEXT("%.0f (per enemy in the cone)"), W.SchadenProSekunde * SchadenBonus()), true });
+	Out.Add({ TDT(TEXT("Nachbrennen"), TEXT("Afterburn")), TDF(TEXT("%.0f Schaden/s für %.0f s"), TEXT("%.0f damage/s for %.0f s"), W.BrennSchaden * SchadenBonus() * (1.f + LevelWert(TEXT("Nachbrennen"))), W.BrennDauer * (1.f + LevelWert(TEXT("Nachbrennen")))), true });
+	Out.Add({ TDT(TEXT("Kegel"), TEXT("Cone")), TDF(TEXT("%.0f°, alle darin"), TEXT("%.0f°, hits all inside"), FlammeKegel * (1.f + LevelWert(TEXT("Kegel"))) * W.Kegel), true });
 }

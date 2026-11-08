@@ -31,6 +31,42 @@
 #include "Kismet/GameplayStatics.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "TimerManager.h"
+#include "TDSprache.h"
+
+/** Anzeigename eines Turms fuer Spielertexte; mTurmName selbst bleibt deutscher Schluessel (Balance, Forschung, Statistik) */
+static FString TDTurmAnzeige(const FString& Turm)
+{
+	if (!TDSprache::Englisch()) return Turm;
+	if (Turm == TEXT("Bolzenturm")) return TEXT("Bolt Turret");
+	if (Turm == TEXT("Gewehrturm")) return TEXT("Rifle Turret");
+	if (Turm == TEXT("Nobelisk-Werfer")) return TEXT("Nobelisk Launcher");
+	if (Turm == TEXT("Teslaspule")) return TEXT("Tesla Coil");
+	if (Turm == TEXT("Flammenwerfer")) return TEXT("Flamethrower");
+	if (Turm == TEXT("Lockfeuer")) return TEXT("Lure Fire");
+	if (Turm == TEXT("Reparaturstation")) return TEXT("Repair Station");
+	if (Turm == TEXT("Oelschlick")) return TEXT("Oil Slick Field");
+	if (Turm == TEXT("Elektrozaun")) return TEXT("Electric Fence");
+	if (Turm == TEXT("Funkmast")) return TEXT("Radio Mast");
+	if (Turm == TEXT("Schildgenerator")) return TEXT("Shield Generator");
+	if (Turm == TEXT("Himmelsturm")) return TEXT("Sky Tower");
+	if (Turm == TEXT("Stoerfeld")) return TEXT("Jammer Projector");
+	if (Turm == TEXT("Singularitaet")) return TEXT("Singularity Launcher");
+	return Turm;
+}
+
+/** Anzeigename der Schadensart; SchadensartName() bleibt Balance-Schluessel (Resistenzen.*) */
+static FString TDSchadensartAnzeige(ETDSchadensart Art)
+{
+	switch (Art)
+	{
+	case ETDSchadensart::Kugel:     return TDT(TEXT("Kugel"), TEXT("Bullet"));
+	case ETDSchadensart::Feuer:     return TDT(TEXT("Feuer"), TEXT("Fire"));
+	case ETDSchadensart::Strom:     return TDT(TEXT("Strom"), TEXT("Electric"));
+	case ETDSchadensart::Explosion: return TDT(TEXT("Explosion"), TEXT("Explosive"));
+	case ETDSchadensart::Gift:      return TDT(TEXT("Gift"), TEXT("Poison"));
+	default:                        return TDT(TEXT("Durchschlag"), TEXT("Piercing"));
+	}
+}
 
 static const TCHAR* TurmSwatchPfad = TEXT("/Game/FactoryGame/Buildable/-Shared/Customization/Swatches/SwatchDesc_Custom.SwatchDesc_Custom_C");
 static constexpr float TurmSchrittIntervall = 0.1f;
@@ -192,40 +228,57 @@ FString ATDTurretBase::LevelDiffText(int32 Von, int32 Bis) const
 		const FString W = Wert;
 		if (W == TEXT("Durchschlag"))
 		{
-			Teile.Add(FString::Printf(TEXT("+%d Durchschlag"), FMath::RoundToInt(D)));
+			Teile.Add(TDF(TEXT("+%d Durchschlag"), TEXT("+%d pierce"), FMath::RoundToInt(D)));
 		}
 		else if (W == TEXT("Spruenge"))
 		{
-			Teile.Add(FString::Printf(TEXT("+%d Sprung"), FMath::RoundToInt(D)));
+			Teile.Add(TDF(TEXT("+%d Sprung"), TEXT("+%d jump"), FMath::RoundToInt(D)));
 		}
 		else
 		{
 			FString Name = W;
-			if (W == TEXT("Takt"))
+			if (W == TEXT("Schaden"))
 			{
-				Name = mTurmName == TEXT("Teslaspule") ? TEXT("Aufladen") : mTurmName == TEXT("Nobelisk-Werfer") ? TEXT("Wurftakt") : TEXT("Feuerrate");
+				Name = TDT(TEXT("Schaden"), TEXT("Damage"));
+			}
+			else if (W == TEXT("Reichweite"))
+			{
+				Name = TDT(TEXT("Reichweite"), TEXT("Range"));
+			}
+			else if (W == TEXT("Nachbrennen"))
+			{
+				Name = TDT(TEXT("Nachbrennen"), TEXT("Afterburn"));
+			}
+			else if (W == TEXT("Magazin"))
+			{
+				Name = TDT(TEXT("Magazin"), TEXT("Magazine"));
+			}
+			else if (W == TEXT("Takt"))
+			{
+				Name = mTurmName == TEXT("Teslaspule") ? TDT(TEXT("Aufladen"), TEXT("Charging"))
+					: mTurmName == TEXT("Nobelisk-Werfer") ? TDT(TEXT("Wurftakt"), TEXT("Throw rate")) : TDT(TEXT("Feuerrate"), TEXT("Fire rate"));
 			}
 			else if (W == TEXT("Radius"))
 			{
-				Name = TEXT("Sprengradius");
+				Name = TDT(TEXT("Sprengradius"), TEXT("Blast radius"));
 			}
 			else if (W == TEXT("Kegel"))
 			{
-				Name = TEXT("Kegelbreite");
+				Name = TDT(TEXT("Kegelbreite"), TEXT("Cone width"));
 			}
-			Teile.Add(W == TEXT("Magazin") && FMath::IsNearlyEqual(D, 1.f) ? FString(TEXT("Magazin x2"))
+			Teile.Add(W == TEXT("Magazin") && FMath::IsNearlyEqual(D, 1.f) ? TDT(TEXT("Magazin x2"), TEXT("Magazine x2"))
 				: FString::Printf(TEXT("%s +%d %%"), *Name, FMath::RoundToInt(100.f * D)));
 		}
 	}
 	// Level 5 = Meisterstufe mit eigener Faehigkeit je Turm (0.64, Marius: nicht ueberall ein zweiter Lauf)
 	if (Von < TurmMaxLevel && Bis >= TurmMaxLevel)
 	{
-		Teile.Add(mTurmName == TEXT("Gewehrturm") ? TEXT("Meisterstufe Gurttrommel: Dauerfeuer ohne Nachladen")
-			: mTurmName == TEXT("Bolzenturm") ? TEXT("Meisterstufe Doppellauf: zwei Bolzen je Schuss")
-			: mTurmName == TEXT("Nobelisk-Werfer") ? TEXT("Meisterstufe Salvenkopf: drei Nobelisken je Salve")
-			: mTurmName == TEXT("Teslaspule") ? TEXT("Meisterstufe Spannungsfeld: bremst Gegner bis 10 m")
-			: mTurmName == TEXT("Flammenwerfer") ? TEXT("Meisterstufe Feuerteppich: der Boden brennt 6 s")
-			: TEXT("Meisterstufe"));
+		Teile.Add(mTurmName == TEXT("Gewehrturm") ? TDT(TEXT("Meisterstufe Gurttrommel: Dauerfeuer ohne Nachladen"), TEXT("Master Tier Belt Drum: continuous fire without reloading"))
+			: mTurmName == TEXT("Bolzenturm") ? TDT(TEXT("Meisterstufe Doppellauf: zwei Bolzen je Schuss"), TEXT("Master Tier Double Barrel: two bolts per shot"))
+			: mTurmName == TEXT("Nobelisk-Werfer") ? TDT(TEXT("Meisterstufe Salvenkopf: drei Nobelisken je Salve"), TEXT("Master Tier Salvo Head: three Nobelisks per salvo"))
+			: mTurmName == TEXT("Teslaspule") ? TDT(TEXT("Meisterstufe Spannungsfeld: bremst Gegner bis 10 m"), TEXT("Master Tier Voltage Field: slows enemies within 10 m"))
+			: mTurmName == TEXT("Flammenwerfer") ? TDT(TEXT("Meisterstufe Feuerteppich: der Boden brennt 6 s"), TEXT("Master Tier Fire Carpet: the ground burns for 6 s"))
+			: TDT(TEXT("Meisterstufe"), TEXT("Master Tier")));
 	}
 	if (Teile.Num() == 0)
 	{
@@ -297,11 +350,11 @@ FString ATDTurretBase::LevelSperre() const
 	const int32 Naechstes = GetLevel() + 1;
 	if (!HatUpgrades())
 	{
-		return TEXT("Dieser Turm hat keine Level.");
+		return TDT(TEXT("Dieser Turm hat keine Level."), TEXT("This turret has no levels."));
 	}
 	if (Naechstes > TurmMaxLevel)
 	{
-		return TEXT("Höchstes Level erreicht.");
+		return TDT(TEXT("Höchstes Level erreicht."), TEXT("Maximum level reached."));
 	}
 	if (Naechstes <= LevelMax())
 	{
@@ -309,17 +362,17 @@ FString ATDTurretBase::LevelSperre() const
 	}
 	if (Naechstes == 2)
 	{
-		return FString::Printf(TEXT("Erst im MAM erforschen: %s."), *mTurmName);
+		return TDF(TEXT("Erst im MAM erforschen: %s."), TEXT("Research in the MAM first: %s."), *TDTurmAnzeige(mTurmName));
 	}
 	if (Naechstes == 3)
 	{
-		return TEXT("Erst im MAM erforschen: Turmfertigung II.");
+		return TDT(TEXT("Erst im MAM erforschen: Turmfertigung II."), TEXT("Research in the MAM first: Turret Fabrication II."));
 	}
 	if (Naechstes == 4)
 	{
-		return TEXT("Erst im MAM erforschen: Turmfertigung III.");
+		return TDT(TEXT("Erst im MAM erforschen: Turmfertigung III."), TEXT("Research in the MAM first: Turret Fabrication III."));
 	}
-	return TEXT("Erst im MAM erforschen: Turmfertigung IV (Meisterstufe).");
+	return TDT(TEXT("Erst im MAM erforschen: Turmfertigung IV (Meisterstufe)."), TEXT("Research in the MAM first: Turret Fabrication IV (Master Tier)."));
 }
 
 FString ATDTurretBase::KaufeLevel()
@@ -332,7 +385,7 @@ FString ATDTurretBase::KaufeLevel()
 	const int32 Neu = GetLevel() + 1;
 	const int32 Preis = LevelPreis();
 	UTDEinsatzSubsystem* Einsatz = GetWorld()->GetSubsystem<UTDEinsatzSubsystem>();
-	const FString Fehler = Einsatz ? Einsatz->ZahleEP(Preis, FString::Printf(TEXT("%s auf Level %d"), *mTurmName, Neu), true) : TEXT("Nur im Einsatz.");
+	const FString Fehler = Einsatz ? Einsatz->ZahleEP(Preis, FString::Printf(TEXT("%s auf Level %d"), *mTurmName, Neu), true) : TDT(TEXT("Nur im Einsatz."), TEXT("Only during an Operation."));
 	if (!Fehler.IsEmpty())
 	{
 		return Fehler;
@@ -344,7 +397,7 @@ FString ATDTurretBase::KaufeLevel()
 	}
 	ZeigeStufenTeile();
 	UE_LOG(LogFicsitTD, Log, TEXT("Level %s %s: Level %d fuer %d EP (%s)"), *mTurmName, *GetName(), mLevel, Preis, *LevelText(mLevel));
-	return FString::Printf(TEXT("Level %d für %d Coupons: %s. Konto %d Coupons."), mLevel, Preis, *LevelText(mLevel), Einsatz->Konto());
+	return TDF(TEXT("Level %d für %d Coupons: %s. Konto %d Coupons."), TEXT("Level %d for %d Coupons: %s. Balance %d Coupons."), mLevel, Preis, *LevelText(mLevel), Einsatz->Konto());
 }
 
 void ATDTurretBase::SetzeLevelTest(int32 Level)
@@ -372,12 +425,12 @@ FText ATDTurretBase::GetLookAtDecription_Implementation(AFGCharacterPlayer* byCh
 	const int32 Stufe = GetLevel();
 	const int32 MaxStufe = TurmMaxLevel;
 	const FString Sperre = LevelSperre();
-	const FString Fortschritt = Stufe >= MaxStufe ? FString(TEXT("Höchstes Level"))
-		: Sperre.IsEmpty() ? FString::Printf(TEXT("Level %d für %d Coupons im Turmfenster"), Stufe + 1, LevelPreis()) : Sperre;
+	const FString Fortschritt = Stufe >= MaxStufe ? TDT(TEXT("Höchstes Level"), TEXT("Maximum level"))
+		: Sperre.IsEmpty() ? TDF(TEXT("Level %d für %d Coupons im Turmfenster"), TEXT("Level %d for %d Coupons in the turret window"), Stufe + 1, LevelPreis()) : Sperre;
 	const FString Boni = Stufe > 1 ? TEXT("   |   ") + LevelSumme() : FString();
-	const FString Zusatz = FString::Printf(TEXT("Schadensart %s%s%s"), SchadensartName(mSchadensart),
+	const FString Zusatz = TDF(TEXT("Schadensart %s%s%s"), TEXT("Damage type %s%s%s"), *TDSchadensartAnzeige(mSchadensart),
 		ZusatzInfo().IsEmpty() ? TEXT("") : TEXT("   |   "), *ZusatzInfo());
-	return FText::FromString(FString::Printf(TEXT("%s\nLevel %d von %d   |   %s\nLebenspunkte %.0f / %.0f   |   Reichweite %.0f m%s%s%s"),
+	return FText::FromString(TDF(TEXT("%s\nLevel %d von %d   |   %s\nLebenspunkte %.0f / %.0f   |   Reichweite %.0f m%s%s%s"), TEXT("%s\nLevel %d of %d   |   %s\nHealth %.0f / %.0f   |   Range %.0f m%s%s%s"),
 		*Super::GetLookAtDecription_Implementation(byCharacter, state).ToString(), Stufe, MaxStufe, *Fortschritt,
 		mHealth, GetTDMaxHealth(), GetReichweite() / 100.f, *Boni, Zusatz.IsEmpty() ? TEXT("") : TEXT("\n"), *Zusatz));
 }
@@ -390,31 +443,31 @@ float ATDTurretBase::Zykluszeit() const
 void ATDTurretBase::Kennwerte(TArray<FTDKennwert>& Out) const
 {
 	const int32 Stufe = GetLevel();
-	Out.Add({ TEXT("Level"), FString::Printf(TEXT("%d von %d"), Stufe, TurmMaxLevel) });
-	Out.Add({ TEXT("Lebenspunkte"), FString::Printf(TEXT("%.0f / %.0f"), FMath::Max(mHealth, 0.f), GetTDMaxHealth()) });
-	Out.Add({ TEXT("Reichweite"), FString::Printf(TEXT("%.0f m"), GetReichweite() / 100.f) });
-	Out.Add({ TEXT("Schadensart"), SchadensartName(mSchadensart) });
+	Out.Add({ TEXT("Level"), TDF(TEXT("%d von %d"), TEXT("%d of %d"), Stufe, TurmMaxLevel) });
+	Out.Add({ TDT(TEXT("Lebenspunkte"), TEXT("Health")), FString::Printf(TEXT("%.0f / %.0f"), FMath::Max(mHealth, 0.f), GetTDMaxHealth()) });
+	Out.Add({ TDT(TEXT("Reichweite"), TEXT("Range")), FString::Printf(TEXT("%.0f m"), GetReichweite() / 100.f) });
+	Out.Add({ TDT(TEXT("Schadensart"), TEXT("Damage type")), TDSchadensartAnzeige(mSchadensart) });
 	Kampfwerte(Out);
 	// 0.84: ausgeloeste Turmkombinationen sichtbar im Turmfenster
 	const FString Kombos = TDKombo::Zeile(this);
 	if (!Kombos.IsEmpty())
 	{
-		Out.Add({ TEXT("Kombinationen"), Kombos, true });
+		Out.Add({ TDT(TEXT("Kombinationen"), TEXT("Combos")), Kombos, true });
 	}
 	if (Stufe > 1)
 	{
-		Out.Add({ TEXT("Levelbonus"), LevelSumme() });
+		Out.Add({ TDT(TEXT("Levelbonus"), TEXT("Level bonus")), LevelSumme() });
 	}
-	Out.Add({ TEXT("Munition"), MunitionsText() });
+	Out.Add({ TDT(TEXT("Munition"), TEXT("Ammo")), MunitionsText() });
 	const FString Zusatz = ZusatzImPanel() ? ZusatzInfo() : FString();
 	if (!Zusatz.IsEmpty())
 	{
 		Out.Add({ TEXT("Status"), Zusatz });
 	}
-	Out.Add({ TEXT("Strom"), RunsOnPower()
-		? FString::Printf(TEXT("%s · %.0f MW"), HasPower() ? TEXT("ja") : TEXT("NEIN"), GetDefaultProducingPowerConsumption())
-		: FString(TEXT("nicht nötig")) });
-	Out.Add({ TEXT("Schüsse/Abschüsse"), FString::Printf(TEXT("%d / %d"), mSchuesse, mKills) });
+	Out.Add({ TDT(TEXT("Strom"), TEXT("Power")), RunsOnPower()
+		? FString::Printf(TEXT("%s · %.0f MW"), *(HasPower() ? TDT(TEXT("ja"), TEXT("yes")) : TDT(TEXT("NEIN"), TEXT("NO"))), GetDefaultProducingPowerConsumption())
+		: TDT(TEXT("nicht nötig"), TEXT("not needed")) });
+	Out.Add({ TDT(TEXT("Schüsse/Abschüsse"), TEXT("Shots/Kills")), FString::Printf(TEXT("%d / %d"), mSchuesse, mKills) });
 }
 
 FString ATDTurretBase::MunitionsText() const
@@ -730,7 +783,7 @@ TSubclassOf<UFGItemDescriptor> ATDTurretBase::AktuelleMunition() const
 FString ATDTurretBase::GetMunitionsName() const
 {
 	const TSubclassOf<UFGItemDescriptor> Munition = AktuelleMunition();
-	return Munition ? UFGItemDescriptor::GetItemName(Munition).ToString() : TEXT("keine");
+	return Munition ? UFGItemDescriptor::GetItemName(Munition).ToString() : TDT(TEXT("keine"), TEXT("none"));
 }
 
 int32 ATDTurretBase::GetAmmo() const
@@ -1052,13 +1105,15 @@ void ATDTurretBase::SammleFeinde(TArray<AFGCreature*>& OutFeinde) const
 
 const TCHAR* ATDTurretBase::ZielModusName(int32 Modus)
 {
+	// 0.85: Rueckgabe bleibt const TCHAR*, daher beide Literale direkt statt TDT
+	const bool bEn = TDSprache::Englisch();
 	switch (Modus)
 	{
-	case 1:  return TEXT("Nächster zum Kern");
-	case 2:  return TEXT("Wenigste LP");
-	case 3:  return TEXT("Meiste LP");
-	case 4:  return TEXT("Elite und Boss zuerst");
-	default: return TEXT("Nächster zum Turm");
+	case 1:  return bEn ? TEXT("Closest to Core") : TEXT("Nächster zum Kern");
+	case 2:  return bEn ? TEXT("Lowest HP") : TEXT("Wenigste LP");
+	case 3:  return bEn ? TEXT("Highest HP") : TEXT("Meiste LP");
+	case 4:  return bEn ? TEXT("Elite and Boss first") : TEXT("Elite und Boss zuerst");
+	default: return bEn ? TEXT("Closest to turret") : TEXT("Nächster zum Turm");
 	}
 }
 
@@ -1070,9 +1125,11 @@ const TArray<FString>& ATDTurretBase::ZielFamilien()
 
 FString ATDTurretBase::FamilienName(const FString& Familie)
 {
-	if (Familie.IsEmpty()) return TEXT("Alle gleich");
+	if (Familie.IsEmpty()) return TDT(TEXT("Alle gleich"), TEXT("All equal"));
 	if (Familie == TEXT("Hog")) return TEXT("Hogs");
-	if (Familie == TEXT("Krabbe")) return TEXT("Krabben");
+	if (Familie == TEXT("Krabbe")) return TDT(TEXT("Krabben"), TEXT("Flying Crabs"));
+	if (Familie == TEXT("Spucker")) return TDT(TEXT("Spucker"), TEXT("Spitters"));
+	if (Familie == TEXT("Stinger")) return TDT(TEXT("Stinger"), TEXT("Stingers"));
 	return Familie;
 }
 
@@ -1337,18 +1394,21 @@ namespace TDKombo
 	/** Anzeigename (lokalisierbar, Marius 08.11.: Deutsch und Englisch) */
 	static FText Anzeige(const FString& Name)
 	{
-		if (Name == TEXT("Verpuffung")) return NSLOCTEXT("FicsitTD", "Kombo.Verpuffung", "Verpuffung");
-		if (Name == TEXT("Blitzableiter")) return NSLOCTEXT("FicsitTD", "Kombo.Blitzableiter", "Blitzableiter");
-		if (Name == TEXT("Hitzeriss")) return NSLOCTEXT("FicsitTD", "Kombo.Hitzeriss", "Hitzeriss");
+		if (Name == TEXT("Verpuffung")) return TDTX(TEXT("Verpuffung"), TEXT("Deflagration"));
+		if (Name == TEXT("Blitzableiter")) return TDTX(TEXT("Blitzableiter"), TEXT("Lightning Rod"));
+		if (Name == TEXT("Hitzeriss")) return TDTX(TEXT("Hitzeriss"), TEXT("Heat Crack"));
 		return FText::FromString(Name);
 	}
 
 	/** Erklaerung beim ersten Ausloesen je Spielwelt: was ist in der Welt passiert (Transparenz, Marius 08.11.) */
 	static FText Erklaerung(const FString& Name)
 	{
-		if (Name == TEXT("Verpuffung")) return NSLOCTEXT("FicsitTD", "Kombo.Verpuffung.Text", "Kombination Verpuffung: Ein Flammenwerfer hat eine Gaswolke entzündet. Das restliche Gas verbrennt auf einen Schlag.");
-		if (Name == TEXT("Blitzableiter")) return NSLOCTEXT("FicsitTD", "Kombo.Blitzableiter.Text", "Kombination Blitzableiter: Im Gegner steckende Bolzen leiten den Tesla-Blitz. Er springt ungeschwächt und einmal weiter.");
-		if (Name == TEXT("Hitzeriss")) return NSLOCTEXT("FicsitTD", "Kombo.Hitzeriss.Text", "Kombination Hitzeriss: Brennender Panzer wird spröde. Kugeln und Bolzen ignorieren solange die Panzerung.");
+		if (Name == TEXT("Verpuffung")) return TDTX(TEXT("Kombination Verpuffung: Ein Flammenwerfer hat eine Gaswolke entzündet. Das restliche Gas verbrennt auf einen Schlag."),
+			TEXT("Combo Deflagration: A Flamethrower ignited a gas cloud. The remaining gas burns up all at once."));
+		if (Name == TEXT("Blitzableiter")) return TDTX(TEXT("Kombination Blitzableiter: Im Gegner steckende Bolzen leiten den Tesla-Blitz. Er springt ungeschwächt und einmal weiter."),
+			TEXT("Combo Lightning Rod: Bolts stuck in an enemy conduct the Tesla lightning. It jumps once more at full strength."));
+		if (Name == TEXT("Hitzeriss")) return TDTX(TEXT("Kombination Hitzeriss: Brennender Panzer wird spröde. Kugeln und Bolzen ignorieren solange die Panzerung."),
+			TEXT("Combo Heat Crack: Burning armor turns brittle. Bullets and bolts ignore armor while it burns."));
 		return FText::FromString(Name);
 	}
 
@@ -1373,7 +1433,7 @@ namespace TDKombo
 				FChatMessageStruct Nachricht;
 				Nachricht.MessageText = Text;
 				Nachricht.MessageType = EFGChatMessageType::CMT_CustomMessage;
-				Nachricht.MessageSender = NSLOCTEXT("FicsitTD", "Kern.Absender", "Abwehrkern");
+				Nachricht.MessageSender = TDTX(TEXT("Abwehrkern"), TEXT("Defense Core"));
 				Nachricht.MessageSenderColor = FLinearColor(1.f, 0.5f, 0.05f);
 				Chat->BroadcastChatMessage(Nachricht);
 			}
@@ -1693,4 +1753,9 @@ void ATDTurretBase::TickeEffekte(float DeltaSeconds)
 			M->SetScalarParameterValue(TEXT("Staerke"), Staerke);
 		}
 	}
+}
+
+FString ATDTurretBase::GetTurmAnzeige() const
+{
+	return TDTurmAnzeige(mTurmName);
 }

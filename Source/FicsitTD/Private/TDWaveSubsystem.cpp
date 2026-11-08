@@ -1,4 +1,5 @@
 ﻿#include "TDWaveSubsystem.h"
+#include "TDSprache.h"
 #include "TDSicherheitsnetz.h"
 #include "TDKernplatz.h"
 #include "TDLaufProtokoll.h"
@@ -637,23 +638,128 @@ static const FTDPhasenInfo KernPhasen[] = {
 };
 static constexpr int32 KernPhasenAnzahl = UE_ARRAY_COUNT(KernPhasen);
 
+/** 0.85 (L1): Anzeigetexte der Phasen in der Spielsprache; die Tabelle oben bleibt deutsch */
+static FString PhasenName(int32 Ph)
+{
+	switch (Ph)
+	{
+	case 0: return TDT(TEXT("Die Herde"), TEXT("The Herd"));
+	case 1: return TDT(TEXT("Der Schwarm"), TEXT("The Swarm"));
+	case 2: return TDT(TEXT("Saeure"), TEXT("Acid"));
+	case 3: return TDT(TEXT("Fremde Biome"), TEXT("Foreign Biomes"));
+	case 4: return TDT(TEXT("Strahlung"), TEXT("Radiation"));
+	default: return KernPhasen[FMath::Clamp(Ph, 0, KernPhasenAnzahl - 1)].Name;
+	}
+}
+static FString PhasenBeschreibung(int32 Ph)
+{
+	switch (Ph)
+	{
+	case 0: return TDT(TEXT("Hogs rammen die Mauern - Bolzen und Mauern halten sie auf."), TEXT("Hogs ram the walls - bolts and walls stop them."));
+	case 1: return TDT(TEXT("Stinger kommen schnell und in Massen - Gewehrturm, Streubolzen und Tesla."), TEXT("Stingers come fast and in swarms - Rifle Turret, spread bolts and Tesla."));
+	case 2: return TDT(TEXT("Spucker greifen aus der Ferne an - Flammenwerfer und Nobelisk."), TEXT("Spitters attack from range - Flamethrower and Nobelisk."));
+	case 3: return TDT(TEXT("Klippen-Hogs, Wuesten- und Wasserspucker, Gas-Stinger - Feuer allein reicht nicht mehr."), TEXT("Cliff Hogs, desert and aquatic spitters, gas stingers - fire alone is no longer enough."));
+	case 4: return TDT(TEXT("Nuklear-Hogs und Johnny - die schwersten Gegner des Planeten."), TEXT("Nuclear Hogs and Johnny - the toughest enemies on the planet."));
+	default: return KernPhasen[FMath::Clamp(Ph, 0, KernPhasenAnzahl - 1)].Text;
+	}
+}
+static FString PhasenVorwarnung(int32 Ph)
+{
+	switch (Ph)
+	{
+	case 1: return TDT(TEXT("Spaeher melden Stinger-Nester: ab Welle 11 kommt der Schwarm. Gewehrturm und Kohlekraft vorbereiten."), TEXT("Scouts report stinger nests: the swarm arrives from wave 11. Prepare Rifle Turrets and coal power."));
+	case 2: return TDT(TEXT("Spaeher melden Saeurespucker: ab Welle 21 greifen sie aus der Ferne an. Raffinerie und Oel vorbereiten."), TEXT("Scouts report acid spitters: from wave 21 they attack from range. Prepare a Refinery and oil."));
+	case 3: return TDT(TEXT("Spaeher melden fremde Arten aus Wueste und Wasser: ab Welle 31 hilft Feuer allein nicht mehr."), TEXT("Scouts report foreign species from desert and water: from wave 31 fire alone no longer helps."));
+	case 4: return TDT(TEXT("Spaeher melden Strahlung: ab Welle 41 kommen Nuklear-Hogs und Johnny."), TEXT("Scouts report radiation: Nuclear Hogs and Johnny arrive from wave 41."));
+	default: return KernPhasen[FMath::Clamp(Ph, 0, KernPhasenAnzahl - 1)].Vorwarnung;
+	}
+}
+static FString PhasenBossName(int32 Ph)
+{
+	switch (Ph)
+	{
+	case 0: return TDT(TEXT("Panzerkoloss"), TEXT("Armored Colossus"));
+	case 1: return TDT(TEXT("Brutmutter"), TEXT("Brood Mother"));
+	case 2: return TDT(TEXT("Saeurekoenigin"), TEXT("Acid Queen"));
+	case 3: return TDT(TEXT("Gasriese"), TEXT("Gas Giant"));
+	case 4: return TDT(TEXT("Johnny-Rotte"), TEXT("Johnny Pack"));
+	default: return KernPhasen[FMath::Clamp(Ph, 0, KernPhasenAnzahl - 1)].BossName;
+	}
+}
+/** Wellenart fuer Ansage und Anzeige (0 Schwarm, 1 Ansturm, 2 Panzer, 3 Gemischt, 4 Fernkampf) */
+static FString WellenArtName(int32 Art)
+{
+	switch (FMath::Clamp(Art, 0, 4))
+	{
+	case 0: return TDT(TEXT("Schwarm"), TEXT("Swarm"));
+	case 1: return TDT(TEXT("Ansturm"), TEXT("Rush"));
+	case 2: return TDT(TEXT("Panzer"), TEXT("Tank"));
+	case 3: return TDT(TEXT("Gemischt"), TEXT("Mixed"));
+	default: return TDT(TEXT("Fernkampf"), TEXT("Ranged"));
+	}
+}
+
 /** 0-basierte Phase einer Welle; >= KernPhasenAnzahl = endlos */
 static int32 PhaseVon(int32 Welle) { return FMath::Max(0, Welle - 1) / 10; }
 /** Wellen-Tipp nach der Phase, nicht nach der Wellenart (Test 0.51: W10 mit nur Hogs bekam "Flammenwerfer gegen Massen") */
-static const TCHAR* TippFuer(int32 Welle)
+static FString TippFuer(int32 Welle)
 {
 	const int32 Ph = PhaseVon(Welle);
-	return Ph < KernPhasenAnzahl ? KernPhasen[Ph].Text : TEXT("Endlos: alle Arten im Mix - Feuer, Strom und Explosionen mischen.");
+	return Ph < KernPhasenAnzahl ? PhasenBeschreibung(Ph) : TDT(TEXT("Endlos: alle Arten im Mix - Feuer, Strom und Explosionen mischen."), TEXT("Endless: all species mixed - combine fire, power and explosions."));
 }
 
 static constexpr int32 KernMaxGegner = 60;
 
-static FString Himmelsrichtung(float WinkelGrad)
+/** bDeutsch: fuer Log-Zeilen immer deutsch; sonst in der Spielsprache (0.85 L1) */
+static FString Himmelsrichtung(float WinkelGrad, bool bDeutsch = false)
 {
 	// Satisfactory-Karte: +X = Osten, +Y = Sueden (Test 0.16.2: "Norden" mit +X lief nicht nach Norden). Kompasskurs = Winkel + 90
 	static const TCHAR* Namen[] = { TEXT("Norden"), TEXT("Nordosten"), TEXT("Osten"), TEXT("Suedosten"), TEXT("Sueden"), TEXT("Suedwesten"), TEXT("Westen"), TEXT("Nordwesten") };
 	const int32 i = FMath::RoundToInt(FRotator::NormalizeAxis(WinkelGrad + 90.f) / 45.f + 8.f) % 8;
-	return Namen[i];
+	if (bDeutsch)
+	{
+		return Namen[i];
+	}
+	switch (i)
+	{
+	case 0: return TDT(TEXT("Norden"), TEXT("North"));
+	case 1: return TDT(TEXT("Nordosten"), TEXT("Northeast"));
+	case 2: return TDT(TEXT("Osten"), TEXT("East"));
+	case 3: return TDT(TEXT("Suedosten"), TEXT("Southeast"));
+	case 4: return TDT(TEXT("Sueden"), TEXT("South"));
+	case 5: return TDT(TEXT("Suedwesten"), TEXT("Southwest"));
+	case 6: return TDT(TEXT("Westen"), TEXT("West"));
+	default: return TDT(TEXT("Nordwesten"), TEXT("Northwest"));
+	}
+}
+
+/** Anzeigename der Schwierigkeit; FTDStufe::Name bleibt deutsch (Balance-Schluessel Stufen.<Name>.*) */
+static FString StufenAnzeige(int32 Stufe)
+{
+	switch (FMath::Clamp(Stufe, 0, 3))
+	{
+	case 0: return TDT(TEXT("Erkundung"), TEXT("Exploration"));
+	case 1: return TDT(TEXT("Normal"), TEXT("Normal"));
+	case 2: return TDT(TEXT("Hart"), TEXT("Hard"));
+	default: return TDT(TEXT("Albtraum"), TEXT("Nightmare"));
+	}
+}
+
+/** Frontname; bDeutsch fuer Log-Zeilen */
+static FString FrontText(const TArray<FTDFront>& Fronten, int32 Index, bool bDeutsch)
+{
+	if (!Fronten.IsValidIndex(Index))
+	{
+		return TEXT("?");
+	}
+	const FTDFront& F = Fronten[Index];
+	if (bDeutsch)
+	{
+		return F.Weg > 0.f ? FString::Printf(TEXT("%s (Weg %.0f m)"), *Himmelsrichtung(F.Winkel, true), F.Weg / 100.f)
+			: FString::Printf(TEXT("%s (ungeprueft)"), *Himmelsrichtung(F.Winkel, true));
+	}
+	return F.Weg > 0.f ? TDF(TEXT("%s (Weg %.0f m)"), TEXT("%s (path %.0f m)"), *Himmelsrichtung(F.Winkel), F.Weg / 100.f)
+		: TDF(TEXT("%s (ungeprueft)"), TEXT("%s (unchecked)"), *Himmelsrichtung(F.Winkel));
 }
 
 // ---- Schwierigkeit und Fronten (Level-Konzept Abschnitte 3 und 5) ----
@@ -703,13 +809,7 @@ int32 UTDWaveSubsystem::AktiveFrontenFuer(int32 Welle) const
 
 FString UTDWaveSubsystem::FrontName(int32 Index) const
 {
-	if (!mFronten.IsValidIndex(Index))
-	{
-		return TEXT("?");
-	}
-	const FTDFront& F = mFronten[Index];
-	return F.Weg > 0.f ? FString::Printf(TEXT("%s (Weg %.0f m)"), *Himmelsrichtung(F.Winkel), F.Weg / 100.f)
-		: FString::Printf(TEXT("%s (ungeprueft)"), *Himmelsrichtung(F.Winkel));
+	return FrontText(mFronten, Index, false);
 }
 
 static FVector FrontBoden(UWorld* World, const FVector& Ort, bool& bTreffer, bool& bWasser)
@@ -961,7 +1061,7 @@ void UTDWaveSubsystem::SucheFronten(const FVector& Mitte)
 	UE_LOG(LogFicsitTD, Log, TEXT("Fronten %s"), *NavDiagnose(World, Mitte));
 	for (int32 i = 0; i < mFronten.Num(); ++i)
 	{
-		UE_LOG(LogFicsitTD, Log, TEXT("Front %d: %s bei %s"), i + 1, *FrontName(i), *mFronten[i].Ort.ToCompactString());
+		UE_LOG(LogFicsitTD, Log, TEXT("Front %d: %s bei %s"), i + 1, *FrontText(mFronten, i, true),*mFronten[i].Ort.ToCompactString());
 	}
 }
 
@@ -991,7 +1091,7 @@ TArray<FString> UTDWaveSubsystem::GetFrontenText(ATDDefenseCore* Kern)
 	{
 		FrontenFuer(Kern);
 	}
-	Zeilen.Add(FString::Printf(TEXT("Fronten (%s): %d von 16 Richtungen begehbar."), GetStufe(mStufe).Name, mGueltigeRichtungen));
+	Zeilen.Add(TDF(TEXT("Fronten (%s): %d von 16 Richtungen begehbar."), TEXT("Fronts (%s): %d of 16 directions passable."), *StufenAnzeige(mStufe), mGueltigeRichtungen));
 	const int32 Aktiv = mLauf == ETDLauf::Aus ? AktiveFrontenFuer(1) : AktiveFrontenFuer(FMath::Max(1, mWelle));
 	for (int32 i = 0; i < mFronten.Num(); ++i)
 	{
@@ -1003,20 +1103,20 @@ TArray<FString> UTDWaveSubsystem::GetFrontenText(ATDDefenseCore* Kern)
 			{
 				if (AktiveFrontenFuer(w) > i)
 				{
-					Ab = FString::Printf(TEXT(" - ab Welle %d"), w);
+					Ab = TDF(TEXT(" - ab Welle %d"), TEXT(" - from wave %d"), w);
 					break;
 				}
 			}
 			if (Ab.IsEmpty())
 			{
-				Ab = TEXT(" - Reserve");
+				Ab = TDT(TEXT(" - Reserve"), TEXT(" - reserve"));
 			}
 		}
 		Zeilen.Add(FString::Printf(TEXT("%d. %s%s"), i + 1, *FrontName(i), *Ab));
 	}
 	if (mGueltigeRichtungen == 0)
 	{
-		Zeilen.Add(TEXT("Kein Weg geprueft (Navigationsnetz fehlt dort?) - Gegner kommen aus ungeprueften Richtungen."));
+		Zeilen.Add(TDT(TEXT("Kein Weg geprueft (Navigationsnetz fehlt dort?) - Gegner kommen aus ungeprueften Richtungen."), TEXT("No path checked (navigation mesh missing there?) - enemies come from unchecked directions.")));
 		Zeilen.Add(NavDiagnose(GetWorld(), Kern->GetActorLocation()));
 	}
 	return Zeilen;
@@ -1043,7 +1143,7 @@ TArray<TArray<FVector>> UTDWaveSubsystem::BerechneWege(ATDDefenseCore* Kern, FSt
 	FNavLocation MitteNav;
 	if (!Nav || !Nav->ProjectPointToNavigation(Mitte, MitteNav, FVector(1200.f, 1200.f, 1000.f)))
 	{
-		Bericht = TEXT("Kein Navigationsnetz am Kern - keine Wegvorschau moeglich.");
+		Bericht = TDT(TEXT("Kein Navigationsnetz am Kern - keine Wegvorschau moeglich."), TEXT("No navigation mesh at the Core - no path preview possible."));
 		return Wege;
 	}
 	// aktive Fronten und die naechste, die dazukommt
@@ -1057,16 +1157,16 @@ TArray<TArray<FVector>> UTDWaveSubsystem::BerechneWege(ATDDefenseCore* Kern, FSt
 		UNavigationPath* Pfad = UNavigationSystemV1::FindPathToLocationSynchronously(World, F.Ort, MitteNav.Location, nullptr, UTDNavFilter::StaticClass());
 		if (!Pfad || !Pfad->IsValid() || Pfad->PathPoints.Num() < 2)
 		{
-			Teile.Add(FString::Printf(TEXT("%s: kein Weg"), *Himmelsrichtung(F.Winkel)));
+			Teile.Add(TDF(TEXT("%s: kein Weg"), TEXT("%s: no path"), *Himmelsrichtung(F.Winkel)));
 			continue;
 		}
 		F.Punkte = Pfad->PathPoints;
 		F.Weg = Pfad->GetPathLength();
 		Wege.Add(F.Punkte);
-		Teile.Add(FString::Printf(TEXT("%s %.0f m%s%s"), *Himmelsrichtung(F.Winkel), F.Weg / 100.f, !PfadAmZiel(Pfad, MitteNav.Location) ? TEXT(" (TEILWEISE)") : TEXT(""),
-			i >= Aktiv ? TEXT(" (kommt spaeter)") : TEXT("")));
+		Teile.Add(FString::Printf(TEXT("%s %.0f m%s%s"), *Himmelsrichtung(F.Winkel), F.Weg / 100.f, !PfadAmZiel(Pfad, MitteNav.Location) ? *TDT(TEXT(" (TEILWEISE)"), TEXT(" (PARTIAL)")) : TEXT(""),
+			i >= Aktiv ? *TDT(TEXT(" (kommt spaeter)"), TEXT(" (comes later)")) : TEXT("")));
 	}
-	Bericht = FString::Printf(TEXT("Wege: %s"), *FString::Join(Teile, TEXT("; ")));
+	Bericht = TDF(TEXT("Wege: %s"), TEXT("Paths: %s"), *FString::Join(Teile, TEXT("; ")));
 	return Wege;
 }
 
@@ -1077,24 +1177,24 @@ void UTDWaveSubsystem::PruefeVersorgung() const
 	for (TActorIterator<ATDTurretBase> It(GetWorld()); It; ++It)
 	{
 		++Tuerme;
-		if (!It->GetCurrentRecipe())                        OhneRezept.Add(It->GetTurmName());
-		else if (!It->HatMunition())                        OhneMunition.Add(It->GetTurmName());
-		if (It->RunsOnPower() && !It->HasPower())           OhneStrom.Add(It->GetTurmName());
+		if (!It->GetCurrentRecipe())                        OhneRezept.Add(It->GetTurmAnzeige());
+		else if (!It->HatMunition())                        OhneMunition.Add(It->GetTurmAnzeige());
+		if (It->RunsOnPower() && !It->HasPower())           OhneStrom.Add(It->GetTurmAnzeige());
 	}
 	if (Tuerme == 0)
 	{
-		Ansage(TEXT("Versorgung: noch kein Turm gebaut!"));
+		Ansage(TDT(TEXT("Versorgung: noch kein Turm gebaut!"), TEXT("Supply: no turret built yet!")));
 		return;
 	}
 	if (OhneMunition.Num() + OhneStrom.Num() + OhneRezept.Num() == 0)
 	{
-		Ansage(FString::Printf(TEXT("Versorgung: alle %d Tuerme haben Munition und Strom."), Tuerme));
+		Ansage(TDF(TEXT("Versorgung: alle %d Tuerme haben Munition und Strom."), TEXT("Supply: all %d turrets have ammo and power."), Tuerme));
 		return;
 	}
-	FString Text = FString::Printf(TEXT("Versorgung WARNUNG (%d Tuerme):"), Tuerme);
-	if (OhneMunition.Num()) Text += FString::Printf(TEXT(" ohne Munition: %s;"), *FString::Join(OhneMunition, TEXT(", ")));
-	if (OhneStrom.Num())    Text += FString::Printf(TEXT(" ohne Strom: %s;"), *FString::Join(OhneStrom, TEXT(", ")));
-	if (OhneRezept.Num())   Text += FString::Printf(TEXT(" ohne Rezept: %s;"), *FString::Join(OhneRezept, TEXT(", ")));
+	FString Text = TDF(TEXT("Versorgung WARNUNG (%d Tuerme):"), TEXT("Supply WARNING (%d turrets):"), Tuerme);
+	if (OhneMunition.Num()) Text += TDF(TEXT(" ohne Munition: %s;"), TEXT(" no ammo: %s;"), *FString::Join(OhneMunition, TEXT(", ")));
+	if (OhneStrom.Num())    Text += TDF(TEXT(" ohne Strom: %s;"), TEXT(" no power: %s;"), *FString::Join(OhneStrom, TEXT(", ")));
+	if (OhneRezept.Num())   Text += TDF(TEXT(" ohne Rezept: %s;"), TEXT(" no recipe: %s;"), *FString::Join(OhneRezept, TEXT(", ")));
 	Ansage(Text);
 }
 
@@ -1106,7 +1206,7 @@ void UTDWaveSubsystem::Ansage(const FString& Text) const
 		FChatMessageStruct Nachricht;
 		Nachricht.MessageText = FText::FromString(Text);
 		Nachricht.MessageType = EFGChatMessageType::CMT_CustomMessage;
-		Nachricht.MessageSender = FText::FromString(TEXT("Abwehrkern"));
+		Nachricht.MessageSender = TDTX(TEXT("Abwehrkern"), TEXT("Defense Core"));
 		Nachricht.MessageSenderColor = FLinearColor(1.f, 0.5f, 0.05f);
 		Chat->BroadcastChatMessage(Nachricht);
 	}
@@ -1124,7 +1224,7 @@ bool UTDWaveSubsystem::StarteKernVerteidigung(ATDDefenseCore* Kern, int32 Wellen
 		FString Bericht;
 		if (const int32 Weg = RaeumeWaisen(GetWorld(), Kern->GetActorLocation(), 60000.f, Bericht))
 		{
-			Ansage(FString::Printf(TEXT("%d liegengebliebene Wellengegner entfernt (%s)."), Weg, *Bericht));
+			Ansage(TDF(TEXT("%d liegengebliebene Wellengegner entfernt (%s)."), TEXT("%d leftover wave enemies removed (%s)."), Weg, *Bericht));
 		}
 	}
 	const FTDStufe& S = GetStufe(mStufe);
@@ -1137,15 +1237,19 @@ bool UTDWaveSubsystem::StarteKernVerteidigung(ATDDefenseCore* Kern, int32 Wellen
 	mLauf = ETDLauf::Aufbau;
 	mCountdown = FMath::Max(10.f, ErsterCountdown < 0.f ? S.Aufbau : ErsterCountdown);
 	FrontenFuer(Kern);   // dieselben Fronten wie in der Vorschau (bei gleicher Stufe)
+	const FString StufenText = StufenAnzeige(mStufe);
+	const FString WellenText = mWellenGesamt > 0 ? TDF(TEXT("%d Wellen"), TEXT("%d waves"), mWellenGesamt) : TDT(TEXT("endlos"), TEXT("endless"));
 	if (mManuell)
 	{
-		Ansage(FString::Printf(TEXT("Einsatz gestartet (%s): %s, Kern %.0f LP. Bauen ohne Zeitdruck - Welle starten mit /td kern weiter."),
-			S.Name, mWellenGesamt > 0 ? *FString::Printf(TEXT("%d Wellen"), mWellenGesamt) : TEXT("endlos"), S.KernLP));
+		Ansage(TDF(TEXT("Einsatz gestartet (%s): %s, Kern %.0f LP. Bauen ohne Zeitdruck - Welle starten mit /td kern weiter."),
+			TEXT("Operation started (%s): %s, Core %.0f HP. Build without time pressure - start the wave with /td kern weiter."),
+			*StufenText, *WellenText, S.KernLP));
 	}
 	else
 	{
-		Ansage(FString::Printf(TEXT("Kern-Verteidigung gestartet (%s): %s, Kern %.0f LP. Erste Welle in %.0f min, danach alle %.0f min Aufbau. Munitions-Produktion aufbauen und Tuerme versorgen! (/td kern weiter = sofort)"),
-			S.Name, mWellenGesamt > 0 ? *FString::Printf(TEXT("%d Wellen"), mWellenGesamt) : TEXT("endlos"), S.KernLP, mCountdown / 60.f, mZwischenCountdown / 60.f));
+		Ansage(TDF(TEXT("Kern-Verteidigung gestartet (%s): %s, Kern %.0f LP. Erste Welle in %.0f min, danach alle %.0f min Aufbau. Munitions-Produktion aufbauen und Tuerme versorgen! (/td kern weiter = sofort)"),
+			TEXT("Core defense started (%s): %s, Core %.0f HP. First wave in %.0f min, then %.0f min build time each. Set up ammo production and supply your turrets! (/td kern weiter = now)"),
+			*StufenText, *WellenText, S.KernLP, mCountdown / 60.f, mZwischenCountdown / 60.f));
 	}
 	for (const FString& Zeile : GetFrontenText(Kern))
 	{
@@ -1153,11 +1257,11 @@ bool UTDWaveSubsystem::StarteKernVerteidigung(ATDDefenseCore* Kern, int32 Wellen
 	}
 	if (mGueltigeRichtungen > 0 && mGueltigeRichtungen < S.FrontenStart)
 	{
-		Ansage(FString::Printf(TEXT("Nur %d begehbare Richtung(en): leichter, aber eng. Wegvorschau: /td kern wege"), mGueltigeRichtungen));
+		Ansage(TDF(TEXT("Nur %d begehbare Richtung(en): leichter, aber eng. Wegvorschau: /td kern wege"), TEXT("Only %d passable direction(s): easier, but tight. Path preview: /td kern wege"), mGueltigeRichtungen));
 	}
 	else
 	{
-		Ansage(TEXT("Wegvorschau der Gegner: /td kern wege"));
+		Ansage(TDT(TEXT("Wegvorschau der Gegner: /td kern wege"), TEXT("Enemy path preview: /td kern wege")));
 	}
 	MarkiereFronten();
 	if (mGueltigeRichtungen == 0)
@@ -1181,7 +1285,7 @@ void UTDWaveSubsystem::PruefeFrontenNach()
 	if (mGueltigeRichtungen > 0)
 	{
 		GetWorld()->GetTimerManager().ClearTimer(mFrontenNachTimer);
-		Ansage(FString::Printf(TEXT("Wege geprueft: die erste Welle kommt aus %s. Markierung auf Karte und Kompass ist aktualisiert."), *FrontName(0)));
+		Ansage(TDF(TEXT("Wege geprueft: die erste Welle kommt aus %s. Markierung auf Karte und Kompass ist aktualisiert."), TEXT("Paths checked: the first wave comes from %s. The marker on map and compass is updated."), *FrontName(0)));
 		SpeichereLauf();
 		MarkiereFronten();
 	}
@@ -1218,15 +1322,15 @@ bool UTDWaveSubsystem::SpringeZuWelle(int32 N)
 	}
 	mWelle = N - 1;
 	SpeichereLauf();
-	Ansage(FString::Printf(TEXT("Test: naechste Welle ist %d (%d Front(en))%s."), N, AktiveFrontenFuer(N),
-		Belohnt > 0 ? *FString::Printf(TEXT(", Belohnung fuer %d uebersprungene Wellen gutgeschrieben"), Belohnt) : TEXT("")));
+	const FString BelohnText = Belohnt > 0 ? TDF(TEXT(", Belohnung fuer %d uebersprungene Wellen gutgeschrieben"), TEXT(", reward for %d skipped waves credited"), Belohnt) : FString();
+	Ansage(TDF(TEXT("Test: naechste Welle ist %d (%d Front(en))%s."), TEXT("Test: next wave is %d (%d front(s))%s."), N, AktiveFrontenFuer(N), *BelohnText));
 	if (AktiveFrontenFuer(N) > AktiveFrontenFuer(FMath::Max(1, N - 1)))
 	{
-		Ansage(FString::Printf(TEXT("ACHTUNG: Ab Welle %d greifen sie auch aus %s an! Die neue Front ist auf Karte und Kompass markiert."), N, *FrontName(AktiveFrontenFuer(N) - 1)));
+		Ansage(TDF(TEXT("ACHTUNG: Ab Welle %d greifen sie auch aus %s an! Die neue Front ist auf Karte und Kompass markiert."), TEXT("WARNING: From wave %d they also attack from %s! The new front is marked on map and compass."), N, *FrontName(AktiveFrontenFuer(N) - 1)));
 	}
 	if (N % 10 == 0)
 	{
-		Ansage(FString::Printf(TEXT("WARNUNG: Welle %d ist ein BOSSKAMPF."), N));
+		Ansage(TDF(TEXT("WARNUNG: Welle %d ist ein BOSSKAMPF."), TEXT("WARNING: Wave %d is a BOSS FIGHT."), N));
 	}
 	MarkiereFronten();
 	return true;
@@ -1295,7 +1399,7 @@ void UTDWaveSubsystem::SetzeLaufFort(ATDDefenseCore* Kern)
 		FString Bericht;
 		if (const int32 Weg = RaeumeWaisen(GetWorld(), Kern->GetActorLocation(), 60000.f, Bericht))
 		{
-			Ansage(FString::Printf(TEXT("%d liegengebliebene Wellengegner aus dem Spielstand entfernt (%s)."), Weg, *Bericht));
+			Ansage(TDF(TEXT("%d liegengebliebene Wellengegner aus dem Spielstand entfernt (%s)."), TEXT("%d leftover wave enemies removed from the save (%s)."), Weg, *Bericht));
 		}
 	}
 	mWellenGesamt = Kern->mLaufWellenGesamt;
@@ -1331,7 +1435,7 @@ void UTDWaveSubsystem::SetzeLaufFort(ATDDefenseCore* Kern)
 	{
 		if (UTDWaveSubsystem* S = Weak.Get())
 		{
-			S->Ansage(FString::Printf(TEXT("Kern-Verteidigung fortgesetzt: Welle %d in %.0f s."), S->mWelle + 1, S->mCountdown));
+			S->Ansage(TDF(TEXT("Kern-Verteidigung fortgesetzt: Welle %d in %.0f s."), TEXT("Core defense resumed: wave %d in %.0f s."), S->mWelle + 1, S->mCountdown));
 			S->MarkiereFronten();
 		}
 	}), 5.f, false);
@@ -1341,7 +1445,7 @@ void UTDWaveSubsystem::KernGefallen(ATDDefenseCore* Kern)
 {
 	if (mLauf != ETDLauf::Aus && Kern == mKern.Get())
 	{
-		StoppeLauf(FString::Printf(TEXT("NIEDERLAGE: Der Abwehrkern ist in Welle %d von %d gefallen. Neuer Versuch: /td kern start"), mWelle, mWellenGesamt));
+		StoppeLauf(TDF(TEXT("NIEDERLAGE: Der Abwehrkern ist in Welle %d von %d gefallen. Neuer Versuch: /td kern start"), TEXT("DEFEAT: The Defense Core fell in wave %d of %d. Try again: /td kern start"), mWelle, mWellenGesamt));
 	}
 }
 
@@ -1350,8 +1454,12 @@ FString UTDWaveSubsystem::GetLaufText() const
 	switch (mLauf)
 	{
 	case ETDLauf::Aufbau:
-		return FString::Printf(TEXT("%s - Aufbau: Welle %d%s in %d:%02d min"), GetStufe(mStufe).Name, mWelle + 1, mWellenGesamt > 0 ? *FString::Printf(TEXT(" von %d"), mWellenGesamt) : TEXT(" (endlos)"),
+	{
+		const FString StufenText = StufenAnzeige(mStufe);
+		const FString GesamtText = mWellenGesamt > 0 ? TDF(TEXT(" von %d"), TEXT(" of %d"), mWellenGesamt) : TDT(TEXT(" (endlos)"), TEXT(" (endless)"));
+		return TDF(TEXT("%s - Aufbau: Welle %d%s in %d:%02d min"), TEXT("%s - Build: wave %d%s in %d:%02d min"), *StufenText, mWelle + 1, *GesamtText,
 			FMath::FloorToInt(mCountdown / 60.f), FMath::FloorToInt(mCountdown) % 60);
+	}
 	case ETDLauf::Welle:
 	{
 		int32 Lebend = 0;
@@ -1360,10 +1468,10 @@ FString UTDWaveSubsystem::GetLaufText() const
 			Lebend += G.bKern && G.Kreatur.IsValid() && G.Kreatur->IsAliveAndWell() ? 1 : 0;
 		}
 		const int32 Offen = FMath::Max(0, mNachschub.Num() - mNachschubIndex);
-		return FString::Printf(TEXT("Welle %d von %d: %d / %d Gegner uebrig (%d unterwegs), aus %s"), mWelle, mWellenGesamt, Lebend + Offen, mWellenGroesse, Lebend, *mRichtungen);
+		return TDF(TEXT("Welle %d von %d: %d / %d Gegner uebrig (%d unterwegs), aus %s"), TEXT("Wave %d of %d: %d / %d enemies left (%d on the way), from %s"), mWelle, mWellenGesamt, Lebend + Offen, mWellenGroesse, Lebend, *mRichtungen);
 	}
 	default:
-		return TEXT("Bereit - /td kern start");
+		return TDT(TEXT("Bereit - /td kern start"), TEXT("Ready - /td kern start"));
 	}
 }
 
@@ -1505,11 +1613,10 @@ FTDWellenStatus UTDWaveSubsystem::GetWellenStatus() const
 	{
 		return S;
 	}
-	static const TCHAR* ArtNamen[] = { TEXT("Schwarm"), TEXT("Ansturm"), TEXT("Panzer"), TEXT("Gemischt"), TEXT("Fernkampf") };
 	S.bGueltig = true;
 	S.Welle = mWelle;
 	S.WellenGesamt = mWellenGesamt;
-	S.Art = ArtNamen[FMath::Clamp(mPlanArt, 0, 4)];
+	S.Art = WellenArtName(mPlanArt);
 	S.Groesse = mNachschub.Num();
 	// Gesamt und noch offen je Art aus der Warteschlange, lebend aus den Wellengegnern
 	auto Eintrag = [&S](const UClass* K, bool bBoss) -> FTDArtStatus&
@@ -1857,7 +1964,7 @@ TArray<FTDPlanGruppe> UTDWaveSubsystem::PlanFuer(int32 Nummer, int32& OutArt) co
 		G.Pfad = P.BossPfad;
 		G.Anzahl = FMath::Max(1, TDBalance::Ganz(FString::Printf(TEXT("Phasen.%d.BossAnzahl"), B + 1), P.BossAnzahl));
 		G.BossLP = TDBalance::Wert(FString::Printf(TEXT("Phasen.%d.BossLP"), B + 1), P.BossLP);
-		G.BossName = P.BossName;
+		G.BossName = PhasenBossName(B);
 		Plan.Add(G);
 	}
 	return Plan;
@@ -1906,10 +2013,9 @@ FTDWellenVorschau UTDWaveSubsystem::GetVorschau(int32 Welle)
 	{
 		Plan = PlanFuer(V.Welle, Art);
 	}
-	static const TCHAR* ArtNamen[] = { TEXT("Schwarm"), TEXT("Ansturm"), TEXT("Panzer"), TEXT("Gemischt"), TEXT("Fernkampf") };
 	V.bGueltig = true;
 	V.WellenGesamt = mWellenGesamt;
-	V.Art = ArtNamen[Art];
+	V.Art = WellenArtName(Art);
 	V.Tipp = TippFuer(V.Welle);
 	V.bZusammensetzung = GetStufe(mStufe).bZusammensetzung;
 	V.Countdown = V.bLaeuft || mManuell || !V.bAktuell ? -1.f : mCountdown;
@@ -2011,34 +2117,52 @@ int32 UTDWaveSubsystem::RaeumeWaisen(UWorld* World, const FVector& Mitte, float 
 FTDKreaturSteckbrief UTDWaveSubsystem::Steckbrief(const FString& Pfad)
 {
 	// Reihenfolge: speziellere Namen zuerst (AlphaHog vor Hog, EliteStinger vor Stinger)
-	struct FEintrag { const TCHAR* Teil; const TCHAR* Name; const TCHAR* Desc; const TCHAR* Text; };
+	// 0.85 (L1): NameEn/TextEn = englische Anzeige (Spielsprache), gewaehlt beim Abruf
+	struct FEintrag { const TCHAR* Teil; const TCHAR* Name; const TCHAR* Desc; const TCHAR* Text; const TCHAR* NameEn; const TCHAR* TextEn; };
 	static const FEintrag Tabelle[] = {
-		{ TEXT("Johnny"), TEXT("Riesen-Hog"), TEXT("Desc_HogAlpha"), TEXT("Ein gewaltiger Hog, der Mauern mit wenigen Stößen einreißt. Langsam, aber kaum aufzuhalten.") },
-		{ TEXT("NuclearHog"), TEXT("Nuklear-Hog"), TEXT("Desc_HogNuclear"), TEXT("Strahlender Hog mit dicker Haut. Langsamer als seine Verwandten, rammt aber hart.") },
-		{ TEXT("CliffHog"), TEXT("Klippen-Hog"), TEXT("Desc_HogCliff"), TEXT("Schwer gepanzerter Hog aus den Felsen. Hält viel aus und rammt Mauern mit voller Wucht.") },
-		{ TEXT("AlphaHog"), TEXT("Alpha-Hog"), TEXT("Desc_HogAlpha"), TEXT("Großer, gepanzerter Anführer der Hogs. Rammt Mauern mit doppelter Wucht.") },
-		{ TEXT("Hog"), TEXT("Hog"), TEXT("Desc_HogBasic"), TEXT("Stürmt geradeaus auf die Mauern zu und rammt sie. Die Panzerhaut lässt Kugeln teilweise abprallen.") },
-		{ TEXT("SpitterAquaticAlpha"), TEXT("Wasser-Alpha"), TEXT("Desc_SpitterAquatic_Alpha"), TEXT("Großer Spucker aus dem Wasser. Schießt aus der Ferne, verträgt Feuer gut, Strom aber schlecht.") },
-		{ TEXT("SpitterAquatic"), TEXT("Wasserspucker"), TEXT("Desc_SpitterAquatic_Small"), TEXT("Spucker aus dem Wasser: hält Feuer aus, Strom trifft ihn hart.") },
-		{ TEXT("SpitterDesertAlpha"), TEXT("Wüsten-Alpha"), TEXT("Desc_SpitterDesert_Alpha"), TEXT("Großer Spucker aus der Wüste. Hitze macht ihm nichts, Kugeln schon.") },
-		{ TEXT("SpitterDesert"), TEXT("Wüstenspucker"), TEXT("Desc_SpitterDesert_Small"), TEXT("Spucker aus der Wüste: Flammen wirken kaum, Gewehr und Bolzen dafür gut.") },
-		{ TEXT("SpitterForestRedAlpha"), TEXT("Roter Alpha"), TEXT("Desc_SpitterForest_Red_Alpha"), TEXT("Rote Variante des Alpha-Spuckers: zäher und angriffslustiger.") },
-		{ TEXT("SpitterForestRed"), TEXT("Roter Spucker"), TEXT("Desc_SpitterForest_Small_Red"), TEXT("Rote Variante des Spuckers: etwas zäher, spuckt aus der Ferne.") },
-		{ TEXT("SpitterForestAlpha"), TEXT("Alpha-Spucker"), TEXT("Desc_SpitterForest_Alpha"), TEXT("Bleibt auf Abstand und beschießt Mauern und Türme aus bis zu 18 m mit Säure.") },
-		{ TEXT("Spitter"), TEXT("Spucker"), TEXT("Desc_SpitterForest_Small"), TEXT("Kleiner Fernkämpfer: hält Abstand und spuckt Säure auf Mauern und Türme.") },
-		{ TEXT("Stinger_Child"), TEXT("Baby-Stinger"), TEXT("Desc_StingerSmall"), TEXT("Klein, flink und zahlreich. Kommt im Schwarm und ist schnell an der Mauer.") },
-		{ TEXT("EliteStinger"), TEXT("Elite-Stinger"), TEXT("Desc_StingerElite"), TEXT("Großer, zäher Stinger. Langsamer als seine Brut, aber mit kräftigen Stichen.") },
-		{ TEXT("Stinger"), TEXT("Stinger"), TEXT("Desc_StingerAlpha"), TEXT("Springt in großen Sätzen auf die Mauern zu und ist schnell durch das Turmfeuer.") },
+		{ TEXT("Johnny"), TEXT("Riesen-Hog"), TEXT("Desc_HogAlpha"), TEXT("Ein gewaltiger Hog, der Mauern mit wenigen Stößen einreißt. Langsam, aber kaum aufzuhalten."),
+			TEXT("Giant Hog"), TEXT("A huge hog that tears down walls in a few hits. Slow, but hard to stop.") },
+		{ TEXT("NuclearHog"), TEXT("Nuklear-Hog"), TEXT("Desc_HogNuclear"), TEXT("Strahlender Hog mit dicker Haut. Langsamer als seine Verwandten, rammt aber hart."),
+			TEXT("Nuclear Hog"), TEXT("Radiant hog with thick skin. Slower than its relatives, but rams hard.") },
+		{ TEXT("CliffHog"), TEXT("Klippen-Hog"), TEXT("Desc_HogCliff"), TEXT("Schwer gepanzerter Hog aus den Felsen. Hält viel aus und rammt Mauern mit voller Wucht."),
+			TEXT("Cliff Hog"), TEXT("Heavily armored hog from the rocks. Takes a lot of damage and rams walls at full force.") },
+		{ TEXT("AlphaHog"), TEXT("Alpha-Hog"), TEXT("Desc_HogAlpha"), TEXT("Großer, gepanzerter Anführer der Hogs. Rammt Mauern mit doppelter Wucht."),
+			TEXT("Alpha Hog"), TEXT("Large, armored leader of the hogs. Rams walls with double force.") },
+		{ TEXT("Hog"), TEXT("Hog"), TEXT("Desc_HogBasic"), TEXT("Stürmt geradeaus auf die Mauern zu und rammt sie. Die Panzerhaut lässt Kugeln teilweise abprallen."),
+			TEXT("Fluffy-tailed Hog"), TEXT("Charges straight at the walls and rams them. Its armored hide deflects some bullets.") },
+		{ TEXT("SpitterAquaticAlpha"), TEXT("Wasser-Alpha"), TEXT("Desc_SpitterAquatic_Alpha"), TEXT("Großer Spucker aus dem Wasser. Schießt aus der Ferne, verträgt Feuer gut, Strom aber schlecht."),
+			TEXT("Aquatic Alpha"), TEXT("Large spitter from the water. Attacks from range, resists fire well, but not power.") },
+		{ TEXT("SpitterAquatic"), TEXT("Wasserspucker"), TEXT("Desc_SpitterAquatic_Small"), TEXT("Spucker aus dem Wasser: hält Feuer aus, Strom trifft ihn hart."),
+			TEXT("Aquatic Spitter"), TEXT("Spitter from the water: withstands fire, power hits it hard.") },
+		{ TEXT("SpitterDesertAlpha"), TEXT("Wüsten-Alpha"), TEXT("Desc_SpitterDesert_Alpha"), TEXT("Großer Spucker aus der Wüste. Hitze macht ihm nichts, Kugeln schon."),
+			TEXT("Desert Alpha"), TEXT("Large spitter from the desert. Heat doesn't bother it, bullets do.") },
+		{ TEXT("SpitterDesert"), TEXT("Wüstenspucker"), TEXT("Desc_SpitterDesert_Small"), TEXT("Spucker aus der Wüste: Flammen wirken kaum, Gewehr und Bolzen dafür gut."),
+			TEXT("Desert Spitter"), TEXT("Spitter from the desert: flames barely work, rifles and bolts work well.") },
+		{ TEXT("SpitterForestRedAlpha"), TEXT("Roter Alpha"), TEXT("Desc_SpitterForest_Red_Alpha"), TEXT("Rote Variante des Alpha-Spuckers: zäher und angriffslustiger."),
+			TEXT("Red Alpha"), TEXT("Red variant of the Alpha Plasma Spitter: tougher and more aggressive.") },
+		{ TEXT("SpitterForestRed"), TEXT("Roter Spucker"), TEXT("Desc_SpitterForest_Small_Red"), TEXT("Rote Variante des Spuckers: etwas zäher, spuckt aus der Ferne."),
+			TEXT("Red Spitter"), TEXT("Red variant of the Plasma Spitter: a bit tougher, spits from range.") },
+		{ TEXT("SpitterForestAlpha"), TEXT("Alpha-Spucker"), TEXT("Desc_SpitterForest_Alpha"), TEXT("Bleibt auf Abstand und beschießt Mauern und Türme aus bis zu 18 m mit Säure."),
+			TEXT("Alpha Plasma Spitter"), TEXT("Keeps its distance and shoots acid at walls and turrets from up to 18 m.") },
+		{ TEXT("Spitter"), TEXT("Spucker"), TEXT("Desc_SpitterForest_Small"), TEXT("Kleiner Fernkämpfer: hält Abstand und spuckt Säure auf Mauern und Türme."),
+			TEXT("Plasma Spitter"), TEXT("Small ranged attacker: keeps its distance and spits acid at walls and turrets.") },
+		{ TEXT("Stinger_Child"), TEXT("Baby-Stinger"), TEXT("Desc_StingerSmall"), TEXT("Klein, flink und zahlreich. Kommt im Schwarm und ist schnell an der Mauer."),
+			TEXT("Baby Stinger"), TEXT("Small, quick and numerous. Comes in swarms and reaches the wall fast.") },
+		{ TEXT("EliteStinger"), TEXT("Elite-Stinger"), TEXT("Desc_StingerElite"), TEXT("Großer, zäher Stinger. Langsamer als seine Brut, aber mit kräftigen Stichen."),
+			TEXT("Elite Stinger"), TEXT("Large, tough stinger. Slower than its brood, but stings hard.") },
+		{ TEXT("Stinger"), TEXT("Stinger"), TEXT("Desc_StingerAlpha"), TEXT("Springt in großen Sätzen auf die Mauern zu und ist schnell durch das Turmfeuer."),
+			TEXT("Stinger"), TEXT("Leaps at the walls in big jumps and gets through turret fire quickly.") },
 	};
 	FTDKreaturSteckbrief B;
 	const FString Klasse = FPaths::GetExtension(Pfad).IsEmpty() ? Pfad : FPaths::GetExtension(Pfad);
+	const bool bEnglisch = TDSprache::Englisch();
 	for (const FEintrag& E : Tabelle)
 	{
 		if (Klasse.Contains(E.Teil))
 		{
-			B.Name = E.Name;
+			B.Name = bEnglisch ? E.NameEn : E.Name;
 			B.Deskriptor = FString::Printf(TEXT("/Game/FactoryGame/Character/Creature/CreatureDescriptors/%s.%s_C"), E.Desc, E.Desc);
-			B.Text = E.Text;
+			B.Text = bEnglisch ? E.TextEn : E.Text;
 			break;
 		}
 	}
@@ -2063,10 +2187,11 @@ FTDKreaturSteckbrief UTDWaveSubsystem::Steckbrief(const FString& Pfad)
 		B.Schaden = W.Schaden;
 		if (const AFGCreature* Vorlage = K->GetDefaultObject<AFGCreature>())
 		{
-			static const TPair<ETDSchadensart, const TCHAR*> Arten[] = {
-				{ ETDSchadensart::Durchschlag, TEXT("Bolzen") }, { ETDSchadensart::Kugel, TEXT("Gewehr") }, { ETDSchadensart::Feuer, TEXT("Flammen") },
-				{ ETDSchadensart::Strom, TEXT("Tesla") }, { ETDSchadensart::Explosion, TEXT("Nobelisk") } };
-			for (const TPair<ETDSchadensart, const TCHAR*>& A : Arten)
+			const TPair<ETDSchadensart, FString> Arten[] = {
+				{ ETDSchadensart::Durchschlag, TDT(TEXT("Bolzen"), TEXT("Bolts")) }, { ETDSchadensart::Kugel, TDT(TEXT("Gewehr"), TEXT("Rifle")) },
+				{ ETDSchadensart::Feuer, TDT(TEXT("Flammen"), TEXT("Flames")) }, { ETDSchadensart::Strom, TDT(TEXT("Tesla"), TEXT("Tesla")) },
+				{ ETDSchadensart::Explosion, TDT(TEXT("Nobelisk"), TEXT("Nobelisk")) } };
+			for (const TPair<ETDSchadensart, FString>& A : Arten)
 			{
 				B.Wirkung.Add(TPair<FString, float>(A.Value, ATDTurretBase::Resistenz(A.Key, Vorlage)));
 			}
@@ -2090,7 +2215,7 @@ void UTDWaveSubsystem::SpawneKernWelle(int32 Nummer)
 		SucheFronten(Mitte);
 		if (mGueltigeRichtungen > 0)
 		{
-			Ansage(FString::Printf(TEXT("Fronten neu bestimmt (%d Richtungen begehbar): /td kern fronten"), mGueltigeRichtungen));
+			Ansage(TDF(TEXT("Fronten neu bestimmt (%d Richtungen begehbar): /td kern fronten"), TEXT("Fronts redetermined (%d directions passable): /td kern fronten"), mGueltigeRichtungen));
 			SpeichereLauf();
 			MarkiereFronten();
 		}
@@ -2104,12 +2229,28 @@ void UTDWaveSubsystem::SpawneKernWelle(int32 Nummer)
 		PlaneWelle(Nummer);
 	}
 	const int32 Art = mPlanArt;
-	static const TCHAR* ArtNamen[] = { TEXT("Schwarm"), TEXT("Ansturm"), TEXT("Panzer"), TEXT("Gemischt"), TEXT("Fernkampf") };
 
 	// Feste Fronten des Laufs; die Stufe bestimmt, ab welcher Welle weitere dazukommen
 	if (mFronten.Num() == 0)
 	{
 		SucheFronten(Mitte);
+	}
+	// 0.9.0 (Pruefung0846: alle 52 versperrten Nachzuegler 30 m hinter Front 2, deren Weg bei der Wahl voll war): das Netz aendert
+	// sich nach der Wahl (Gelaende und Bauten werden nachgeladen). Vor jeder Welle den Weg der aktiven Fronten neu pruefen und
+	// bei einem Teilweg die Fronten neu bestimmen.
+	for (int32 i = 0; i < AktiveFrontenFuer(Nummer) && mFronten.IsValidIndex(i); ++i)
+	{
+		bool bVoll = false;
+		const TArray<FVector> Probe = UTDGegnerHirn::BerechneWeg(GetWorld(), mFronten[i].Ort, mKern.Get(), &bVoll);
+		if (!bVoll)
+		{
+			UE_LOG(LogFicsitTD, Warning, TEXT("Frontpruefung Welle %d: Front %d (%s) hat nur noch einen Teilweg (%d Punkte, Ende %s) - Fronten neu bestimmen"),
+				Nummer, i + 1, *FrontText(mFronten, i, true), Probe.Num(), Probe.Num() ? *Probe.Last().ToCompactString() : TEXT("-"));
+			mFronten.Reset();
+			SucheFronten(Mitte);
+			MarkiereFronten();
+			break;
+		}
 	}
 	TArray<FVector> Orte;
 	mRichtungen.Reset();
@@ -2181,7 +2322,7 @@ void UTDWaveSubsystem::SpawneKernWelle(int32 Nummer)
 		}
 		if (P.bBoss)
 		{
-			Boss = FString::Printf(TEXT(" BOSS: %s!"), *P.BossName);
+			Boss = TDF(TEXT(" BOSS: %s!"), TEXT(" BOSS: %s!"), *P.BossName);
 			mBossName = P.BossName;
 		}
 		for (int32 i = 0; i < P.Anzahl; ++i)
@@ -2218,7 +2359,7 @@ void UTDWaveSubsystem::SpawneKernWelle(int32 Nummer)
 	const int32 Gleichzeitig = TDBalance::Ganz(TEXT("Wellen.MaxGleichzeitig"), TDBalance::Ganz(TEXT("Wellen.MaxGegner"), KernMaxGegner));
 	if (Gespawnt > Gleichzeitig)
 	{
-		Boss += FString::Printf(TEXT(" Sie kommen in Schueben, hoechstens %d gleichzeitig."), Gleichzeitig);
+		Boss += TDF(TEXT(" Sie kommen in Schueben, hoechstens %d gleichzeitig."), TEXT(" They come in batches, at most %d at once."), Gleichzeitig);
 	}
 	// T3: neue Arten in der Ansage nennen (Steckbrief in der Wellenvorschau am Kern)
 	FString Neu;
@@ -2226,7 +2367,7 @@ void UTDWaveSubsystem::SpawneKernWelle(int32 Nummer)
 	{
 		if (P.bNeu)
 		{
-			Neu += (Neu.IsEmpty() ? TEXT(" NEU: ") : TEXT(", ")) + Steckbrief(P.Pfad).Name;
+			Neu += (Neu.IsEmpty() ? TDT(TEXT(" NEU: "), TEXT(" NEW: ")) : FString(TEXT(", "))) + Steckbrief(P.Pfad).Name;
 		}
 	}
 	Boss += Neu;
@@ -2235,26 +2376,28 @@ void UTDWaveSubsystem::SpawneKernWelle(int32 Nummer)
 		const int32 Ph = PhaseVon(Nummer);
 		if (Ph < KernPhasenAnzahl)
 		{
-			Ansage(FString::Printf(TEXT("PHASE %d: %s - %s"), Ph + 1, KernPhasen[Ph].Name, KernPhasen[Ph].Text));
+			Ansage(FString::Printf(TEXT("PHASE %d: %s - %s"), Ph + 1, *PhasenName(Ph), *PhasenBeschreibung(Ph)));
 		}
 		else if (Nummer == 51 || Ph == KernPhasenAnzahl)
 		{
-			Ansage(TEXT("ENDLOS: Alle Arten im Mix, alle 10 Wellen ein Boss. Wie weit kommst du?"));
+			Ansage(TDT(TEXT("ENDLOS: Alle Arten im Mix, alle 10 Wellen ein Boss. Wie weit kommst du?"), TEXT("ENDLESS: All species mixed, a boss every 10 waves. How far can you go?")));
 		}
 	}
 	mWellenZeit = 0.f;
 	mZeitBisSteuerung = 0.f;
+	const FString GesamtText = mWellenGesamt > 0 ? FString::Printf(TEXT("/%d"), mWellenGesamt) : FString();
 	if (S.bZusammensetzung)
 	{
-		Ansage(FString::Printf(TEXT("WELLE %d%s (%s): %d Gegner%s aus %s, %.0f m entfernt.%s %s"), Nummer,
-			mWellenGesamt > 0 ? *FString::Printf(TEXT("/%d"), mWellenGesamt) : TEXT(""), ArtNamen[Art], Gespawnt,
-			mElites > 0 ? *FString::Printf(TEXT(", davon %d Elite"), mElites) : TEXT(""), *mRichtungen, Abstand / 100.f, *Boss, *(FString(TEXT("Tipp: ")) + TippFuer(Nummer))));
+		const FString ArtText = WellenArtName(Art);
+		const FString EliteText = mElites > 0 ? TDF(TEXT(", davon %d Elite"), TEXT(", %d of them Elite"), mElites) : FString();
+		const FString TippText = TDT(TEXT("Tipp: "), TEXT("Tip: ")) + TippFuer(Nummer);
+		Ansage(TDF(TEXT("WELLE %d%s (%s): %d Gegner%s aus %s, %.0f m entfernt.%s %s"), TEXT("WAVE %d%s (%s): %d enemies%s from %s, %.0f m away.%s %s"), Nummer,
+			*GesamtText, *ArtText, Gespawnt, *EliteText, *mRichtungen, Abstand / 100.f, *Boss, *TippText));
 	}
 	else
 	{
 		// Hart/Albtraum: nur Richtung und Anzahl
-		Ansage(FString::Printf(TEXT("WELLE %d%s: %d Gegner aus %s.%s"), Nummer,
-			mWellenGesamt > 0 ? *FString::Printf(TEXT("/%d"), mWellenGesamt) : TEXT(""), Gespawnt, *mRichtungen, *Boss));
+		Ansage(TDF(TEXT("WELLE %d%s: %d Gegner aus %s.%s"), TEXT("WAVE %d%s: %d enemies from %s.%s"), Nummer, *GesamtText, Gespawnt, *mRichtungen, *Boss));
 	}
 }
 
@@ -2303,7 +2446,7 @@ void UTDWaveSubsystem::WelleAusgewertet(float Anteil)
 		const int32 Neu = It->GetKills() - (Vorher ? *Vorher : 0);
 		if (Neu > 0)
 		{
-			Bilanz.Add({ It->GetTurmName(), Neu });
+			Bilanz.Add({ It->GetTurmAnzeige(), Neu });
 		}
 	}
 	Bilanz.Sort([](const TPair<FString, int32>& A, const TPair<FString, int32>& B) { return A.Value > B.Value; });
@@ -2317,8 +2460,9 @@ void UTDWaveSubsystem::WelleAusgewertet(float Anteil)
 	{
 		Beste += FString::Printf(TEXT("%s%s %d"), i ? TEXT(", ") : TEXT(""), *Bilanz[i].Key, Bilanz[i].Value);
 	}
-	Ansage(FString::Printf(TEXT("Welle %d abgewehrt: %d Gegner in %.0f s, Kern bei %.0f %%.%s"), mWelle, mWellenGroesse, mWellenZeit, Anteil,
-		Beste.IsEmpty() ? TEXT("") : *FString::Printf(TEXT(" Beste Tuerme: %s."), *Beste)));
+	const FString BesteText = Beste.IsEmpty() ? FString() : TDF(TEXT(" Beste Tuerme: %s."), TEXT(" Best turrets: %s."), *Beste);
+	Ansage(TDF(TEXT("Welle %d abgewehrt: %d Gegner in %.0f s, Kern bei %.0f %%.%s"), TEXT("Wave %d repelled: %d enemies in %.0f s, Core at %.0f %%.%s"), mWelle, mWellenGroesse, mWellenZeit, Anteil,
+		*BesteText));
 	MeldeMetrik(Anteil);
 }
 
@@ -2471,7 +2615,7 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 	}
 	if (!mKern.IsValid())
 	{
-		StoppeLauf(TEXT("Kern-Verteidigung beendet: der Abwehrkern wurde abgebaut."));
+		StoppeLauf(TDT(TEXT("Kern-Verteidigung beendet: der Abwehrkern wurde abgebaut."), TEXT("Core defense ended: the Defense Core was dismantled.")));
 		return;
 	}
 	if (mLauf == ETDLauf::Aufbau)
@@ -2519,8 +2663,8 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 		{
 			if (Vorher > Marke && mCountdown <= Marke)
 			{
-				Ansage(Marke >= 120.f ? FString::Printf(TEXT("Welle %d in %.0f Minuten."), mWelle + 1, Marke / 60.f)
-					: FString::Printf(TEXT("Welle %d in %.0f Sekunden."), mWelle + 1, Marke));
+				Ansage(Marke >= 120.f ? TDF(TEXT("Welle %d in %.0f Minuten."), TEXT("Wave %d in %.0f minutes."), mWelle + 1, Marke / 60.f)
+					: TDF(TEXT("Welle %d in %.0f Sekunden."), TEXT("Wave %d in %.0f seconds."), mWelle + 1, Marke));
 				if (Marke == 60.f)
 				{
 					PruefeVersorgung();
@@ -2607,7 +2751,7 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 	{
 		mLauf = ETDLauf::Aus;
 		SpeichereLauf();
-		Ansage(FString::Printf(TEXT("SIEG! Alle %d Wellen abgewehrt, Kern bei %.0f %%."), mWellenGesamt, Anteil));
+		Ansage(TDF(TEXT("SIEG! Alle %d Wellen abgewehrt, Kern bei %.0f %%."), TEXT("VICTORY! All %d waves repelled, Core at %.0f %%."), mWellenGesamt, Anteil));
 		return;
 	}
 	mLauf = ETDLauf::Aufbau;
@@ -2617,24 +2761,24 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 	{
 		Lauf->SpeichereSpielstand(FString::Printf(TEXT("FicsitTD_W%02d_Ende"), mWelle));
 	}
-	Ansage(mManuell ? FString(TEXT("Bauen, so lange du willst - naechste Welle mit /td kern weiter."))
-		: FString::Printf(TEXT("Naechste Welle in %.0f min (/td kern weiter = sofort)."), mCountdown / 60.f));
+	Ansage(mManuell ? TDT(TEXT("Bauen, so lange du willst - naechste Welle mit /td kern weiter."), TEXT("Build as long as you like - next wave with /td kern weiter."))
+		: TDF(TEXT("Naechste Welle in %.0f min (/td kern weiter = sofort)."), TEXT("Next wave in %.0f min (/td kern weiter = now)."), mCountdown / 60.f));
 	const int32 Jetzt = AktiveFrontenFuer(mWelle);
 	const int32 Danach = AktiveFrontenFuer(mWelle + 1);
 	for (int32 i = Jetzt; i < Danach; ++i)
 	{
-		Ansage(FString::Printf(TEXT("ACHTUNG: Ab Welle %d greifen sie auch aus %s an! Die neue Front ist auf Karte und Kompass markiert."), mWelle + 1, *FrontName(i)));
+		Ansage(TDF(TEXT("ACHTUNG: Ab Welle %d greifen sie auch aus %s an! Die neue Front ist auf Karte und Kompass markiert."), TEXT("WARNING: From wave %d they also attack from %s! The new front is marked on map and compass."), mWelle + 1, *FrontName(i)));
 	}
 	if ((mWelle + 1) % 10 == 0)
 	{
-		Ansage(FString::Printf(TEXT("WARNUNG: Welle %d ist ein BOSSKAMPF (%s). Verteidigung bündeln - danach gibt es Extra-Coupons."), mWelle + 1,
-			KernPhasen[((mWelle + 1) / 10 - 1) % KernPhasenAnzahl].BossName));
+		Ansage(TDF(TEXT("WARNUNG: Welle %d ist ein BOSSKAMPF (%s). Verteidigung bündeln - danach gibt es Extra-Coupons."), TEXT("WARNING: Wave %d is a BOSS FIGHT (%s). Concentrate your defense - extra Coupons afterwards."), mWelle + 1,
+			*PhasenBossName(((mWelle + 1) / 10 - 1) % KernPhasenAnzahl)));
 	}
 	// Wellen-Progression: zur Mitte einer Phase die naechste Familie ankuendigen, damit man Fabrik und Forschung vorbereitet
 	const int32 NaechstePhase = PhaseVon(mWelle + 1) + 1;
 	if ((mWelle + 1) % 10 == 5 && NaechstePhase < KernPhasenAnzahl && (mWellenGesamt <= 0 || NaechstePhase * 10 < mWellenGesamt))
 	{
-		Ansage(KernPhasen[NaechstePhase].Vorwarnung);
+		Ansage(PhasenVorwarnung(NaechstePhase));
 	}
 	MarkiereFronten();
 }
@@ -2827,7 +2971,7 @@ void UTDWaveSubsystem::MarkiereFronten()
 		FMapMarker M;
 		M.Location = mFronten[i].Ort;
 		const FString Richtung = Himmelsrichtung(mFronten[i].Winkel);
-		M.Name = i < Aktiv ? FString::Printf(TEXT("Front %s"), *Richtung) : FString::Printf(TEXT("Front %s (ab Welle %d)"), *Richtung, Ab);
+		M.Name = i < Aktiv ? TDF(TEXT("Front %s"), TEXT("Front %s"), *Richtung) : TDF(TEXT("Front %s (ab Welle %d)"), TEXT("Front %s (from wave %d)"), *Richtung, Ab);
 		M.CategoryName = Kategorie;
 		M.MapMarkerType = ERepresentationType::RT_MapMarker;
 		M.IconID = Symbol;
@@ -2883,7 +3027,7 @@ void UTDWaveSubsystem::Tick(float DeltaTime)
 			mBossPuls = 0.f;
 			if (mBossBalken)
 			{
-				Ansage(FString::Printf(TEXT("BOSS BESIEGT: %s!"), *mBossName));
+				Ansage(TDF(TEXT("BOSS BESIEGT: %s!"), TEXT("BOSS DEFEATED: %s!"), *mBossName));
 			}
 			EntferneBossBalken();
 		}
@@ -3374,18 +3518,18 @@ bool UTDWaveSubsystem::StarteStress(ATDDefenseCore* Kern, const TArray<int32>& S
 {
 	if (!Kern)
 	{
-		Meldung = TEXT("Kein Abwehrkern gebaut.");
+		Meldung = TDT(TEXT("Kein Abwehrkern gebaut."), TEXT("No Defense Core built."));
 		return false;
 	}
 	if (mLauf == ETDLauf::Welle || mStressPhase != 0)
 	{
-		Meldung = mStressPhase != 0 ? TEXT("Stresstest laeuft schon (/td kern stress stop).") : TEXT("Erst nach der Welle (Stresstest nur in der Bauphase oder ohne Lauf).");
+		Meldung = mStressPhase != 0 ? TDT(TEXT("Stresstest laeuft schon (/td kern stress stop)."), TEXT("Stress test already running (/td kern stress stop).")) : TDT(TEXT("Erst nach der Welle (Stresstest nur in der Bauphase oder ohne Lauf)."), TEXT("Only after the wave (stress test only in the build phase or without a run)."));
 		return false;
 	}
 	FrontenFuer(Kern);
 	if (mFronten.Num() == 0)
 	{
-		Meldung = TEXT("Keine Front gefunden (/td kern fronten neu).");
+		Meldung = TDT(TEXT("Keine Front gefunden (/td kern fronten neu)."), TEXT("No front found (/td kern fronten neu)."));
 		return false;
 	}
 	if (mLauf == ETDLauf::Aus)
@@ -3420,7 +3564,8 @@ bool UTDWaveSubsystem::StarteStress(ATDDefenseCore* Kern, const TArray<int32>& S
 		}
 		UE_LOG(LogFicsitTD, Log, TEXT("Render (Stresstest Start): %s; %d Tuerme"), *Render, Tuerme);
 	}
-	Meldung = FString::Printf(TEXT("Stresstest: %d Stufen je %.0f s an %s, Gegner x%.0f LP, kein Schaden am Kern/Mauern, Abschuesse zaehlen nicht. Bitte nahe am Kern bleiben und nicht bauen."),
+	Meldung = TDF(TEXT("Stresstest: %d Stufen je %.0f s an %s, Gegner x%.0f LP, kein Schaden am Kern/Mauern, Abschuesse zaehlen nicht. Bitte nahe am Kern bleiben und nicht bauen."),
+		TEXT("Stress test: %d stages of %.0f s each at %s, enemies x%.0f HP, no damage to Core/walls, kills do not count. Please stay near the Core and do not build."),
 		Stufen.Num(), Sekunden, *FrontName(0), LPFaktor);
 	return true;
 }
@@ -3521,7 +3666,8 @@ void UTDWaveSubsystem::StressTick()
 			bStressDrehenAus ? TEXT("aus") : TEXT("an"), StressDrehtakt > 0.f ? StressDrehtakt : 30.f, bStressSchattenAus ? TEXT("aus") : TEXT("an"), bStressDfAus ? TEXT("aus") : TEXT("an"), bStressEffekteAus ? TEXT("aus") : TEXT("an"), mStressSterben, W.Tote, W.SchadenMs, W.GeschossMs, W.Geschosse,
 			W.SpielMs, W.SpielMax, W.RenderMs, W.RenderMax, W.GpuMs, W.GpuMax,
 			W.Bilder, mStressSekunden, W.Mittel, W.Mittel > 0.f ? 1000.f / W.Mittel : 0.f, W.P95, W.Max, W.Ruckler, W.HirnMs, W.TurmMs, Lebend);
-		mStressErgebnis.Add(FString::Printf(TEXT("%d Gegner: %.0f FPS im Mittel, schlechtestes Bild %.0f ms, %d Ruckler, %d Tode; Spiel-Thread %.1f ms (Treffer %.2f, Geschosse %.2f), Render %.1f ms, Grafik %.1f ms"),
+		mStressErgebnis.Add(TDF(TEXT("%d Gegner: %.0f FPS im Mittel, schlechtestes Bild %.0f ms, %d Ruckler, %d Tode; Spiel-Thread %.1f ms (Treffer %.2f, Geschosse %.2f), Render %.1f ms, Grafik %.1f ms"),
+			TEXT("%d enemies: %.0f FPS average, worst frame %.0f ms, %d stutters, %d deaths; game thread %.1f ms (hits %.2f, projectiles %.2f), render %.1f ms, GPU %.1f ms"),
 			N, W.Mittel > 0.f ? 1000.f / W.Mittel : 0.f, W.Max, W.Ruckler, W.Tote, W.SpielMs, W.SchadenMs, W.GeschossMs, W.RenderMs, W.GpuMs));
 		RaeumeStress();
 		++mStressIndex;
@@ -3532,13 +3678,13 @@ void UTDWaveSubsystem::StressTick()
 	// Phase 2: naechste Stufe spawnen oder fertig
 	if (!mStressStufen.IsValidIndex(mStressIndex))
 	{
-		StoppeStress(TEXT("Stresstest fertig. Ergebnisse (auch im Log, Zeilen 'Stresstest'):"));
+		StoppeStress(TDT(TEXT("Stresstest fertig. Ergebnisse (auch im Log, Zeilen 'Stresstest'):"), TEXT("Stress test finished. Results (also in the log, lines 'Stresstest'):")));
 		return;
 	}
 	const ATDDefenseCore* Kern = mKern.Get();
 	if (!Kern)
 	{
-		StoppeStress(TEXT("Stresstest abgebrochen: kein Abwehrkern."));
+		StoppeStress(TDT(TEXT("Stresstest abgebrochen: kein Abwehrkern."), TEXT("Stress test aborted: no Defense Core.")));
 		return;
 	}
 	const int32 N = mStressStufen[mStressIndex];
@@ -3561,7 +3707,7 @@ void UTDWaveSubsystem::StressTick()
 	}
 	if (Klassen.Num() == 0)
 	{
-		StoppeStress(FString::Printf(TEXT("Stresstest abgebrochen: Art '%s' unbekannt. Moeglich: mix, %s"), *mStressArt, *FString::Join(Namen, TEXT(", ")).ToLower()));
+		StoppeStress(TDF(TEXT("Stresstest abgebrochen: Art '%s' unbekannt. Moeglich: mix, %s"), TEXT("Stress test aborted: type '%s' unknown. Possible: mix, %s"), *mStressArt, *FString::Join(Namen, TEXT(", ")).ToLower()));
 		return;
 	}
 	const int32 Vorher = mGegner.Num();
@@ -3576,9 +3722,9 @@ void UTDWaveSubsystem::StressTick()
 	{
 		mStressGegner.Add(mGegner[i].Kreatur);
 	}
-	UE_LOG(LogFicsitTD, Log, TEXT("Stresstest %d Gegner (%s): %d gespawnt in %.0f ms an %s"), N, *mStressArt, mStressGegner.Num(), SpawnMs, *FrontName(0));
+	UE_LOG(LogFicsitTD, Log, TEXT("Stresstest %d Gegner (%s): %d gespawnt in %.0f ms an %s"), N, *mStressArt, mStressGegner.Num(), SpawnMs, *FrontText(mFronten, 0, true));
 	MeldeKreaturen(FString::Printf(TEXT("Stresstest %d Gegner, Start"), N));
-	Ansage(FString::Printf(TEXT("Stresstest Stufe %d/%d: %d Gegner (Spawn %.0f ms), Messung %.0f s ..."), mStressIndex + 1, mStressStufen.Num(), mStressGegner.Num(), SpawnMs, mStressSekunden));
+	Ansage(TDF(TEXT("Stresstest Stufe %d/%d: %d Gegner (Spawn %.0f ms), Messung %.0f s ..."), TEXT("Stress test stage %d/%d: %d enemies (spawn %.0f ms), measuring %.0f s ..."), mStressIndex + 1, mStressStufen.Num(), mStressGegner.Num(), SpawnMs, mStressSekunden));
 	StarteBildMessung();
 	mStressPhase = 1;
 	mStressEnde = FPlatformTime::Seconds() + mStressSekunden;

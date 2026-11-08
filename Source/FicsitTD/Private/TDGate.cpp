@@ -14,6 +14,7 @@
 #include "NavAreas/NavArea_Null.h"
 #include "TimerManager.h"
 #include "WheeledVehicles/FGWheeledVehicle.h"
+#include "TDSprache.h"
 
 // Masse aus Modelle\td_tor.py (Blender m -> cm): Oeffnung 4 m, Fluegel je 2 m, Saeulen 2 m, Hoehe 5 m
 static constexpr float TorOeffnung = 400.f;
@@ -139,9 +140,9 @@ void ATDGate::GetClearanceData_Implementation(TArray<FFGClearanceData>& out_data
 
 FText ATDGate::GetLookAtDecription_Implementation(AFGCharacterPlayer* byCharacter, const FUseState& state) const
 {
-	return FText::FromString(FString::Printf(TEXT("Tor (%s)\nLebenspunkte %.0f / %.0f%s"),
-		mOffen > 0.95f ? TEXT("offen") : mOffen < 0.05f ? TEXT("zu") : TEXT("bewegt sich"),
-		FMath::Max(mHealth, 0.f), GetTDMaxHealth(), mGegnerNah ? TEXT("\nGegner in der Naehe: bleibt zu") : TEXT("")));
+	return FText::FromString(TDF(TEXT("Tor (%s)\nLebenspunkte %.0f / %.0f%s"), TEXT("Gate (%s)\nHealth %.0f / %.0f%s"),
+		*(mOffen > 0.95f ? TDT(TEXT("offen"), TEXT("open")) : mOffen < 0.05f ? TDT(TEXT("zu"), TEXT("closed")) : TDT(TEXT("bewegt sich"), TEXT("moving"))),
+		FMath::Max(mHealth, 0.f), GetTDMaxHealth(), *(mGegnerNah ? TDT(TEXT("\nGegner in der Naehe: bleibt zu"), TEXT("\nEnemies nearby: stays closed")) : FString())));
 }
 
 float ATDGate::TakeDamage(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser)

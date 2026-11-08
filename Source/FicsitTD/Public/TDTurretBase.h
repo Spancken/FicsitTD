@@ -109,6 +109,8 @@ public:
 	/** Reichweitenkreis am fertigen Turm ein-/ausblenden (/td reichweite) */
 	void ZeigeReichweite(bool bAn);
 	FString GetTurmName() const { return mTurmName; }
+	/** 0.85: Turmname in der Spielsprache (GetTurmName ist ein Schluessel) */
+	FString GetTurmAnzeige() const;
 	/** Koeder des Gebaeudes (0.81: Lockfeuer zieht Gegner auf sie) */
 	const TArray<TObjectPtr<class ATDDecoy>>& GetKoederListe() const { return mDecoys; }
 	/** 0.78.1 Pruefstand-Diagnose: worauf zielt der Turm gerade */

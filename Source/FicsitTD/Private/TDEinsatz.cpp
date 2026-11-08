@@ -7,6 +7,8 @@
 #include "TDLaufProtokoll.h"
 #include "FicsitTDModule.h"
 #include "TDBalance.h"
+#include "TDSprache.h"
+#include "UObject/TextProperty.h"
 #include "TDBarrier.h"
 #include "TDDamageable.h"
 #include "TDDefenseCore.h"
@@ -219,19 +221,75 @@ static const TCHAR* KernRezeptPfad = TEXT("/FicsitTD/Buildings/DefenseCore/Recip
 /** Verteidigungsfeld um den Kern, in dem waehrend einer Welle nicht gebaut werden darf (cm) */
 static constexpr float EinsatzFeldRadius = 12000.f;
 
+/** 0.85 (L1): Anzeigename eines Kontingent- bzw. Laden-Schluessels. Die Schluessel selbst bleiben deutsch
+ *  (Vergleiche, Balance-Datei, Spielstand mKontingentGekauft, Laufprotokoll) - nur die Ausgabe an den Spieler wird uebersetzt. */
+static FString TDAnzeige(const FString& Key)
+{
+	if (!TDSprache::Englisch())
+	{
+		return Key;
+	}
+	static const TMap<FString, FString> En = {
+		{ TEXT("Abwehrkern"), TEXT("Defense Core") }, { TEXT("Miner"), TEXT("Miner") }, { TEXT("Schmelzofen"), TEXT("Smelter") },
+		{ TEXT("Konstruktor"), TEXT("Constructor") }, { TEXT("Biomassegenerator"), TEXT("Biomass Burner") }, { TEXT("Lager"), TEXT("Storage Container") },
+		{ TEXT("Bolzenturm"), TEXT("Bolt Turret") }, { TEXT("Mauer"), TEXT("Wall") }, { TEXT("MAM"), TEXT("MAM") },
+		{ TEXT("Splitter"), TEXT("Conveyor Splitter") }, { TEXT("Verbinder"), TEXT("Conveyor Merger") }, { TEXT("AWESOME-Sink"), TEXT("AWESOME Sink") },
+		{ TEXT("Panzersperre"), TEXT("Barrier") }, { TEXT("Tor"), TEXT("Gate") }, { TEXT("Dimensionslager"), TEXT("Dimensional Storage") },
+		{ TEXT("Elektrozaun"), TEXT("Electric Fence") }, { TEXT("Funkmast"), TEXT("Radio Mast") }, { TEXT("Schildgenerator"), TEXT("Shield Generator") },
+		{ TEXT("Himmelsturm"), TEXT("Sky Tower") }, { TEXT("Stoerfeld"), TEXT("Jammer Projector") }, { TEXT("Singularitaet"), TEXT("Singularity Launcher") },
+		{ TEXT("Gewehrturm"), TEXT("Rifle Turret") }, { TEXT("Flammenturm"), TEXT("Flamethrower") }, { TEXT("Flammenwerfer"), TEXT("Flamethrower") },
+		{ TEXT("Teslaspule"), TEXT("Tesla Coil") }, { TEXT("Nobelisk-Werfer"), TEXT("Nobelisk Launcher") }, { TEXT("Reparaturstation"), TEXT("Repair Station") },
+		{ TEXT("Lockfeuer"), TEXT("Lure Fire") }, { TEXT("Oelschlick"), TEXT("Oil Slick Field") }, { TEXT("Wasserpumpe"), TEXT("Water Extractor") },
+		{ TEXT("Oelpumpe"), TEXT("Oil Extractor") }, { TEXT("Foerderanlage"), TEXT("Extractor") }, { TEXT("Kohlekraftwerk"), TEXT("Coal-Powered Generator") },
+		{ TEXT("Treibstoffkraftwerk"), TEXT("Fuel-Powered Generator") }, { TEXT("Atomkraftwerk"), TEXT("Nuclear Power Plant") }, { TEXT("Kraftwerk"), TEXT("Power Generator") },
+		{ TEXT("Giesserei"), TEXT("Foundry") }, { TEXT("Assembler"), TEXT("Assembler") }, { TEXT("Fertiger"), TEXT("Manufacturer") },
+		{ TEXT("Raffinerie"), TEXT("Refinery") }, { TEXT("Abfueller"), TEXT("Packager") }, { TEXT("Mischer"), TEXT("Blender") },
+		{ TEXT("Fabrik"), TEXT("Factory") }, { TEXT("Fluessigkeitspuffer"), TEXT("Fluid Buffer") }, { TEXT("Inventarplätze"), TEXT("Inventory Slots") },
+		{ TEXT("Handplatz"), TEXT("Hand Slot") }, { TEXT("Armierpistole"), TEXT("Rebar Gun") }, { TEXT("Klingenläufer"), TEXT("Blade Runners") },
+		{ TEXT("Gewehr"), TEXT("Rifle") }, { TEXT("Nobelisken-Zünder"), TEXT("Nobelisk Detonator") }, { TEXT("Kernreparatur"), TEXT("Core Repair") },
+	};
+	const FString* Gefunden = En.Find(Key);
+	return Gefunden ? *Gefunden : Key;
+}
+
+/** Sperrtexte der Bau-Hologramme: stehen am CDO. Im Konstruktor ist die Spielsprache evtl. noch nicht die endgueltige,
+ *  deshalb setzt PruefeHologramm sie bei Bedarf neu (TDAktualisiereSperrTexte) */
+static FText TDTextKontingent() { return TDTX(TEXT("Kontingent erschöpft (/td einsatz status)"), TEXT("Quota used up (/td einsatz status)")); }
+static FText TDTextSinkGesperrt() { return TDTX(TEXT("Im Einsatz gesperrt: FICSIT-Coupons gibt es nur vom Abwehrkern"), TEXT("Locked during an operation: FICSIT Coupons only come from the Defense Core")); }
+static FText TDTextWellenSperre() { return TDTX(TEXT("Während der Welle ist Bauen am Kern gesperrt"), TEXT("Building near the Core is locked during a wave")); }
+
 UTDCDKontingent::UTDCDKontingent()
 {
-	mDisqfualifyingText = FText::FromString(TEXT("Kontingent erschöpft (/td einsatz status)"));
+	mDisqfualifyingText = TDTextKontingent();
 }
 
 UTDCDSinkGesperrt::UTDCDSinkGesperrt()
 {
-	mDisqfualifyingText = NSLOCTEXT("FicsitTD", "Einsatz.SinkGesperrt", "Im Einsatz gesperrt: FICSIT-Coupons gibt es nur vom Abwehrkern");
+	mDisqfualifyingText = TDTextSinkGesperrt();
 }
 
 UTDCDWellenSperre::UTDCDWellenSperre()
 {
-	mDisqfualifyingText = FText::FromString(TEXT("Während der Welle ist Bauen am Kern gesperrt"));
+	mDisqfualifyingText = TDTextWellenSperre();
+}
+
+static void TDAktualisiereSperrTexte()
+{
+	static int32 Stand = -1;
+	const int32 Jetzt = TDSprache::Englisch() ? 1 : 0;
+	if (Stand == Jetzt)
+	{
+		return;
+	}
+	FTextProperty* Feld = FindFProperty<FTextProperty>(UFGConstructDisqualifier::StaticClass(), TEXT("mDisqfualifyingText"));
+	if (!Feld)
+	{
+		return;
+	}
+	Stand = Jetzt;
+	Feld->SetPropertyValue_InContainer(GetMutableDefault<UTDCDKontingent>(), TDTextKontingent());
+	Feld->SetPropertyValue_InContainer(GetMutableDefault<UTDCDSinkGesperrt>(), TDTextSinkGesperrt());
+	Feld->SetPropertyValue_InContainer(GetMutableDefault<UTDCDWellenSperre>(), TDTextWellenSperre());
 }
 
 bool UTDEinsatzSubsystem::IstLogistik(const UClass* BauKlasse)
@@ -341,7 +399,7 @@ void UTDEinsatzSubsystem::SchalteScannerFrei()
 	}
 	if (Neu.Num() > 0)
 	{
-		Melde(FString::Printf(TEXT("Ressourcenscanner (V): jetzt suchbar - %s"), *FString::Join(Neu, TEXT(", "))));
+		Melde(TDF(TEXT("Ressourcenscanner (V): jetzt suchbar - %s"), TEXT("Resource Scanner (V): now scannable - %s"), *FString::Join(Neu, TEXT(", "))));
 	}
 }
 
@@ -514,13 +572,15 @@ void UTDEinsatzSubsystem::WelleBeendet(int32 Welle, float KernAnteil)
 		TArray<FString> Teile;
 		for (const TPair<FString, int32>& Z : mZerstoert)
 		{
-			Teile.Add(FString::Printf(TEXT("%d %s"), Z.Value, *Z.Key));
+			Teile.Add(FString::Printf(TEXT("%d %s"), Z.Value, *TDAnzeige(Z.Key)));
 		}
-		Melde(FString::Printf(TEXT("Zerstoert in dieser Welle: %s. Das Baumaterial liegt im Inventar (oder wartet am Kern) - Kontingent ist wieder frei."), *FString::Join(Teile, TEXT(", "))));
+		Melde(TDF(TEXT("Zerstoert in dieser Welle: %s. Das Baumaterial liegt im Inventar (oder wartet am Kern) - Kontingent ist wieder frei."),
+			TEXT("Destroyed this wave: %s. The building materials are in your inventory (or waiting at the Core) - the quota is free again."), *FString::Join(Teile, TEXT(", "))));
 		mZerstoert.Reset();
 	}
-	Melde(FString::Printf(TEXT("+%d FICSIT-Coupons%s (Konto %d Coupons). Ausgeben im Kern-Menue (E am Kern)."), Punkte,
-		Welle % 10 == 0 ? TEXT(" inkl. Boss-Bonus") : TEXT(""), Kern->mEinsatzPunkte));
+	Melde(TDF(TEXT("+%d FICSIT-Coupons%s (Konto %d Coupons). Ausgeben im Kern-Menue (E am Kern)."),
+		TEXT("+%d FICSIT Coupons%s (balance %d Coupons). Spend them in the Core Menu (E at the Core)."), Punkte,
+		Welle % 10 == 0 ? *TDT(TEXT(" inkl. Boss-Bonus"), TEXT(" incl. boss bonus")) : TEXT(""), Kern->mEinsatzPunkte));
 
 	// Biomasse je Welle fuer den Anfangsstrom (bis Kohle laeuft); 0 = aus
 	if (const int32 Bio = TDBalance::Ganz(TEXT("Einsatz.Biomasse.JeWelle"), 100))
@@ -533,7 +593,7 @@ void UTDEinsatzSubsystem::WelleBeendet(int32 Welle, float KernAnteil)
 		{
 			// Test 0.53: bei vollem Inventar verfiel die Biomasse, danach fehlte der Strom - jetzt wartet der Rest am Kern
 			const FString Text = GibMaterial({ { Biomasse, Bio } });
-			Melde(FString::Printf(TEXT("Biomasse fuer die Brenner: %s."), *Text));
+			Melde(TDF(TEXT("Biomasse fuer die Brenner: %s."), TEXT("Biomass for the burners: %s."), *Text));
 		}
 	}
 	// Forschungspunkte (Schritt B): je Welle, Bonus bei gutem Kern und nach dem Boss; als Item ins Inventar (MAM-Kosten)
@@ -541,15 +601,16 @@ void UTDEinsatzSubsystem::WelleBeendet(int32 Welle, float KernAnteil)
 		+ (Welle % 10 == 0 ? TDBalance::Ganz(TEXT("Einsatz.FP.Boss"), 3) : 0);
 	Kern->mFPOffen += FMath::Max(0, FP);
 	const int32 Gegeben = GibOffeneFP();
-	Melde(FString::Printf(TEXT("+%d Forschungspunkte (FICSIT-Kampfdaten), jetzt %d im Inventar%s. Einsetzen im MAM."), FP, FPImInventar(),
-		Kern->mFPOffen > 0 ? *FString::Printf(TEXT(" - %d warten, Inventar voll"), Kern->mFPOffen) : TEXT("")));
+	Melde(TDF(TEXT("+%d Forschungspunkte (FICSIT-Kampfdaten), jetzt %d im Inventar%s. Einsetzen im MAM."),
+		TEXT("+%d Research Points (FICSIT Combat Data), now %d in your inventory%s. Use them in the MAM."), FP, FPImInventar(),
+		Kern->mFPOffen > 0 ? *TDF(TEXT(" - %d warten, Inventar voll"), TEXT(" - %d waiting, inventory full"), Kern->mFPOffen) : TEXT("")));
 	UE_LOG(LogFicsitTD, Log, TEXT("Einsatz: Welle %d -> %d FP (%d ins Inventar, %d offen)"), Welle, FP, Gegeben, Kern->mFPOffen);
 	// 0.65 (Lauf 04.11.: Kern fiel ohne Gegenmittel von 82 % auf 10 %): Grundreparatur nach jeder Welle
 	{
 		const float Grund = Kern->HealTD(Kern->GetTDMaxHealth() * TDBalance::Wert(TEXT("Kern.Grundreparatur"), 0.05f));
 		if (Grund > 0.f)
 		{
-			Melde(FString::Printf(TEXT("Kern repariert sich nach der Welle: +%.0f LP."), Grund));
+			Melde(TDF(TEXT("Kern repariert sich nach der Welle: +%.0f LP."), TEXT("The Core repairs itself after the wave: +%.0f HP."), Grund));
 		}
 	}
 	// Forschung Notreparatur: der Kern heilt sich nach jeder Welle um 10 %
@@ -558,13 +619,14 @@ void UTDEinsatzSubsystem::WelleBeendet(int32 Welle, float KernAnteil)
 		const float Geheilt = Kern->HealTD(Kern->GetTDMaxHealth() * TDBalance::Wert(TEXT("Forschung.KernNotrep.Anteil"), 0.1f));
 		if (Geheilt > 0.f)
 		{
-			Melde(FString::Printf(TEXT("Notreparatur: Kern +%.0f LP."), Geheilt));
+			Melde(TDF(TEXT("Notreparatur: Kern +%.0f LP."), TEXT("Emergency repair: Core +%.0f HP."), Geheilt));
 		}
 	}
 	// Warnung: der Kern ist knapp (Marius hat die Kernreparatur im Laden nicht gefunden)
 	if (KernAnteil < TDBalance::Wert(TEXT("Kern.Warnung"), 50.f))
 	{
-		Melde(FString::Printf(TEXT("ACHTUNG: Kern nur noch bei %.0f %%. Kernreparatur im Kern-Menü (Laden), Notreparatur im MAM (Kern-Ausbau) - und mehr oder stärkere Türme."), KernAnteil));
+		Melde(TDF(TEXT("ACHTUNG: Kern nur noch bei %.0f %%. Kernreparatur im Kern-Menü (Laden), Notreparatur im MAM (Kern-Ausbau) - und mehr oder stärkere Türme."),
+			TEXT("WARNING: Core only at %.0f %%. Core Repair in the Core Menu (Shop), Emergency Repair in the MAM (Core upgrades) - and more or stronger turrets."), KernAnteil));
 	}
 	if (UTDPionier* Pionier = UTDPionier::Get(this))
 	{
@@ -622,7 +684,7 @@ FString UTDEinsatzSubsystem::GibMaterial(const TMap<UClass*, int32>& Items)
 	FString Text = FString::Join(Teile, TEXT(", "));
 	if (Wartet > 0)
 	{
-		Text += FString::Printf(TEXT(" (%d Teile warten am Kern, Inventar voll: E am Kern holt sie)"), Wartet);
+		Text += TDF(TEXT(" (%d Teile warten am Kern, Inventar voll: E am Kern holt sie)"), TEXT(" (%d items waiting at the Core, inventory full: press E at the Core to collect them)"), Wartet);
 	}
 	return Text;
 }
@@ -731,16 +793,16 @@ FString UTDEinsatzSubsystem::ZahleEP(int32 Preis, const FString& Posten, bool bA
 	ATDDefenseCore* Kern = mKern.Get();
 	if (!mAktiv || !Kern)
 	{
-		return TEXT("Nur im Einsatz.");
+		return TDT(TEXT("Nur im Einsatz."), TEXT("Only during an operation."));
 	}
 	const UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
 	if (!bAuchInWelle && Waves && Waves->LaeuftWelle())
 	{
-		return TEXT("Nur in der Bauphase.");
+		return TDT(TEXT("Nur in der Bauphase."), TEXT("Only in the build phase."));
 	}
 	if (Kern->mEinsatzPunkte < Preis)
 	{
-		return FString::Printf(TEXT("Zu wenig FICSIT-Coupons: %d Coupons nötig, Konto %d Coupons."), Preis, Kern->mEinsatzPunkte);
+		return TDF(TEXT("Zu wenig FICSIT-Coupons: %d Coupons nötig, Konto %d Coupons."), TEXT("Not enough FICSIT Coupons: %d Coupons needed, balance %d Coupons."), Preis, Kern->mEinsatzPunkte);
 	}
 	Kern->mEinsatzPunkte -= Preis;
 	if (UTDLaufProtokoll* Lauf = UTDLaufProtokoll::Get(this))
@@ -761,7 +823,8 @@ void UTDEinsatzSubsystem::MerkeTurmErbe(const FString& Turm, int32 Kills, int32 
 	// 0.63: "Typ|Abschuesse|L<Level>" (vorher "Typ|Abschuesse|R|F|S|Sp")
 	Kern->mTurmErbe.Add(FString::Printf(TEXT("%s|%d|L%d"), *Turm, Kills, Level));
 	UE_LOG(LogFicsitTD, Log, TEXT("Einsatz: %s abgerissen, Level %d fuer den naechsten gemerkt (%d Abschuesse)"), *Turm, Level, Kills);
-	Melde(FString::Printf(TEXT("%s abgerissen: Der nächste neu gebaute %s übernimmt sein Level %d."), *Turm, *Turm, Level));
+	Melde(TDF(TEXT("%s abgerissen: Der nächste neu gebaute %s übernimmt sein Level %d."), TEXT("%s dismantled: the next %s you build inherits its level %d."),
+		*TDAnzeige(Turm), *TDAnzeige(Turm), Level));
 }
 
 /** Level aus einem Erbe-Eintrag; alte Eintraege (R|F|S) wie beim Laden umrechnen: hoechste Stufe + 1 */
@@ -824,29 +887,29 @@ FString UTDEinsatzSubsystem::SpielerWirkung(const FTDSpielerPosten& P, int32 Men
 		}
 		const float Geheilt = Kern->HealTD(Kern->GetTDMaxHealth() * Menge / 100.f);
 		UE_LOG(LogFicsitTD, Log, TEXT("Einsatz: Kern repariert +%.0f LP, jetzt %.0f/%.0f"), Geheilt, Kern->GetTDHealth(), Kern->GetTDMaxHealth());
-		return FString::Printf(TEXT("Kern +%.0f LP, jetzt %.0f %%."), Geheilt, 100.f * Kern->GetTDHealth() / FMath::Max(Kern->GetTDMaxHealth(), 1.f));
+		return TDF(TEXT("Kern +%.0f LP, jetzt %.0f %%."), TEXT("Core +%.0f HP, now %.0f %%."), Geheilt, 100.f * Kern->GetTDHealth() / FMath::Max(Kern->GetTDMaxHealth(), 1.f));
 	}
 	if (P.Art == 1 || P.Art == 2)
 	{
 		AFGUnlockSubsystem* Freischaltung = AFGUnlockSubsystem::Get(GetWorld());
 		if (!Freischaltung)
 		{
-			return TEXT("(Freischaltung nicht erreichbar)");
+			return TDT(TEXT("(Freischaltung nicht erreichbar)"), TEXT("(unlocks not available)"));
 		}
 		if (P.Art == 1)
 		{
 			Freischaltung->UnlockInventorySlots(Menge);
-			return FString::Printf(TEXT("+%d Inventarplätze, jetzt %d."), Menge, Freischaltung->GetNumTotalInventorySlots());
+			return TDF(TEXT("+%d Inventarplätze, jetzt %d."), TEXT("+%d inventory slots, now %d."), Menge, Freischaltung->GetNumTotalInventorySlots());
 		}
 		Freischaltung->UnlockArmEquipmentSlots(Menge);
-		return FString::Printf(TEXT("+%d Handplatz, jetzt %d."), Menge, Freischaltung->GetNumTotalArmEquipmentSlots());
+		return TDF(TEXT("+%d Handplatz, jetzt %d."), TEXT("+%d hand slot, now %d."), Menge, Freischaltung->GetNumTotalArmEquipmentSlots());
 	}
 	TMap<UClass*, int32> Item;
 	if (UClass* Klasse = LoadClass<UFGItemDescriptor>(nullptr, P.Item))
 	{
 		Item.Add(Klasse, Menge);
 	}
-	return Item.Num() ? TEXT("Erhalten: ") + GibMaterial(Item) + TEXT(".") : TEXT("(Ausrüstung nicht gefunden)");
+	return Item.Num() ? TDT(TEXT("Erhalten: "), TEXT("Received: ")) + GibMaterial(Item) + TEXT(".") : TDT(TEXT("(Ausrüstung nicht gefunden)"), TEXT("(equipment not found)"));
 }
 
 TArray<FTDLadenZeile> UTDEinsatzSubsystem::LadenZeilen() const
@@ -872,7 +935,8 @@ TArray<FTDLadenZeile> UTDEinsatzSubsystem::LadenZeilen() const
 		Z.Symbol = Symbol(E.Key);
 		if (const FTDSpielerPosten* SP = SpielerFuer(E.Key))
 		{
-			Z.Einheit = SP->Art == 1 ? TEXT("Inventarplätze") : SP->Art == 2 ? TEXT("Handplatz") : SP->Art == 3 ? TEXT("% Kern-LP") : TEXT("Ausrüstung");
+			Z.Einheit = SP->Art == 1 ? TDT(TEXT("Inventarplätze"), TEXT("inventory slots")) : SP->Art == 2 ? TDT(TEXT("Handplatz"), TEXT("hand slot"))
+				: SP->Art == 3 ? TDT(TEXT("% Kern-LP"), TEXT("% Core HP")) : TDT(TEXT("Ausrüstung"), TEXT("equipment"));
 			Z.Max = SpielerMax(*SP);
 			// Marius 03.11.2026: eine gekaufte Waffe noch einmal anzubieten ergibt keinen Sinn
 			if (Z.Max > 0 && Z.Gekauft >= Z.Max)
@@ -976,26 +1040,26 @@ TArray<FString> UTDEinsatzSubsystem::LadenText() const
 	const ATDDefenseCore* Kern = mKern.Get();
 	if (!mAktiv || !Kern)
 	{
-		Zeilen.Add(TEXT("Kein Einsatz aktiv."));
+		Zeilen.Add(TDT(TEXT("Kein Einsatz aktiv."), TEXT("No operation active.")));
 		return Zeilen;
 	}
-	Zeilen.Add(FString::Printf(TEXT("Laden - Konto: %d Coupons"), Kern->mEinsatzPunkte));
+	Zeilen.Add(TDF(TEXT("Laden - Konto: %d Coupons"), TEXT("Shop - balance: %d Coupons"), Kern->mEinsatzPunkte));
 	TArray<FString> Kaufbar, Gesperrt;
 	for (const FTDLadenEintrag& E : LadenListe)
 	{
 		if (!RezeptVerfuegbar(GetWorld(), E.Rezept))
 		{
-			Gesperrt.Add(E.Key);
+			Gesperrt.Add(TDAnzeige(E.Key));
 			continue;
 		}
 		const int32* Gekauft = Kern->mKontingentGekauft.Find(E.Key);
 		const int32 Preis = LadenPreis(E, Gekauft ? *Gekauft : 0);
-		Kaufbar.Add(FString::Printf(TEXT("%s +%d: %d Coupons"), E.Key, LadenPaket(E), Preis));
+		Kaufbar.Add(FString::Printf(TEXT("%s +%d: %d Coupons"), *TDAnzeige(E.Key), LadenPaket(E), Preis));
 	}
 	Zeilen.Add(FString::Join(Kaufbar, TEXT(", ")));
 	if (Gesperrt.Num() > 0)
 	{
-		Zeilen.Add(TEXT("Erst im MAM erforschen: ") + FString::Join(Gesperrt, TEXT(", ")));
+		Zeilen.Add(TDT(TEXT("Erst im MAM erforschen: "), TEXT("Research in the MAM first: ")) + FString::Join(Gesperrt, TEXT(", ")));
 	}
 	return Zeilen;
 }
@@ -1005,12 +1069,12 @@ FString UTDEinsatzSubsystem::Kaufe(const FString& Name, int32 Anzahl)
 	ATDDefenseCore* Kern = mKern.Get();
 	if (!mAktiv || !Kern)
 	{
-		return TEXT("Kein Einsatz aktiv.");
+		return TDT(TEXT("Kein Einsatz aktiv."), TEXT("No operation active."));
 	}
 	const UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
 	if (Waves && Waves->LaeuftWelle())
 	{
-		return TEXT("Waehrend der Welle ist der Laden geschlossen.");
+		return TDT(TEXT("Waehrend der Welle ist der Laden geschlossen."), TEXT("The shop is closed during a wave."));
 	}
 	// erst der genaue Name, dann der Anfang (Test 0.56: "Gewehr" traf zuerst "Gewehrturm" - drei Gewehrtuerme statt der Waffe)
 	const FTDLadenEintrag* E = nullptr;
@@ -1032,22 +1096,22 @@ FString UTDEinsatzSubsystem::Kaufe(const FString& Name, int32 Anzahl)
 	}
 	if (!E)
 	{
-		return FString::Printf(TEXT("Unbekannt: %s (Liste: /td laden)"), *Name);
+		return TDF(TEXT("Unbekannt: %s (Liste: /td laden)"), TEXT("Unknown: %s (list: /td laden)"), *Name);
 	}
 	if (!RezeptVerfuegbar(GetWorld(), E->Rezept))
 	{
-		return FString::Printf(TEXT("%s ist noch nicht erforscht (MAM)."), E->Key);
+		return TDF(TEXT("%s ist noch nicht erforscht (MAM)."), TEXT("%s is not researched yet (MAM)."), *TDAnzeige(E->Key));
 	}
 	int32 Gekauft = 0, Kosten = 0;
 	int32& Bisher = Kern->mKontingentGekauft.FindOrAdd(E->Key);
 	const FTDSpielerPosten* SP = SpielerFuer(E->Key);
 	if (SP && SpielerMax(*SP) > 0 && Bisher >= SpielerMax(*SP))
 	{
-		return FString::Printf(TEXT("%s: schon %d von %d gekauft."), E->Key, Bisher, SpielerMax(*SP));
+		return TDF(TEXT("%s: schon %d von %d gekauft."), TEXT("%s: already bought %d of %d."), *TDAnzeige(E->Key), Bisher, SpielerMax(*SP));
 	}
 	if (SP && SP->Art == 3 && Kern->GetTDHealth() >= Kern->GetTDMaxHealth() - 1.f)
 	{
-		return TEXT("Der Kern ist unbeschädigt.");
+		return TDT(TEXT("Der Kern ist unbeschädigt."), TEXT("The Core is undamaged."));
 	}
 	for (int32 i = 0; i < FMath::Max(1, Anzahl); ++i)
 	{
@@ -1071,19 +1135,21 @@ FString UTDEinsatzSubsystem::Kaufe(const FString& Name, int32 Anzahl)
 	}
 	if (Gekauft == 0)
 	{
-		return FString::Printf(TEXT("Zu wenig FICSIT-Coupons (Konto %d Coupons)."), Kern->mEinsatzPunkte);
+		return TDF(TEXT("Zu wenig FICSIT-Coupons (Konto %d Coupons)."), TEXT("Not enough FICSIT Coupons (balance %d Coupons)."), Kern->mEinsatzPunkte);
 	}
 	mBelegtZeit = -1.f;
 	if (SP)
 	{
-		return FString::Printf(TEXT("Gekauft: %s für %d Coupons. %s Konto %d Coupons."), E->Key, Kosten, *SpielerWirkung(*SP, Gekauft * LadenPaket(*E)), Kern->mEinsatzPunkte);
+		return TDF(TEXT("Gekauft: %s für %d Coupons. %s Konto %d Coupons."), TEXT("Bought: %s for %d Coupons. %s Balance %d Coupons."),
+			*TDAnzeige(E->Key), Kosten, *SpielerWirkung(*SP, Gekauft * LadenPaket(*E)), Kern->mEinsatzPunkte);
 	}
 	// Mit dem Kontingent kommt das Baumaterial (Marius 02.11.: sonst fehlte es z. B. fuer Mauern und Miner)
 	TMap<UClass*, int32> Material;
 	SammleBaumaterial(E->Key, Gekauft * LadenPaket(*E), Material);
 	const FString MaterialText = Material.Num() ? GibMaterial(Material) : FString();
-	return FString::Printf(TEXT("Gekauft: %s +%d fuer %d Coupons. Jetzt %d/%d, Konto %d Coupons.%s"), E->Key, Gekauft * LadenPaket(*E), Kosten,
-		Belegt(E->Key), Grenze(E->Key), Kern->mEinsatzPunkte, MaterialText.IsEmpty() ? TEXT("") : *(TEXT(" Material: ") + MaterialText));
+	return TDF(TEXT("Gekauft: %s +%d fuer %d Coupons. Jetzt %d/%d, Konto %d Coupons.%s"), TEXT("Bought: %s +%d for %d Coupons. Now %d/%d, balance %d Coupons.%s"),
+		*TDAnzeige(E->Key), Gekauft * LadenPaket(*E), Kosten,
+		Belegt(E->Key), Grenze(E->Key), Kern->mEinsatzPunkte, MaterialText.IsEmpty() ? TEXT("") : *(TDT(TEXT(" Material: "), TEXT(" Materials: ")) + MaterialText));
 }
 
 FString UTDEinsatzSubsystem::KaufeKorb(const TMap<FString, int32>& Korb)
@@ -1091,12 +1157,12 @@ FString UTDEinsatzSubsystem::KaufeKorb(const TMap<FString, int32>& Korb)
 	ATDDefenseCore* Kern = mKern.Get();
 	if (!mAktiv || !Kern)
 	{
-		return TEXT("Kein Einsatz aktiv.");
+		return TDT(TEXT("Kein Einsatz aktiv."), TEXT("No operation active."));
 	}
 	const UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
 	if (Waves && Waves->LaeuftWelle())
 	{
-		return TEXT("Während der Welle ist der Laden geschlossen.");
+		return TDT(TEXT("Während der Welle ist der Laden geschlossen."), TEXT("The shop is closed during a wave."));
 	}
 	int32 Summe = 0;
 	TArray<FString> Teile;
@@ -1109,29 +1175,29 @@ FString UTDEinsatzSubsystem::KaufeKorb(const TMap<FString, int32>& Korb)
 		}
 		if (!RezeptVerfuegbar(GetWorld(), E->Rezept))
 		{
-			return FString::Printf(TEXT("%s ist noch nicht erforscht (MAM)."), E->Key);
+			return TDF(TEXT("%s ist noch nicht erforscht (MAM)."), TEXT("%s is not researched yet (MAM)."), *TDAnzeige(E->Key));
 		}
 		const int32* Gekauft = Kern->mKontingentGekauft.Find(E->Key);
 		if (const FTDSpielerPosten* SP = SpielerFuer(E->Key))
 		{
 			if (SpielerMax(*SP) > 0 && (Gekauft ? *Gekauft : 0) + Posten.Value > SpielerMax(*SP))
 			{
-				return FString::Printf(TEXT("%s: höchstens %d (schon %d gekauft)."), E->Key, SpielerMax(*SP), Gekauft ? *Gekauft : 0);
+				return TDF(TEXT("%s: höchstens %d (schon %d gekauft)."), TEXT("%s: at most %d (already bought %d)."), *TDAnzeige(E->Key), SpielerMax(*SP), Gekauft ? *Gekauft : 0);
 			}
 		}
 		for (int32 i = 0; i < Posten.Value; ++i)
 		{
 			Summe += LadenPreis(*E, (Gekauft ? *Gekauft : 0) + i);
 		}
-		Teile.Add(FString::Printf(TEXT("%s +%d"), E->Key, Posten.Value * LadenPaket(*E)));
+		Teile.Add(FString::Printf(TEXT("%s +%d"), *TDAnzeige(E->Key), Posten.Value * LadenPaket(*E)));
 	}
 	if (Teile.Num() == 0)
 	{
-		return TEXT("Der Warenkorb ist leer.");
+		return TDT(TEXT("Der Warenkorb ist leer."), TEXT("The cart is empty."));
 	}
 	if (Summe > Kern->mEinsatzPunkte)
 	{
-		return FString::Printf(TEXT("Zu wenig FICSIT-Coupons: %d Coupons nötig, Konto %d Coupons."), Summe, Kern->mEinsatzPunkte);
+		return TDF(TEXT("Zu wenig FICSIT-Coupons: %d Coupons nötig, Konto %d Coupons."), TEXT("Not enough FICSIT Coupons: %d Coupons needed, balance %d Coupons."), Summe, Kern->mEinsatzPunkte);
 	}
 	auto Offen = [Kern]() { int32 N = 0; for (const auto& P : Kern->mMaterialOffen) { N += P.Value; } return N; };
 	const int32 OffenVorher = Offen();
@@ -1145,8 +1211,8 @@ FString UTDEinsatzSubsystem::KaufeKorb(const TMap<FString, int32>& Korb)
 	mBelegtZeit = -1.f;
 	// Test 0.53: bei vollem Inventar wartete das Baumaterial am Kern, ohne dass das Kern-Menue es sagte
 	const int32 Wartet = Offen() - OffenVorher;
-	return FString::Printf(TEXT("Gekauft: %s für %d Coupons. Konto %d Coupons.%s"), *FString::Join(Teile, TEXT(", ")), Summe, Kern->mEinsatzPunkte,
-		Wartet > 0 ? *FString::Printf(TEXT(" Inventar voll: %d Teile Baumaterial warten am Kern, E am Kern holt sie."), Wartet) : TEXT(""));
+	return TDF(TEXT("Gekauft: %s für %d Coupons. Konto %d Coupons.%s"), TEXT("Bought: %s for %d Coupons. Balance %d Coupons.%s"), *FString::Join(Teile, TEXT(", ")), Summe, Kern->mEinsatzPunkte,
+		Wartet > 0 ? *TDF(TEXT(" Inventar voll: %d Teile Baumaterial warten am Kern, E am Kern holt sie."), TEXT(" Inventory full: %d building materials are waiting at the Core, press E at the Core to collect them."), Wartet) : TEXT(""));
 }
 
 static UClass* BauRezeptFuer(const FString& Key)
@@ -1220,7 +1286,7 @@ void UTDEinsatzSubsystem::AktualisiereToDo()
 			if (Z.Grenze > Z.Belegt)
 			{
 				Offen.Add(Z.Key, Z.Grenze - Z.Belegt);
-				OffenText.Add(FString::Printf(TEXT("%s %d"), *Z.Key, Z.Grenze - Z.Belegt));
+				OffenText.Add(FString::Printf(TEXT("%s %d"), *TDAnzeige(Z.Key), Z.Grenze - Z.Belegt));
 			}
 		}
 	}
@@ -1271,22 +1337,23 @@ void UTDEinsatzSubsystem::AktualisiereToDo()
 	FString Neu = Eigen;
 	if (bAn)
 	{
-		FString Welle = TEXT("kein Lauf");
+		FString Welle = TDT(TEXT("kein Lauf"), TEXT("no run"));
 		if (Waves && Waves->LaeuftWelle())
 		{
 			Welle = Waves->GetLaufText();
 		}
 		else if (Waves && Waves->LaeuftKernVerteidigung())
 		{
-			Welle = FString::Printf(TEXT("Welle %d/%d bereit"), Waves->GetWelle() + 1, Waves->mWellenGesamt);
+			Welle = TDF(TEXT("Welle %d/%d bereit"), TEXT("Wave %d/%d ready"), Waves->GetWelle() + 1, Waves->mWellenGesamt);
 		}
 		TArray<FString> Block;
 		Block.Add(Anfang);
 		Block.Add(Welle);
-		Block.Add(FString::Printf(TEXT("Kern %.0f %%  |  Konto %d Coupons"), 100.f * Kern->GetTDHealth() / FMath::Max(Kern->GetTDMaxHealth(), 1.f), Kern->mEinsatzPunkte));
-		Block.Add(mFrei ? TEXT("Freies Bauen: keine Kontingente")
-			: OffenText.Num() ? TEXT("Noch baubar: ") + FString::Join(OffenText, TEXT(", ")) : TEXT("Kontingent ausgeschöpft - mehr im Laden"));
-		Block.Add(TEXT("Laden und Welle: E am Abwehrkern"));
+		Block.Add(TDF(TEXT("Kern %.0f %%  |  Konto %d Coupons"), TEXT("Core %.0f %%  |  Balance %d Coupons"), 100.f * Kern->GetTDHealth() / FMath::Max(Kern->GetTDMaxHealth(), 1.f), Kern->mEinsatzPunkte));
+		Block.Add(mFrei ? TDT(TEXT("Freies Bauen: keine Kontingente"), TEXT("Free Build: no quotas"))
+			: OffenText.Num() ? TDT(TEXT("Noch baubar: "), TEXT("Still buildable: ")) + FString::Join(OffenText, TEXT(", "))
+			: TDT(TEXT("Kontingent ausgeschöpft - mehr im Laden"), TEXT("Quota used up - more in the Shop")));
+		Block.Add(TDT(TEXT("Laden und Welle: E am Abwehrkern"), TEXT("Shop and wave: E at the Defense Core")));
 		Block.Add(Ende);
 		Neu = FString::Join(Block, TEXT("\n")) + (Eigen.IsEmpty() ? FString() : FString(TEXT("\n\n")) + Eigen);
 	}
@@ -1371,6 +1438,7 @@ void UTDEinsatzSubsystem::PruefeHologramm(AFGHologram* Hologramm)
 		return;
 	}
 	const ATDDefenseCore* Kern = mKern.Get();
+	TDAktualisiereSperrTexte();
 	// Bausperre im Verteidigungsfeld waehrend einer Welle
 	const UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
 	if (Waves && Waves->LaeuftWelle() && Kern && FVector::Dist2D(Hologramm->GetActorLocation(), Kern->GetActorLocation()) < EinsatzFeldRadius)
@@ -1399,7 +1467,7 @@ void UTDEinsatzSubsystem::Melde(const FString& Text) const
 		FChatMessageStruct Nachricht;
 		Nachricht.MessageText = FText::FromString(Text);
 		Nachricht.MessageType = EFGChatMessageType::CMT_CustomMessage;
-		Nachricht.MessageSender = FText::FromString(TEXT("Einsatz"));
+		Nachricht.MessageSender = TDTX(TEXT("Einsatz"), TEXT("Operation"));
 		Nachricht.MessageSenderColor = FLinearColor(0.2f, 0.7f, 1.f);
 		Chat->BroadcastChatMessage(Nachricht);
 	}
@@ -1427,7 +1495,7 @@ void UTDEinsatzSubsystem::GebaeudeGebaut(AFGBuildable* Gebaeude)
 	}
 	ZaehleNeu();
 	const int32 Jetzt = Belegt(Key), Max = Grenze(Key);
-	Melde(FString::Printf(TEXT("%s %d/%d%s"), *Key, Jetzt, Max, Jetzt >= Max ? TEXT(" - Kontingent voll") : TEXT("")));
+	Melde(FString::Printf(TEXT("%s %d/%d%s"), *TDAnzeige(Key), Jetzt, Max, Jetzt >= Max ? *TDT(TEXT(" - Kontingent voll"), TEXT(" - quota full")) : TEXT("")));
 }
 
 ATDDefenseCore* UTDEinsatzSubsystem::SetzeKern(APawn* Spieler)
@@ -1486,10 +1554,10 @@ void UTDEinsatzSubsystem::Starte(ATDDefenseCore* Kern, int32 Stufe, int32 Wellen
 		Kern = SetzeKern(Spieler);
 		if (!Kern)
 		{
-			Meldungen.Add(TEXT("Abwehrkern konnte nicht gesetzt werden."));
+			Meldungen.Add(TDT(TEXT("Abwehrkern konnte nicht gesetzt werden."), TEXT("Could not place the Defense Core.")));
 			return;
 		}
-		Meldungen.Add(TEXT("Abwehrkern 10 m vor dir gesetzt."));
+		Meldungen.Add(TDT(TEXT("Abwehrkern 10 m vor dir gesetzt."), TEXT("Defense Core placed 10 m in front of you.")));
 	}
 	SchalteStartFrei();
 	Verbinde();
@@ -1519,7 +1587,7 @@ void UTDEinsatzSubsystem::Starte(ATDDefenseCore* Kern, int32 Stufe, int32 Wellen
 			}
 		}
 		Kern->mEinsatzStartkit = true;
-		Meldungen.Add(TEXT("Startkit: ") + GibMaterial(Kit));
+		Meldungen.Add(TDT(TEXT("Startkit: "), TEXT("Starter kit: ")) + GibMaterial(Kit));
 		// 0.84: Wellen je Einsatz verschieden (Option, Standard aus); einmal je Einsatz gewuerfelt und im Kern gespeichert
 		Kern->mLaufSaat = TDBalance::Wert(TEXT("Wellen.VariationJeEinsatz"), 0.f) > 0.f ? (FMath::Rand() | 1) : 0;
 		UE_LOG(LogFicsitTD, Log, TEXT("Einsatz: Wellensaat %d (%s)"), Kern->mLaufSaat, Kern->mLaufSaat ? TEXT("Wellen je Einsatz verschieden") : TEXT("Wellen je Kernplatz fest"));
@@ -1529,7 +1597,7 @@ void UTDEinsatzSubsystem::Starte(ATDDefenseCore* Kern, int32 Stufe, int32 Wellen
 		Waves->SetManuell(true);
 		if (!Waves->StarteKernVerteidigung(Kern, Wellen, -1.f, -1.f, Stufe))
 		{
-			Meldungen.Add(TEXT("Es laeuft schon eine Kern-Verteidigung - erst /td kern stop."));
+			Meldungen.Add(TDT(TEXT("Es laeuft schon eine Kern-Verteidigung - erst /td kern stop."), TEXT("A Core defense is already running - use /td kern stop first.")));
 		}
 	}
 	mBelegtZeit = -1.f;
@@ -1555,7 +1623,7 @@ void UTDEinsatzSubsystem::Beende()
 	if (UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>())
 	{
 		Waves->SetManuell(false);
-		Waves->StoppeLauf(TEXT("Einsatz beendet."));
+		Waves->StoppeLauf(TDT(TEXT("Einsatz beendet."), TEXT("Operation ended.")));
 	}
 	AktualisiereToDo();
 	StelleRezepteWiederHer();
@@ -1607,17 +1675,19 @@ TArray<FString> UTDEinsatzSubsystem::StatusText()
 	TArray<FString> Zeilen;
 	if (!mAktiv)
 	{
-		Zeilen.Add(TEXT("Kein Einsatz aktiv (/td einsatz start [stufe] [wellen])."));
+		Zeilen.Add(TDT(TEXT("Kein Einsatz aktiv (/td einsatz start [stufe] [wellen])."), TEXT("No operation active (/td einsatz start [stufe] [wellen]).")));
 		return Zeilen;
 	}
-	Zeilen.Add(mFrei ? TEXT("Einsatz aktiv - FREIES BAUEN (Kontingente und Bausperre aus, /td einsatz frei aus)")
-		: TEXT("Einsatz aktiv - Kontingente gelten, Bauen waehrend der Welle gesperrt (/td einsatz frei an)"));
+	Zeilen.Add(mFrei ? TDT(TEXT("Einsatz aktiv - FREIES BAUEN (Kontingente und Bausperre aus, /td einsatz frei aus)"),
+			TEXT("Operation active - FREE BUILD (quotas and build lock off, /td einsatz frei aus)"))
+		: TDT(TEXT("Einsatz aktiv - Kontingente gelten, Bauen waehrend der Welle gesperrt (/td einsatz frei an)"),
+			TEXT("Operation active - quotas apply, building is locked during a wave (/td einsatz frei an)")));
 	ZaehleNeu();
 	TArray<FString> Teile;
 	TSet<FString> Gezeigt;
 	for (const TPair<const TCHAR*, int32>& Eintrag : StartKontingent)
 	{
-		Teile.Add(FString::Printf(TEXT("%s %d/%d"), Eintrag.Key, Belegt(Eintrag.Key), Grenze(Eintrag.Key)));
+		Teile.Add(FString::Printf(TEXT("%s %d/%d"), *TDAnzeige(Eintrag.Key), Belegt(Eintrag.Key), Grenze(Eintrag.Key)));
 		Gezeigt.Add(Eintrag.Key);
 	}
 	if (const ATDDefenseCore* Kern = mKern.Get())
@@ -1626,12 +1696,12 @@ TArray<FString> UTDEinsatzSubsystem::StatusText()
 		{
 			if (!Gezeigt.Contains(Kauf.Key))
 			{
-				Teile.Add(FString::Printf(TEXT("%s %d/%d"), *Kauf.Key, Belegt(Kauf.Key), Grenze(Kauf.Key)));
+				Teile.Add(FString::Printf(TEXT("%s %d/%d"), *TDAnzeige(Kauf.Key), Belegt(Kauf.Key), Grenze(Kauf.Key)));
 			}
 		}
-		Zeilen.Add(FString::Printf(TEXT("Konto: %d Coupons"), Kern->mEinsatzPunkte));
+		Zeilen.Add(TDF(TEXT("Konto: %d Coupons"), TEXT("Balance: %d Coupons"), Kern->mEinsatzPunkte));
 	}
-	Zeilen.Add(TEXT("Kontingent: ") + FString::Join(Teile, TEXT(", ")));
+	Zeilen.Add(TDT(TEXT("Kontingent: "), TEXT("Quota: ")) + FString::Join(Teile, TEXT(", ")));
 	return Zeilen;
 }
 

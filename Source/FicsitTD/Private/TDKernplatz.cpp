@@ -3,6 +3,7 @@
 #include "TDDefenseCore.h"
 #include "TDWaveSubsystem.h"
 #include "TDBalance.h"
+#include "TDSprache.h"
 #include "EngineUtils.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
@@ -66,6 +67,27 @@ static const TArray<FTDPlatzKandidat> TDKandidaten = {
 	{ TEXT("D3"), TEXT("Duenenwueste"),    255000.f, -255000.f,  2089.f, 3 },
 };
 static const TCHAR* TDStufenNamen[] = { TEXT("Erkundung"), TEXT("Normal"), TEXT("Hart"), TEXT("Albtraum") };
+/** 0.85 (L1): Stufe und Biom fuer Spielermeldungen in der Spielsprache (die deutschen Namen oben bleiben fuer Scan, Log und Dateien) */
+static FString TDStufeAnzeige(int32 Stufe)
+{
+	switch (FMath::Clamp(Stufe, 0, 3))
+	{
+	case 0: return TDT(TEXT("Erkundung"), TEXT("Exploration"));
+	case 1: return TDT(TEXT("Normal"), TEXT("Normal"));
+	case 2: return TDT(TEXT("Hart"), TEXT("Hard"));
+	default: return TDT(TEXT("Albtraum"), TEXT("Nightmare"));
+	}
+}
+static FString TDBiomAnzeige(int32 Stufe)
+{
+	switch (FMath::Clamp(Stufe, 0, 3))
+	{
+	case 0: return TDT(TEXT("Grasfelder"), TEXT("Grass Fields"));
+	case 1: return TDT(TEXT("Felsenwueste"), TEXT("Rocky Desert"));
+	case 2: return TDT(TEXT("Noerdlicher Wald"), TEXT("Northern Forest"));
+	default: return TDT(TEXT("Duenenwueste"), TEXT("Dune Desert"));
+	}
+}
 /** Plattform 6 x 6 Fundamente zu 8 m: Raster 7 x 7 Messpunkte im Abstand von 8 m */
 static constexpr int32 TDPlatzHalbe = 3;
 static constexpr float TDPlatzRaster = 800.f;
@@ -112,7 +134,7 @@ void UTDKernplatz::Melde(const FString& Text) const
 		FChatMessageStruct N;
 		N.MessageText = FText::FromString(Text);
 		N.MessageType = EFGChatMessageType::CMT_CustomMessage;
-		N.MessageSender = FText::FromString(TEXT("Kernplatz"));
+		N.MessageSender = TDTX(TEXT("Kernplatz"), TEXT("Core site"));
 		N.MessageSenderColor = FLinearColor(1.f, 0.55f, 0.1f);
 		Chat->BroadcastChatMessage(N);
 	}
@@ -399,7 +421,8 @@ void UTDKernplatz::SucheBoden()
 	GetWorld()->GetTimerManager().ClearTimer(mTimer);
 	if (!bGefunden)
 	{
-		Melde(FString::Printf(TEXT("%s: nach 30 s kein Boden gefunden - Gelaende nicht geladen oder Platz ueber Wasser."), *mId));
+		Melde(TDF(TEXT("%s: nach 30 s kein Boden gefunden - Gelaende nicht geladen oder Platz ueber Wasser."),
+			TEXT("%s: no ground found after 30 s - terrain not loaded or site over water."), *mId));
 		if (mScanLaeuft && mScanPhase == 2)
 		{
 			GetWorld()->GetTimerManager().SetTimer(mScanTimer, this, &UTDKernplatz::ScanNaechstePruefung, 1.f, false);
@@ -414,7 +437,7 @@ void UTDKernplatz::SucheBoden()
 	mBodenMitte = Grund;
 	if (mBauen)
 	{
-		Melde(FString::Printf(TEXT("%s: Boden gefunden, baue in 2 s ..."), *mId));
+		Melde(TDF(TEXT("%s: Boden gefunden, baue in 2 s ..."), TEXT("%s: ground found, building in 2 s ..."), *mId));
 		GetWorld()->GetTimerManager().SetTimer(mTimer, this, &UTDKernplatz::BaueJetzt, 2.f, false);
 		return;
 	}
@@ -1272,8 +1295,9 @@ FString UTDKernplatz::BauePlatz(const FString& Biom, const FString& Nr, APawn* S
 		Figur->GetCharacterMovement()->SetMovementMode(MOVE_Flying);
 	}
 	GetWorld()->GetTimerManager().SetTimer(mTimer, this, &UTDKernplatz::SucheBoden, 1.f, true, 1.f);
-	return FString::Printf(TEXT("Baue den Kernplatz %s (%s, Stufe %s, %d von %d Plaetzen): fliege hin und warte auf das Gelaende ..."),
-		P->Id, *Name, TDStufenNamen[Stufe], Index + 1, Auswahl.Num());
+	return TDF(TEXT("Baue den Kernplatz %s (%s, Stufe %s, %d von %d Plaetzen): fliege hin und warte auf das Gelaende ..."),
+		TEXT("Building core site %s (%s, difficulty %s, %d of %d sites): flying there and waiting for the terrain ..."),
+		P->Id, *TDBiomAnzeige(Stufe), *TDStufeAnzeige(Stufe), Index + 1, Auswahl.Num());
 }
 
 void UTDKernplatz::BaueJetzt()
@@ -1288,7 +1312,7 @@ void UTDKernplatz::BaueJetzt()
 	UClass* KernRezept = LoadClass<UFGRecipe>(nullptr, TDKernRezept);
 	if (!Bau || !Fundament || !KernKlasse)
 	{
-		Melde(TEXT("Bauen nicht moeglich: Fundament- oder Kernklasse nicht gefunden."));
+		Melde(TDT(TEXT("Bauen nicht moeglich: Fundament- oder Kernklasse nicht gefunden."), TEXT("Cannot build: foundation or core class not found.")));
 		Schuetze(false);
 		return;
 	}
@@ -1318,7 +1342,7 @@ void UTDKernplatz::BaueJetzt()
 	}
 	if (Hoehen.Num() == 0)
 	{
-		Melde(TEXT("Bauen nicht moeglich: kein Boden unter der Plattform."));
+		Melde(TDT(TEXT("Bauen nicht moeglich: kein Boden unter der Plattform."), TEXT("Cannot build: no ground under the platform.")));
 		Schuetze(false);
 		return;
 	}
@@ -1544,15 +1568,17 @@ void UTDKernplatz::BaueJetzt()
 		}
 	}
 	Schuetze(false);
-	Melde(FString::Printf(TEXT("%s: Plattform (6 x 6, bis %d uebereinander, %d Fundamente) mit %d Rampen, %d Eckstuecken und Abwehrkern gebaut, %d Pflanzen im Umkreis von 60 m geraeumt."), *mId, Stapel, Gesetzt, Rampen, Ecken, Geraeumt));
+	Melde(TDF(TEXT("%s: Plattform (6 x 6, bis %d uebereinander, %d Fundamente) mit %d Rampen, %d Eckstuecken und Abwehrkern gebaut, %d Pflanzen im Umkreis von 60 m geraeumt."),
+		TEXT("%s: platform (6 x 6, up to %d stacked, %d foundations) built with %d ramps, %d corner pieces and the Defense Core, %d plants cleared within 60 m."),
+		*mId, Stapel, Gesetzt, Rampen, Ecken, Geraeumt));
 	mNeuerKern = Cast<ATDDefenseCore>(Kern);
 	mEinsatzWarten = 0;
 	if (!mNeuerKern.IsValid())
 	{
-		Melde(TEXT("Einsatz nicht gestartet: Kern fehlt."));
+		Melde(TDT(TEXT("Einsatz nicht gestartet: Kern fehlt."), TEXT("Operation not started: Core missing.")));
 		return;
 	}
-	Melde(TEXT("Warte auf das Navigationsnetz um den Kern, dann startet der Einsatz ..."));
+	Melde(TDT(TEXT("Warte auf das Navigationsnetz um den Kern, dann startet der Einsatz ..."), TEXT("Waiting for the navigation mesh around the Core, then the operation starts ...")));
 	GetWorld()->GetTimerManager().SetTimer(mTimer, this, &UTDKernplatz::WarteNetzFuerEinsatz, 2.f, true, 2.f);
 }
 
@@ -1568,7 +1594,7 @@ void UTDKernplatz::WarteNetzFuerEinsatz()
 	UTDEinsatzSubsystem* Einsatz = GetWorld()->GetSubsystem<UTDEinsatzSubsystem>();
 	if (!Kern || !Einsatz)
 	{
-		Melde(TEXT("Einsatz nicht gestartet: Kern fehlt."));
+		Melde(TDT(TEXT("Einsatz nicht gestartet: Kern fehlt."), TEXT("Operation not started: Core missing.")));
 		return;
 	}
 	UE_LOG(LogFicsitTD, Log, TEXT("Kernplatz: Netz nach %d s an %d/16 Punkten, starte Einsatz"), mEinsatzWarten * 2, Auf);
@@ -1716,7 +1742,7 @@ void UTDKernplatz::PruefeTDStart()
 		}
 	}
 	UE_LOG(LogFicsitTD, Log, TEXT("Kernplatz: Tower-Defense-Spielstand ohne Kern, Startort %s (%.0f m vom Startgebiet), baue den Kernplatz"), Biome[Bestes], Abstand / 100.f);
-	Melde(TEXT("FICSIT Tower Defense: Dein Einsatzort wird vorbereitet ..."));
+	Melde(TDT(TEXT("FICSIT Tower Defense: Dein Einsatzort wird vorbereitet ..."), TEXT("FICSIT Tower Defense: preparing your operation site ...")));
 	// 0.83.1: der Selbsttest gibt den Platz vor (sonst zufaellig), gilt nur fuer diesen einen Bau
 	const FString Nr = sVorgabePlatz;
 	sVorgabePlatz.Reset();

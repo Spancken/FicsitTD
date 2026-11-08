@@ -409,8 +409,9 @@ FString TDBalance::Lade()
 	Schreibe(FPaths::Combine(FPaths::GetPath(Datei), TEXT("Balance-Standard.json")), GStandard);
 	if (!FPaths::FileExists(Datei))
 	{
-		Schreibe(Datei, GStandard);
-		const FString Meldung = FString::Printf(TEXT("Balance: %s mit %d Standardwerten angelegt"), *Datei, GStandard.Num());
+		// 0.9.0: keine Balance.json mehr anlegen - sonst froren die Werte beim Spieler ein und spaetere Balance-Updates wirkten nicht.
+		// Wer etwas aendern will, kopiert Balance-Standard.json nach Balance.json (oder legt nur die geaenderten Schluessel an).
+		const FString Meldung = FString::Printf(TEXT("Balance: keine %s - es gelten die %d Standardwerte (Vorlage Balance-Standard.json)"), *Datei, GStandard.Num());
 		UE_LOG(LogFicsitTD, Log, TEXT("%s"), *Meldung);
 		return Meldung;
 	}

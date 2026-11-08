@@ -9,6 +9,7 @@
 #include "Equipment/FGAmmoTypeProjectile.h"
 #include "Kismet/GameplayStatics.h"
 #include "Resources/FGItemDescriptor.h"
+#include "TDSprache.h"
 
 static constexpr int32 NobeliskPool = 9;   // 0.64: Level 5 wirft drei je Salve
 /** Level 5 Salvenkopf: Rohre neben dem Hauptrohr (Kanzel-Raum) und Abstand der Nebenziele vom Hauptziel */
@@ -424,23 +425,23 @@ void ATDNobeliskLauncher::Kampfwerte(TArray<FTDKennwert>& Out) const
 {
 	const FTDNobeliskWerte W = WerteFuer(AktuelleMunition());
 	const float Takt = Zykluszeit();
-	Out.Add({ TEXT("Schaden je Treffer"), FString::Printf(TEXT("%.0f (Umkreis %.1f m)"), W.Schaden * SchadenBonus(), W.Radius * (1.f + LevelWert(TEXT("Radius"))) / 100.f), true });
+	Out.Add({ TDT(TEXT("Schaden je Treffer"), TEXT("Damage per hit")), TDF(TEXT("%.0f (Umkreis %.1f m)"), TEXT("%.0f (radius %.1f m)"), W.Schaden * SchadenBonus(), W.Radius * (1.f + LevelWert(TEXT("Radius"))) / 100.f), true });
 	if (Takt > 0.f)
 	{
-		Out.Add({ TEXT("Feuerrate"), FString::Printf(TEXT("%.2f Schuss/s"), 1.f / Takt), true });
-		Out.Add({ TEXT("Schaden/s"), FString::Printf(TEXT("%.0f (je Gegner im Umkreis)"), W.Schaden * SchadenBonus() / Takt), true });
+		Out.Add({ TDT(TEXT("Feuerrate"), TEXT("Fire rate")), TDF(TEXT("%.2f Schuss/s"), TEXT("%.2f shots/s"), 1.f / Takt), true });
+		Out.Add({ TDT(TEXT("Schaden/s"), TEXT("Damage/s")), TDF(TEXT("%.0f (je Gegner im Umkreis)"), TEXT("%.0f (per enemy in radius)"), W.Schaden * SchadenBonus() / Takt), true });
 	}
 	if (W.GasSchaden > 0.f)
 	{
-		Out.Add({ TEXT("Gaswolke"), FString::Printf(TEXT("%.0f Schaden/s für %.0f s"), W.GasSchaden * SchadenBonus(), W.GasDauer), true });
+		Out.Add({ TDT(TEXT("Gaswolke"), TEXT("Gas cloud")), TDF(TEXT("%.0f Schaden/s für %.0f s"), TEXT("%.0f damage/s for %.0f s"), W.GasSchaden * SchadenBonus(), W.GasDauer), true });
 	}
 	if (W.Betaeubung > 0.f)
 	{
-		Out.Add({ TEXT("Betäubung"), FString::Printf(TEXT("%.0f s"), W.Betaeubung), true });
+		Out.Add({ TDT(TEXT("Betäubung"), TEXT("Stun")), FString::Printf(TEXT("%.0f s"), W.Betaeubung), true });
 	}
 	if (W.Streu > 0)
 	{
-		Out.Add({ TEXT("Streuung"), FString::Printf(TEXT("%d Zusatz-Explosionen"), W.Streu), true });
+		Out.Add({ TDT(TEXT("Streuung"), TEXT("Cluster")), TDF(TEXT("%d Zusatz-Explosionen"), TEXT("%d extra explosions"), W.Streu), true });
 	}
-	Out.Add({ TEXT("Mindestabstand"), TEXT("10 m"), true });
+	Out.Add({ TDT(TEXT("Mindestabstand"), TEXT("Minimum range")), TEXT("10 m"), true });
 }

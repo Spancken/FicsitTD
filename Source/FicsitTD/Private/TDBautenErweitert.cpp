@@ -11,6 +11,7 @@
 #include "GameFramework/DamageType.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
+#include "TDSprache.h"
 
 // Lage der beweglichen Teile aus den Blender-Skripten in Satisfactory\Modelle (m -> cm). Namen mit Praefix wegen Unity-Build.
 
@@ -97,16 +98,16 @@ FString ATDConductorWall::ZusatzInfo() const
 {
 	if (!HasPower())
 	{
-		return TEXT("ohne Strom: nur Mauer");
+		return TDT(TEXT("ohne Strom: nur Mauer"), TEXT("no power: wall only"));
 	}
-	return IsProducing() ? TEXT("unter Spannung") : TEXT("bereit, Spannung bei Gegnern in der Nähe");
+	return IsProducing() ? TDT(TEXT("unter Spannung"), TEXT("live")) : TDT(TEXT("bereit, Spannung bei Gegnern in der Nähe"), TEXT("ready, powers up when enemies are near"));
 }
 
 void ATDConductorWall::Kampfwerte(TArray<FTDKennwert>& Out) const
 {
-	Out.Add({ TEXT("Schlag"), FString::Printf(TEXT("%.0f Strom-Schaden"), TDBalance::Wert(TEXT("Tuerme.Elektrozaun.Schaden"), 15.f) * SchadenBonus()), true });
-	Out.Add({ TEXT("Betäubung"), FString::Printf(TEXT("%.1f s"), TDBalance::Wert(TEXT("Tuerme.Elektrozaun.Betaeubung"), 1.f)), true });
-	Out.Add({ TEXT("Schläge"), FString::Printf(TEXT("%d"), mSchlaege), true });
+	Out.Add({ TDT(TEXT("Schlag"), TEXT("Shock")), TDF(TEXT("%.0f Strom-Schaden"), TEXT("%.0f electric damage"), TDBalance::Wert(TEXT("Tuerme.Elektrozaun.Schaden"), 15.f) * SchadenBonus()), true });
+	Out.Add({ TDT(TEXT("Betäubung"), TEXT("Stun")), FString::Printf(TEXT("%.1f s"), TDBalance::Wert(TEXT("Tuerme.Elektrozaun.Betaeubung"), 1.f)), true });
+	Out.Add({ TDT(TEXT("Schläge"), TEXT("Shocks")), FString::Printf(TEXT("%d"), mSchlaege), true });
 }
 
 // =====================================================================================================================
@@ -198,8 +199,8 @@ void ATDRadioMast::Animieren(float DeltaSeconds, AFGCreature* Ziel)
 
 FString ATDRadioMast::ZusatzInfo() const
 {
-	return IsProducing() ? FString::Printf(TEXT("sendet: Türme in %.0f m +%.0f %% Reichweite"), TDBalance::Wert(TEXT("Tuerme.Funkmast.Radius"), 30.f),
-		TDBalance::Wert(TEXT("Tuerme.Funkmast.Bonus"), 0.1f) * 100.f) : TEXT("sendet nicht (Strom?)");
+	return IsProducing() ? TDF(TEXT("sendet: Türme in %.0f m +%.0f %% Reichweite"), TEXT("transmitting: turrets within %.0f m +%.0f %% range"), TDBalance::Wert(TEXT("Tuerme.Funkmast.Radius"), 30.f),
+		TDBalance::Wert(TEXT("Tuerme.Funkmast.Bonus"), 0.1f) * 100.f) : TDT(TEXT("sendet nicht (Strom?)"), TEXT("not transmitting (power?)"));
 }
 
 void ATDRadioMast::Kampfwerte(TArray<FTDKennwert>& Out) const
@@ -210,9 +211,9 @@ void ATDRadioMast::Kampfwerte(TArray<FTDKennwert>& Out) const
 	{
 		Anzahl += !It->IsA<ATDRadioMast>() && FVector::DistSquared2D(It->GetActorLocation(), GetActorLocation()) < Radius * Radius ? 1 : 0;
 	}
-	Out.Add({ TEXT("Reichweite"), FString::Printf(TEXT("+%.0f %%"), TDBalance::Wert(TEXT("Tuerme.Funkmast.Bonus"), 0.1f) * 100.f), true });
-	Out.Add({ TEXT("Sendekreis"), FString::Printf(TEXT("%.0f m"), Radius / 100.f), true });
-	Out.Add({ TEXT("Türme im Kreis"), FString::Printf(TEXT("%d"), Anzahl), true });
+	Out.Add({ TDT(TEXT("Reichweite"), TEXT("Range")), FString::Printf(TEXT("+%.0f %%"), TDBalance::Wert(TEXT("Tuerme.Funkmast.Bonus"), 0.1f) * 100.f), true });
+	Out.Add({ TDT(TEXT("Sendekreis"), TEXT("Broadcast radius")), FString::Printf(TEXT("%.0f m"), Radius / 100.f), true });
+	Out.Add({ TDT(TEXT("Türme im Kreis"), TEXT("Turrets in radius")), FString::Printf(TEXT("%d"), Anzahl), true });
 }
 
 // =====================================================================================================================
@@ -357,22 +358,22 @@ FString ATDShieldGenerator::ZusatzInfo() const
 {
 	if (!IsProducing())
 	{
-		return TEXT("aus (Strom?)");
+		return TDT(TEXT("aus (Strom?)"), TEXT("off (power?)"));
 	}
 	const double Rest = mLadenBis - Jetzt();
 	if (Rest > 0.0)
 	{
-		return FString::Printf(TEXT("Schild gebrochen, lädt noch %.0f s"), Rest);
+		return TDF(TEXT("Schild gebrochen, lädt noch %.0f s"), TEXT("Shield broken, recharging for %.0f s"), Rest);
 	}
-	return FString::Printf(TEXT("Schild %.0f / %.0f"), FMath::Max(mSchild, 0.f), SchildMax());
+	return TDF(TEXT("Schild %.0f / %.0f"), TEXT("Shield %.0f / %.0f"), FMath::Max(mSchild, 0.f), SchildMax());
 }
 
 void ATDShieldGenerator::Kampfwerte(TArray<FTDKennwert>& Out) const
 {
-	Out.Add({ TEXT("Schild"), FString::Printf(TEXT("%.0f / %.0f"), FMath::Max(mSchild, 0.f), SchildMax()), true });
-	Out.Add({ TEXT("Kuppel"), FString::Printf(TEXT("%.0f m"), TDBalance::Wert(TEXT("Tuerme.Schildgenerator.Radius"), 20.f)), true });
-	Out.Add({ TEXT("Ladezeit"), FString::Printf(TEXT("%.0f s nach Bruch"), TDBalance::Wert(TEXT("Tuerme.Schildgenerator.Ladezeit"), 20.f)), true });
-	Out.Add({ TEXT("Geschluckt"), FString::Printf(TEXT("%.0f"), mGeschluckt), true });
+	Out.Add({ TDT(TEXT("Schild"), TEXT("Shield")), FString::Printf(TEXT("%.0f / %.0f"), FMath::Max(mSchild, 0.f), SchildMax()), true });
+	Out.Add({ TDT(TEXT("Kuppel"), TEXT("Dome")), FString::Printf(TEXT("%.0f m"), TDBalance::Wert(TEXT("Tuerme.Schildgenerator.Radius"), 20.f)), true });
+	Out.Add({ TDT(TEXT("Ladezeit"), TEXT("Recharge")), TDF(TEXT("%.0f s nach Bruch"), TEXT("%.0f s after breaking"), TDBalance::Wert(TEXT("Tuerme.Schildgenerator.Ladezeit"), 20.f)), true });
+	Out.Add({ TDT(TEXT("Geschluckt"), TEXT("Absorbed")), FString::Printf(TEXT("%.0f"), mGeschluckt), true });
 }
 
 // =====================================================================================================================
@@ -504,16 +505,16 @@ void ATDFlakTurret::Feuern(AFGCreature* Ziel)
 
 FString ATDFlakTurret::ZusatzInfo() const
 {
-	return mFlieger.IsValid() ? TEXT("Flieger erfasst") : TEXT("sucht Flieger (keine Bodenziele)");
+	return mFlieger.IsValid() ? TDT(TEXT("Flieger erfasst"), TEXT("flyer locked")) : TDT(TEXT("sucht Flieger (keine Bodenziele)"), TEXT("searching for flyers (no ground targets)"));
 }
 
 void ATDFlakTurret::Kampfwerte(TArray<FTDKennwert>& Out) const
 {
-	Out.Add({ TEXT("Schaden"), FString::Printf(TEXT("%.0f in %.0f m"), TDBalance::Wert(TEXT("Tuerme.Himmelsturm.Schaden"), 200.f) * SchadenBonus(),
+	Out.Add({ TDT(TEXT("Schaden"), TEXT("Damage")), TDF(TEXT("%.0f in %.0f m"), TEXT("%.0f within %.0f m"), TDBalance::Wert(TEXT("Tuerme.Himmelsturm.Schaden"), 200.f) * SchadenBonus(),
 		TDBalance::Wert(TEXT("Tuerme.Himmelsturm.Radius"), 6.f)), true });
-	Out.Add({ TEXT("Feuerrate"), FString::Printf(TEXT("%.1f s"), Zykluszeit()), true });
-	Out.Add({ TEXT("Ziele"), TEXT("nur Flieger"), true });
-	Out.Add({ TEXT("Flieger getroffen"), FString::Printf(TEXT("%d"), mTreffer), true });
+	Out.Add({ TDT(TEXT("Feuerrate"), TEXT("Fire rate")), FString::Printf(TEXT("%.1f s"), Zykluszeit()), true });
+	Out.Add({ TDT(TEXT("Ziele"), TEXT("Targets")), TDT(TEXT("nur Flieger"), TEXT("flyers only")), true });
+	Out.Add({ TDT(TEXT("Flieger getroffen"), TEXT("Flyers hit")), FString::Printf(TEXT("%d"), mTreffer), true });
 }
 
 // =====================================================================================================================
@@ -585,15 +586,15 @@ void ATDFieldProjector::Animieren(float DeltaSeconds, AFGCreature* Ziel)
 
 FString ATDFieldProjector::ZusatzInfo() const
 {
-	return IsProducing() ? TEXT("Feld aktiv, Gegner gebremst") : TEXT("bereit, wartet auf Gegner (braucht SAM-Barren)");
+	return IsProducing() ? TDT(TEXT("Feld aktiv, Gegner gebremst"), TEXT("field active, enemies slowed")) : TDT(TEXT("bereit, wartet auf Gegner (braucht SAM-Barren)"), TEXT("ready, waiting for enemies (needs Reanimated SAM)"));
 }
 
 void ATDFieldProjector::Kampfwerte(TArray<FTDKennwert>& Out) const
 {
-	Out.Add({ TEXT("Bremse"), FString::Printf(TEXT("%.0f %%"), (1.f - TDBalance::Wert(TEXT("Tuerme.Stoerfeld.Bremse"), 0.6f)) * 100.f), true });
-	Out.Add({ TEXT("Feld"), FString::Printf(TEXT("%.0f m"), GetReichweite() / 100.f), true });
-	Out.Add({ TEXT("Verbrauch"), FString::Printf(TEXT("1 Barren je %.0f s"), Zykluszeit()), true });
-	Out.Add({ TEXT("Bremsungen"), FString::Printf(TEXT("%d"), mGebremst), true });
+	Out.Add({ TDT(TEXT("Bremse"), TEXT("Slow")), FString::Printf(TEXT("%.0f %%"), (1.f - TDBalance::Wert(TEXT("Tuerme.Stoerfeld.Bremse"), 0.6f)) * 100.f), true });
+	Out.Add({ TDT(TEXT("Feld"), TEXT("Field")), FString::Printf(TEXT("%.0f m"), GetReichweite() / 100.f), true });
+	Out.Add({ TDT(TEXT("Verbrauch"), TEXT("Consumption")), TDF(TEXT("1 Barren je %.0f s"), TEXT("1 Reanimated SAM per %.0f s"), Zykluszeit()), true });
+	Out.Add({ TDT(TEXT("Bremsungen"), TEXT("Enemies slowed")), FString::Printf(TEXT("%d"), mGebremst), true });
 }
 
 // =====================================================================================================================
@@ -687,14 +688,14 @@ void ATDSingularityLauncher::Feuern(AFGCreature* Ziel)
 
 FString ATDSingularityLauncher::ZusatzInfo() const
 {
-	return HatMunition() ? FString() : TEXT("braucht Ficsonium");
+	return HatMunition() ? FString() : TDT(TEXT("braucht Ficsonium"), TEXT("needs Ficsonium"));
 }
 
 void ATDSingularityLauncher::Kampfwerte(TArray<FTDKennwert>& Out) const
 {
-	Out.Add({ TEXT("Schaden"), FString::Printf(TEXT("%.0f in %.0f m"), TDBalance::Wert(TEXT("Tuerme.Singularitaet.Schaden"), 1500.f) * SchadenBonus(),
+	Out.Add({ TDT(TEXT("Schaden"), TEXT("Damage")), TDF(TEXT("%.0f in %.0f m"), TEXT("%.0f within %.0f m"), TDBalance::Wert(TEXT("Tuerme.Singularitaet.Schaden"), 1500.f) * SchadenBonus(),
 		TDBalance::Wert(TEXT("Tuerme.Singularitaet.Radius"), 12.f)), true });
-	Out.Add({ TEXT("Sog"), FString::Printf(TEXT("%.1f s festgehalten"), TDBalance::Wert(TEXT("Tuerme.Singularitaet.Sogzeit"), 1.5f)), true });
-	Out.Add({ TEXT("Feuerrate"), FString::Printf(TEXT("%.1f s"), Zykluszeit()), true });
-	Out.Add({ TEXT("Getroffen"), FString::Printf(TEXT("%d"), mGetroffen), true });
+	Out.Add({ TDT(TEXT("Sog"), TEXT("Pull")), TDF(TEXT("%.1f s festgehalten"), TEXT("%.1f s held"), TDBalance::Wert(TEXT("Tuerme.Singularitaet.Sogzeit"), 1.5f)), true });
+	Out.Add({ TDT(TEXT("Feuerrate"), TEXT("Fire rate")), FString::Printf(TEXT("%.1f s"), Zykluszeit()), true });
+	Out.Add({ TDT(TEXT("Getroffen"), TEXT("Hit")), FString::Printf(TEXT("%d"), mGetroffen), true });
 }

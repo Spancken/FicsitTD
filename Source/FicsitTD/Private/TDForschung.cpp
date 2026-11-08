@@ -6,6 +6,7 @@
 #include "Engine/World.h"
 #include "Unlocks/FGUnlockInfoOnly.h"
 #include "FicsitTDModule.h"
+#include "TDSprache.h"
 
 #include "TDForschungInfo.inl"
 
@@ -116,6 +117,22 @@ namespace TDForschung
 		return AbWelle(K) > Naechste ? ETDForschungZustand::ZuFrueh : ETDForschungZustand::Moeglich;
 	}
 
+	/** 0.85 (L1): Knoten- und Baumname in der Spielsprache. Die Knotentabelle ist deutsch (Schluessel, Vergleiche);
+	 *  englisch kommen die Baumnamen von hier, die Knotennamen aus der Asset-Uebersetzung (TDSprache::Nachschlagen) */
+	static FString Anzeige(const FString& De)
+	{
+		if (!TDSprache::Englisch())
+		{
+			return De;
+		}
+		if (De == TEXT("Industrie")) return TEXT("Industry");
+		if (De == TEXT("Ballistik")) return TEXT("Ballistics");
+		if (De == TEXT("Elementar")) return TEXT("Elemental");
+		if (De == TEXT("Festung")) return TEXT("Fortress");
+		const TCHAR* En = TDSprache::Nachschlagen(De);
+		return En ? FString(En) : De;
+	}
+
 	static FString NameVon(const FString& Key, const FString& EigenerBaum)
 	{
 		const FTDForschungKnoten* V = Finde(Key);
@@ -123,7 +140,7 @@ namespace TDForschung
 		{
 			return Key;
 		}
-		return V->Baum == EigenerBaum ? V->Name : FString::Printf(TEXT("%s (%s)"), *V->Name, *V->BaumName);
+		return V->Baum == EigenerBaum ? Anzeige(V->Name) : FString::Printf(TEXT("%s (%s)"), *Anzeige(V->Name), *Anzeige(V->BaumName));
 	}
 
 	FString StatusTitel(const UObject* WorldContext, const FTDForschungKnoten& K, FString& OutText)
@@ -134,11 +151,12 @@ namespace TDForschung
 		switch (Zustand(WorldContext, K))
 		{
 		case ETDForschungZustand::Erforscht:
-			OutText = TEXT("Dieser Knoten ist erforscht.");
-			return TEXT("Erforscht");
+			OutText = TDT(TEXT("Dieser Knoten ist erforscht."), TEXT("This node is researched."));
+			return TDT(TEXT("Erforscht"), TEXT("Researched"));
 		case ETDForschungZustand::Ausgeschlossen:
-			OutText = FString::Printf(TEXT("Abzweigung: In diesem Einsatz ist schon %s erforscht. Nur eine Seite ist möglich."), *NameVon(GewaehlteAndere(WorldContext, K), K.Baum));
-			return FString::Printf(TEXT("Ausgeschlossen: %s gewählt"), *NameVon(GewaehlteAndere(WorldContext, K), K.Baum));
+			OutText = TDF(TEXT("Abzweigung: In diesem Einsatz ist schon %s erforscht. Nur eine Seite ist möglich."),
+				TEXT("Branch: %s is already researched in this operation. Only one side is possible."), *NameVon(GewaehlteAndere(WorldContext, K), K.Baum));
+			return TDF(TEXT("Ausgeschlossen: %s gewählt"), TEXT("Excluded: %s chosen"), *NameVon(GewaehlteAndere(WorldContext, K), K.Baum));
 		case ETDForschungZustand::Gesperrt:
 		{
 			TArray<FString> Fehlt;
@@ -149,19 +167,20 @@ namespace TDForschung
 					Fehlt.Add(NameVon(V, K.Baum));
 				}
 			}
-			OutText = FString::Printf(TEXT("Zuerst im MAM erforschen: %s."), *FString::Join(Fehlt, TEXT(", ")));
-			return FString::Printf(TEXT("Gesperrt: zuerst %s"), Fehlt.Num() ? *Fehlt[0] : TEXT("Voraussetzung"));
+			OutText = TDF(TEXT("Zuerst im MAM erforschen: %s."), TEXT("Research in the MAM first: %s."), *FString::Join(Fehlt, TEXT(", ")));
+			return TDF(TEXT("Gesperrt: zuerst %s"), TEXT("Locked: first %s"), Fehlt.Num() ? *Fehlt[0] : *TDT(TEXT("Voraussetzung"), TEXT("prerequisite")));
 		}
 		case ETDForschungZustand::ZuFrueh:
 		{
 			const int32 Ab = AbWelle(K);
 			const int32 Noch = FMath::Max(1, Ab - Naechste);
-			OutText = FString::Printf(TEXT("Freigabe ab Welle %d. Nächste Welle: %d, also noch %d %s."), Ab, Naechste, Noch, Noch == 1 ? TEXT("Welle") : TEXT("Wellen"));
-			return FString::Printf(TEXT("Gesperrt: ab Welle %d"), Ab);
+			OutText = TDF(TEXT("Freigabe ab Welle %d. Nächste Welle: %d, also noch %d %s."), TEXT("Unlocks from wave %d. Next wave: %d, so %d more %s."), Ab, Naechste, Noch,
+				Noch == 1 ? *TDT(TEXT("Welle"), TEXT("wave")) : *TDT(TEXT("Wellen"), TEXT("waves")));
+			return TDF(TEXT("Gesperrt: ab Welle %d"), TEXT("Locked: from wave %d"), Ab);
 		}
 		default:
-			OutText = FString::Printf(TEXT("Alle Voraussetzungen erfüllt. Kosten: %d FP (FICSIT-Kampfdaten)."), K.FP);
-			return TEXT("Jetzt erforschbar");
+			OutText = TDF(TEXT("Alle Voraussetzungen erfüllt. Kosten: %d FP (FICSIT-Kampfdaten)."), TEXT("All prerequisites met. Cost: %d RP (FICSIT Combat Data)."), K.FP);
+			return TDT(TEXT("Jetzt erforschbar"), TEXT("Researchable now"));
 		}
 	}
 
@@ -176,7 +195,7 @@ namespace TDForschung
 		{
 			if (K.Pfad == Pfad)
 			{
-				return K.Name;
+				return Anzeige(K.Name);
 			}
 		}
 		return UFGSchematic::GetSchematicDisplayName(TSubclassOf<UFGSchematic>(const_cast<UClass*>(Schematic))).ToString();
@@ -201,32 +220,33 @@ namespace TDForschung
 				continue;
 			}
 			++Knoten;
-			FString Titel = K.Name;
+			const FString Name = Anzeige(K.Name);
+			FString Titel = Name;
 			switch (Zustand(WorldContext, K))
 			{
 			case ETDForschungZustand::ZuFrueh:
-				Titel = FString::Printf(TEXT("%s (ab Welle %d)"), *K.Name, AbWelle(K));
+				Titel = TDF(TEXT("%s (ab Welle %d)"), TEXT("%s (from wave %d)"), *Name, AbWelle(K));
 				break;
 			case ETDForschungZustand::Gesperrt:
 				for (const FString& V : K.Braucht)
 				{
 					if (!Hat(WorldContext, *V))
 					{
-						Titel = FString::Printf(TEXT("%s (zuerst %s)"), *K.Name, *NameVon(V, K.Baum));
+						Titel = TDF(TEXT("%s (zuerst %s)"), TEXT("%s (first %s)"), *Name, *NameVon(V, K.Baum));
 						break;
 					}
 				}
 				break;
 			case ETDForschungZustand::Ausgeschlossen:
-				Titel = FString::Printf(TEXT("%s (ausgeschlossen: %s gewählt)"), *K.Name, *NameVon(GewaehlteAndere(WorldContext, K), K.Baum));
+				Titel = TDF(TEXT("%s (ausgeschlossen: %s gewählt)"), TEXT("%s (excluded: %s chosen)"), *Name, *NameVon(GewaehlteAndere(WorldContext, K), K.Baum));
 				break;
 			// 0.78.3 (Marius 05.11.: "immer noch nicht transparent, was kann ich schon und was nicht"): jeder Zustand steht im Titel,
 			// auch erforscht und jetzt erforschbar (vorher nur der blanke Name)
 			case ETDForschungZustand::Erforscht:
-				Titel = FString::Printf(TEXT("%s (erforscht)"), *K.Name);
+				Titel = TDF(TEXT("%s (erforscht)"), TEXT("%s (researched)"), *Name);
 				break;
 			case ETDForschungZustand::Moeglich:
-				Titel = FString::Printf(TEXT("%s (jetzt erforschbar)"), *K.Name);
+				Titel = TDF(TEXT("%s (jetzt erforschbar)"), TEXT("%s (researchable now)"), *Name);
 				break;
 			default:
 				break;

@@ -7,6 +7,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
+#include "TDSprache.h"
 
 // Masse aus Modelle\td_oelschlick.py: Platte 8 x 8 m, Deck 0,3 m, Rohr auf +X (Flansch bei 5,15 m), Handrad bei (4,75 / -0,6 / 0,62)
 static constexpr float SchlickHalb = 400.f;
@@ -165,15 +166,15 @@ FString ATDSlickPlate::ZusatzInfo() const
 {
 	if (Jetzt() < mBrandBis)
 	{
-		return TEXT("brennt");
+		return TDT(TEXT("brennt"), TEXT("burning"));
 	}
-	return IstNass() ? TEXT("Ölfilm liegt, Gegner werden gebremst") : TEXT("trocken, wartet auf Gegner");
+	return IstNass() ? TDT(TEXT("Ölfilm liegt, Gegner werden gebremst"), TEXT("oil film down, enemies are slowed")) : TDT(TEXT("trocken, wartet auf Gegner"), TEXT("dry, waiting for enemies"));
 }
 
 void ATDSlickPlate::Kampfwerte(TArray<FTDKennwert>& Out) const
 {
-	Out.Add({ TEXT("Bremse"), FString::Printf(TEXT("%.0f %%"), (1.f - TDBalance::Wert(TEXT("Tuerme.Oelschlick.Bremse"), 0.65f)) * 100.f), true });
-	Out.Add({ TEXT("Brand"), FString::Printf(TEXT("%.0f Schaden/s für %.0f s"), TDBalance::Wert(TEXT("Tuerme.Oelschlick.BrandSchaden"), 20.f),
+	Out.Add({ TDT(TEXT("Bremse"), TEXT("Slow")), FString::Printf(TEXT("%.0f %%"), (1.f - TDBalance::Wert(TEXT("Tuerme.Oelschlick.Bremse"), 0.65f)) * 100.f), true });
+	Out.Add({ TDT(TEXT("Brand"), TEXT("Fire")), TDF(TEXT("%.0f Schaden/s für %.0f s"), TEXT("%.0f damage/s for %.0f s"), TDBalance::Wert(TEXT("Tuerme.Oelschlick.BrandSchaden"), 20.f),
 		TDBalance::Wert(TEXT("Tuerme.Oelschlick.BrandDauer"), 5.f)), true });
-	Out.Add({ TEXT("Entzündet"), FString::Printf(TEXT("%d-mal"), mBraende), true });
+	Out.Add({ TDT(TEXT("Entzündet"), TEXT("Ignited")), TDF(TEXT("%d-mal"), TEXT("%d times"), mBraende), true });
 }

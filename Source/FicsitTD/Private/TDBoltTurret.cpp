@@ -9,6 +9,7 @@
 #include "FGProjectileMovementComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "TDSprache.h"
 
 /** Level 5 Doppellauf (0.64): zweiter Lauf neben dem ersten, Versatz im Kanzel-Raum (Modelle\TD_BoltTurret_Stufen.blend) */
 static const FVector BolzenZweiterLauf(0.f, 95.f, 0.f);   // neben dem ersten (Blender -0,95 m = Unreal +95)
@@ -285,26 +286,26 @@ void ATDBoltTurret::Kampfwerte(TArray<FTDKennwert>& Out) const
 	const float Schaden = W.Schaden * SchadenBonus();
 	const float Takt = Zykluszeit();
 	// Einheitlich fuer alle Tuerme (Marius 03.11.2026): Schaden je Treffer, Feuerrate in Schuss/s, Schaden/s
-	Out.Add({ TEXT("Schaden je Treffer"), FString::Printf(TEXT("%.0f"), Schaden), true });
+	Out.Add({ TDT(TEXT("Schaden je Treffer"), TEXT("Damage per hit")), FString::Printf(TEXT("%.0f"), Schaden), true });
 	if (Takt > 0.f)
 	{
-		Out.Add({ TEXT("Feuerrate"), FString::Printf(TEXT("%.1f Schuss/s"), 1.f / Takt), true });
-		Out.Add({ TEXT("Schaden/s"), FString::Printf(TEXT("%.0f (ein Ziel)"), Schaden / Takt), true });
+		Out.Add({ TDT(TEXT("Feuerrate"), TEXT("Fire rate")), TDF(TEXT("%.1f Schuss/s"), TEXT("%.1f shots/s"), 1.f / Takt), true });
+		Out.Add({ TDT(TEXT("Schaden/s"), TEXT("Damage/s")), TDF(TEXT("%.0f (ein Ziel)"), TEXT("%.0f (single target)"), Schaden / Takt), true });
 	}
 	if (W.Durchschlag > 0)
 	{
-		Out.Add({ TEXT("Durchschlag"), FString::Printf(TEXT("+%d Gegner dahinter, je x%.2f"), W.Durchschlag, W.Folgeschaden), true });
+		Out.Add({ TDT(TEXT("Durchschlag"), TEXT("Pierce")), TDF(TEXT("+%d Gegner dahinter, je x%.2f"), TEXT("+%d enemies behind, x%.2f each"), W.Durchschlag, W.Folgeschaden), true });
 	}
 	if (W.FlaechenRadius > 0.f)
 	{
-		Out.Add({ TEXT("Explosion"), FString::Printf(TEXT("+%.0f Schaden im Umkreis von %.1f m"), W.FlaechenSchaden * SchadenBonus(), W.FlaechenRadius / 100.f), true });
+		Out.Add({ TDT(TEXT("Explosion"), TEXT("Explosion")), TDF(TEXT("+%.0f Schaden im Umkreis von %.1f m"), TEXT("+%.0f damage within %.1f m"), W.FlaechenSchaden * SchadenBonus(), W.FlaechenRadius / 100.f), true });
 	}
 	if (W.Betaeubung > 0.f)
 	{
-		Out.Add({ TEXT("Betäubung"), FString::Printf(TEXT("%.0f s"), W.Betaeubung), true });
+		Out.Add({ TDT(TEXT("Betäubung"), TEXT("Stun")), FString::Printf(TEXT("%.0f s"), W.Betaeubung), true });
 	}
 	if (W.Splitter > 0)
 	{
-		Out.Add({ TEXT("Splitter"), FString::Printf(TEXT("%d weitere Ziele je %.0f Schaden (%.0f m)"), W.Splitter, W.SplitterSchaden * SchadenBonus(), W.SplitterRadius / 100.f), true });
+		Out.Add({ TDT(TEXT("Splitter"), TEXT("Shrapnel")), TDF(TEXT("%d weitere Ziele je %.0f Schaden (%.0f m)"), TEXT("%d more targets, %.0f damage each (%.0f m)"), W.Splitter, W.SplitterSchaden * SchadenBonus(), W.SplitterRadius / 100.f), true });
 	}
 }

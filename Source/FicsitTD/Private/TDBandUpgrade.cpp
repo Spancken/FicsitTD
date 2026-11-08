@@ -1,6 +1,7 @@
 ﻿#include "TDBandUpgrade.h"
 #include "TDForschung.h"
 #include "FicsitTDModule.h"
+#include "TDSprache.h"
 #include "EngineUtils.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
@@ -120,7 +121,7 @@ FString UTDBandUpgrade::RuesteUm(int32 Stufe)
 	UClass* LiftRezept = LoadClass<UFGRecipe>(nullptr, *FString::Printf(TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_ConveyorLiftMk%d.Recipe_ConveyorLiftMk%d_C"), Stufe, Stufe));
 	if (!Bau || !BandKlasse)
 	{
-		return FString::Printf(TEXT("Baender Mk%d: Klasse nicht gefunden, nichts aufgeruestet."), Stufe);
+		return TDF(TEXT("Baender Mk%d: Klasse nicht gefunden, nichts aufgeruestet."), TEXT("Belts Mk%d: class not found, nothing upgraded."), Stufe);
 	}
 	TArray<AFGBuildableConveyorBelt*> Baender;
 	TArray<AFGBuildableConveyorLift*> Lifte;
@@ -250,7 +251,8 @@ FString UTDBandUpgrade::RuesteUm(int32 Stufe)
 		Stufe, Verbindungen.Num(), Verbunden, Fehlt);
 	const int32 Plaetze = SchnellleisteAufStufe(World, Stufe);
 	UE_LOG(LogFicsitTD, Log, TEXT("Band-Upgrade Mk%d: %d Baender, %d Lifte aufgeruestet, %d Plaetze der Schnellleiste umgestellt"), Stufe, B, L, Plaetze);
-	return FString::Printf(TEXT("FICSIT-Logistik: %d Foerderbaender und %d Lifte automatisch auf Mk%d aufgeruestet."), B, L, Stufe);
+	return TDF(TEXT("FICSIT-Logistik: %d Foerderbaender und %d Lifte automatisch auf Mk%d aufgeruestet."),
+		TEXT("FICSIT Logistics: %d Conveyor Belts and %d Conveyor Lifts automatically upgraded to Mk%d."), B, L, Stufe);
 }
 
 

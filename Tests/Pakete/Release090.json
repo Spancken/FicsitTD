@@ -1,0 +1,5 @@
+{
+  "Name": "Release090",
+  "_Hinweis": "0.9.0 Alpha (Deutsch): Grundtest, neues Spiel mit TD-Schalter, MAM-Fotos, vier Basisplaene mit den Release-Standardwerten (ohne Balance.json), Frontpruefung je Welle.",
+  "Plaene": ["Grundtest", "Neustart", "MAMBild", "Strat-Gewehr-Tesla", "Strat-Gewehr-Flamme", "Strat-Gewehr-Nobelisk", "Strat-MonoBolzen"]
+}

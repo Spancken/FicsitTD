@@ -4,6 +4,7 @@
 #include "TDDecoy.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
+#include "TDSprache.h"
 
 TArray<TWeakObjectPtr<ATDLureBeacon>> ATDLureBeacon::sAlle;
 
@@ -168,16 +169,16 @@ FString ATDLureBeacon::ZusatzInfo() const
 {
 	if (IstAktiv())
 	{
-		return TEXT("lockt Gegner an");
+		return TDT(TEXT("lockt Gegner an"), TEXT("luring enemies"));
 	}
 	const double Rest = mPauseBis - Jetzt();
-	return Rest > 0.0 ? FString::Printf(TEXT("Pause, noch %.0f s"), Rest) : TEXT("bereit, wartet auf Gegner in Reichweite");
+	return Rest > 0.0 ? TDF(TEXT("Pause, noch %.0f s"), TEXT("Paused, %.0f s left"), Rest) : TDT(TEXT("bereit, wartet auf Gegner in Reichweite"), TEXT("ready, waiting for enemies in range"));
 }
 
 void ATDLureBeacon::Kampfwerte(TArray<FTDKennwert>& Out) const
 {
-	Out.Add({ TEXT("Lockradius"), FString::Printf(TEXT("%.0f m"), LockRadius() / 100.f), true });
-	Out.Add({ TEXT("Lockruf"), FString::Printf(TEXT("%.0f s je Zyklus"), Zykluszeit()), true });
-	Out.Add({ TEXT("Pause"), FString::Printf(TEXT("%.0f s"), TDBalance::Wert(TEXT("Tuerme.Lockfeuer.Pause"), 30.f)), true });
-	Out.Add({ TEXT("Lockrufe"), FString::Printf(TEXT("%d"), mLockrufe), true });
+	Out.Add({ TDT(TEXT("Lockradius"), TEXT("Lure radius")), FString::Printf(TEXT("%.0f m"), LockRadius() / 100.f), true });
+	Out.Add({ TDT(TEXT("Lockruf"), TEXT("Lure call")), TDF(TEXT("%.0f s je Zyklus"), TEXT("%.0f s per cycle"), Zykluszeit()), true });
+	Out.Add({ TDT(TEXT("Pause"), TEXT("Pause")), FString::Printf(TEXT("%.0f s"), TDBalance::Wert(TEXT("Tuerme.Lockfeuer.Pause"), 30.f)), true });
+	Out.Add({ TDT(TEXT("Lockrufe"), TEXT("Lure calls")), FString::Printf(TEXT("%d"), mLockrufe), true });
 }
