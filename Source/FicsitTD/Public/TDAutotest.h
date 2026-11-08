@@ -45,6 +45,7 @@ public:
  *   {"stromfrei": true}                    Cheat ohne Strom (Fabrik und Netz sind nicht Teil des Pruefstands)
  *   {"baue": "Gewehrturm", "anzahl": 2, "level": 2, "rezept": "Recipe_TD_Gun_Standard"}  Tuerme auf freie Plaetze der Plattform
  *        optional "ring": "innen" -> 8 m um den Kern (kurze Reichweite: Flamme, Tesla), sonst 16-m-Ring
+ *   {"aufwerten": "Gewehrturm", "level": 4, "rezept": "Recipe_TD_Gun_Turbo"}  0.84: vorhandene Tuerme des Typs heben/umstellen
  *   {"versorgung": {"Bolzenturm": 30, "Gewehrturm": 8}}  Munition je Turm und Minute in den Eingang (ersetzt die Fabrik)
  *   {"wellenlauf": 10, "zeitraffer": 4, "max": 400}  Wellen nacheinander starten, bis Welle 10 vorbei ist (max s je Welle)
  *   {"balance": {"Wellen.SpawnBreite": 20}}  0.78.2: Balance-Werte fuer einen A/B-Versuch setzen (gelten bis zum naechsten Laden)

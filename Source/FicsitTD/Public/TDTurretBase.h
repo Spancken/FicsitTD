@@ -12,6 +12,25 @@ class ATDDecoy;
 class UMaterialInstanceDynamic;
 
 /** Schadensart eines Turms (Spielkonzept S4: Resistenzen, damit sich eine Turm-Mischung lohnt) */
+class AFGCreature;
+class ATDTurretBase;
+
+/** 0.84 Turmkombinationen (Konzept-Spezialisierung-und-Vielfalt Abschnitt F): Reaktionen mit Logik statt Prozentbonus.
+ *  Modus Balance Kombo.Aktiv (Standard 0); jede Kombination wirkt erst, wenn ihre beiden Forschungen da sind. */
+namespace TDKombo
+{
+	/** Kombination freigeschaltet? Name: Verpuffung, Blitzableiter, Hitzeriss */
+	FICSITTD_API bool Aktiv(const UObject* Kontext, const TCHAR* Name);
+	/** Bolzen steckt im Gegner (Blitzableiter), Dauer Kombo.Blitzableiter.Dauer */
+	/** true, wenn der Gegner vorher keinen steckenden Bolzen hatte (dann zeigt der Bolzenturm einen) */
+	FICSITTD_API bool MarkiereBolzen(const UObject* Kontext, AFGCreature* Ziel);
+	FICSITTD_API bool HatBolzen(const UObject* Kontext, const AFGCreature* Ziel);
+	/** Ausgeloeste Kombination zaehlen (Turmfenster, Log) */
+	FICSITTD_API void Melde(const TCHAR* Name, const ATDTurretBase* Turm, float Schaden);
+	/** Zeilen fuer das Turmfenster: "Name n× (+Schaden)" */
+	FICSITTD_API FString Zeile(const ATDTurretBase* Turm);
+}
+
 enum class ETDSchadensart : uint8
 {
 	Durchschlag,   // Bolzen

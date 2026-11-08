@@ -1,0 +1,17 @@
+{
+  "Name": "Pruefung0843",
+  "_Hinweis": "0.84.3: Hitzeriss (Kugel+Durchschlag) und Verpuffung (Explosion x1,5) nachgewiesen? Dazu Balance-Buendel A, je zwei Laeufe.",
+  "Plaene": [
+    "Grundtest",
+    "Strat-Gewehr-Flamme-Hitzeriss",
+    "Strat-Gewehr-Nobelisk-Verpuffung",
+    "Strat-Gewehr-Tesla-A1",
+    "Strat-Gewehr-Tesla-A2",
+    "Strat-Gewehr-Flamme-A1",
+    "Strat-Gewehr-Flamme-A2",
+    "Strat-Gewehr-Nobelisk-A1",
+    "Strat-Gewehr-Nobelisk-A2",
+    "Strat-MonoBolzen-A1",
+    "Strat-MonoBolzen-A2"
+  ]
+}

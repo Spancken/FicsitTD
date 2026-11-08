@@ -375,7 +375,7 @@ void UTDKernTerminal::BaueOberflaeche()
 	Status->AddChild(StatusSpalte);
 	UHorizontalBox* Zahlen = WidgetTree->ConstructWidget<UHorizontalBox>();
 	StatusSpalte->AddChildToVerticalBox(Zahlen);
-	const TCHAR* Beschriftungen[3] = { TEXT("Welle:"), TEXT("Kernzustand:"), TEXT("Konto: EP für Kontingente, FP für den MAM:") };
+	const TCHAR* Beschriftungen[3] = { TEXT("Welle:"), TEXT("Kernzustand:"), TEXT("Konto: Coupons für Kontingente, FP für den MAM:") };
 	TObjectPtr<UTextBlock>* Felder[3] = { &mWelle, &mKernLP, &mKonto };
 	for (int32 i = 0; i < 3; ++i)
 	{
@@ -479,7 +479,7 @@ void UTDKernTerminal::BaueOberflaeche()
 	UBorder* Fuss = NeuesFeld(TDUI::ZeileB, FMargin(12.f, 10.f));
 	UVerticalBox* FussSpalte = WidgetTree->ConstructWidget<UVerticalBox>();
 	Fuss->AddChild(FussSpalte);
-	mKorbSumme = NeuerText(TEXT("Summe: 0 EP"), 16, TDUI::Hell, true);
+	mKorbSumme = NeuerText(TEXT("Summe: 0 Coupons"), 16, TDUI::Hell, true);
 	FussSpalte->AddChildToVerticalBox(mKorbSumme);
 	mKorbRest = NeuerText(TEXT(""), 13, TDUI::Grau);
 	if (UVerticalBoxSlot* S = FussSpalte->AddChildToVerticalBox(mKorbRest))
@@ -652,7 +652,7 @@ void UTDKernTerminal::Aktualisiere()
 	}
 	mWelle->SetText(FText::FromString(WelleText));
 	mKernLP->SetText(FText::FromString(K ? FString::Printf(TEXT("%.0f %%"), 100.f * K->GetTDHealth() / FMath::Max(K->GetTDMaxHealth(), 1.f)) : TEXT("-")));
-	mKonto->SetText(FText::FromString(bEinsatz ? FString::Printf(TEXT("%d EP  ·  %d FP"), Einsatz->Konto(), Einsatz->FPImInventar()) : TEXT("-")));
+	mKonto->SetText(FText::FromString(bEinsatz ? FString::Printf(TEXT("%d Coupons  ·  %d FP"), Einsatz->Konto(), Einsatz->FPImInventar()) : TEXT("-")));
 	mWelleText->SetText(FText::FromString(Waves->LaeuftWelle() ? TEXT("Welle läuft ...") : TEXT("Welle starten")));
 	mWegeText->SetText(FText::FromString(K && K->ZeigtWege() ? TEXT("Wegvorschau aus") : TEXT("Wegvorschau an")));
 	mFreiText->SetText(FText::FromString(Einsatz->IstFrei() ? TEXT("Freies Bauen: AN") : TEXT("Freies Bauen: aus")));
@@ -1171,7 +1171,7 @@ void UTDKernTerminal::BauePionier()
 	}
 	Abschnitt(Spalten, 14.f);
 	UTextBlock* NeuText = nullptr;
-	UButton* Neu = NeuerKnopf(FString::Printf(TEXT("Talente neu verteilen (%d EP)"), UTDPionier::NeuVerteilenPreis()), NeuText);
+	UButton* Neu = NeuerKnopf(FString::Printf(TEXT("Talente neu verteilen (%d Coupons)"), UTDPionier::NeuVerteilenPreis()), NeuText);
 	Neu->OnClicked.AddDynamic(this, &UTDKernTerminal::TalenteNeu);
 	UHorizontalBox* Fuss = WidgetTree->ConstructWidget<UHorizontalBox>();
 	Fuss->AddChildToHorizontalBox(Neu);
@@ -1552,7 +1552,7 @@ void UTDKernTerminal::BaueListen()
 		UHorizontalBox* Reihe = nullptr;
 		NeueKarte(mLaden, TDUI::ZeileA, Reihe);
 		Fuellen(Reihe, NeuerText(TEXT("Erst einen Einsatz starten."), 13, TDUI::Grau));
-		mKorbSumme->SetText(FText::FromString(TEXT("Summe: 0 EP")));
+		mKorbSumme->SetText(FText::FromString(TEXT("Summe: 0 Coupons")));
 		mKorbRest->SetText(FText::GetEmpty());
 		mBestaetigen->SetIsEnabled(false);
 	}
@@ -1572,7 +1572,7 @@ void UTDKernTerminal::BaueListen()
 			if (Z.bVerfuegbar)
 			{
 				UHorizontalBox* Unter = WidgetTree->ConstructWidget<UHorizontalBox>();
-				Unter->AddChildToHorizontalBox(NeuerText(FString::Printf(TEXT("%d EP"), Z.PreisNach(ImKorb)), 13, TDUI::KarteOrange, true));
+				Unter->AddChildToHorizontalBox(NeuerText(FString::Printf(TEXT("%d Coupons"), Z.PreisNach(ImKorb)), 13, TDUI::KarteOrange, true));
 				const FString Einheit = !Z.Einheit.IsEmpty() ? Z.Einheit : Z.Paket == 1 ? TEXT("Gebäude") : TEXT("Stück");
 				Unter->AddChildToHorizontalBox(NeuerText(Z.Max > 0
 					? FString::Printf(TEXT("  für +%d %s (%d/%d)"), Z.Paket, *Einheit, Z.Gekauft, Z.Max)
@@ -1627,13 +1627,13 @@ void UTDKernTerminal::BaueListen()
 			Mittig(Reihe, NeueKachel(Z.Symbol, 44.f, FString::Printf(TEXT("%d"), Anzahl * Z.Paket)), 0.f);
 			UVerticalBox* Texte = WidgetTree->ConstructWidget<UVerticalBox>();
 			Texte->AddChildToVerticalBox(NeuerText(FString::Printf(TEXT("%d x %s"), Anzahl, *Z.Key), 14, TDUI::KarteText, true));
-			Texte->AddChildToVerticalBox(NeuerText(FString::Printf(TEXT("+%d Kontingent, %s EP"), Anzahl * Z.Paket, *FString::Join(Preise, TEXT(" + "))), 12, TDUI::KarteGrau));
+			Texte->AddChildToVerticalBox(NeuerText(FString::Printf(TEXT("+%d Kontingent, %s Coupons"), Anzahl * Z.Paket, *FString::Join(Preise, TEXT(" + "))), 12, TDUI::KarteGrau));
 			if (UHorizontalBoxSlot* S = Reihe->AddChildToHorizontalBox(Texte))
 			{
 				S->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
 				S->SetPadding(FMargin(10.f, 0.f, 6.f, 0.f));
 			}
-			Mittig(Reihe, NeuerText(FString::Printf(TEXT("%d EP"), Posten), 15, TDUI::KarteOrange, true), 0.f);
+			Mittig(Reihe, NeuerText(FString::Printf(TEXT("%d Coupons"), Posten), 15, TDUI::KarteOrange, true), 0.f);
 		}
 		if (mKorb.Num() == 0)
 		{
@@ -1643,8 +1643,8 @@ void UTDKernTerminal::BaueListen()
 			Hinweis->SetAutoWrapText(true);
 			Fuellen(Reihe, Hinweis);
 		}
-		mKorbSumme->SetText(FText::FromString(FString::Printf(TEXT("Summe: %d EP"), Summe)));
-		mKorbRest->SetText(FText::FromString(FString::Printf(TEXT("Konto %d EP  ->  danach %d EP"), Konto, Konto - Summe)));
+		mKorbSumme->SetText(FText::FromString(FString::Printf(TEXT("Summe: %d Coupons"), Summe)));
+		mKorbRest->SetText(FText::FromString(FString::Printf(TEXT("Konto %d Coupons  ->  danach %d Coupons"), Konto, Konto - Summe)));
 		mKorbRest->SetColorAndOpacity(FSlateColor(Konto - Summe < 0 ? TDUI::Fehler : TDUI::Gut));
 		mBestaetigen->SetIsEnabled(mKorb.Num() > 0 && Summe <= Konto && !bWelle);
 	}
@@ -1896,7 +1896,7 @@ void UTDTurmInfo::FuelleUpgrades()
 	mUpgradeReihe->SetVisibility(ESlateVisibility::Visible);
 	if (mUpgradeTexte.IsValidIndex(0) && mUpgradeKnoepfe.IsValidIndex(0))
 	{
-		mUpgradeTexte[0]->SetText(FText::FromString(bMax ? FString(TEXT("max")) : Sperre.IsEmpty() ? FString::Printf(TEXT("%d EP"), Preis) : FString(TEXT("gesperrt"))));
+		mUpgradeTexte[0]->SetText(FText::FromString(bMax ? FString(TEXT("max")) : Sperre.IsEmpty() ? FString::Printf(TEXT("%d Coupons"), Preis) : FString(TEXT("gesperrt"))));
 		mUpgradeKnoepfe[0]->SetIsEnabled(!bMax && Sperre.IsEmpty() && Preis > 0 && Preis <= Konto);
 	}
 	for (int32 k = 0; k < mUpgradeStufenMax; ++k)
@@ -1916,7 +1916,7 @@ void UTDTurmInfo::FuelleUpgrades()
 	const FString Naechstes = bMax ? FString::Printf(TEXT("Jetzt Level %d (höchstes Level)"), Level)
 		: FString::Printf(TEXT("Jetzt Level %d. Upgrade auf %d: %s"), Level, Level + 1, *Turm->LevelText(Level + 1));
 	const FString Hinweis = mUpgradeMeldungZeit > 0.f ? mUpgradeMeldung
-		: Sperre.IsEmpty() || bMax ? FString::Printf(TEXT("%s · Konto %d EP"), *Naechstes, Konto)
+		: Sperre.IsEmpty() || bMax ? FString::Printf(TEXT("%s · Konto %d Coupons"), *Naechstes, Konto)
 		: FString::Printf(TEXT("%s · %s"), *Naechstes, *Sperre);
 	mUpgradeHinweis->SetText(FText::FromString(Hinweis));
 	mUpgradeHinweis->SetVisibility(ESlateVisibility::Visible);
@@ -2444,7 +2444,7 @@ void UTDHud::Aktualisiere()
 		: FString(TEXT("Kein Lauf"));
 	const UTDPionier* Pionier = UTDPionier::Get(this);
 	const int32 Frei = Pionier ? Pionier->FreiePunkte() : 0;
-	mText->SetText(FText::FromString(FString::Printf(TEXT("%s  |  Kern %.0f %%  |  %d EP  |  %d FP  |  Rang %d%s"), *Welle,
+	mText->SetText(FText::FromString(FString::Printf(TEXT("%s  |  Kern %.0f %%  |  %d Coupons  |  %d FP  |  Rang %d%s"), *Welle,
 		K ? 100.f * K->GetTDHealth() / FMath::Max(K->GetTDMaxHealth(), 1.f) : 0.f, Einsatz->Konto(), Einsatz->FPImInventar(),
 		Pionier ? Pionier->GetRang() : 1, Frei > 0 ? *FString::Printf(TEXT(" (%d Talentpunkt%s)"), Frei, Frei == 1 ? TEXT("") : TEXT("e")) : TEXT(""))));
 }
@@ -2912,7 +2912,7 @@ void UTDKernTerminal::BaueStatistik()
 		UBorder* Karte = NeuesFeld(TDUI::KarteDunkel, FMargin(12.f, 10.f));
 		UVerticalBox* Inhalt = WidgetTree->ConstructWidget<UVerticalBox>();
 		Karte->AddChild(Inhalt);
-		UTextBlock* Kopfzeile = NeuerText(FString::Printf(TEXT("Welle %d · %.0f s · %d Gegner · Kern %.0f %% auf %.0f %% · +%d EP, +%d FP"),
+		UTextBlock* Kopfzeile = NeuerText(FString::Printf(TEXT("Welle %d · %.0f s · %d Gegner · Kern %.0f %% auf %.0f %% · +%d Coupons, +%d FP"),
 			W.Welle, W.Dauer, W.Gegner, W.KernStart, W.KernEnde, W.EP, W.FP), 16, TDUI::Akzent, true);
 		Kopfzeile->SetAutoWrapText(true);
 		Inhalt->AddChildToVerticalBox(Kopfzeile);

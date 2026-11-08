@@ -517,6 +517,42 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 			FString::Printf(TEXT("%d gebaut%s"), Gebaut, Munition || !S->HasField(TEXT("rezept")) ? TEXT("") : TEXT(", Rezept nicht gefunden")));
 		return true;
 	}
+	if (S->TryGetStringField(TEXT("aufwerten"), Wort))
+	{
+		// 0.84 (Tagesauftrag 08.11.: W1-W50 wie ein Spieler): vorhandene Tuerme eines Typs auf ein hoeheres Level und optional eine
+		// andere Munition bringen. Vorher konnten Spielplaene nur neu bauen; spaete Wellen liefen mit Level-2-Tuermen und ungenutzten EP.
+		const int32 Level = S->HasField(TEXT("level")) ? static_cast<int32>(S->GetNumberField(TEXT("level"))) : 1;
+		const FString RezeptName = S->HasField(TEXT("rezept")) ? S->GetStringField(TEXT("rezept")) : FString();
+		int32 Gehoben = 0, Umgestellt = 0, Gesamt = 0;
+		for (TActorIterator<ATDTurretBase> It(World); It; ++It)
+		{
+			if (It->GetTurmName() != Wort)
+			{
+				continue;
+			}
+			++Gesamt;
+			if (It->GetLevel() < Level)
+			{
+				It->SetzeLevelTest(Level);
+				++Gehoben;
+			}
+			if (!RezeptName.IsEmpty())
+			{
+				const FString Ordner = FPaths::GetPath(It->GetClass()->GetPathName());
+				if (UClass* R = LoadClass<UFGRecipe>(nullptr, *FString::Printf(TEXT("%s/%s.%s_C"), *Ordner, *RezeptName, *RezeptName)))
+				{
+					if (It->GetCurrentRecipe() != R)
+					{
+						It->SetRecipe(R);
+						++Umgestellt;
+					}
+				}
+			}
+		}
+		Ergebnis(TEXT("Pruefstand"), FString::Printf(TEXT("aufwerten %s auf Level %d%s"), *Wort, Level, RezeptName.IsEmpty() ? TEXT("") : *(TEXT(", ") + RezeptName)),
+			Gesamt > 0, FString::Printf(TEXT("%d von %d gehoben, %d umgestellt"), Gehoben, Gesamt, Umgestellt));
+		return true;
+	}
 	const TSharedPtr<FJsonObject>* Liefern = nullptr;
 	if (S->TryGetObjectField(TEXT("versorgung"), Liefern))
 	{

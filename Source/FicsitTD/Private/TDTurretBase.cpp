@@ -14,6 +14,7 @@
 #include "FGCharacterPlayer.h"
 #include "TDWaveSubsystem.h"
 #include "TDLeistung.h"
+#include "FGChatManager.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Creature/FGCreature.h"
@@ -343,7 +344,7 @@ FString ATDTurretBase::KaufeLevel()
 	}
 	ZeigeStufenTeile();
 	UE_LOG(LogFicsitTD, Log, TEXT("Level %s %s: Level %d fuer %d EP (%s)"), *mTurmName, *GetName(), mLevel, Preis, *LevelText(mLevel));
-	return FString::Printf(TEXT("Level %d für %d EP: %s. Konto %d EP."), mLevel, Preis, *LevelText(mLevel), Einsatz->Konto());
+	return FString::Printf(TEXT("Level %d für %d Coupons: %s. Konto %d Coupons."), mLevel, Preis, *LevelText(mLevel), Einsatz->Konto());
 }
 
 void ATDTurretBase::SetzeLevelTest(int32 Level)
@@ -372,7 +373,7 @@ FText ATDTurretBase::GetLookAtDecription_Implementation(AFGCharacterPlayer* byCh
 	const int32 MaxStufe = TurmMaxLevel;
 	const FString Sperre = LevelSperre();
 	const FString Fortschritt = Stufe >= MaxStufe ? FString(TEXT("Höchstes Level"))
-		: Sperre.IsEmpty() ? FString::Printf(TEXT("Level %d für %d EP im Turmfenster"), Stufe + 1, LevelPreis()) : Sperre;
+		: Sperre.IsEmpty() ? FString::Printf(TEXT("Level %d für %d Coupons im Turmfenster"), Stufe + 1, LevelPreis()) : Sperre;
 	const FString Boni = Stufe > 1 ? TEXT("   |   ") + LevelSumme() : FString();
 	const FString Zusatz = FString::Printf(TEXT("Schadensart %s%s%s"), SchadensartName(mSchadensart),
 		ZusatzInfo().IsEmpty() ? TEXT("") : TEXT("   |   "), *ZusatzInfo());
@@ -394,6 +395,12 @@ void ATDTurretBase::Kennwerte(TArray<FTDKennwert>& Out) const
 	Out.Add({ TEXT("Reichweite"), FString::Printf(TEXT("%.0f m"), GetReichweite() / 100.f) });
 	Out.Add({ TEXT("Schadensart"), SchadensartName(mSchadensart) });
 	Kampfwerte(Out);
+	// 0.84: ausgeloeste Turmkombinationen sichtbar im Turmfenster
+	const FString Kombos = TDKombo::Zeile(this);
+	if (!Kombos.IsEmpty())
+	{
+		Out.Add({ TEXT("Kombinationen"), Kombos, true });
+	}
 	if (Stufe > 1)
 	{
 		Out.Add({ TEXT("Levelbonus"), LevelSumme() });
@@ -1259,10 +1266,178 @@ struct FTDGesundheitZugang : public UFGHealthComponent
 	}
 };
 
+// ---------------- Turmkombinationen (0.84, Konzept-Spezialisierung-und-Vielfalt Abschnitt F, Modus "Kombo.Aktiv") ----------------
+// Marius 08.11.: Kombinationen muessen logisch in die Spielwelt passen, im MAM und in der Optik erkennbar und im Spiel sichtbar sein.
+//   Verpuffung:    Flamme entzuendet eine Gaswolke (Gas-Nobelisk + Flammenwerfer)    -> ATDNobeliskLauncher::EntzuendeWolke
+//   Blitzableiter: Tesla springt auf Gegner mit steckendem Bolzen (Teslaspule)        -> ATDTeslaCoil::Feuern
+//   Hitzeriss:     brennender Panzer laesst Durchschlag durch (Flammenwerfer + Durchschlagbolzen) -> hier, Resistenz entfaellt
+namespace TDKombo
+{
+	struct FZustand { float BrandBis = -1.f; float BolzenBis = -1.f; };
+	static TMap<TWeakObjectPtr<AFGCreature>, FZustand> GZustand;
+	static TMap<TWeakObjectPtr<const ATDTurretBase>, TMap<FString, FVector2D>> GJeTurm;   // Name -> (Anzahl, Schaden)
+	static TMap<FString, FVector2D> GGesamt;
+
+	static float Jetzt(const UObject* Kontext)
+	{
+		const UWorld* W = Kontext ? Kontext->GetWorld() : nullptr;
+		return W ? W->GetTimeSeconds() : 0.f;
+	}
+
+	static void Aufraeumen(float T)
+	{
+		if (GZustand.Num() < 400)
+		{
+			return;
+		}
+		for (auto It = GZustand.CreateIterator(); It; ++It)
+		{
+			if (!It.Key().IsValid() || (It.Value().BrandBis < T && It.Value().BolzenBis < T))
+			{
+				It.RemoveCurrent();
+			}
+		}
+	}
+
+	bool Aktiv(const UObject* Kontext, const TCHAR* Name)
+	{
+		if (TDBalance::Wert(TEXT("Kombo.Aktiv"), 1.f) <= 0.f)
+		{
+			return false;
+		}
+		const FString N = Name;
+		if (N == TEXT("Verpuffung")) return TDForschung::Hat(Kontext, TEXT("GasNobelisk")) && TDForschung::Hat(Kontext, TEXT("Flammenwerfer"));
+		if (N == TEXT("Blitzableiter")) return TDForschung::Hat(Kontext, TEXT("Teslaspule"));
+		// 0.84.3 (Review 08.11.: nur Stinger und Krabben hatten Durchschlag < 1, Hitzeriss loeste nie aus): gilt fuer Kugel und Durchschlag,
+		// also genau gegen die gepanzerte Hog-Familie (Kugel 0,75). Braucht nur den Flammenwerfer - Bolzen und Gewehr hat jeder.
+		if (N == TEXT("Hitzeriss")) return TDForschung::Hat(Kontext, TEXT("Flammenwerfer"));
+		return false;
+	}
+
+	bool MarkiereBolzen(const UObject* Kontext, AFGCreature* Ziel)
+	{
+		if (Ziel && TDBalance::Wert(TEXT("Kombo.Aktiv"), 1.f) > 0.f)
+		{
+			const float T = Jetzt(Kontext);
+			FZustand& Z = GZustand.FindOrAdd(Ziel);
+			const bool bNeu = Z.BolzenBis <= T;
+			Z.BolzenBis = T + TDBalance::Wert(TEXT("Kombo.Blitzableiter.Dauer"), 5.f);
+			Aufraeumen(T);
+			return bNeu;
+		}
+		return false;
+	}
+
+	bool HatBolzen(const UObject* Kontext, const AFGCreature* Ziel)
+	{
+		const FZustand* Z = Ziel ? GZustand.Find(const_cast<AFGCreature*>(Ziel)) : nullptr;
+		return Z && Z->BolzenBis > Jetzt(Kontext);
+	}
+
+	/** Anzeigename (lokalisierbar, Marius 08.11.: Deutsch und Englisch) */
+	static FText Anzeige(const FString& Name)
+	{
+		if (Name == TEXT("Verpuffung")) return NSLOCTEXT("FicsitTD", "Kombo.Verpuffung", "Verpuffung");
+		if (Name == TEXT("Blitzableiter")) return NSLOCTEXT("FicsitTD", "Kombo.Blitzableiter", "Blitzableiter");
+		if (Name == TEXT("Hitzeriss")) return NSLOCTEXT("FicsitTD", "Kombo.Hitzeriss", "Hitzeriss");
+		return FText::FromString(Name);
+	}
+
+	/** Erklaerung beim ersten Ausloesen je Spielwelt: was ist in der Welt passiert (Transparenz, Marius 08.11.) */
+	static FText Erklaerung(const FString& Name)
+	{
+		if (Name == TEXT("Verpuffung")) return NSLOCTEXT("FicsitTD", "Kombo.Verpuffung.Text", "Kombination Verpuffung: Ein Flammenwerfer hat eine Gaswolke entzündet. Das restliche Gas verbrennt auf einen Schlag.");
+		if (Name == TEXT("Blitzableiter")) return NSLOCTEXT("FicsitTD", "Kombo.Blitzableiter.Text", "Kombination Blitzableiter: Im Gegner steckende Bolzen leiten den Tesla-Blitz. Er springt ungeschwächt und einmal weiter.");
+		if (Name == TEXT("Hitzeriss")) return NSLOCTEXT("FicsitTD", "Kombo.Hitzeriss.Text", "Kombination Hitzeriss: Brennender Panzer wird spröde. Kugeln und Bolzen ignorieren solange die Panzerung.");
+		return FText::FromString(Name);
+	}
+
+	static TWeakObjectPtr<UWorld> GAngesagtWelt;
+	static TSet<FString> GAngesagt;
+
+	void Melde(const TCHAR* Name, const ATDTurretBase* Turm, float Schaden)
+	{
+		UWorld* Welt = Turm ? Turm->GetWorld() : nullptr;
+		if (Welt && GAngesagtWelt.Get() != Welt)
+		{
+			GAngesagtWelt = Welt;
+			GAngesagt.Reset();
+		}
+		if (Welt && !GAngesagt.Contains(Name))
+		{
+			GAngesagt.Add(Name);
+			const FText Text = Erklaerung(Name);
+			UE_LOG(LogFicsitTD, Log, TEXT("Ansage: %s"), *Text.ToString());
+			if (AFGChatManager* Chat = AFGChatManager::Get(Welt))
+			{
+				FChatMessageStruct Nachricht;
+				Nachricht.MessageText = Text;
+				Nachricht.MessageType = EFGChatMessageType::CMT_CustomMessage;
+				Nachricht.MessageSender = NSLOCTEXT("FicsitTD", "Kern.Absender", "Abwehrkern");
+				Nachricht.MessageSenderColor = FLinearColor(1.f, 0.5f, 0.05f);
+				Chat->BroadcastChatMessage(Nachricht);
+			}
+		}
+		FVector2D& J = GJeTurm.FindOrAdd(Turm).FindOrAdd(Name);
+		J.X += 1.f;
+		J.Y += Schaden;
+		FVector2D& G = GGesamt.FindOrAdd(Name);
+		G.X += 1.f;
+		G.Y += Schaden;
+		if (FMath::RoundToInt(G.X) % 100 == 1)
+		{
+			UE_LOG(LogFicsitTD, Log, TEXT("Kombo %s: %.0f ausgeloest, +%.0f Schaden bisher"), Name, G.X, G.Y);
+		}
+	}
+
+	FString Zeile(const ATDTurretBase* Turm)
+	{
+		const TMap<FString, FVector2D>* M = GJeTurm.Find(Turm);
+		if (!M || M->Num() == 0)
+		{
+			return FString();
+		}
+		TArray<FString> Teile;
+		for (const TPair<FString, FVector2D>& P : *M)
+		{
+			// Spielschrift ohne Sonderzeichen (Style Guide): "x" statt Malzeichen
+			Teile.Add(FString::Printf(TEXT("%s %.0fx (+%.0f)"), *Anzeige(P.Key).ToString(), P.Value.X, P.Value.Y));
+		}
+		return FString::Join(Teile, TEXT(", "));
+	}
+
+	/** Hitzeriss: brennender Gegner, Durchschlag-Treffer -> Panzerung (Resistenz) entfaellt. Merkt Feuer-Treffer als Brand. */
+	static bool Hitzeriss(const ATDTurretBase* Turm, AFGCreature* Ziel, ETDSchadensart Art)
+	{
+		if (!Ziel || TDBalance::Wert(TEXT("Kombo.Aktiv"), 1.f) <= 0.f)
+		{
+			return false;
+		}
+		const float T = Jetzt(Turm);
+		if (Art == ETDSchadensart::Feuer)
+		{
+			GZustand.FindOrAdd(Ziel).BrandBis = T + TDBalance::Wert(TEXT("Kombo.Hitzeriss.Dauer"), 3.f);
+			Aufraeumen(T);
+			return false;
+		}
+		const FZustand* Z = GZustand.Find(Ziel);
+		return (Art == ETDSchadensart::Durchschlag || Art == ETDSchadensart::Kugel) && Z && Z->BrandBis > T && Aktiv(Turm, TEXT("Hitzeriss"));
+	}
+}
+
 void ATDTurretBase::TrefferArt(AFGCreature* Ziel, float Schaden, const FVector& Richtung, float Betaeubung, float Verzoegerung, ETDSchadensart Art)
 {
 	const float Roh = Schaden;
-	Schaden *= Resistenz(Art, Ziel);
+	// 0.84 Hitzeriss: brennender Panzer laesst Durchschlag durch - die Resistenz der Gegnerart entfaellt (Funken am Ziel)
+	if (TDKombo::Hitzeriss(this, Ziel, Art) && Resistenz(Art, Ziel) < 1.f)
+	{
+		TDKombo::Melde(TEXT("Hitzeriss"), this, Schaden * (1.f - Resistenz(Art, Ziel)));
+		ZeigeLeuchten(Ziel->GetActorLocation() + FVector(0.f, 0.f, 60.f), FLinearColor(1.f, 0.55f, 0.1f), 0.6f, 0.25f, Verzoegerung);
+	}
+	else
+	{
+		Schaden *= Resistenz(Art, Ziel);
+	}
 	TWeakObjectPtr<AFGCreature> WeakZiel = Ziel;
 	TWeakObjectPtr<ATDTurretBase> WeakSelf = this;
 	auto Wirkung = [WeakZiel, WeakSelf, Richtung, Schaden, Roh, Betaeubung]()

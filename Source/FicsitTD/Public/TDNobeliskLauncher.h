@@ -54,6 +54,9 @@ public:
 	virtual void BeginPlay() override;
 
 	static FTDNobeliskWerte WerteFuer(const UClass* Munition);
+	/** 0.84 Verpuffung: eine Flamme am Ort entzuendet jede Gaswolke, die ihn einschliesst (Stichflamme, Explosion, Wolke weg).
+	 *  Gibt den Schaden zurueck (0 = keine Wolke oder Kombination nicht freigeschaltet). */
+	static float EntzuendeWolke(UWorld* Welt, const FVector& Ort, const class ATDTurretBase* Zuender);
 
 protected:
 	virtual void Feuern(AFGCreature* Ziel) override;

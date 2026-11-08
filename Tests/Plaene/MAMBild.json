@@ -1,0 +1,106 @@
+{
+  "Name": "MAMBild",
+  "_Hinweis": "0.83.1: MAM-Aufbau (Wurzeln, graue Knoten mit Linie, Infokarten) im T2-Spielstand fotografieren. Klickorte der Baumliste werden ausprobiert.",
+  "Spielstand": "Autotest_FicsitTD_T2",
+  "Quelle": "FicsitTD_T2.sav",
+  "ErweiterteEinstellungen": true,
+  "WarteNachLaden": 20,
+  "MaxMinuten": 6,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "oeffne": "MAM"
+    },
+    {
+      "warte": 4
+    },
+    {
+      "foto": "MAM_00_offen"
+    },
+    {
+      "klick": [
+        0.307,
+        0.13
+      ],
+      "_text": "Baumliste y 0.13"
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "MAM_y130"
+    },
+    {
+      "klick": [
+        0.307,
+        0.17
+      ],
+      "_text": "Baumliste y 0.17"
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "MAM_y170"
+    },
+    {
+      "klick": [
+        0.307,
+        0.21
+      ],
+      "_text": "Baumliste y 0.21"
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "MAM_y210"
+    },
+    {
+      "klick": [
+        0.307,
+        0.25
+      ],
+      "_text": "Baumliste y 0.25"
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "MAM_y250"
+    },
+    {
+      "klick": [
+        0.307,
+        0.283
+      ],
+      "_text": "Baumliste y 0.283"
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "MAM_y283"
+    },
+    {
+      "klick": [
+        0.307,
+        0.32
+      ],
+      "_text": "Baumliste y 0.32"
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "MAM_y320"
+    },
+    {
+      "schliesse": true
+    }
+  ]
+}

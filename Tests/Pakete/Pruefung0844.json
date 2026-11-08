@@ -1,0 +1,13 @@
+{
+  "Name": "Pruefung0844",
+  "_Hinweis": "0.84.4: Coupons statt EP (Befehlsausgaben), Kombos als Standard ohne Balance-Schalter, MAM-Kombo-Karten (Fotos), Buendel A als Standard (Basisplaene ohne Ueberschreibung).",
+  "Plaene": [
+    "Grundtest",
+    "Neustart",
+    "MAMBild",
+    "Strat-Gewehr-Tesla",
+    "Strat-Gewehr-Flamme",
+    "Strat-Gewehr-Nobelisk",
+    "Strat-MonoBolzen"
+  ]
+}

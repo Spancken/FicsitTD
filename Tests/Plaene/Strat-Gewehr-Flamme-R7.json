@@ -1,0 +1,285 @@
+{
+  "Name": "Strat-Gewehr-Flamme-R7",
+  "_Hinweis": "0.84 Balance-Kandidat R7 (Simulator 08.11.: 9/11 Ziele). Beste Modellstrategie der Linie Gewehr+Flamme (Nr. 349, Doktrin keine, Stil Level, Kern ja, Gabel Schockbolzen/Zielsuchmunition/GasNobelisk/Kettenblitz/KernSchild): Plan bei der Auswahl 90 % bis W30, Vorhersage 99 %, 11 Türme. Erzeugt von Werkzeuge\\FicsitTD-Simulator\\strategie_plaene.py.",
+  "NeuesSpiel": {
+    "Startort": "Rocky Desert"
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 45,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warte": 15
+    },
+    {
+      "befehl": "td einsatz stop"
+    },
+    {
+      "befehl": "td kern stop"
+    },
+    {
+      "befehl": "td einsatz start normal 50"
+    },
+    {
+      "befehl": "td einsatz frei an"
+    },
+    {
+      "balance": {
+        "Wellen.BossBudget": 0.6,
+        "Munition.Tesla.Schaden": 240,
+        "Munition.Nobelisk.Streu.Schaden": 180,
+        "Munition.Bolzen.Explosivbolzen.Flaechenschaden": 120,
+        "Munition.Bolzen.Streubolzen.Splitterschaden": 55,
+        "Munition.Bolzen.Betaeubungsbolzen.Schaden": 70,
+        "Munition.Nobelisk.Nobelisk.Schaden": 110,
+        "Munition.Nobelisk.Gas.GasSchaden": 15,
+        "Stufen.Normal.GegnerLP": 1.05
+      }
+    },
+    {
+      "stromfrei": true
+    },
+    {
+      "versorgung": {
+        "Bolzenturm": 50,
+        "Gewehrturm": 25,
+        "Nobelisk-Werfer": 15,
+        "Flammenwerfer": 6000
+      }
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 1,
+      "level": 1,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "Strat-Gewehr-Flamme_W00"
+    },
+    {
+      "wellenlauf": 1,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Assembler"
+    },
+    {
+      "aufwerten": "Bolzenturm",
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 1,
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "wellenlauf": 2,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Kupfer"
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 1,
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "wellenlauf": 3,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Giesserei"
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 1,
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "wellenlauf": 4,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Gewehrturm"
+    },
+    {
+      "wellenlauf": 8,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "KernNotrep"
+    },
+    {
+      "erforsche": "KernPanzer"
+    },
+    {
+      "erforsche": "Kohlekraft"
+    },
+    {
+      "erforsche": "Schwefel"
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 2,
+      "level": 2,
+      "rezept": "Recipe_TD_Gun_Standard"
+    },
+    {
+      "wellenlauf": 12,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "BandMk2"
+    },
+    {
+      "erforsche": "Caterium"
+    },
+    {
+      "erforsche": "KernSchild"
+    },
+    {
+      "erforsche": "Turmfertigung2"
+    },
+    {
+      "erforsche": "Zielsuchmunition"
+    },
+    {
+      "aufwerten": "Gewehrturm",
+      "level": 3,
+      "rezept": "Recipe_TD_Gun_Homing"
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 2,
+      "level": 3,
+      "rezept": "Recipe_TD_Gun_Homing"
+    },
+    {
+      "wellenlauf": 16,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Brandmunition"
+    },
+    {
+      "erforsche": "Flammenwerfer"
+    },
+    {
+      "erforsche": "Munitionspuffer"
+    },
+    {
+      "erforsche": "Raffinerie"
+    },
+    {
+      "aufwerten": "Gewehrturm",
+      "level": 3,
+      "rezept": "Recipe_TD_Gun_Brand"
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 1,
+      "level": 3,
+      "rezept": "Recipe_TD_Gun_Brand"
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "Strat-Gewehr-Flamme_W16"
+    },
+    {
+      "wellenlauf": 20,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Turmfertigung3"
+    },
+    {
+      "baue": "Flammenwerfer",
+      "anzahl": 1,
+      "level": 4,
+      "rezept": "Recipe_TD_Flame_Fuel",
+      "ring": "innen"
+    },
+    {
+      "aufwerten": "Gewehrturm",
+      "level": 4,
+      "rezept": "Recipe_TD_Gun_Brand"
+    },
+    {
+      "wellenlauf": 25,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Bauxit"
+    },
+    {
+      "erforsche": "Turbomunition"
+    },
+    {
+      "erforsche": "Turbotreibstoff"
+    },
+    {
+      "aufwerten": "Flammenwerfer",
+      "level": 4,
+      "rezept": "Recipe_TD_Flame_Turbo"
+    },
+    {
+      "baue": "Flammenwerfer",
+      "anzahl": 1,
+      "level": 4,
+      "rezept": "Recipe_TD_Flame_Turbo",
+      "ring": "innen"
+    },
+    {
+      "aufwerten": "Gewehrturm",
+      "level": 4,
+      "rezept": "Recipe_TD_Gun_Turbo"
+    },
+    {
+      "wellenlauf": 30,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "Strat-Gewehr-Flamme_W30"
+    },
+    {
+      "pruefe": "KernLebt",
+      "text": "Kern hat Welle 30 überstanden"
+    },
+    {
+      "pruefe": "Sicherheitsnetze",
+      "text": "kein Sicherheitsnetz ausgelöst (Versetzen, Absturz, 0 LP)"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}

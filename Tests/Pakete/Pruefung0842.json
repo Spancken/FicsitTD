@@ -1,0 +1,6 @@
+{
+  "Name": "Pruefung0842",
+  "_Hinweis": "0.84.2: Hitzeriss und Verpuffung mit passenden Plaenen, Blitzableiter-Optik, Kandidat R8 (R7 ohne Gegner-LP und Nobelisk-Schwaechung), Nachzuegler-Diagnose.",
+  "Plaene": ["Grundtest", "Strat-Gewehr-Tesla-Kombo", "Strat-Gewehr-Flamme-Hitzeriss", "Strat-Gewehr-Nobelisk-Verpuffung",
+             "Strat-Gewehr-Tesla-R8", "Strat-Gewehr-Nobelisk-R8", "Strat-MonoBolzen-R8", "Strat-MonoTesla-R8"]
+}

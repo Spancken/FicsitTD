@@ -43,6 +43,8 @@ protected:
 
 private:
 	void SpawneGeschoss(const FVector& Von, const FVector& Nach) const;
+	/** 0.84.1 Blitzableiter: Bolzen-Geschoss bleibt am Gegner haengen (rein optisch, so lange wie die Markierung) */
+	void ZeigeSteckendenBolzen(AFGCreature* Ziel, const FVector& Von) const;
 	/** Ein Bolzen aus einer Muendung (Level 5: zwei je Zyklus) */
 	void Schuss(AFGCreature* Ziel, const FVector& Muendung, const FTDBolzenWerte& W, float Faktor);
 };

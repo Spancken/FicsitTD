@@ -1,8 +1,8 @@
 {
 	"FileVersion": 3,
-	"Version": 148,
-	"VersionName": "0.83.1",
-	"SemVersion": "0.83.1",
+	"Version": 155,
+	"VersionName": "0.84.6",
+	"SemVersion": "0.84.6",
 	"GameVersion": ">=491125",
 	"FriendlyName": "FICSIT Tower Defense",
 	"Description": "Tower Defense fuer Satisfactory. Machbarkeitstest: Gegnerwellen per /welle spawnen und auf ein Ziel schicken.",
@@ -17,7 +17,7 @@
 	"IsExperimentalVersion": false,
 	"Installed": false,
 	"AcceptsAnyRemoteVersion": false,
-	"RemoteVersionRange": "^0.1.0",
+	"RemoteVersionRange": "^0.84.0",
 	"Modules": [
 		{
 			"Name": "FicsitTD",

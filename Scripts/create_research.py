@@ -175,7 +175,7 @@ BAEUME = [
         ("KernGeschuetz", "Kern-Geschütz", GABEL + "Der Kern schießt selbst: alle 1,5 s ein Bolzen mit 60 Schaden auf den nächsten Gegner in 30 m. Die letzte Linie, kein Ersatz für Türme.",
          (2, 1), ["KernPanzer"], [], ZEIT, [], BOLZEN),
         ("Turmfertigung2", "Turmfertigung II", "Alle Türme können auf Level 3 gebracht werden (im Turmfenster, 15 EP je Turm).",
-         (5, 4), [], [], ZEIT, [], f"{P}/IronPlateReinforced/Desc_IronPlateReinforced"),
+         (2, 4), [], [], ZEIT, [], f"{P}/IronPlateReinforced/Desc_IronPlateReinforced"),
         ("Stachelmauer", "Stachelmauern", "Gegner, die eine Mauer angreifen, nehmen ein Viertel ihres Schadens selbst (mindestens 15).",
          (4, 1), ["MauerMk2"], [], ZEIT, [], f"{P}/SteelPlate/Desc_SteelPlate"),
         ("Turmfertigung3", "Turmfertigung III", "Alle Türme können auf Level 4 gebracht werden (im Turmfenster, 25 EP je Turm). Die Türme der Doktrin bekommen schon Level 5.",
@@ -563,7 +563,23 @@ def herstellungs_karten(b_key, k_key, k_name, rezepte, eltern, icon):
         text = [f"{TITEL[vb]} > {NAMEN[(vb, vk)]}" for vb, vk in vor] + ([f"Erforschbar ab Welle {welle}."] if welle else [])
         icon_vor = next((kk[8] for bb in BAEUME for kk in bb[4] if vor and kk[0] == vor[0][1]), icon)
         karten.append((titel, "\n".join(text), icon_vor))
+    # 0.84.1 Turmkombinationen (Konzept Abschnitt F): auf beiden beteiligten Knoten eine Karte "Kombination: X mit Y".
+    # Erst einschalten, wenn der Modus Kombo.Aktiv Standard wird - sonst beschreibt die Karte etwas, das nicht wirkt.
+    if MIT_KOMBO_KARTEN:
+        for name, knoten_paar, partner, text in KOMBOS:
+            if k_key in knoten_paar:
+                karten.append((f"Kombination: {name} mit {partner[k_key]}", text, icon))
     return karten
+
+MIT_KOMBO_KARTEN = True
+KOMBOS = [
+    ("Verpuffung", ("GasNobelisk", "Flammenwerfer"), {"GasNobelisk": "Flammenwerfer", "Flammenwerfer": "Gas-Nobelisk"},
+     "Trifft die Flamme eine Gaswolke, entzündet sie sich: Das restliche Gas verpufft auf einen Schlag als Explosion (anderthalbfacher Gasschaden), die Wolke ist weg. Erkennbar an der Stichflamme."),
+    ("Blitzableiter", ("Teslaspule",), {"Teslaspule": "Bolzenturm"},
+     "Bolzen stecken einige Sekunden im Gegner. Der Tesla-Blitz springt bevorzugt auf solche Gegner, ungeschwächt und einmal weiter. Erkennbar am steckenden Bolzen und blauen Funken."),
+    ("Hitzeriss", ("Flammenwerfer",), {"Flammenwerfer": "Bolzen- und Gewehrturm"},
+     "Brennender Panzer wird spröde: Kugeln und Bolzen ignorieren solange die Panzerung (z. B. der Hogs). Erkennbar am orangen Funken."),
+]
 
 def _knoten_baum(k_key):
     return next(((bb[0], k_key) for bb in BAEUME for kk in bb[4] if kk[0] == k_key), None)

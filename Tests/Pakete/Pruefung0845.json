@@ -1,0 +1,11 @@
+{
+  "Name": "Pruefung0845",
+  "_Hinweis": "0.84.5: Spawnprobe ohne Teilpfade (Nachzuegler 'Weg VERSPERRT' sollen verschwinden, Logzeile 'Spawnprobe'). Zugleich zweiter Lauf der neuen Standardwerte.",
+  "Plaene": [
+    "Grundtest",
+    "Strat-Gewehr-Tesla",
+    "Strat-Gewehr-Flamme",
+    "Strat-Gewehr-Nobelisk",
+    "Strat-MonoBolzen"
+  ]
+}

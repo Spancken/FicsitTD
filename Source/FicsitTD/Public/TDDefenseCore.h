@@ -71,6 +71,10 @@ public:
 	bool mEinsatzFrei = false;
 	UPROPERTY(SaveGame)
 	bool mEinsatzStartkit = false;
+	/** 0.84 (Marius 08.11.: gleiche Kernplaetze ergeben gleiche Wellen): Zufallszahl je Einsatz fuer den Wellenplan,
+	 *  0 = keine Variation (Standard, Balance Wellen.VariationJeEinsatz = 0) */
+	UPROPERTY(SaveGame)
+	int32 mLaufSaat = 0;
 	/** Einsatzpunkte (Konto) und gekaufte Kontingente je Schluessel (Anzahl Kaeufe) */
 	UPROPERTY(SaveGame)
 	int32 mEinsatzPunkte = 0;

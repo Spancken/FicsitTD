@@ -2,15 +2,8 @@
   "Name": "Strategie",
   "_Hinweis": "Beste Modellstrategie je Linie als fester Plan bis W30 (Balance-Kreislauf 3.3).",
   "Plaene": [
-    "Strat-MonoBolzen",
-    "Strat-MonoGewehr",
-    "Strat-MonoNobelisk",
-    "Strat-MonoTesla",
-    "Strat-MonoFlamme",
-    "Strat-MonoBolzen",
-    "Strat-MonoGewehr",
-    "Strat-MonoNobelisk",
-    "Strat-MonoTesla",
-    "Strat-MonoFlamme"
+    "Strat-Gewehr-Tesla",
+    "Strat-Gewehr-Flamme",
+    "Strat-Gewehr-Nobelisk"
   ]
 }

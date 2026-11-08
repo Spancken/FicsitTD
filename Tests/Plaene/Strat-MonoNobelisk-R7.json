@@ -1,0 +1,238 @@
+{
+  "Name": "Strat-MonoNobelisk-R7",
+  "_Hinweis": "0.84 Balance-Kandidat R7 (Simulator 08.11.: 9/11 Ziele). Beste Modellstrategie der Linie Mono Nobelisk (Nr. 100, Doktrin keine, Stil Tuerme, Kern ja, Gabel Schockbolzen/Zielsuchmunition/PulsNobelisk/Ueberlast/KernSchild): Plan bei der Auswahl 95 % bis W30, Vorhersage 98 %, 15 Türme. Erzeugt von Werkzeuge\\FicsitTD-Simulator\\strategie_plaene.py.",
+  "NeuesSpiel": {
+    "Startort": "Rocky Desert"
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 45,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warte": 15
+    },
+    {
+      "befehl": "td einsatz stop"
+    },
+    {
+      "befehl": "td kern stop"
+    },
+    {
+      "befehl": "td einsatz start normal 50"
+    },
+    {
+      "befehl": "td einsatz frei an"
+    },
+    {
+      "balance": {
+        "Wellen.BossBudget": 0.6,
+        "Munition.Tesla.Schaden": 240,
+        "Munition.Nobelisk.Streu.Schaden": 180,
+        "Munition.Bolzen.Explosivbolzen.Flaechenschaden": 120,
+        "Munition.Bolzen.Streubolzen.Splitterschaden": 55,
+        "Munition.Bolzen.Betaeubungsbolzen.Schaden": 70,
+        "Munition.Nobelisk.Nobelisk.Schaden": 110,
+        "Munition.Nobelisk.Gas.GasSchaden": 15,
+        "Stufen.Normal.GegnerLP": 1.05
+      }
+    },
+    {
+      "stromfrei": true
+    },
+    {
+      "versorgung": {
+        "Bolzenturm": 50,
+        "Gewehrturm": 25,
+        "Nobelisk-Werfer": 15,
+        "Flammenwerfer": 6000
+      }
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 1,
+      "level": 1,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "Strat-MonoNobelisk_W00"
+    },
+    {
+      "wellenlauf": 1,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Assembler"
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 1,
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "wellenlauf": 2,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Kupfer"
+    },
+    {
+      "wellenlauf": 3,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Giesserei"
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 1,
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "wellenlauf": 4,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Schwefel"
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 2,
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "wellenlauf": 8,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "KernNotrep"
+    },
+    {
+      "erforsche": "KernPanzer"
+    },
+    {
+      "erforsche": "Kohlekraft"
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 2,
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "wellenlauf": 12,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "KernSchild"
+    },
+    {
+      "erforsche": "NobeliskWerfer"
+    },
+    {
+      "erforsche": "Quarz"
+    },
+    {
+      "erforsche": "Turmfertigung2"
+    },
+    {
+      "baue": "Nobelisk-Werfer",
+      "anzahl": 2,
+      "level": 3,
+      "rezept": "Recipe_TD_Nobelisk_Explosive"
+    },
+    {
+      "wellenlauf": 16,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Munitionspuffer"
+    },
+    {
+      "erforsche": "PulsNobelisk"
+    },
+    {
+      "erforsche": "Raffinerie"
+    },
+    {
+      "baue": "Nobelisk-Werfer",
+      "anzahl": 1,
+      "level": 3,
+      "rezept": "Recipe_TD_Nobelisk_Pulse"
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "Strat-MonoNobelisk_W16"
+    },
+    {
+      "wellenlauf": 20,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Turmfertigung3"
+    },
+    {
+      "baue": "Nobelisk-Werfer",
+      "anzahl": 3,
+      "level": 4,
+      "rezept": "Recipe_TD_Nobelisk_Pulse"
+    },
+    {
+      "wellenlauf": 25,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "StreuNobelisk"
+    },
+    {
+      "baue": "Nobelisk-Werfer",
+      "anzahl": 2,
+      "level": 4,
+      "rezept": "Recipe_TD_Nobelisk_Pulse"
+    },
+    {
+      "wellenlauf": 30,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "Strat-MonoNobelisk_W30"
+    },
+    {
+      "pruefe": "KernLebt",
+      "text": "Kern hat Welle 30 überstanden"
+    },
+    {
+      "pruefe": "Sicherheitsnetze",
+      "text": "kein Sicherheitsnetz ausgelöst (Versetzen, Absturz, 0 LP)"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}

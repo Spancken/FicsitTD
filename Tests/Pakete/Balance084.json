@@ -1,0 +1,23 @@
+{
+  "Name": "Balance084",
+  "_Hinweis": "0.84: Kandidat R7 auf drei Gewehr-Paaren und drei Mono-Linien bis W30; Vergleich mit Kombo084 (ohne Kombo) und Nachweis0831.",
+  "Plaene": [
+    "Strat-Gewehr-Tesla-R7",
+    "Strat-Gewehr-Flamme-R7",
+    "Strat-Gewehr-Nobelisk-R7",
+    "Strat-MonoBolzen-R7",
+    "Strat-MonoNobelisk-R7",
+    "Strat-MonoTesla-R7"
+  ],
+  "R7": {
+    "Wellen.BossBudget": 0.6,
+    "Munition.Tesla.Schaden": 240,
+    "Munition.Nobelisk.Streu.Schaden": 180,
+    "Munition.Bolzen.Explosivbolzen.Flaechenschaden": 120,
+    "Munition.Bolzen.Streubolzen.Splitterschaden": 55,
+    "Munition.Bolzen.Betaeubungsbolzen.Schaden": 70,
+    "Munition.Nobelisk.Nobelisk.Schaden": 110,
+    "Munition.Nobelisk.Gas.GasSchaden": 15,
+    "Stufen.Normal.GegnerLP": 1.05
+  }
+}

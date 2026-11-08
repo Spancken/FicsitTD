@@ -1627,6 +1627,7 @@ int32 UTDWaveSubsystem::SpawneGruppe(TSubclassOf<AFGCreature> Klasse, int32 Anza
 	// Weg Front -> Kern einmal je Gruppe (ohne Wasser); ihm folgen die Gehirne
 	const TArray<FVector> Weg = VorWeg ? *VorWeg : UTDGegnerHirn::BerechneWeg(World, FrontOrt, mKern.Get());
 	int32 Gespawnt = 0;
+	int32 ProbeAbgelehnt = 0, AnDerFront = 0, FrontNichtAufNetz = 0;
 	for (int32 i = 0; i < Anzahl; ++i)
 	{
 		// Spawnfeld: quer zur Angriffsrichtung verteilt (Wellen.SpawnBreite, Marius 03.11.2026), bevorzugt ein erreichbarer Punkt des Netzes
@@ -1640,6 +1641,11 @@ int32 UTDWaveSubsystem::SpawneGruppe(TSubclassOf<AFGCreature> Klasse, int32 Anza
 		ANavigationData* NavDaten = Nav ? Nav->GetDefaultNavDataInstance(FNavigationSystem::DontCreate) : nullptr;
 		const FSharedConstNavQueryFilter Filter = NavDaten ? UNavigationQueryFilter::GetQueryFilter(*NavDaten, this, UTDNavFilter::StaticClass()) : nullptr;
 		bool bTrocken = false;
+		// 0.84.6 (Pruefung0845: oft alle 6 Proben verworfen, die 4 Versuche danach ungeprueft wieder auf der Insel): Ziel der Probe ist
+		// die aufs Netz gesetzte Front (die Abfrage verlangt einen begehbaren Endpunkt), und jeder Versuch wird geprueft.
+		FNavLocation FrontNav;
+		const bool bFrontAufNetz = NavDaten && Nav->ProjectPointToNavigation(FrontOrt, FrontNav, FVector(800.f, 800.f, 600.f), NavDaten, Filter);
+		FrontNichtAufNetz += bFrontAufNetz ? 0 : 1;
 		for (int32 Versuch = 0; Versuch < 10 && Nav && !bTrocken; ++Versuch)
 		{
 			const FVector& Mittelpunkt = Versuch < 6 ? Teilort : FrontOrt;
@@ -1648,6 +1654,19 @@ int32 UTDWaveSubsystem::SpawneGruppe(TSubclassOf<AFGCreature> Klasse, int32 Anza
 			bTrocken = Nav->GetRandomReachablePointInRadius(Mittelpunkt, Versuch < 6 ? 1000.f : 1500.f, NavOrt, NavDaten, Filter)
 				&& FMath::Abs(NavOrt.Location.Z - FrontOrt.Z) <= TDBalance::Wert(TEXT("Wellen.SpawnHoehe"), 4.f) * 100.f
 				&& !PunktImWasser(World, NavOrt.Location);
+			// 0.84.3 Ursache der Nachzuegler am Frontstart (Pruefung0842, Hirn-Diagnose: 85 von 479 standen am Start der Front
+			// Suedosten mit "Weg VERSPERRT", Rest wenige Meter): "erreichbar" galt nur vom seitlich versetzten Suchpunkt aus. Lag der
+			// auf einem abgeschnittenen Stueck Netz (Felsabsatz), erschien der Gegner dort und kam nie vom Fleck. Jetzt muss der
+			// Punkt auch die Front selbst erreichen (deren Weg zum Kern ist bei der Wahl geprueft); schneller Grobtest.
+			if (bTrocken && bFrontAufNetz)
+			{
+				// 0.84.4 (Pruefung0843: weiter 92 Nachzuegler "Weg VERSPERRT" an einer Stelle): FPathFindingQuery erlaubt von Haus aus
+				// Teilpfade, der Test war damit fast immer wahr. Jetzt nur ein vollstaendiger Weg, genau statt grob.
+				FPathFindingQuery Probe(this, *NavDaten, NavOrt.Location, FrontNav.Location, Filter);
+				Probe.SetAllowPartialPaths(false);
+				bTrocken = Nav->TestPathSync(Probe, EPathFindingMode::Regular);
+				ProbeAbgelehnt += bTrocken ? 0 : 1;
+			}
 		}
 		if (bTrocken)
 		{
@@ -1657,6 +1676,7 @@ int32 UTDWaveSubsystem::SpawneGruppe(TSubclassOf<AFGCreature> Klasse, int32 Anza
 		{
 			// die Front selbst ist bei der Wahl als trocken geprueft (FrontenFuer)
 			Ort = FrontOrt + FVector(0, 0, 150.f);
+			++AnDerFront;
 		}
 		else
 		{
@@ -1708,6 +1728,10 @@ int32 UTDWaveSubsystem::SpawneGruppe(TSubclassOf<AFGCreature> Klasse, int32 Anza
 		mGegner.Add(G);
 		++Gespawnt;
 	}
+	if (ProbeAbgelehnt > 0 || AnDerFront > 0 || FrontNichtAufNetz > 0)
+	{
+		UE_LOG(LogFicsitTD, Log, TEXT("Spawnprobe: %s x%d, %d Punkte ohne vollen Weg zur Front verworfen, %d an der Front selbst, Front %d-mal nicht auf dem Netz"), *Klasse->GetName(), Anzahl, ProbeAbgelehnt, AnDerFront, FrontNichtAufNetz);
+	}
 	return Gespawnt;
 }
 
@@ -1718,10 +1742,17 @@ TArray<FTDPlanGruppe> UTDWaveSubsystem::PlanFuer(int32 Nummer, int32& OutArt) co
 	const ATDDefenseCore* Kern = mKern.Get();
 	const FVector Ort = Kern ? Kern->GetActorLocation() : FVector::ZeroVector;
 	const uint32 Saat = HashCombine(HashCombine(GetTypeHash(FIntVector(FMath::RoundToInt(Ort.X / 100.f), FMath::RoundToInt(Ort.Y / 100.f), 0)), GetTypeHash(mStufe)), GetTypeHash(Nummer));
-	FRandomStream Zufall(static_cast<int32>(Saat));
+	// 0.84: optional je Einsatz verschieden (ATDDefenseCore::mLaufSaat, Balance Wellen.VariationJeEinsatz)
+	FRandomStream Zufall(static_cast<int32>(Kern && Kern->mLaufSaat ? HashCombine(Saat, GetTypeHash(Kern->mLaufSaat)) : Saat));
 	const FTDStufe& S = GetStufe(mStufe);
 	int32 Budget = FMath::Max(2, FMath::RoundToInt(S.Budget * (TDBalance::Wert(TEXT("Wellen.BudgetGrund"), 4.f)
 		+ TDBalance::Wert(TEXT("Wellen.BudgetJeWelle"), 2.5f) * Nummer + TDBalance::Wert(TEXT("Wellen.BudgetQuadrat"), 0.12f) * Nummer * Nummer)));
+	// 0.84 (Pruefstand 08.11.: die meisten Linien fielen am ersten Boss in W10): Bosswellen mit weniger Begleitern, der Boss ist
+	// der Hoehepunkt der Welle. Wellen.BossBudget = Anteil des normalen Budgets (1 = wie bis 0.83)
+	if (Nummer % 10 == 0)
+	{
+		Budget = FMath::Max(2, FMath::RoundToInt(Budget * TDBalance::Wert(TEXT("Wellen.BossBudget"), 1.f)));
+	}
 	// T5: Gesamtzahl je Welle; gleichzeitig lebende begrenzt der Nachschub (Wellen.MaxGleichzeitig)
 	const int32 MaxGegner = TDBalance::Ganz(TEXT("Wellen.MaxGesamt"), 2 * KernMaxGegner);
 	// Wellenart: Ansturm, Panzer, Gemischt, Fernkampf, Schwarm im Wechsel
@@ -2596,7 +2627,7 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 	}
 	if ((mWelle + 1) % 10 == 0)
 	{
-		Ansage(FString::Printf(TEXT("WARNUNG: Welle %d ist ein BOSSKAMPF (%s). Verteidigung bündeln - danach gibt es Extra-Einsatzpunkte."), mWelle + 1,
+		Ansage(FString::Printf(TEXT("WARNUNG: Welle %d ist ein BOSSKAMPF (%s). Verteidigung bündeln - danach gibt es Extra-Coupons."), mWelle + 1,
 			KernPhasen[((mWelle + 1) / 10 - 1) % KernPhasenAnzahl].BossName));
 	}
 	// Wellen-Progression: zur Mitte einer Phase die naechste Familie ankuendigen, damit man Fabrik und Forschung vorbereitet
@@ -2611,9 +2642,15 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 void UTDWaveSubsystem::PruefeNachzuegler(FTDWellenGegner& G, float Abstand, float DeltaTime)
 {
 	// Test 0.56 W14: vier Gegner standen 3 min 250 m vor dem Kern (ohne Weg kein Versetzen im Hirn), die Welle endete nie
-	if (G.BesterAbstand < 0.f || Abstand < G.BesterAbstand - 500.f)
+	// 0.84 (Nachweis0831: 363 Nachzuegler im W50-Lauf, fast alle langsame Spucker und Klippen-Hogs 140-190 m vor dem Kern): der
+	// Fortschritt wurde als Luftlinie zum Kern gemessen. Die Frontwege machen Umwege (325 m Weg bei 250 m Abstand); wer laenger
+	// als 25 s quer zum Kern laeuft, kam nicht naeher und wurde versetzt, obwohl er lief. Gemessen wird jetzt der Restweg auf
+	// dem Weg des Hirns; nur ohne Weg die Luftlinie.
+	const UTDGegnerHirn* WegHirn = UTDGegnerHirn::Von(G.Kreatur.Get());
+	const float Mass = WegHirn && WegHirn->GetRestweg() > 0.f ? WegHirn->GetRestweg() : Abstand;
+	if (G.BesterAbstand < 0.f || Mass < G.BesterAbstand - 500.f)
 	{
-		G.BesterAbstand = Abstand;
+		G.BesterAbstand = Mass;
 		G.Still = 0.f;
 		return;
 	}
@@ -2629,10 +2666,11 @@ void UTDWaveSubsystem::PruefeNachzuegler(FTDWellenGegner& G, float Abstand, floa
 	// 0.83.1: wer im Stau hinter einem Wellengegner wartet, ebenfalls nicht (das Hirn versetzt ihn nach Gegner.StauGeduld selbst)
 	if (Abstand < 4000.f || (Hirn && (Hirn->GetPhase() != ETDHirnPhase::Marsch || Hirn->StehtImStau())))
 	{
-		G.BesterAbstand = Abstand;
+		G.BesterAbstand = Mass;
 		return;
 	}
 	const FVector Vorher = Kreatur->GetActorLocation();
+	const FString HirnZustand = Hirn ? Hirn->Diagnose() : FString();
 	if (++G.Rettungen > TDBalance::Ganz(TEXT("Wellen.NachzueglerVersuche"), 3))
 	{
 		UE_LOG(LogFicsitTD, Log, TEXT("Nachzuegler: %s bei %s (%.0f m vor dem Kern) nach %d Versuchen entfernt"), *Kreatur->GetClass()->GetName(),
@@ -2697,10 +2735,13 @@ void UTDWaveSubsystem::PruefeNachzuegler(FTDWellenGegner& G, float Abstand, floa
 	{
 		Hirn->Neustart(Kreatur, Bester ? *Bester : TArray<FVector>());
 	}
-	G.BesterAbstand = FVector::Dist2D(Kreatur->GetActorLocation(), KernOrt);
-	UE_LOG(LogFicsitTD, Log, TEXT("Nachzuegler: %s hing %.0f m vor dem Kern bei %s, Versuch %d: %s nach %s (%s)"), *Kreatur->GetClass()->GetName(),
+	// 0.84: nach dem Versetzen neu messen (Restweg, sobald das Hirn seinen Fortschritt neu bestimmt hat; bis dahin Luftlinie)
+	G.BesterAbstand = -1.f;
+	// 0.84.1 Ursachensuche (Kombo084: 329 Nachzuegler im W50-Lauf, 440 davon 175-200 m vor dem Kern, gehaeuft am Startpunkt der Front
+	// Suedosten): Zustand des Hirns vor dem Versetzen mitschreiben (Weg, Restweg, Tempo, Bewegungsart, Ziel)
+	UE_LOG(LogFicsitTD, Log, TEXT("Nachzuegler: %s hing %.0f m vor dem Kern bei %s, Versuch %d: %s nach %s (%s) | Mass %.0f m, Hirn: %s"), *Kreatur->GetClass()->GetName(),
 		Abstand / 100.f, *Vorher.ToCompactString(), G.Rettungen, bVersetzt ? TEXT("versetzt") : TEXT("NICHT versetzt"), *Ziel.ToCompactString(),
-		bGefunden ? TEXT("auf dem Frontweg") : TEXT("Richtung Kern"));
+		bGefunden ? TEXT("auf dem Frontweg") : TEXT("Richtung Kern"), Mass / 100.f, HirnZustand.IsEmpty() ? TEXT("keins") : *HirnZustand);
 }
 
 void UTDWaveSubsystem::EntschaerfeLogistik(const FVector& Mitte)

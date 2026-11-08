@@ -101,7 +101,9 @@ void ATDTeslaCoil::Feuern(AFGCreature* Ziel)
 	AFGCreature* Aktuell = Ziel;
 	float Schaden = TeslaSchaden() * SchadenBonus() * TeslaUeberlast(this);
 	const int32 Ziele = TeslaZieleMit(this, TeslaZiele() + FMath::RoundToInt(LevelWert(TEXT("Spruenge"))));
-	for (int32 i = 0; i < Ziele && Aktuell; ++i)
+	const bool bBlitzableiter = TDKombo::Aktiv(this, TEXT("Blitzableiter"));
+	int32 ZusatzZiele = 0;   // je Blitzableiter ein Sprung mehr, hoechstens TeslaBlitzVorrat Blitze
+	for (int32 i = 0; i < FMath::Min(Ziele + ZusatzZiele, TeslaBlitzVorrat) && Aktuell; ++i)
 	{
 		const FVector Nach = Aktuell->GetActorLocation();
 		ZeigeBlitz(i, Von, Nach);
@@ -119,9 +121,34 @@ void ATDTeslaCoil::Feuern(AFGCreature* Ziel)
 				Naechstes = F;
 			}
 		}
+		// 0.84 Blitzableiter: steckende Bolzen sind Metall im Gegner - der Blitz springt weiter und bevorzugt dorthin, ohne Schwaechung
+		bool bLeiter = false;
+		if (bBlitzableiter)
+		{
+			float BestLeiter = FMath::Square(TeslaSprungweite() * TDBalance::Wert(TEXT("Kombo.Blitzableiter.Reichweite"), 1.5f));
+			for (AFGCreature* F : Feinde)
+			{
+				const float D = FVector::DistSquared(F->GetActorLocation(), Nach);
+				if (!Getroffen.Contains(F) && D < BestLeiter && TDKombo::HatBolzen(this, F))
+				{
+					BestLeiter = D;
+					Naechstes = F;
+					bLeiter = true;
+				}
+			}
+		}
 		Von = Nach;
 		Aktuell = Naechstes;
-		Schaden *= TDBalance::Wert(TEXT("Munition.Tesla.SprungFaktor"), 0.5f);
+		if (bLeiter)
+		{
+			TDKombo::Melde(TEXT("Blitzableiter"), this, Schaden);
+			ZeigeLeuchten(Naechstes->GetActorLocation() + FVector(0.f, 0.f, 80.f), FLinearColor(0.5f, 0.8f, 1.f), 0.8f, 0.3f);
+			++ZusatzZiele;
+		}
+		else
+		{
+			Schaden *= TDBalance::Wert(TEXT("Munition.Tesla.SprungFaktor"), 0.5f);
+		}
 	}
 	mBlitzRest = TeslaBlitzDauer;
 	mNachgluehen = 1.f;

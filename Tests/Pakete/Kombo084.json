@@ -1,0 +1,14 @@
+{
+  "Name": "Kombo084",
+  "_Hinweis": "0.84: Turmkombinationen A/B je Gewehr-Paar bis W30 (ohne/mit Kombo.Aktiv), Nachzuegler-Fix (Restweg), aufwerten in den Plaenen. Etwa 1 h. Dazu MonoTesla bis W50 als Gegenprobe zum Nachzuegler-Fix (Nachweis0831: 363 versetzt).",
+  "Plaene": [
+    "Grundtest",
+    "Strat-Gewehr-Tesla",
+    "Strat-Gewehr-Tesla-Kombo",
+    "Strat-Gewehr-Flamme",
+    "Strat-Gewehr-Flamme-Kombo",
+    "Strat-Gewehr-Nobelisk",
+    "Strat-Gewehr-Nobelisk-Kombo",
+    "Strat-MonoTesla-Vor-W50"
+  ]
+}

@@ -24,7 +24,7 @@ namespace TDBalanceIntern
 		{ TEXT("Stufen.Erkundung.EliteAbWelle"), 15.f }, { TEXT("Stufen.Erkundung.KernLP"), 30000.f },
 		{ TEXT("Stufen.Normal.Budget"), 1.0f }, { TEXT("Stufen.Normal.GegnerLP"), 1.0f }, { TEXT("Stufen.Normal.AufbauSekunden"), 1200.f },
 		{ TEXT("Stufen.Normal.PauseSekunden"), 600.f }, { TEXT("Stufen.Normal.FrontenStart"), 1.f }, { TEXT("Stufen.Normal.NeueFrontAbWelle"), 11.f },
-		{ TEXT("Stufen.Normal.EliteAbWelle"), 10.f }, { TEXT("Stufen.Normal.KernLP"), 20000.f },
+		{ TEXT("Stufen.Normal.EliteAbWelle"), 13.f }, { TEXT("Stufen.Normal.KernLP"), 20000.f },
 		{ TEXT("Stufen.Hart.Budget"), 2.0f }, { TEXT("Stufen.Hart.GegnerLP"), 1.6f }, { TEXT("Stufen.Hart.AufbauSekunden"), 900.f },
 		{ TEXT("Stufen.Hart.PauseSekunden"), 480.f }, { TEXT("Stufen.Hart.FrontenStart"), 1.f }, { TEXT("Stufen.Hart.NeueFrontAbWelle"), 8.f },
 		{ TEXT("Stufen.Hart.EliteAbWelle"), 7.f }, { TEXT("Stufen.Hart.KernLP"), 15000.f },
@@ -42,15 +42,16 @@ namespace TDBalanceIntern
 		{ TEXT("Wellen.BossAlphaAnzahl"), 3.f }, { TEXT("Wellen.BossAlphaLP"), 4.f }, { TEXT("Wellen.BossJohnnyLP"), 2.f },
 
 		// ---- Wellen-Progression (Wellen-Progression.md): Einfuehrungswelle je Art, Gewicht der Familie der laufenden Phase, Bosse je Phase ----
-		{ TEXT("Katalog.Hog.AbWelle"), 1.f },
+		// 0.84.4 Buendel A (Review 08.11., Pruefung0843 je 2 Laeufe: Kernverlust -13 bis -29 %): W1 glatter, W11 entzerrt, Boss W10 leichter, Klippen-Hog W7 (Marius)
+		{ TEXT("Katalog.Hog.AbWelle"), 0.f },
 		{ TEXT("Katalog.AlphaHog.AbWelle"), 5.f },
-		{ TEXT("Katalog.StingerKlein.AbWelle"), 11.f },
+		{ TEXT("Katalog.StingerKlein.AbWelle"), 13.f },
 		{ TEXT("Katalog.Stinger.AbWelle"), 15.f },
 		{ TEXT("Katalog.Spucker.AbWelle"), 21.f },
-		{ TEXT("Katalog.RoterSpucker.AbWelle"), 24.f },
-		{ TEXT("Katalog.AlphaSpucker.AbWelle"), 26.f },
-		{ TEXT("Katalog.RoterAlphaSpucker.AbWelle"), 28.f },
-		{ TEXT("Katalog.KlippenHog.AbWelle"), 31.f },
+		{ TEXT("Katalog.RoterSpucker.AbWelle"), 25.f },
+		{ TEXT("Katalog.AlphaSpucker.AbWelle"), 28.f },
+		{ TEXT("Katalog.RoterAlphaSpucker.AbWelle"), 34.f },
+		{ TEXT("Katalog.KlippenHog.AbWelle"), 7.f },
 		{ TEXT("Katalog.WuestenSpucker.AbWelle"), 33.f },
 		{ TEXT("Katalog.WuestenAlpha.AbWelle"), 35.f },
 		{ TEXT("Katalog.WasserSpucker.AbWelle"), 36.f },
@@ -59,7 +60,7 @@ namespace TDBalanceIntern
 		{ TEXT("Katalog.NuklearHog.AbWelle"), 41.f },
 		{ TEXT("Katalog.Johnny.AbWelle"), 46.f },
 		{ TEXT("Katalog.PhasenGewicht"), 3.f },
-		{ TEXT("Phasen.1.BossAnzahl"), 1.f }, { TEXT("Phasen.1.BossLP"), 10.0f }, { TEXT("Phasen.2.BossAnzahl"), 1.f }, { TEXT("Phasen.2.BossLP"), 25.0f }, { TEXT("Phasen.3.BossAnzahl"), 1.f }, { TEXT("Phasen.3.BossLP"), 15.0f }, { TEXT("Phasen.4.BossAnzahl"), 1.f }, { TEXT("Phasen.4.BossLP"), 15.0f }, { TEXT("Phasen.5.BossAnzahl"), 2.f }, { TEXT("Phasen.5.BossLP"), 2.0f },
+		{ TEXT("Phasen.1.BossAnzahl"), 1.f }, { TEXT("Phasen.1.BossLP"), 8.0f }, { TEXT("Phasen.2.BossAnzahl"), 1.f }, { TEXT("Phasen.2.BossLP"), 25.0f }, { TEXT("Phasen.3.BossAnzahl"), 1.f }, { TEXT("Phasen.3.BossLP"), 15.0f }, { TEXT("Phasen.4.BossAnzahl"), 1.f }, { TEXT("Phasen.4.BossLP"), 15.0f }, { TEXT("Phasen.5.BossAnzahl"), 2.f }, { TEXT("Phasen.5.BossLP"), 2.0f },
 
 		// ---- Gegner (Gehirn): Schaden je Angriff, Sekunden zwischen Angriffen, Lauftempo m/s, Angriffsreichweite m ----
 		{ TEXT("Gegner.Hog.Schaden"), 30.f }, { TEXT("Gegner.Hog.Takt"), 1.5f }, { TEXT("Gegner.Hog.Tempo"), 7.5f }, { TEXT("Gegner.Hog.Reichweite"), 3.5f },
@@ -276,7 +277,9 @@ namespace TDBalanceIntern
 		// Spielstand vor und nach jeder Welle (FicsitTD_W05_Start / _Ende), 0 = aus
 		{ TEXT("Lauf.Spielstaende"), 1.f },
 		// Abstand von der Kernmitte (m), ab dem ein Gegner zusaetzlich zur eigenen Reichweite den Kern angreift (Tiefbohrer 0.61: Sockel 4,1 m)
-		{ TEXT("Kern.AngriffsAbstand"), 6.f }, { TEXT("Gegner.AbsturzGrenze"), 150.f }, { TEXT("Wellen.SpawnHoehe"), 4.f }, { TEXT("Gegner.Abgrund"), 6.f }, { TEXT("Gegner.StauGeduld"), 40.f }, { TEXT("Gegner.BewuchsRaeumen"), 4.f }, { TEXT("Wellen.WegRaeumen"), 3.f }, { TEXT("Treffer.Rundungsrest"), 0.01f },
+		{ TEXT("Kern.AngriffsAbstand"), 6.f }, { TEXT("Gegner.AbsturzGrenze"), 150.f }, { TEXT("Wellen.SpawnHoehe"), 4.f }, { TEXT("Gegner.Abgrund"), 6.f }, { TEXT("Gegner.StauGeduld"), 40.f }, { TEXT("Wellen.VariationJeEinsatz"), 0.f }, { TEXT("Wellen.BossBudget"), 0.6f },
+		{ TEXT("Kombo.Aktiv"), 1.f }, { TEXT("Kombo.Verpuffung.Faktor"), 1.5f }, { TEXT("Kombo.Blitzableiter.Dauer"), 5.f },
+		{ TEXT("Kombo.Blitzableiter.Reichweite"), 1.5f }, { TEXT("Kombo.Hitzeriss.Dauer"), 3.f }, { TEXT("Gegner.BewuchsRaeumen"), 4.f }, { TEXT("Wellen.WegRaeumen"), 3.f }, { TEXT("Treffer.Rundungsrest"), 0.01f },
 		// 0.79 Breite Front (Option, Standard aus - Marius 06.11.: technisch vorhanden, jetzige Spielversion unveraendert)
 		{ TEXT("Wellen.BreiteFront"), 0.f }, { TEXT("Wellen.BreiteVersatz"), 12.f }, { TEXT("Wellen.BreiteTempo"), 0.12f },
 		{ TEXT("Wellen.BreiteKern"), 40.f }, { TEXT("Wellen.BreiteAbstand"), 4.f }, { TEXT("Wellen.BreiteAbstandGewicht"), 0.6f }, { TEXT("Gegner.AngriffHoehe"), 12.f }, { TEXT("Kern.Gedraenge"), 16.f }, { TEXT("Kern.GedraengeSekunden"), 3.f },

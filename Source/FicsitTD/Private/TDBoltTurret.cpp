@@ -6,6 +6,8 @@
 #include "Engine/World.h"
 #include "Equipment/FGAmmoTypeProjectile.h"
 #include "FGProjectile.h"
+#include "FGProjectileMovementComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "Kismet/GameplayStatics.h"
 
 /** Level 5 Doppellauf (0.64): zweiter Lauf neben dem ersten, Versatz im Kanzel-Raum (Modelle\TD_BoltTurret_Stufen.blend) */
@@ -59,6 +61,42 @@ FTDBolzenWerte ATDBoltTurret::WerteFuer(const UClass* MunitionsKlasse)
 		W.SplitterRadius = TDBalance::Wert(V + TEXT("Splitterradius"), 6.f) * 100.f;
 	}
 	return W;
+}
+
+void ATDBoltTurret::ZeigeSteckendenBolzen(AFGCreature* Ziel, const FVector& Von) const
+{
+	if (!Ziel || UTDWaveSubsystem::bStressOhneGeschoss || TDBalance::Wert(TEXT("Leistung.Geschosse"), 1.f) < 0.5f)
+	{
+		return;
+	}
+	UClass* Standard = LoadClass<UFGItemDescriptor>(nullptr, TurmStandardBolzen);
+	const UFGAmmoTypeProjectile* Typ = Cast<UFGAmmoTypeProjectile>(Standard ? Standard->GetDefaultObject() : nullptr);
+	if (!Typ || !Typ->GetProjectileClass())
+	{
+		return;
+	}
+	// Einstichpunkt: Koerpermitte, um den halben Kapselradius zum Turm hin versetzt; Spitze zeigt in Flugrichtung
+	const FVector Mitte = Ziel->GetActorLocation();
+	const FVector Richtung = (Mitte - Von).GetSafeNormal();
+	const float Radius = Ziel->GetCapsuleComponent() ? Ziel->GetCapsuleComponent()->GetScaledCapsuleRadius() : 50.f;
+	const FTransform Ort(Richtung.Rotation(), Mitte - Richtung * Radius * 0.6f);
+	AFGProjectile* Bolzen = GetWorld()->SpawnActorDeferred<AFGProjectile>(Typ->GetProjectileClass(), Ort, const_cast<ATDBoltTurret*>(this), nullptr,
+		ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+	if (!Bolzen)
+	{
+		return;
+	}
+	Bolzen->SetImpactDamageTypes({});
+	Bolzen->SetEndOfLifeDamageTypes({});
+	UGameplayStatics::FinishSpawningActor(Bolzen, Ort);
+	Bolzen->SetActorEnableCollision(false);
+	if (UActorComponent* Flug = Bolzen->GetProjectileMovement())
+	{
+		Flug->Deactivate();
+	}
+	Bolzen->SetActorScale3D(FVector(FMath::Clamp(TDBalance::Wert(TEXT("Tuerme.Bolzenturm.GeschossGroesse"), 3.f), 0.5f, 8.f) * 0.8f));
+	Bolzen->AttachToActor(Ziel, FAttachmentTransformRules::KeepWorldTransform);
+	Bolzen->SetLifeSpan(TDBalance::Wert(TEXT("Kombo.Blitzableiter.Dauer"), 5.f));
 }
 
 void ATDBoltTurret::SpawneGeschoss(const FVector& Von, const FVector& Nach) const
@@ -137,6 +175,12 @@ void ATDBoltTurret::Schuss(AFGCreature* Ziel, const FVector& Muendung, const FTD
 	// 0.73 Spezialisierung: Schockbolzen machen Strom-Schaden (Antwort des Bolzenturms auf Stinger und Wasserspucker)
 	TrefferArt(Ziel, W.Schaden * Faktor, (ZielPunkt - Muendung).GetSafeNormal(), W.Betaeubung, Flugzeit(ZielPunkt),
 		W.Betaeubung > 0.f ? ETDSchadensart::Strom : GetSchadensart());
+	// 0.84 Blitzableiter: der Bolzen steckt einige Sekunden im Gegner. 0.84.1: sichtbar, sobald die Kombination freigeschaltet ist
+	// (Marius 08.11.: Kombos muessen in der Optik erkennbar sein) - ein Bolzen je Gegner, solange die Markierung haelt
+	if (TDKombo::MarkiereBolzen(this, Ziel) && TDKombo::Aktiv(this, TEXT("Blitzableiter")))
+	{
+		ZeigeSteckendenBolzen(Ziel, Muendung);
+	}
 	// 0.64 Munition sichtbar: Einschlag je Bolzenart (Betaeubung blauer Funkenring, Explosion orange, Armierung heller Funke)
 	const float Ankunft = Flugzeit(ZielPunkt);
 	if (W.Betaeubung > 0.f)

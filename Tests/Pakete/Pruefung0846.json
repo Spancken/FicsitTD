@@ -1,0 +1,11 @@
+{
+  "Name": "Pruefung0846",
+  "_Hinweis": "0.84.6: Spawnprobe auf alle 10 Versuche, Ziel = Front auf dem Netz (Nachzuegler 'Weg VERSPERRT' sollen verschwinden, Logzeile 'Spawnprobe'). Zugleich dritter Lauf der neuen Standardwerte.",
+  "Plaene": [
+    "Grundtest",
+    "Strat-Gewehr-Tesla",
+    "Strat-Gewehr-Flamme",
+    "Strat-Gewehr-Nobelisk",
+    "Strat-MonoBolzen"
+  ]
+}

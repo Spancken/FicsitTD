@@ -1,0 +1,288 @@
+{
+  "Name": "Strat-Gewehr-Nobelisk-A2",
+  "_Hinweis": "0.84.3 Buendel A (Review 08.11.): W1 glatt, Klippen-Hog W7 (Marius ja), Stinger/Elite W13, Boss W10 leichter, Mittelphase entzerrt",
+  "NeuesSpiel": {
+    "Startort": "Rocky Desert"
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 45,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warte": 15
+    },
+    {
+      "befehl": "td einsatz stop"
+    },
+    {
+      "befehl": "td kern stop"
+    },
+    {
+      "befehl": "td einsatz start normal 50"
+    },
+    {
+      "befehl": "td einsatz frei an"
+    },
+    {
+      "balance": {
+        "Katalog.Hog.AbWelle": 0,
+        "Katalog.KlippenHog.AbWelle": 7,
+        "Katalog.StingerKlein.AbWelle": 13,
+        "Stufen.Normal.EliteAbWelle": 13,
+        "Wellen.BossBudget": 0.6,
+        "Phasen.1.BossLP": 8,
+        "Katalog.RoterSpucker.AbWelle": 25,
+        "Katalog.AlphaSpucker.AbWelle": 28,
+        "Katalog.RoterAlphaSpucker.AbWelle": 34,
+        "Einsatz.EP.Grund": 12,
+        "Einsatz.EP.JeWelle": 1.6
+      }
+    },
+    {
+      "stromfrei": true
+    },
+    {
+      "versorgung": {
+        "Bolzenturm": 50,
+        "Gewehrturm": 25,
+        "Nobelisk-Werfer": 15,
+        "Flammenwerfer": 6000
+      }
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 1,
+      "level": 1,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "Strat-Gewehr-Nobelisk_W00"
+    },
+    {
+      "wellenlauf": 1,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Assembler"
+    },
+    {
+      "aufwerten": "Bolzenturm",
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 1,
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "wellenlauf": 2,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Kupfer"
+    },
+    {
+      "wellenlauf": 3,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Giesserei"
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 2,
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "wellenlauf": 4,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Gewehrturm"
+    },
+    {
+      "wellenlauf": 8,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "KernNotrep"
+    },
+    {
+      "erforsche": "KernPanzer"
+    },
+    {
+      "erforsche": "Kohlekraft"
+    },
+    {
+      "erforsche": "Schwefel"
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 2,
+      "level": 2,
+      "rezept": "Recipe_TD_Gun_Standard"
+    },
+    {
+      "wellenlauf": 12,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Caterium"
+    },
+    {
+      "erforsche": "NobeliskWerfer"
+    },
+    {
+      "erforsche": "Turmfertigung2"
+    },
+    {
+      "erforsche": "Zielsuchmunition"
+    },
+    {
+      "aufwerten": "Gewehrturm",
+      "level": 3,
+      "rezept": "Recipe_TD_Gun_Homing"
+    },
+    {
+      "wellenlauf": 16,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "BandMk2"
+    },
+    {
+      "erforsche": "Brandmunition"
+    },
+    {
+      "erforsche": "GasNobelisk"
+    },
+    {
+      "erforsche": "KernSchild"
+    },
+    {
+      "erforsche": "Munitionspuffer"
+    },
+    {
+      "aufwerten": "Gewehrturm",
+      "level": 3,
+      "rezept": "Recipe_TD_Gun_Brand"
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 1,
+      "level": 3,
+      "rezept": "Recipe_TD_Gun_Brand"
+    },
+    {
+      "baue": "Nobelisk-Werfer",
+      "anzahl": 2,
+      "level": 3,
+      "rezept": "Recipe_TD_Nobelisk_Gas"
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "Strat-Gewehr-Nobelisk_W16"
+    },
+    {
+      "wellenlauf": 20,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Raffinerie"
+    },
+    {
+      "erforsche": "Turmfertigung3"
+    },
+    {
+      "aufwerten": "Gewehrturm",
+      "level": 4,
+      "rezept": "Recipe_TD_Gun_Brand"
+    },
+    {
+      "aufwerten": "Nobelisk-Werfer",
+      "level": 4,
+      "rezept": "Recipe_TD_Nobelisk_Gas"
+    },
+    {
+      "baue": "Nobelisk-Werfer",
+      "anzahl": 1,
+      "level": 4,
+      "rezept": "Recipe_TD_Nobelisk_Gas"
+    },
+    {
+      "wellenlauf": 25,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Bauxit"
+    },
+    {
+      "erforsche": "StreuNobelisk"
+    },
+    {
+      "erforsche": "Turbomunition"
+    },
+    {
+      "aufwerten": "Gewehrturm",
+      "level": 4,
+      "rezept": "Recipe_TD_Gun_Turbo"
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 2,
+      "level": 4,
+      "rezept": "Recipe_TD_Gun_Turbo"
+    },
+    {
+      "baue": "Nobelisk-Werfer",
+      "anzahl": 1,
+      "level": 4,
+      "rezept": "Recipe_TD_Nobelisk_Gas"
+    },
+    {
+      "wellenlauf": 30,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "Strat-Gewehr-Nobelisk_W30"
+    },
+    {
+      "pruefe": "KernLebt",
+      "text": "Kern hat Welle 30 überstanden"
+    },
+    {
+      "pruefe": "Sicherheitsnetze",
+      "text": "kein Sicherheitsnetz ausgelöst (Versetzen, Absturz, 0 LP)"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}

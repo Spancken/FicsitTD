@@ -1,0 +1,16 @@
+{
+  "Name": "Pruefung084b",
+  "_Hinweis": "0.84 zweiter Build: logische Kombos (Blitzableiter, Hitzeriss, Verpuffung) gegen Kombo084 ohne Kombo, dazu Kandidat R7.",
+  "Plaene": [
+    "Grundtest",
+    "Strat-Gewehr-Tesla-Kombo",
+    "Strat-Gewehr-Flamme-Kombo",
+    "Strat-Gewehr-Nobelisk-Kombo",
+    "Strat-Gewehr-Tesla-R7",
+    "Strat-Gewehr-Flamme-R7",
+    "Strat-Gewehr-Nobelisk-R7",
+    "Strat-MonoBolzen-R7",
+    "Strat-MonoNobelisk-R7",
+    "Strat-MonoTesla-R7"
+  ]
+}

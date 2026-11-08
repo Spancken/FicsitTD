@@ -47,6 +47,15 @@ public:
 	UTDCDKontingent();
 };
 
+/** 0.84.4 Bau abgelehnt: AWESOME-Sink im Einsatz gesperrt (Coupons kommen nur vom Kern, Marius 08.11.) */
+UCLASS()
+class FICSITTD_API UTDCDSinkGesperrt : public UFGConstructDisqualifier
+{
+	GENERATED_BODY()
+public:
+	UTDCDSinkGesperrt();
+};
+
 /** Bau abgelehnt: im Verteidigungsfeld waehrend einer Welle (Einsatz-Konzept Abschnitt 2) */
 UCLASS()
 class FICSITTD_API UTDCDWellenSperre : public UFGConstructDisqualifier

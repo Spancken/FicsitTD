@@ -224,6 +224,11 @@ UTDCDKontingent::UTDCDKontingent()
 	mDisqfualifyingText = FText::FromString(TEXT("Kontingent erschöpft (/td einsatz status)"));
 }
 
+UTDCDSinkGesperrt::UTDCDSinkGesperrt()
+{
+	mDisqfualifyingText = NSLOCTEXT("FicsitTD", "Einsatz.SinkGesperrt", "Im Einsatz gesperrt: FICSIT-Coupons gibt es nur vom Abwehrkern");
+}
+
 UTDCDWellenSperre::UTDCDWellenSperre()
 {
 	mDisqfualifyingText = FText::FromString(TEXT("Während der Welle ist Bauen am Kern gesperrt"));
@@ -409,6 +414,9 @@ FString UTDEinsatzSubsystem::Schluessel(const UClass* BauKlasse)
 	{
 		return FString();
 	}
+	// 0.84.4 Coupons (Marius 08.11.): der Kern zahlt FICSIT-Coupons statt EP; der AWESOME-Sink ist im Einsatz gesperrt, sonst gaebe
+	// er eine zweite Coupon-Quelle. Kein Start- und kein Ladenkontingent -> Grenze 0 -> nicht baubar (Shop bleibt erlaubt)
+	if (Name.Contains(TEXT("ResourceSink")) && !Name.Contains(TEXT("Shop"))) return TEXT("AWESOME-Sink");
 	if (BauKlasse->IsChildOf(ATDDefenseCore::StaticClass())) return TEXT("Abwehrkern");
 	if (BauKlasse->IsChildOf(AFGBuildableMAM::StaticClass())) return TEXT("MAM");
 	// Band-Splitter (auch Smart/Programmierbar/Lift) und Verbinder: Kontingent wie Gebaeude
@@ -511,7 +519,7 @@ void UTDEinsatzSubsystem::WelleBeendet(int32 Welle, float KernAnteil)
 		Melde(FString::Printf(TEXT("Zerstoert in dieser Welle: %s. Das Baumaterial liegt im Inventar (oder wartet am Kern) - Kontingent ist wieder frei."), *FString::Join(Teile, TEXT(", "))));
 		mZerstoert.Reset();
 	}
-	Melde(FString::Printf(TEXT("+%d Einsatzpunkte%s (Konto %d EP). Ausgeben im Kern-Menue (E am Kern)."), Punkte,
+	Melde(FString::Printf(TEXT("+%d FICSIT-Coupons%s (Konto %d Coupons). Ausgeben im Kern-Menue (E am Kern)."), Punkte,
 		Welle % 10 == 0 ? TEXT(" inkl. Boss-Bonus") : TEXT(""), Kern->mEinsatzPunkte));
 
 	// Biomasse je Welle fuer den Anfangsstrom (bis Kohle laeuft); 0 = aus
@@ -732,7 +740,7 @@ FString UTDEinsatzSubsystem::ZahleEP(int32 Preis, const FString& Posten, bool bA
 	}
 	if (Kern->mEinsatzPunkte < Preis)
 	{
-		return FString::Printf(TEXT("Zu wenig Einsatzpunkte: %d EP nötig, Konto %d EP."), Preis, Kern->mEinsatzPunkte);
+		return FString::Printf(TEXT("Zu wenig FICSIT-Coupons: %d Coupons nötig, Konto %d Coupons."), Preis, Kern->mEinsatzPunkte);
 	}
 	Kern->mEinsatzPunkte -= Preis;
 	if (UTDLaufProtokoll* Lauf = UTDLaufProtokoll::Get(this))
@@ -971,7 +979,7 @@ TArray<FString> UTDEinsatzSubsystem::LadenText() const
 		Zeilen.Add(TEXT("Kein Einsatz aktiv."));
 		return Zeilen;
 	}
-	Zeilen.Add(FString::Printf(TEXT("Laden - Konto: %d EP"), Kern->mEinsatzPunkte));
+	Zeilen.Add(FString::Printf(TEXT("Laden - Konto: %d Coupons"), Kern->mEinsatzPunkte));
 	TArray<FString> Kaufbar, Gesperrt;
 	for (const FTDLadenEintrag& E : LadenListe)
 	{
@@ -982,7 +990,7 @@ TArray<FString> UTDEinsatzSubsystem::LadenText() const
 		}
 		const int32* Gekauft = Kern->mKontingentGekauft.Find(E.Key);
 		const int32 Preis = LadenPreis(E, Gekauft ? *Gekauft : 0);
-		Kaufbar.Add(FString::Printf(TEXT("%s +%d: %d EP"), E.Key, LadenPaket(E), Preis));
+		Kaufbar.Add(FString::Printf(TEXT("%s +%d: %d Coupons"), E.Key, LadenPaket(E), Preis));
 	}
 	Zeilen.Add(FString::Join(Kaufbar, TEXT(", ")));
 	if (Gesperrt.Num() > 0)
@@ -1063,18 +1071,18 @@ FString UTDEinsatzSubsystem::Kaufe(const FString& Name, int32 Anzahl)
 	}
 	if (Gekauft == 0)
 	{
-		return FString::Printf(TEXT("Zu wenig Einsatzpunkte (Konto %d EP)."), Kern->mEinsatzPunkte);
+		return FString::Printf(TEXT("Zu wenig FICSIT-Coupons (Konto %d Coupons)."), Kern->mEinsatzPunkte);
 	}
 	mBelegtZeit = -1.f;
 	if (SP)
 	{
-		return FString::Printf(TEXT("Gekauft: %s für %d EP. %s Konto %d EP."), E->Key, Kosten, *SpielerWirkung(*SP, Gekauft * LadenPaket(*E)), Kern->mEinsatzPunkte);
+		return FString::Printf(TEXT("Gekauft: %s für %d Coupons. %s Konto %d Coupons."), E->Key, Kosten, *SpielerWirkung(*SP, Gekauft * LadenPaket(*E)), Kern->mEinsatzPunkte);
 	}
 	// Mit dem Kontingent kommt das Baumaterial (Marius 02.11.: sonst fehlte es z. B. fuer Mauern und Miner)
 	TMap<UClass*, int32> Material;
 	SammleBaumaterial(E->Key, Gekauft * LadenPaket(*E), Material);
 	const FString MaterialText = Material.Num() ? GibMaterial(Material) : FString();
-	return FString::Printf(TEXT("Gekauft: %s +%d fuer %d EP. Jetzt %d/%d, Konto %d EP.%s"), E->Key, Gekauft * LadenPaket(*E), Kosten,
+	return FString::Printf(TEXT("Gekauft: %s +%d fuer %d Coupons. Jetzt %d/%d, Konto %d Coupons.%s"), E->Key, Gekauft * LadenPaket(*E), Kosten,
 		Belegt(E->Key), Grenze(E->Key), Kern->mEinsatzPunkte, MaterialText.IsEmpty() ? TEXT("") : *(TEXT(" Material: ") + MaterialText));
 }
 
@@ -1123,7 +1131,7 @@ FString UTDEinsatzSubsystem::KaufeKorb(const TMap<FString, int32>& Korb)
 	}
 	if (Summe > Kern->mEinsatzPunkte)
 	{
-		return FString::Printf(TEXT("Zu wenig Einsatzpunkte: %d EP nötig, Konto %d EP."), Summe, Kern->mEinsatzPunkte);
+		return FString::Printf(TEXT("Zu wenig FICSIT-Coupons: %d Coupons nötig, Konto %d Coupons."), Summe, Kern->mEinsatzPunkte);
 	}
 	auto Offen = [Kern]() { int32 N = 0; for (const auto& P : Kern->mMaterialOffen) { N += P.Value; } return N; };
 	const int32 OffenVorher = Offen();
@@ -1137,7 +1145,7 @@ FString UTDEinsatzSubsystem::KaufeKorb(const TMap<FString, int32>& Korb)
 	mBelegtZeit = -1.f;
 	// Test 0.53: bei vollem Inventar wartete das Baumaterial am Kern, ohne dass das Kern-Menue es sagte
 	const int32 Wartet = Offen() - OffenVorher;
-	return FString::Printf(TEXT("Gekauft: %s für %d EP. Konto %d EP.%s"), *FString::Join(Teile, TEXT(", ")), Summe, Kern->mEinsatzPunkte,
+	return FString::Printf(TEXT("Gekauft: %s für %d Coupons. Konto %d Coupons.%s"), *FString::Join(Teile, TEXT(", ")), Summe, Kern->mEinsatzPunkte,
 		Wartet > 0 ? *FString::Printf(TEXT(" Inventar voll: %d Teile Baumaterial warten am Kern, E am Kern holt sie."), Wartet) : TEXT(""));
 }
 
@@ -1275,7 +1283,7 @@ void UTDEinsatzSubsystem::AktualisiereToDo()
 		TArray<FString> Block;
 		Block.Add(Anfang);
 		Block.Add(Welle);
-		Block.Add(FString::Printf(TEXT("Kern %.0f %%  |  Konto %d EP"), 100.f * Kern->GetTDHealth() / FMath::Max(Kern->GetTDMaxHealth(), 1.f), Kern->mEinsatzPunkte));
+		Block.Add(FString::Printf(TEXT("Kern %.0f %%  |  Konto %d Coupons"), 100.f * Kern->GetTDHealth() / FMath::Max(Kern->GetTDMaxHealth(), 1.f), Kern->mEinsatzPunkte));
 		Block.Add(mFrei ? TEXT("Freies Bauen: keine Kontingente")
 			: OffenText.Num() ? TEXT("Noch baubar: ") + FString::Join(OffenText, TEXT(", ")) : TEXT("Kontingent ausgeschöpft - mehr im Laden"));
 		Block.Add(TEXT("Laden und Welle: E am Abwehrkern"));
@@ -1372,6 +1380,11 @@ void UTDEinsatzSubsystem::PruefeHologramm(AFGHologram* Hologramm)
 	}
 	// Mehrere auf einmal (Mauern ziehen): alle muessen ins Kontingent passen (Test 0.19.1: "Mauer 6/5")
 	const int32 Anzahl = FMath::Max(1, Hologramm->GetBaseCostMultiplier());
+	if (Key == TEXT("AWESOME-Sink"))
+	{
+		Hologramm->AddConstructDisqualifier(UTDCDSinkGesperrt::StaticClass());
+		return;
+	}
 	if (Belegt(Key) + Anzahl > Grenze(Key))
 	{
 		Hologramm->AddConstructDisqualifier(UTDCDKontingent::StaticClass());
@@ -1507,6 +1520,9 @@ void UTDEinsatzSubsystem::Starte(ATDDefenseCore* Kern, int32 Stufe, int32 Wellen
 		}
 		Kern->mEinsatzStartkit = true;
 		Meldungen.Add(TEXT("Startkit: ") + GibMaterial(Kit));
+		// 0.84: Wellen je Einsatz verschieden (Option, Standard aus); einmal je Einsatz gewuerfelt und im Kern gespeichert
+		Kern->mLaufSaat = TDBalance::Wert(TEXT("Wellen.VariationJeEinsatz"), 0.f) > 0.f ? (FMath::Rand() | 1) : 0;
+		UE_LOG(LogFicsitTD, Log, TEXT("Einsatz: Wellensaat %d (%s)"), Kern->mLaufSaat, Kern->mLaufSaat ? TEXT("Wellen je Einsatz verschieden") : TEXT("Wellen je Kernplatz fest"));
 	}
 	if (UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>())
 	{
@@ -1613,7 +1629,7 @@ TArray<FString> UTDEinsatzSubsystem::StatusText()
 				Teile.Add(FString::Printf(TEXT("%s %d/%d"), *Kauf.Key, Belegt(Kauf.Key), Grenze(Kauf.Key)));
 			}
 		}
-		Zeilen.Add(FString::Printf(TEXT("Konto: %d EP"), Kern->mEinsatzPunkte));
+		Zeilen.Add(FString::Printf(TEXT("Konto: %d Coupons"), Kern->mEinsatzPunkte));
 	}
 	Zeilen.Add(TEXT("Kontingent: ") + FString::Join(Teile, TEXT(", ")));
 	return Zeilen;

@@ -1,4 +1,5 @@
 ﻿#include "TDNobeliskLauncher.h"
+#include "EngineUtils.h"
 #include "TDBalance.h"
 #include "Components/StaticMeshComponent.h"
 #include "Creature/FGCreature.h"
@@ -75,6 +76,50 @@ void ATDNobeliskLauncher::BeginPlay()
 	{
 		mHeadMesh->SetRelativeRotation(FRotator(50.f, 0.f, 0.f));   // Ruhelage wie im Modell
 	}
+}
+
+float ATDNobeliskLauncher::EntzuendeWolke(UWorld* Welt, const FVector& Ort, const ATDTurretBase* Zuender)
+{
+	if (!Welt || !TDKombo::Aktiv(Welt, TEXT("Verpuffung")))
+	{
+		return 0.f;
+	}
+	float Summe = 0.f;
+	for (TActorIterator<ATDNobeliskLauncher> It(Welt); It; ++It)
+	{
+		ATDNobeliskLauncher* L = *It;
+		for (int32 i = L->mWolken.Num() - 1; i >= 0; --i)
+		{
+			const FTDGasWolke G = L->mWolken[i];
+			if (FVector::Dist(G.Ort, Ort) > G.Radius)
+			{
+				continue;
+			}
+			// das ganze restliche Gas verbrennt auf einmal: Schaden der Restdauer an alle in der Wolke.
+			// 0.84.3 (Review 08.11.): als Explosion (Verpuffung = Gasexplosion) und Faktor 1,5 - sonst war es nur ein Zeitraffer der Wolke,
+			// netto eher weniger Schaden, weil spaeter eintretende Gegner das Gas verpassen
+			const float Schaden = G.Schaden * FMath::Max(G.Rest, 1.f) * TDBalance::Wert(TEXT("Kombo.Verpuffung.Faktor"), 1.5f);
+			L->mWolken.RemoveAtSwap(i);
+			TArray<AFGCreature*> Feinde;
+			L->SammleFeinde(Feinde);
+			int32 Getroffen = 0;
+			for (AFGCreature* F : Feinde)
+			{
+				const FVector Zu = F->GetActorLocation() - G.Ort;
+				if (Zu.Size() <= G.Radius * 1.2f)
+				{
+					L->TrefferArt(F, Schaden, Zu.GetSafeNormal(), 0.f, 0.f, ETDSchadensart::Explosion);
+					++Getroffen;
+				}
+			}
+			// Stichflamme: grosses oranges Leuchten ueber der Wolke, kurz und hell
+			L->ZeigeLeuchten(G.Ort + FVector(0.f, 0.f, 150.f), FLinearColor(1.f, 0.5f, 0.1f), G.Radius / 18.f, 0.6f, 0.f, false, 60.f);
+			L->ZeigeLeuchten(G.Ort + FVector(0.f, 0.f, 350.f), FLinearColor(1.f, 0.8f, 0.3f), G.Radius / 30.f, 0.4f, 0.1f, false, 40.f);
+			TDKombo::Melde(TEXT("Verpuffung"), Zuender, Schaden * Getroffen);
+			Summe += Schaden * Getroffen;
+		}
+	}
+	return Summe;
 }
 
 FTDNobeliskWerte ATDNobeliskLauncher::WerteFuer(const UClass* Munition)

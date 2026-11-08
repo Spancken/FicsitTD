@@ -1,0 +1,290 @@
+{
+  "Name": "Strat-Gewehr-Tesla-Kombo",
+  "_Hinweis": "0.84 A/B Turmkombinationen (Kombo.Aktiv = 1). Beste Modellstrategie der Linie Gewehr+Tesla (Nr. 317, Doktrin Gewehrturm, Stil Tuerme, Kern ja, Gabel Schockbolzen/Panzerbrechend/GasNobelisk/Kettenblitz/KernSchild): Plan bei der Auswahl 70 % bis W30, Vorhersage 70 %, 15 Türme. Erzeugt von Werkzeuge\\FicsitTD-Simulator\\strategie_plaene.py.",
+  "NeuesSpiel": {
+    "Startort": "Rocky Desert"
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 45,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warte": 15
+    },
+    {
+      "befehl": "td einsatz stop"
+    },
+    {
+      "befehl": "td kern stop"
+    },
+    {
+      "befehl": "td einsatz start normal 50"
+    },
+    {
+      "befehl": "td einsatz frei an"
+    },
+    {
+      "balance": {
+        "Kombo.Aktiv": 1
+      }
+    },
+    {
+      "stromfrei": true
+    },
+    {
+      "versorgung": {
+        "Bolzenturm": 50,
+        "Gewehrturm": 25,
+        "Nobelisk-Werfer": 15,
+        "Flammenwerfer": 6000
+      }
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 1,
+      "level": 1,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "Strat-Gewehr-Tesla_W00"
+    },
+    {
+      "wellenlauf": 1,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Assembler"
+    },
+    {
+      "aufwerten": "Bolzenturm",
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 1,
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "wellenlauf": 2,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Kupfer"
+    },
+    {
+      "wellenlauf": 3,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Giesserei"
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 2,
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "wellenlauf": 4,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Gewehrturm"
+    },
+    {
+      "wellenlauf": 8,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Kohlekraft"
+    },
+    {
+      "erforsche": "Panzerbrechend"
+    },
+    {
+      "erforsche": "Schwefel"
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 2,
+      "level": 2,
+      "rezept": "Recipe_TD_Gun_Standard"
+    },
+    {
+      "wellenlauf": 12,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "KernNotrep"
+    },
+    {
+      "erforsche": "KernPanzer"
+    },
+    {
+      "erforsche": "Kettenblitz"
+    },
+    {
+      "erforsche": "Teslaspule"
+    },
+    {
+      "erforsche": "Turmfertigung2"
+    },
+    {
+      "aufwerten": "Gewehrturm",
+      "level": 3,
+      "rezept": "Recipe_TD_Gun_Panzer"
+    },
+    {
+      "baue": "Teslaspule",
+      "anzahl": 1,
+      "level": 2,
+      "rezept": "Recipe_TD_Tesla_Discharge"
+    },
+    {
+      "wellenlauf": 16,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Brandmunition"
+    },
+    {
+      "erforsche": "DoktrinGewehr"
+    },
+    {
+      "erforsche": "KernSchild"
+    },
+    {
+      "aufwerten": "Gewehrturm",
+      "level": 3,
+      "rezept": "Recipe_TD_Gun_Brand"
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 1,
+      "level": 3,
+      "rezept": "Recipe_TD_Gun_Brand"
+    },
+    {
+      "aufwerten": "Teslaspule",
+      "level": 3,
+      "rezept": "Recipe_TD_Tesla_Discharge"
+    },
+    {
+      "baue": "Teslaspule",
+      "anzahl": 1,
+      "level": 3,
+      "rezept": "Recipe_TD_Tesla_Discharge"
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "Strat-Gewehr-Tesla_W16"
+    },
+    {
+      "wellenlauf": 20,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Akkubank"
+    },
+    {
+      "erforsche": "BandMk2"
+    },
+    {
+      "erforsche": "Munitionspuffer"
+    },
+    {
+      "erforsche": "Raffinerie"
+    },
+    {
+      "erforsche": "Turmfertigung3"
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 2,
+      "level": 3,
+      "rezept": "Recipe_TD_Gun_Brand"
+    },
+    {
+      "aufwerten": "Teslaspule",
+      "level": 4,
+      "rezept": "Recipe_TD_Tesla_Discharge"
+    },
+    {
+      "baue": "Teslaspule",
+      "anzahl": 2,
+      "level": 4,
+      "rezept": "Recipe_TD_Tesla_Discharge"
+    },
+    {
+      "wellenlauf": 25,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Bauxit"
+    },
+    {
+      "erforsche": "Turbomunition"
+    },
+    {
+      "aufwerten": "Gewehrturm",
+      "level": 5,
+      "rezept": "Recipe_TD_Gun_Turbo"
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 1,
+      "level": 5,
+      "rezept": "Recipe_TD_Gun_Turbo"
+    },
+    {
+      "baue": "Teslaspule",
+      "anzahl": 1,
+      "level": 4,
+      "rezept": "Recipe_TD_Tesla_Discharge"
+    },
+    {
+      "wellenlauf": 30,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "Strat-Gewehr-Tesla_W30"
+    },
+    {
+      "pruefe": "KernLebt",
+      "text": "Kern hat Welle 30 überstanden"
+    },
+    {
+      "pruefe": "Sicherheitsnetze",
+      "text": "kein Sicherheitsnetz ausgelöst (Versetzen, Absturz, 0 LP)"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}
