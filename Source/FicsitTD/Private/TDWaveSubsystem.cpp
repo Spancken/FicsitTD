@@ -2796,7 +2796,9 @@ void UTDWaveSubsystem::PruefeNachzuegler(FTDWellenGegner& G, float Abstand, floa
 	// als 25 s quer zum Kern laeuft, kam nicht naeher und wurde versetzt, obwohl er lief. Gemessen wird jetzt der Restweg auf
 	// dem Weg des Hirns; nur ohne Weg die Luftlinie.
 	const UTDGegnerHirn* WegHirn = UTDGegnerHirn::Von(G.Kreatur.Get());
-	const float Mass = WegHirn && WegHirn->GetRestweg() > 0.f ? WegHirn->GetRestweg() : Abstand;
+	// 0.9.5 (Verlauf der Nachzuegler: ein 2-m-Teilweg setzte den Bestwert auf 2 m, danach lief der Gegner auf vollem Weg von
+	// 200 auf 62 m und galt trotzdem als Nachzuegler): nur ein voller Weg misst den Restweg, sonst die Luftlinie
+	const float Mass = WegHirn && WegHirn->IstWegVoll() && WegHirn->GetRestweg() > 0.f ? WegHirn->GetRestweg() : Abstand;
 	if (G.BesterAbstand < 0.f || Mass < G.BesterAbstand - 500.f)
 	{
 		G.BesterAbstand = Mass;
@@ -2820,6 +2822,7 @@ void UTDWaveSubsystem::PruefeNachzuegler(FTDWellenGegner& G, float Abstand, floa
 	}
 	const FVector Vorher = Kreatur->GetActorLocation();
 	const FString HirnZustand = Hirn ? Hirn->Diagnose() : FString();
+	const FString HirnVerlauf = Hirn ? Hirn->Verlauf() : FString();   // 0.9.5: Restweg und Neuberechnungen der letzten ~40 s
 	if (++G.Rettungen > TDBalance::Ganz(TEXT("Wellen.NachzueglerVersuche"), 3))
 	{
 		UE_LOG(LogFicsitTD, Log, TEXT("Nachzuegler: %s bei %s (%.0f m vor dem Kern) nach %d Versuchen entfernt"), *Kreatur->GetClass()->GetName(),
@@ -2888,9 +2891,9 @@ void UTDWaveSubsystem::PruefeNachzuegler(FTDWellenGegner& G, float Abstand, floa
 	G.BesterAbstand = -1.f;
 	// 0.84.1 Ursachensuche (Kombo084: 329 Nachzuegler im W50-Lauf, 440 davon 175-200 m vor dem Kern, gehaeuft am Startpunkt der Front
 	// Suedosten): Zustand des Hirns vor dem Versetzen mitschreiben (Weg, Restweg, Tempo, Bewegungsart, Ziel)
-	UE_LOG(LogFicsitTD, Log, TEXT("Nachzuegler: %s hing %.0f m vor dem Kern bei %s, Versuch %d: %s nach %s (%s) | Mass %.0f m, Hirn: %s"), *Kreatur->GetClass()->GetName(),
+	UE_LOG(LogFicsitTD, Log, TEXT("Nachzuegler: %s hing %.0f m vor dem Kern bei %s, Versuch %d: %s nach %s (%s) | Mass %.0f m, Hirn: %s | Verlauf: %s"), *Kreatur->GetClass()->GetName(),
 		Abstand / 100.f, *Vorher.ToCompactString(), G.Rettungen, bVersetzt ? TEXT("versetzt") : TEXT("NICHT versetzt"), *Ziel.ToCompactString(),
-		bGefunden ? TEXT("auf dem Frontweg") : TEXT("Richtung Kern"), Mass / 100.f, HirnZustand.IsEmpty() ? TEXT("keins") : *HirnZustand);
+		bGefunden ? TEXT("auf dem Frontweg") : TEXT("Richtung Kern"), Mass / 100.f, HirnZustand.IsEmpty() ? TEXT("keins") : *HirnZustand, *HirnVerlauf);
 }
 
 void UTDWaveSubsystem::EntschaerfeLogistik(const FVector& Mitte)

@@ -63,22 +63,41 @@ namespace TDHirn
 	}
 
 	/** Wegstrecke (cm) bis zum Punkt des Weges, der Ort am naechsten liegt; Gesamt = Laenge des Weges */
-	static float WegFortschritt(const TArray<FVector>& Weg, const FVector& Ort, float& Gesamt)
+	// 0.9.5 (Mono-Tesla bis W50, Verlauf und Nachpruefung der Nachzuegler: Netz stabil, trotzdem Schleifen): gesucht wurde das
+	// naechste Wegstueck ueber den ganzen Weg. Fuehrt ein Umweg als U dicht an der eigenen Stelle vorbei, sprang der Fortschritt
+	// auf das Rueckstueck - der Gegner kuerzte das U ab, stand wieder in der Sackgasse, bekam wieder das U (56 von 83 Nachzueglern).
+	// Mit Vorher >= 0 wird nur im Fenster 15 m zurueck bis 40 m voraus gesucht; Vorher < 0 sucht ueber den ganzen Weg (Ersatzweg).
+	static float WegFortschritt(const TArray<FVector>& Weg, const FVector& Ort, float& Gesamt, float Vorher = -1.f)
 	{
 		float Fortschritt = 0.f, BesterAbstand = TNumericLimits<float>::Max();
+		float Fenster = 0.f, FensterAbstand = TNumericLimits<float>::Max();
+		const float Von = Vorher - 1500.f, Bis = Vorher + 4000.f;
 		Gesamt = 0.f;
 		for (int32 i = 1; i < Weg.Num(); ++i)
 		{
+			const float Stueck = FVector::Dist(Weg[i - 1], Weg[i]);
 			const FVector Nah = FMath::ClosestPointOnSegment(Ort, Weg[i - 1], Weg[i]);
 			const float D = FVector::DistSquared2D(Nah, Ort);
+			const float Stelle = Gesamt + FVector::Dist(Weg[i - 1], Nah);
 			if (D < BesterAbstand)
 			{
 				BesterAbstand = D;
-				Fortschritt = Gesamt + FVector::Dist(Weg[i - 1], Nah);
+				Fortschritt = Stelle;
 			}
-			Gesamt += FVector::Dist(Weg[i - 1], Weg[i]);
+			if (Vorher >= 0.f && Gesamt + Stueck >= Von && Gesamt <= Bis)
+			{
+				const float Eingegrenzt = FMath::Clamp(Stelle, FMath::Max(Gesamt, Von), FMath::Min(Gesamt + Stueck, Bis));
+				const FVector Punkt = Stueck > 1.f ? FMath::Lerp(Weg[i - 1], Weg[i], (Eingegrenzt - Gesamt) / Stueck) : Weg[i];
+				const float DF = FVector::DistSquared2D(Punkt, Ort);
+				if (DF < FensterAbstand)
+				{
+					FensterAbstand = DF;
+					Fenster = Eingegrenzt;
+				}
+			}
+			Gesamt += Stueck;
 		}
-		return Fortschritt;
+		return Vorher >= 0.f && FensterAbstand < TNumericLimits<float>::Max() ? Fenster : Fortschritt;
 	}
 
 	/** Ist der Weg in Richtung frei? Kugel in Koerperbreite 3 m voraus; flache Flaechen (Boden) zaehlen nicht */
@@ -195,7 +214,12 @@ TArray<FVector> UTDGegnerHirn::BerechneWeg(UWorld* World, const FVector& Ort, co
 	UNavigationSystemV1* Nav = World ? FNavigationSystem::GetCurrent<UNavigationSystemV1>(World) : nullptr;
 	FNavLocation Start, Ziel;
 	// Zielpunkt am Kern: seit 0.61 (Tiefbohrer, 8 x 8 m) liegt der naechste begehbare Boden erst 4,5-5 m von der Mitte -> 12 m suchen
-	const bool bStart = Nav && Kern && Nav->ProjectPointToNavigation(Ort, Start, FVector(1500.f, 1500.f, 1000.f));
+	// 0.9.5 (Mono-Tesla bis W50, Verlauf der 83 Nachzuegler: 56 bekamen bei der Neuberechnung ~200 m Umweg, 17 einen 3-m-Teilweg,
+	// immer an denselben Stellen): der 15-m-Suchkasten setzte den Start von der Koerpermitte aus auf einen Absatz oder eine Insel
+	// daneben. Erst eng um den Gegner projizieren (Gegner.StartSuche, Standard 2 m seitlich, 3 m hoch), nur ohne Treffer weit.
+	const float Eng = TDBalance::Wert(TEXT("Gegner.StartSuche"), 2.f) * 100.f;
+	const bool bStart = Nav && Kern && ((Eng > 0.f && Nav->ProjectPointToNavigation(Ort, Start, FVector(Eng, Eng, 300.f)))
+		|| Nav->ProjectPointToNavigation(Ort, Start, FVector(1500.f, 1500.f, 1000.f)));
 	const bool bZiel = bStart && Nav->ProjectPointToNavigation(Kern->GetActorLocation(), Ziel, FVector(1200.f, 1200.f, 1000.f));
 	if (bStart && !bZiel)
 	{
@@ -339,7 +363,7 @@ AFGCreature* UTDGegnerHirn::Spawne(UWorld* World, UClass* Klasse, const FVector&
 	if (Hirn->mWeg.Num() >= 2)
 	{
 		Hirn->mWeg[0] = Kreatur->GetActorLocation();
-		Hirn->mFortschritt = TDHirn::WegFortschritt(Hirn->mWeg, Kreatur->GetActorLocation(), Hirn->mGesamt);
+		Hirn->mFortschritt = TDHirn::WegFortschritt(Hirn->mWeg, Kreatur->GetActorLocation(), Hirn->mGesamt, 0.f);
 		Hirn->mBester = Hirn->mFortschritt;
 	}
 	// Erste Pruefung des Weges gestaffelt, damit 60 Gegner einer Welle nicht im selben Bild rechnen
@@ -388,7 +412,13 @@ void UTDGegnerHirn::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 	}
 	if (mWeg.Num() >= 2)
 	{
-		mFortschritt = TDHirn::WegFortschritt(mWeg, Kreatur->GetActorLocation(), mGesamt);
+		mFortschritt = TDHirn::WegFortschritt(mWeg, Kreatur->GetActorLocation(), mGesamt, mFortschritt);
+	}
+	mVerlaufTakt -= DeltaTime;
+	if (mVerlaufTakt <= 0.f)
+	{
+		mVerlaufTakt = 2.5f;
+		Merke(Kreatur, -1.f);
 	}
 	// T4c: Toenungskopie nur zeigen, wenn das Original in der letzten halben Sekunde im Bild gezeichnet wurde
 	if (USkeletalMeshComponent* Kopie = mToenung.Get())
@@ -617,12 +647,76 @@ void UTDGegnerHirn::NeuerWeg(const AFGCreature* Kreatur)
 	{
 		UE_LOG(LogFicsitTD, Log, TEXT("Hirn: %s Weg zum Kern %s"), *Kreatur->GetClass()->GetName(), bVoll ? TEXT("wieder frei") : TEXT("VERSPERRT"));
 	}
+	const FVector Projiziert = Weg[0];
 	Weg[0] = Kreatur->GetActorLocation();
+	const float RestVorher = mWeg.Num() >= 2 ? GetRestweg() : 0.f;
+	float Laenge = 0.f;
+	for (int32 i = 1; i < Weg.Num(); ++i)
+	{
+		Laenge += FVector::Dist(Weg[i - 1], Weg[i]);
+	}
+	// 0.9.5 (Mono-Tesla bis W50: 17-19 Nachzuegler je Lauf am Spawn von Front 2, schon in 0.9.4): neben dem Spawnpunkt liegt
+	// eine kleine Netzinsel. Wer dort landet, bekam einen Teilweg von 2-3 m und trat auf der Stelle. Ein Teilweg unter 10 m bei
+	// vollem altem Weg kommt nur von einer Insel - dann den alten, geprueften Weg behalten. (Regel 2 bleibt: ein Teilweg vor einer
+	// neuen Mauer ist lang.)
+	if (!bVoll && mWegVoll && mWeg.Num() >= 2 && Laenge < 1000.f && RestVorher > 2000.f)
+	{
+		static int32 Inseln = 0;
+		if (Inseln++ < 20)
+		{
+			UE_LOG(LogFicsitTD, Log, TEXT("Hirn: %s bei %s auf einer Netzinsel (Teilweg %.0f m) - alter Weg (%.0f m) bleibt"),
+				*Kreatur->GetClass()->GetName(), *Weg[0].ToCompactString(), Laenge / 100.f, RestVorher / 100.f);
+		}
+		return;
+	}
+	{
+		static int32 Spruenge = 0;
+		if (mWegVoll && RestVorher > 2000.f && Laenge > RestVorher + 5000.f && Spruenge++ < 40)
+		{
+			UE_LOG(LogFicsitTD, Log, TEXT("Hirn: Wegsprung %s bei %s: %.0f -> %.0f m (%s), Start %.1f m daneben projiziert (Hoehe %+.1f m)"),
+				*Kreatur->GetClass()->GetName(), *Weg[0].ToCompactString(), RestVorher / 100.f, Laenge / 100.f, bVoll ? TEXT("voll") : TEXT("Teilweg"),
+				FVector::Dist2D(Projiziert, Weg[0]) / 100.f, (Projiziert.Z - Weg[0].Z) / 100.f);
+		}
+	}
 	mWeg = MoveTemp(Weg);
 	mWegVoll = bVoll;
-	mFortschritt = TDHirn::WegFortschritt(mWeg, Kreatur->GetActorLocation(), mGesamt);
+	mFortschritt = TDHirn::WegFortschritt(mWeg, Kreatur->GetActorLocation(), mGesamt, 0.f);
 	mBester = mFortschritt;
 	mStill = 0.f;
+	Merke(Kreatur, RestVorher);
+}
+
+void UTDGegnerHirn::Merke(const AFGCreature* Kreatur, float NeuVor)
+{
+	FTDVerlaufPunkt P;
+	P.Zeit = GetWorld()->GetTimeSeconds();
+	P.Rest = GetRestweg();
+	P.NeuVor = NeuVor;
+	P.Ort = Kreatur->GetActorLocation();
+	P.Abseits = mWeg.Num() >= 2 ? FVector::Dist2D(P.Ort, TDHirn::PunktAufWeg(mWeg, mFortschritt)) : -1.f;
+	if (mVerlauf.Num() >= 24)
+	{
+		mVerlauf.RemoveAt(0, 1, EAllowShrinking::No);
+	}
+	mVerlauf.Add(P);
+}
+
+FString UTDGegnerHirn::Verlauf() const
+{
+	const float Jetzt = GetWorld()->GetTimeSeconds();
+	TArray<FString> Teile;
+	for (const FTDVerlaufPunkt& P : mVerlauf)
+	{
+		if (P.NeuVor >= 0.f)
+		{
+			Teile.Add(FString::Printf(TEXT("-%.0fs NEU %.0f->%.0f m"), Jetzt - P.Zeit, P.NeuVor / 100.f, P.Rest / 100.f));
+		}
+		else
+		{
+			Teile.Add(FString::Printf(TEXT("-%.0fs %.0f m (%.0f/%.0f) ab %.0f m"), Jetzt - P.Zeit, P.Rest / 100.f, P.Ort.X / 100.f, P.Ort.Y / 100.f, P.Abseits / 100.f));
+		}
+	}
+	return FString::Join(Teile, TEXT("; "));
 }
 
 void UTDGegnerHirn::Neustart(const AFGCreature* Kreatur, const TArray<FVector>& Ersatz)

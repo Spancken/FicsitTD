@@ -36,6 +36,16 @@ enum class ETDHirnPhase : uint8
 	Tot
 };
 
+/** 0.9.5 Nachzuegler-Diagnose: Messpunkt des Restwegs (alle 2,5 s) oder Neuberechnung des Weges (NeuVor >= 0) */
+struct FTDVerlaufPunkt
+{
+	float Zeit = 0.f;
+	float Rest = 0.f;
+	float Abseits = 0.f;
+	float NeuVor = -1.f;
+	FVector Ort = FVector::ZeroVector;
+};
+
 /** Kampfwerte je Gegnerart */
 struct FTDGegnerWerte
 {
@@ -86,7 +96,11 @@ public:
 	const FString& GetLetztesOpfer() const { return mLetztesOpfer; }
 	/** Restweg bis zum Kern (cm) entlang des Weges */
 	float GetRestweg() const { return FMath::Max(0.f, mGesamt - mFortschritt); }
+	/** Fuehrt der Weg bis zum Kern (false: Teilweg, endet vorher) */
+	bool IstWegVoll() const { return mWegVoll; }
 	FString Diagnose() const;
+	/** 0.9.5: Verlauf von Restweg, Ort und Neuberechnungen der letzten ~40 s (Nachzuegler-Diagnose) */
+	FString Verlauf() const;
 	/** Nach dem Versetzen durch die Nachzuegler-Pruefung: Weg neu, ohne Netz an dieser Stelle den Ersatzweg der Front nehmen */
 	void Neustart(const AFGCreature* Kreatur, const TArray<FVector>& Ersatz);
 	/** Teslaspule Level 5 (Spannungsfeld, 0.64): Lauftempo fuer Dauer s auf Faktor senken; im Feld laufend erneuert */
@@ -144,6 +158,10 @@ private:
 	bool mWegVoll = true;
 	/** Sekunden bis zur naechsten Neuberechnung des Weges */
 	float mNeuWeg = 0.f;
+	/** 0.9.5: Ring der letzten Messpunkte (Verlauf) und Takt bis zum naechsten */
+	TArray<FTDVerlaufPunkt> mVerlauf;
+	float mVerlaufTakt = 0.f;
+	void Merke(const AFGCreature* Kreatur, float NeuVor);
 	/** Anlauf: bester Abstand zum Ziel und Sekunden ohne Annaeherung (festgefahren vor einer Mauer?) */
 	float mAnlaufBest = 0.f;
 	float mAnlaufStill = 0.f;
