@@ -103,10 +103,11 @@ static const FTDLadenEintrag LadenListe[] = {
 	{ TEXT("Teslaspule"), 10, 0.4f, 1, TEXT("/FicsitTD/Buildings/TeslaCoil/Recipe_TD_TeslaCoil.Recipe_TD_TeslaCoil_C") },
 	{ TEXT("Mauer"), 3, 0.2f, 5, TEXT("/FicsitTD/Buildings/DefenseWall/Recipe_TD_DefenseWall.Recipe_TD_DefenseWall_C") },
 	{ TEXT("Panzersperre"), 3, 0.2f, 5, TEXT("/FicsitTD/Buildings/Barrier/Recipe_TD_Barrier.Recipe_TD_Barrier_C") },
-	{ TEXT("Reparaturstation"), 8, 0.4f, 1, TEXT("/FicsitTD/Buildings/RepairStation/Recipe_TD_RepairStation.Recipe_TD_RepairStation_C") },
+	// 0.9.3: Reparaturstation durch den Drohnenplatz ersetzt (Marius 09.11.2026)
+	{ TEXT("Drohnenplatz"), 14, 0.5f, 1, TEXT("/FicsitTD/Buildings/DronePort/Recipe_TD_DronePort.Recipe_TD_DronePort_C") },
 	// 0.81 passive Bauten P1 (Konzept-Rohstoffe-Tuerme-Bauten-2026-11-07): Tor ab Mauern Mk2, Lockfeuer, Oelschlick-Feld ab Raffinerie
 	{ TEXT("Tor"), 4, 0.3f, 1, TEXT("/FicsitTD/Buildings/Gate/Recipe_TD_Gate.Recipe_TD_Gate_C") },
-	{ TEXT("Lockfeuer"), 6, 0.4f, 1, TEXT("/FicsitTD/Buildings/LureBeacon/Recipe_TD_LureBeacon.Recipe_TD_LureBeacon_C") },
+	{ TEXT("Lockfeuer"), 4, 0.4f, 1, TEXT("/FicsitTD/Buildings/LureBeacon/Recipe_TD_LureBeacon.Recipe_TD_LureBeacon_C") },
 	{ TEXT("Oelschlick"), 4, 0.3f, 1, TEXT("/FicsitTD/Buildings/SlickPlate/Recipe_TD_SlickPlate.Recipe_TD_SlickPlate_C") },
 	// 0.83 Bauten P2/P3 (Konzept-Rohstoffe-Tuerme-Bauten-2026-11-07)
 	{ TEXT("Elektrozaun"), 5, 0.3f, 1, TEXT("/FicsitTD/Buildings/ConductorWall/Recipe_TD_ConductorWall.Recipe_TD_ConductorWall_C") },
@@ -115,13 +116,19 @@ static const FTDLadenEintrag LadenListe[] = {
 	{ TEXT("Himmelsturm"), 10, 0.4f, 1, TEXT("/FicsitTD/Buildings/FlakTurret/Recipe_TD_FlakTurret.Recipe_TD_FlakTurret_C") },
 	{ TEXT("Stoerfeld"), 14, 0.5f, 1, TEXT("/FicsitTD/Buildings/FieldProjector/Recipe_TD_FieldProjector.Recipe_TD_FieldProjector_C") },
 	{ TEXT("Singularitaet"), 20, 0.6f, 1, TEXT("/FicsitTD/Buildings/SingularityLauncher/Recipe_TD_SingularityLauncher.Recipe_TD_SingularityLauncher_C") },
-	{ TEXT("Dimensionslager"), 12, 0.5f, 1, TEXT("/FicsitTD/Buildings/DimensionalDepot/Recipe_TD_DimensionalDepot.Recipe_TD_DimensionalDepot_C") },
+	// 0.9.3: Dimensionslager gestrichen (Marius 09.11.2026)
 	// Wellen-Progression P2: Leiter L4 (Feuer, Chemie, Raffinerie)
 	{ TEXT("Flammenturm"), 8, 0.3f, 1, TEXT("/FicsitTD/Buildings/FlameTurret/Recipe_TD_FlameTurret.Recipe_TD_FlameTurret_C") },
 	{ TEXT("Nobelisk-Werfer"), 10, 0.3f, 1, TEXT("/FicsitTD/Buildings/NobeliskLauncher/Recipe_TD_NobeliskLauncher.Recipe_TD_NobeliskLauncher_C") },
 	{ TEXT("Oelpumpe"), 6, 0.4f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_OilPump.Recipe_OilPump_C") },
 	{ TEXT("Raffinerie"), 8, 0.4f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_OilRefinery.Recipe_OilRefinery_C") },
 	{ TEXT("Treibstoffkraftwerk"), 8, 0.4f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_GeneratorFuel.Recipe_GeneratorFuel_C") },
+	// 0.9.1 Endgame-Konzept (Marius 09.11.2026): spaete Maschinen. Ohne sie waren Schild, Himmelsturm, Stoerfeld nicht herstellbar.
+	{ TEXT("Fluessigkeitspuffer"), 3, 0.3f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_PipeStorageTank.Recipe_PipeStorageTank_C") },
+	{ TEXT("Fertiger"), 14, 0.5f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_ManufacturerMk1.Recipe_ManufacturerMk1_C") },
+	{ TEXT("Mischer"), 10, 0.5f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_Blender.Recipe_Blender_C") },
+	{ TEXT("Abfueller"), 8, 0.4f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_Packager.Recipe_Packager_C") },
+	{ TEXT("Foerderanlage"), 6, 0.4f, 3, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_FrackingExtractor.Recipe_FrackingExtractor_C") },
 	{ TEXT("Splitter"), 2, 0.2f, 2, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_ConveyorAttachmentSplitter.Recipe_ConveyorAttachmentSplitter_C") },
 	{ TEXT("Verbinder"), 2, 0.2f, 2, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_ConveyorAttachmentMerger.Recipe_ConveyorAttachmentMerger_C") },
 	// Spieler aufbessern (Marius 03.11.2026, 0.56): EP-Ausgaben ohne neue Technik; Rezept = ab wann kaufbar
@@ -238,7 +245,9 @@ static FString TDAnzeige(const FString& Key)
 		{ TEXT("Elektrozaun"), TEXT("Electric Fence") }, { TEXT("Funkmast"), TEXT("Radio Mast") }, { TEXT("Schildgenerator"), TEXT("Shield Generator") },
 		{ TEXT("Himmelsturm"), TEXT("Sky Tower") }, { TEXT("Stoerfeld"), TEXT("Jammer Projector") }, { TEXT("Singularitaet"), TEXT("Singularity Launcher") },
 		{ TEXT("Gewehrturm"), TEXT("Rifle Turret") }, { TEXT("Flammenturm"), TEXT("Flamethrower") }, { TEXT("Flammenwerfer"), TEXT("Flamethrower") },
-		{ TEXT("Teslaspule"), TEXT("Tesla Coil") }, { TEXT("Nobelisk-Werfer"), TEXT("Nobelisk Launcher") }, { TEXT("Reparaturstation"), TEXT("Repair Station") },
+		{ TEXT("Fertiger"), TEXT("Manufacturer") }, { TEXT("Mischer"), TEXT("Blender") }, { TEXT("Abfueller"), TEXT("Packager") },
+		{ TEXT("Foerderanlage"), TEXT("Resource Well") }, { TEXT("Fluessigkeitspuffer"), TEXT("Fluid Buffer") },
+		{ TEXT("Teslaspule"), TEXT("Tesla Coil") }, { TEXT("Nobelisk-Werfer"), TEXT("Nobelisk Launcher") }, { TEXT("Reparaturstation"), TEXT("Repair Station") }, { TEXT("Drohnenplatz"), TEXT("Drone Pad") },
 		{ TEXT("Lockfeuer"), TEXT("Lure Fire") }, { TEXT("Oelschlick"), TEXT("Oil Slick Field") }, { TEXT("Wasserpumpe"), TEXT("Water Extractor") },
 		{ TEXT("Oelpumpe"), TEXT("Oil Extractor") }, { TEXT("Foerderanlage"), TEXT("Extractor") }, { TEXT("Kohlekraftwerk"), TEXT("Coal-Powered Generator") },
 		{ TEXT("Treibstoffkraftwerk"), TEXT("Fuel-Powered Generator") }, { TEXT("Atomkraftwerk"), TEXT("Nuclear Power Plant") }, { TEXT("Kraftwerk"), TEXT("Power Generator") },
@@ -498,6 +507,7 @@ FString UTDEinsatzSubsystem::Schluessel(const UClass* BauKlasse)
 		if (Name.Contains(TEXT("Flame"))) return TEXT("Flammenturm");
 		if (Name.Contains(TEXT("Tesla"))) return TEXT("Teslaspule");
 		if (Name.Contains(TEXT("Nobelisk"))) return TEXT("Nobelisk-Werfer");
+		if (Name.Contains(TEXT("DronePort"))) return TEXT("Drohnenplatz");
 		if (Name.Contains(TEXT("Repair"))) return TEXT("Reparaturstation");
 		if (Name.Contains(TEXT("Lure"))) return TEXT("Lockfeuer");
 		if (Name.Contains(TEXT("Slick"))) return TEXT("Oelschlick");
@@ -548,7 +558,13 @@ int32 UTDEinsatzSubsystem::Grenze(const FString& Key) const
 	const ATDDefenseCore* Kern = mKern.Get();
 	const FTDLadenEintrag* Laden = LadenFuer(Key);
 	const int32* Gekauft = Kern ? Kern->mKontingentGekauft.Find(Key) : nullptr;
-	return Start + (Gekauft && Laden ? *Gekauft * LadenPaket(*Laden) : 0);
+	int32 Geschenk = 0;
+	// 0.9.1 (Simulation 09.11.): die Raketen-Kette war zu teuer - die Forschung Raketentreibstoff schenkt Foerderanlagen fuer den Stickstoff
+	if (Key == TEXT("Foerderanlage") && TDForschung::Hat(this, TEXT("Raketentreibstoff")))
+	{
+		Geschenk = TDBalance::Ganz(TEXT("Einsatz.Geschenk.Raketentreibstoff.Foerderanlage"), 3);
+	}
+	return Start + Geschenk + (Gekauft && Laden ? *Gekauft * LadenPaket(*Laden) : 0);
 }
 
 void UTDEinsatzSubsystem::WelleBeendet(int32 Welle, float KernAnteil)
@@ -1432,31 +1448,46 @@ void UTDEinsatzSubsystem::PruefeHologramm(AFGHologram* Hologramm)
 	{
 		return;
 	}
-	const FString Key = Schluessel(Hologramm->GetBuildClass());
-	if (Key.IsEmpty())
-	{
-		return;
-	}
-	const ATDDefenseCore* Kern = mKern.Get();
 	TDAktualisiereSperrTexte();
-	// Bausperre im Verteidigungsfeld waehrend einer Welle
-	const UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
-	if (Waves && Waves->LaeuftWelle() && Kern && FVector::Dist2D(Hologramm->GetActorLocation(), Kern->GetActorLocation()) < EinsatzFeldRadius)
+	// Mehrere auf einmal (Mauern ziehen): alle muessen ins Kontingent passen (Test 0.19.1: "Mauer 6/5")
+	const FString Grund = SperrGrund(Hologramm->GetBuildClass(), Hologramm->GetActorLocation(), FMath::Max(1, Hologramm->GetBaseCostMultiplier()));
+	if (Grund == TEXT("Welle"))
 	{
 		Hologramm->AddConstructDisqualifier(UTDCDWellenSperre::StaticClass());
-		return;
 	}
-	// Mehrere auf einmal (Mauern ziehen): alle muessen ins Kontingent passen (Test 0.19.1: "Mauer 6/5")
-	const int32 Anzahl = FMath::Max(1, Hologramm->GetBaseCostMultiplier());
-	if (Key == TEXT("AWESOME-Sink"))
+	else if (Grund == TEXT("Sink"))
 	{
 		Hologramm->AddConstructDisqualifier(UTDCDSinkGesperrt::StaticClass());
-		return;
 	}
-	if (Belegt(Key) + Anzahl > Grenze(Key))
+	else if (Grund == TEXT("Kontingent"))
 	{
 		Hologramm->AddConstructDisqualifier(UTDCDKontingent::StaticClass());
 	}
+}
+
+FString UTDEinsatzSubsystem::SperrGrund(UClass* BauKlasse, const FVector& Ort, int32 Anzahl)
+{
+	if (!mAktiv || mFrei || !BauKlasse)
+	{
+		return FString();
+	}
+	const FString Key = Schluessel(BauKlasse);
+	if (Key.IsEmpty())
+	{
+		return FString();
+	}
+	// Bausperre im Verteidigungsfeld waehrend einer Welle
+	const ATDDefenseCore* Kern = mKern.Get();
+	const UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
+	if (Waves && Waves->LaeuftWelle() && Kern && FVector::Dist2D(Ort, Kern->GetActorLocation()) < EinsatzFeldRadius)
+	{
+		return TEXT("Welle");
+	}
+	if (Key == TEXT("AWESOME-Sink"))
+	{
+		return TEXT("Sink");
+	}
+	return Belegt(Key) + Anzahl > Grenze(Key) ? TEXT("Kontingent") : FString();
 }
 
 void UTDEinsatzSubsystem::Melde(const FString& Text) const

@@ -24,6 +24,7 @@ BAUTEN = {
     "FieldProjector": ["Base", "Core", "Ring0", "Ring1", "Ring2"],
     "SingularityLauncher": ["Base", "Yaw", "Pitch"],
     "DimensionalDepot": ["Base", "Sphere"],
+    "DronePort": ["Base", "Tower", "Drone"],   # 0.9.3
 }
 # 0.83: FICSITTD_NUR=ConductorWall,... begrenzt Import und Menue auf diese Bauten
 _NUR = [n for n in os.environ.get("FICSITTD_NUR", "").split(",") if n]
@@ -131,7 +132,7 @@ def menue():
     sc_tuerme = unreal.load_asset("/FicsitTD/UI/SC_TD_Turrets")
     MENUE = (("Gate", sc_mauern, 1.5), ("LureBeacon", sc_mauern, 3.0), ("SlickPlate", sc_mauern, 4.0),
              ("ConductorWall", sc_mauern, 1.7), ("RadioMast", sc_mauern, 5.0), ("ShieldGenerator", sc_mauern, 6.0),
-             ("DimensionalDepot", sc_mauern, 7.0), ("FieldProjector", sc_mauern, 8.0),
+             ("DimensionalDepot", sc_mauern, 7.0), ("DronePort", sc_mauern, 7.5), ("FieldProjector", sc_mauern, 8.0),
              ("FlakTurret", sc_tuerme, 20.0), ("SingularityLauncher", sc_tuerme, 21.0))
     for bau, sub, prio in MENUE:
         if bau not in BAUTEN:

@@ -1,0 +1,142 @@
+{
+  "Name": "LeiterE3",
+  "_Hinweis": "0.9.4: Kombo Leiter allein - 2 Teslaspulen (L1) neben dem Weg, 2 Elektrozaeune quer zum Weg 18/24 m vor dem Kern, wo die Wege zusammenlaufen. Keine weiteren Tuerme, damit Gegner bis an die Zaeune kommen.",
+  "NeuesSpiel": {
+    "Startort": "Rocky Desert"
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 25,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warte": 15
+    },
+    {
+      "befehl": "td einsatz stop"
+    },
+    {
+      "befehl": "td kern stop"
+    },
+    {
+      "befehl": "td einsatz start normal 30"
+    },
+    {
+      "befehl": "td einsatz frei an"
+    },
+    {
+      "stromfrei": true
+    },
+    {
+      "erforsche": "Teslaspule"
+    },
+    {
+      "erforsche": "Elektrozaun"
+    },
+    {
+      "erforsche": "Hochspannung"
+    },
+    {
+      "versorgung": {}
+    },
+    {
+      "baue": "Elektrozaun",
+      "anzahl": 1,
+      "rezept": "Recipe_TD_Zaun_Strom",
+      "ring": "weg",
+      "abstand": 18,
+      "quer": true
+    },
+    {
+      "baue": "Elektrozaun",
+      "anzahl": 1,
+      "rezept": "Recipe_TD_Zaun_Strom",
+      "ring": "weg",
+      "abstand": 24,
+      "quer": true
+    },
+    {
+      "baue": "Teslaspule",
+      "anzahl": 2,
+      "level": 1,
+      "rezept": "Recipe_TD_Tesla_Discharge",
+      "ring": "weg",
+      "abstand": 21,
+      "seite": 7
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "LeiterE3_W00"
+    },
+    {
+      "wellenlauf": 10,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "LeiterE3_W10"
+    },
+    {
+      "pruefe": "KernLebt",
+      "text": "Kern hat Welle 10 überstanden"
+    },
+    {
+      "pruefe": "Kombo",
+      "kombo": "Leiter",
+      "min": 1,
+      "text": "Kombo Leiter (Zaun leitet Tesla) ausgelöst"
+    },
+    {
+      "pruefe": "TurmWert",
+      "turm": "Elektrozaun",
+      "wert": "Schlaege",
+      "min": 0,
+      "text": "Elektrozaun (Schläge, Info)"
+    },
+    {
+      "pruefe": "TurmWert",
+      "turm": "Elektrozaun",
+      "wert": "NahMin",
+      "min": 0,
+      "text": "Elektrozaun naechstes Ziel in m (Diagnose)"
+    },
+    {
+      "pruefe": "TurmWert",
+      "turm": "Elektrozaun",
+      "wert": "ZielTakte",
+      "min": 0,
+      "text": "Elektrozaun Takte mit Ziel (Diagnose)"
+    },
+    {
+      "pruefe": "TurmWert",
+      "turm": "Elektrozaun",
+      "wert": "NahTakte",
+      "min": 0,
+      "text": "Elektrozaun Ziel unter 4 m (Diagnose)"
+    },
+    {
+      "pruefe": "TurmWert",
+      "turm": "Elektrozaun",
+      "wert": "Intakt",
+      "min": 0,
+      "text": "Elektrozaun intakt (Diagnose)"
+    },
+    {
+      "pruefe": "Sicherheitsnetze",
+      "text": "kein Sicherheitsnetz ausgelöst"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}

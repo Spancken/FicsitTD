@@ -99,6 +99,7 @@ private:
 	TMap<TWeakObjectPtr<class ATDTurretBase>, float> mVersorgtRest;
 	int32 mBauplatz = 0;
 	int32 mBauplatzInnen = 0;
+	int32 mBauplatzWeg = 0;
 	/** 0.78.1: Kern im Wellenlauf gefallen -> weitere Wellenlaeufe des Plans ueberspringen (keine Folgefehler) */
 	bool mKernGefallen = false;
 	/** 0.78.1: Nachzuegler-Diagnose (hoechstens 3 Gegner leben lange): Uhr, Meldungen je Welle, Welle der letzten Meldung */

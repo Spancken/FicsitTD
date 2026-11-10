@@ -15,14 +15,18 @@ def mesh(turm, teil):
 
 # Turm -> Komponentenname -> Modell; Strom in MW; Band-Eingang ja/nein
 TUERME = {
-    "BoltTurret": dict(modelle={"TurretYaw": mesh("BoltTurret", "Yaw"), "TurretHead": mesh("BoltTurret", "Head")}, strom=8.0, band=True),
+    "BoltTurret": dict(modelle={"TurretYaw": mesh("BoltTurret", "Yaw"), "TurretHead": mesh("BoltTurret", "Head")}, strom=8.0, band=True,
+                       eingang=(-210.0, 0.0, 100.0), strom_ort=(0.0, -250.0, 130.0)),   # 0.9.3 Original-Anschluesse
     "GunTurret": dict(modelle={"TurretYaw": mesh("GunTurret", "Yaw"), "TurretHead": mesh("GunTurret", "Head"),
-                               "Laufbuendel": mesh("GunTurret", "Barrels")}, strom=12.0, band=True),
+                               "Laufbuendel": mesh("GunTurret", "Barrels")}, strom=12.0, band=True,
+                      eingang=(-235.0, 0.0, 100.0), strom_ort=(-85.0, -275.0, 82.0)),
     # Teslaspule: Spule steht fest in TurretYaw, keine Kanzel; Strom fliesst nur beim Aufladen (= Produzieren)
-    "TeslaCoil": dict(modelle={"TurretYaw": mesh("TeslaCoil", "Coil")}, strom=75.0, band=False),
+    "TeslaCoil": dict(modelle={"TurretYaw": mesh("TeslaCoil", "Coil")}, strom=75.0, band=False, strom_ort=(-45.0, -255.0, 49.0)),
     # Flammenwerfer: Treibstoff ueber PipeInput (C++-Komponente) hinten am Sockel
-    "FlameTurret": dict(modelle={"TurretYaw": mesh("FlameTurret", "Yaw"), "TurretHead": mesh("FlameTurret", "Head")}, strom=6.0, band=False),
-    "NobeliskLauncher": dict(modelle={"TurretYaw": mesh("NobeliskLauncher", "Yaw"), "TurretHead": mesh("NobeliskLauncher", "Head")}, strom=20.0, band=True),
+    "FlameTurret": dict(modelle={"TurretYaw": mesh("FlameTurret", "Yaw"), "TurretHead": mesh("FlameTurret", "Head")}, strom=6.0, band=False,
+                        strom_ort=(-45.0, -265.0, 82.0)),
+    "NobeliskLauncher": dict(modelle={"TurretYaw": mesh("NobeliskLauncher", "Yaw"), "TurretHead": mesh("NobeliskLauncher", "Head")}, strom=20.0, band=True,
+                             eingang=(-225.0, 0.0, 100.0), strom_ort=(-45.0, -265.0, 82.0)),
     "Barrier": dict(modelle={}, strom=None, band=False),
     "RepairStation": dict(modelle={"TurretYaw": mesh("RepairStation", "Yaw")}, strom=10.0, band=True),
     # Abwehrkern: kein Strom, keine Anschluesse
@@ -30,20 +34,25 @@ TUERME = {
     # 0.81 passive Bauten P1: Tor (Aussichtsturm-Kopie, Teile laedt der Code), Lockfeuer und Oelschlick (Konstruktor-Kopien)
     "Gate": dict(modelle={}, strom=None, band=False, ohne_gemeinsam=True),
     "LureBeacon": dict(modelle={"TurretYaw": mesh("LureBeacon", "Horn")}, strom=5.0, band=True,
-                       eingang=(-102.0, 0.0, 45.0), strom_ort=(90.0, -90.0, 92.0)),
+                       eingang=(-160.0, 0.0, 100.0), strom_ort=(30.0, -190.0, 50.0)),
+    # 0.9.3 Drohnenplatz: Turm (Kontrollturm) als TurretYaw, Original-Anschluesse wie in Modelle\\td_drohnenplatz.py
+    "DronePort": dict(modelle={"TurretYaw": mesh("DronePort", "Tower")}, strom=30.0, band=True,
+                      eingang=(-350.0, 0.0, 100.0), strom_ort=(150.0, 390.0, 60.0)),
     "SlickPlate": dict(modelle={"TurretYaw": mesh("SlickPlate", "Valve")}, strom=2.0, band=False,
-                       strom_ort=(430.0, -150.0, 58.0), ausgang=(0.0, 0.0, 15.0)),
+                       strom_ort=(375.0, 205.0, 80.0), ausgang=(0.0, 0.0, 15.0)),
     # 0.83 Bauten P2/P3: Lage der Anschluesse aus den Blender-Skripten (Stromdose, Band-Eingang hinten -X)
     "ConductorWall": dict(modelle={"TurretYaw": mesh("ConductorWall", "Door0")}, strom=2.0, band=False,
-                          strom_ort=(330.0, -45.0, 60.0), ausgang=(0.0, 0.0, 40.0)),
+                          strom_ort=(0.0, -120.0, 80.0), ausgang=(0.0, 0.0, 40.0)),
     "RadioMast": dict(modelle={"TurretYaw": mesh("RadioMast", "Dish")}, strom=15.0, band=False,
-                      strom_ort=(119.0, -30.0, 70.0), ausgang=(0.0, 0.0, 40.0)),
+                      strom_ort=(190.0, 30.0, 75.0), ausgang=(0.0, 0.0, 40.0)),
     "ShieldGenerator": dict(modelle={"TurretYaw": mesh("ShieldGenerator", "Ring0")}, strom=60.0, band=False,
-                            strom_ort=(250.0, -250.0, 70.0), ausgang=(0.0, 0.0, 30.0)),
-    "FlakTurret": dict(modelle={"TurretYaw": mesh("FlakTurret", "Yaw"), "TurretHead": mesh("FlakTurret", "Pitch")}, strom=25.0, band=True),
-    "FieldProjector": dict(modelle={"TurretYaw": mesh("FieldProjector", "Core")}, strom=80.0, band=True),
+                            strom_ort=(-200.0, -385.0, 110.0), ausgang=(0.0, 0.0, 30.0)),
+    "FlakTurret": dict(modelle={"TurretYaw": mesh("FlakTurret", "Yaw"), "TurretHead": mesh("FlakTurret", "Pitch")}, strom=25.0, band=True,
+                       eingang=(-210.0, 0.0, 100.0), strom_ort=(0.0, -250.0, 130.0)),
+    "FieldProjector": dict(modelle={"TurretYaw": mesh("FieldProjector", "Core")}, strom=80.0, band=True,
+                           eingang=(-210.0, 0.0, 100.0), strom_ort=(0.0, -250.0, 130.0)),
     "SingularityLauncher": dict(modelle={"TurretYaw": mesh("SingularityLauncher", "Yaw"), "TurretHead": mesh("SingularityLauncher", "Pitch")},
-                                strom=150.0, band=True, eingang=(-336.0, 0.0, 125.0), strom_ort=(250.0, -280.0, 120.0)),
+                                strom=150.0, band=True, eingang=(-350.0, 0.0, 100.0), strom_ort=(-240.0, -390.0, 75.0)),
     # Lager: Kugel laedt der Code, Band-Eingang am Kern-Anschluss hinten, Ausgang versteckt
     "DimensionalDepot": dict(modelle={}, strom=None, band=True, ohne_gemeinsam=True, eingang=(-220.0, 0.0, 70.0), ausgang=(0.0, 0.0, 40.0)),
 }
@@ -81,7 +90,7 @@ def richte_ein(turm, cfg):
                 obj.set_editor_property("relative_location", unreal.Vector(*cfg.get("eingang", (-198.0, 0.0, 100.0))))
                 # Achtung: unreal.Rotator(roll, pitch, yaw) - deshalb mit Schluesselwoertern
                 obj.set_editor_property("relative_rotation", unreal.Rotator(roll=0.0, pitch=0.0, yaw=180.0))
-                log(f"  Band-Eingang {n} -> (-198, 0, 100), Blick -X")
+                log(f"  Band-Eingang {n} -> {cfg.get('eingang', (-198.0, 0.0, 100.0))}, Blick -X")
             else:
                 weg.append((h, n))
         elif c == "FGFactoryConnectionComponent" and n.startswith("Output"):

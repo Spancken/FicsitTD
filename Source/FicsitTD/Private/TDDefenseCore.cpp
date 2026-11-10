@@ -112,7 +112,7 @@ void ATDDefenseCore::BeginPlay()
 	GetWorldTimerManager().SetTimer(mGeschuetzTimer, this, &ATDDefenseCore::Geschuetz, 1.5f, true, 1.5f);
 	// 8 Koeder rund um den Sockel (Modell +-204 cm). Test 0.16.2: die alten sassen 1,1 m von der Mitte im Sockel, Gegner kamen nicht heran
 	// 0.61 Tiefbohrer: Sockel 8 x 8 m -> 12 Koeder knapp ausserhalb
-	ATDDecoy::SpawnRing(this, 470.f, 95.f, 12, mDecoys);
+	ATDDecoy::SpawnRing(this, 940.f, 95.f, 16, mDecoys);   // 0.9.3: Kern doppelt so gross (16 x 16 m), Koeder knapp ausserhalb
 	// Spielt das Navigationsnetz nur um "Invoker" (Spieler) herum, erzeugt der Kern sein eigenes bis hinter die weitesten Fronten (300 m)
 	if (UNavigationSystemV1* Nav = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld()))
 	{
@@ -174,7 +174,7 @@ void ATDDefenseCore::Geschuetz()
 		return;
 	}
 	// Optik wie beim Bolzenturm: Geschoss des Armierungsgewehrs, rein sichtbar
-	const FVector Von = GetActorLocation() + FVector(0.f, 0.f, 650.f);
+	const FVector Von = GetActorLocation() + FVector(0.f, 0.f, 1300.f);
 	const FVector Nach = Ziel->GetActorLocation();
 	UClass* Bolzen = LoadClass<UFGItemDescriptor>(nullptr, TEXT("/Game/FactoryGame/Resource/Parts/SpikedRebar/Desc_SpikedRebar.Desc_SpikedRebar_C"));
 	const UFGAmmoTypeProjectile* Typ = Cast<UFGAmmoTypeProjectile>(Bolzen ? Bolzen->GetDefaultObject() : nullptr);
@@ -211,7 +211,7 @@ void ATDDefenseCore::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void ATDDefenseCore::GetClearanceData_Implementation(TArray<FFGClearanceData>& out_data) const
 {
 	FFGClearanceData Data;
-	Data.ClearanceBox = FBox(FVector(-405.f, -405.f, 0.f), FVector(405.f, 405.f, 1550.f));
+	Data.ClearanceBox = FBox(FVector(-810.f, -810.f, 0.f), FVector(810.f, 810.f, 3100.f));
 	out_data.Add(Data);
 }
 
@@ -329,8 +329,8 @@ void ATDDefenseCore::Animieren()
 	// Tiefbohrer: in der Welle faehrt der Bohrer ins Loch und dreht schnell, in der Bauphase steht er oben und dreht langsam
 	const UTDWaveSubsystem* Waves = GetWorld() ? GetWorld()->GetSubsystem<UTDWaveSubsystem>() : nullptr;
 	const bool bBohrt = Waves && Waves->LaeuftWelle() && Anteil > 0.f;
-	const float Soll = bBohrt ? 0.f : 150.f;
-	mBohrHoehe = FMath::FInterpConstantTo(mBohrHoehe, Soll, KernAnimIntervall, 60.f);
+	const float Soll = bBohrt ? 0.f : 300.f;   // 0.9.3: Hub mit dem Kern verdoppelt
+	mBohrHoehe = FMath::FInterpConstantTo(mBohrHoehe, Soll, KernAnimIntervall, 120.f);
 	const float Ruetteln = bBohrt && mBohrHoehe < 5.f ? 1.5f * FMath::Sin(mZeit * 45.f) : 0.f;
 	if (mBohrer)
 	{

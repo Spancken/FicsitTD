@@ -5,6 +5,7 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialInterface.h"
 #include "TDSprache.h"
+#include "TDSlickPlate.h"
 
 /** Anzeigename der Schadensart (SchadensartName bleibt Balance-Schluessel) */
 static FString TDGewehrSchadensart(ETDSchadensart Art)
@@ -22,7 +23,7 @@ static FString TDGewehrSchadensart(ETDSchadensart Art)
 
 // Masse aus Modelle\TD_GunTurret_Stufen.blend (0.62, flacher Sockel nach Marius' Stufenbildern), Unreal-cm
 static const FVector GewehrLaufNabe(150.f, 0.f, 0.f);       // Drehachse des Laufbuendels in der Kanzel
-static const FVector GewehrMuendung(345.f, 0.f, 0.f);       // vor den Laufenden
+static const FVector GewehrMuendung(345.f, 0.f, 18.f);      // 0.9.3: vor dem jeweils oberen Lauf (Laufkreis r 18 cm um die Nabe), nicht in der Nabenmitte
 static constexpr float GewehrLaufMax = 1440.f;              // Grad/s bei voller Drehzahl
 
 /** Farbe der Leuchtspur und des Muendungsfeuers je Patrone (0.64: Munition sichtbar) */
@@ -40,9 +41,9 @@ ATDGunTurret::ATDGunTurret()
 {
 	mTurmName = TEXT("Gewehrturm");
 	mSchadensart = ETDSchadensart::Kugel;
-	mDrehpunkt = FVector(0.f, 0.f, 145.f);
+	mDrehpunkt = FVector(0.f, 0.f, 310.f);   // 0.9.3: Sockel 165 cm hoeher
 	mNeigeachse = FVector(0.f, 0.f, 90.f);
-	mLampenOrt = FVector(-90.f, -150.f, 128.f);   // neben dem Faltenbalg hinten links auf dem Deck
+	mLampenOrt = FVector(-60.f, 205.f, 340.f);   // 0.9.3: Lampe oben auf dem Original-Statusmast
 	mMuendung = GewehrMuendung;
 	mRange = 4200.f;   // Test 0.24.1: Spucker blieben ausserhalb von 35 m, Gewehr kam in Welle 4 nicht zum Schuss
 	mTurnSpeed = 220.f;
@@ -61,6 +62,11 @@ ATDGunTurret::ATDGunTurret()
 	mMuendungsfeuer->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	mMuendungsfeuer->SetCastShadow(false);
 	mMuendungsfeuer->SetVisibility(false);
+	// 0.9.3 Original-Anschluesse (Lagen aus Modelle\Original_Anschluesse.json)
+	OriginalTeil(TDOriginal::Eingang, FVector(-235.f, 0.f, 0.f), 90.f);
+	OriginalTeil(TDOriginal::Strom, FVector(-85.f, -185.f, 82.f), -90.f);
+	OriginalTeil(TDOriginal::Mast, FVector(-60.f, 205.f, 0.f), 180.f);
+
 }
 
 USceneComponent* ATDGunTurret::StufenZiel(const FString& Teil) const
@@ -149,6 +155,10 @@ void ATDGunTurret::Animieren(float DeltaSeconds, AFGCreature* Ziel)
 			if (W.Brand > 0.f)
 			{
 				TrefferArt(Ziel, W.Brand * SchadenBonus(), Richtung, 0.f, 0.5f, ETDSchadensart::Feuer);
+				if (mSchuesse % 6 == 0)   // 0.9.1 Oelbrand: Brandgeschosse zuenden das Oelschlick-Feld unter dem Ziel (nicht jeder Schuss, spart Suche)
+				{
+					ATDSlickPlate::Entzuende(GetWorld(), Ziel->GetActorLocation(), this);
+				}
 			}
 			if (mSchuesse % SpurJede == 0)
 			{

@@ -1,0 +1,110 @@
+{
+  "Name": "BautenE3b",
+  "_Hinweis": "0.9.1 E2/E3: Hochspannung; Stoerfeld und Singularitaet bremsen gemeinsam. 0.9.4: Leiter-Test in den eigenen Plan LeiterE3.",
+  "NeuesSpiel": {
+    "Startort": "Rocky Desert"
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 25,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warte": 15
+    },
+    {
+      "befehl": "td einsatz stop"
+    },
+    {
+      "befehl": "td kern stop"
+    },
+    {
+      "befehl": "td einsatz start normal 30"
+    },
+    {
+      "befehl": "td einsatz frei an"
+    },
+    {
+      "stromfrei": true
+    },
+    {
+      "erforsche": "Teslaspule"
+    },
+    {
+      "erforsche": "Elektrozaun"
+    },
+    {
+      "erforsche": "Hochspannung"
+    },
+    {
+      "versorgung": {
+        "Bolzenturm": 50,
+        "Stoerfeld": 2,
+        "Singularitaet": 8
+      }
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 2,
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "baue": "Stoerfeld",
+      "anzahl": 1,
+      "rezept": "Recipe_TD_Feld_SAM"
+    },
+    {
+      "baue": "Singularitaet",
+      "anzahl": 1,
+      "rezept": "Recipe_TD_Singularitaet_Ficsonium"
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "BautenE3b_W00"
+    },
+    {
+      "wellenlauf": 10,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "BautenE3b_W10"
+    },
+    {
+      "pruefe": "KernLebt",
+      "text": "Kern hat Welle 10 überstanden"
+    },
+    {
+      "pruefe": "TurmWert",
+      "turm": "Stoerfeld",
+      "wert": "Gebremst",
+      "min": 1,
+      "text": "Störfeld hat Gegner gebremst"
+    },
+    {
+      "pruefe": "TurmWert",
+      "turm": "Singularitaet",
+      "wert": "Getroffen",
+      "min": 1,
+      "text": "Singularität hat Gegner gesprengt"
+    },
+    {
+      "pruefe": "Sicherheitsnetze",
+      "text": "kein Sicherheitsnetz ausgelöst"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}

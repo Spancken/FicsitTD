@@ -1,0 +1,90 @@
+{
+  "Name": "Sperren091",
+  "_Hinweis": "0.9.1: Bausperren im Einsatz ohne freies Bauen: AWESOME-Sink gesperrt, Kontingent greift, Kauf erweitert das Kontingent. Prueft die Logik von PruefeHologramm (SperrGrund), nicht das Hologramm selbst.",
+  "NeuesSpiel": {
+    "Startort": "Rocky Desert"
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 12,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warte": 15
+    },
+    {
+      "befehl": "td einsatz stop"
+    },
+    {
+      "befehl": "td kern stop"
+    },
+    {
+      "befehl": "td einsatz start normal 30"
+    },
+    {
+      "warte": 5
+    },
+    {
+      "pruefe": "Bausperre",
+      "klasse": "/Game/FactoryGame/Buildable/Factory/ResourceSink/Build_ResourceSink.Build_ResourceSink_C",
+      "ort": "fern",
+      "soll": "Sink",
+      "text": "AWESOME-Sink ist im Einsatz gesperrt (auch fern vom Kern)"
+    },
+    {
+      "pruefe": "Bausperre",
+      "klasse": "/FicsitTD/Buildings/BoltTurret/Build_TD_BoltTurret.Build_TD_BoltTurret_C",
+      "ort": "fern",
+      "anzahl": 50,
+      "soll": "Kontingent",
+      "text": "50 Bolzentürme überschreiten das Kontingent"
+    },
+    {
+      "pruefe": "Bausperre",
+      "klasse": "/Game/FactoryGame/Buildable/Factory/ManufacturerMk1/Build_ManufacturerMk1.Build_ManufacturerMk1_C",
+      "ort": "fern",
+      "soll": "Kontingent",
+      "text": "Fertiger ohne Kauf gesperrt (Kontingent 0)"
+    },
+    {
+      "pruefe": "Bausperre",
+      "klasse": "/Game/FactoryGame/Buildable/Factory/Blender/Build_Blender.Build_Blender_C",
+      "ort": "fern",
+      "soll": "Kontingent",
+      "text": "Mischer ohne Kauf gesperrt (Kontingent 0)"
+    },
+    {
+      "erforsche": "Bauxit"
+    },
+    {
+      "erforsche": "Schwerindustrie"
+    },
+    {
+      "erforsche": "Mischtechnik"
+    },
+    {
+      "befehl": "td laden"
+    },
+    {
+      "befehl": "td einsatz stop"
+    },
+    {
+      "warte": 3
+    },
+    {
+      "pruefe": "Bausperre",
+      "klasse": "/Game/FactoryGame/Buildable/Factory/ResourceSink/Build_ResourceSink.Build_ResourceSink_C",
+      "ort": "fern",
+      "soll": "",
+      "text": "ohne Einsatz ist der AWESOME-Sink wieder frei"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}

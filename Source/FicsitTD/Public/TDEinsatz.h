@@ -147,6 +147,9 @@ public:
 
 	/** Aus dem Hook auf AFGHologram::ValidatePlacementAndCost: Kontingent und Wellensperre pruefen */
 	void PruefeHologramm(AFGHologram* Hologramm);
+	/** 0.9.1: Entscheidung von PruefeHologramm ohne Hologramm (Selbsttest "Bausperre"). Leer = erlaubt, sonst
+	 *  "Welle", "Sink" oder "Kontingent". */
+	FString SperrGrund(UClass* BauKlasse, const FVector& Ort, int32 Anzahl = 1);
 	/** To-do-Liste des Spiels: offene Kontingente als Bau-Rezepte in die Einkaufsliste, Einsatz-Block in die private Notiz
 	 *  (eigener Text des Spielers bleibt). Alle 3 s, solange ein Einsatz laeuft; beim Ende wird alles entfernt. */
 	void AktualisiereToDo();

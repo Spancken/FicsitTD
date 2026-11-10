@@ -243,6 +243,17 @@ AFGCreature* UTDGegnerHirn::Spawne(UWorld* World, UClass* Klasse, const FVector&
 		Kreatur->SpawnDefaultController();
 	}
 	Kreatur->SetIsPersistent(true);
+	// 0.9.4 (Mono-Tesla bis W50: 325 Nachzuegler, fast alle in Gruppen an den Spawnpunkten mit Tempo 0, "Weg frei"): die Gegner
+	// wichen einander nie aus, zwei grosse Gegner hielten sich gegenseitig fest. Ausweichen der Engine (RVO) fuer Wellengegner.
+	if (TDBalance::Wert(TEXT("Gegner.Ausweichen"), 1.f) > 0.f)
+	{
+		if (UCharacterMovementComponent* Bewegung = Kreatur->GetCharacterMovement())
+		{
+			Bewegung->AvoidanceConsiderationRadius = TDBalance::Wert(TEXT("Gegner.AusweichRadius"), 5.f) * 100.f;
+			Bewegung->AvoidanceWeight = 0.5f;
+			Bewegung->SetAvoidanceEnabled(true);
+		}
+	}
 	// Tag zuerst: der Hook auf AFGCreature::SetEnabled (FicsitTDModule) verhindert damit das Abschalten durch das Spiel
 	Kreatur->Tags.AddUnique(TEXT("FicsitTD"));
 	FFicsitTDModule::MerkeWellenKreatur(Kreatur);
@@ -399,6 +410,14 @@ void UTDGegnerHirn::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 	if (mPflege <= 0.f)
 	{
 		mPflege = 1.f;
+		for (int32 i = 0; i < BremsPlaetze; ++i)
+		{
+			const double Rest = mBremseBis[i] - GetWorld()->GetTimeSeconds();
+			if (Rest > 0.0)
+			{
+				mPflege = FMath::Min(mPflege, float(Rest) + 0.05f);
+			}
+		}
 		UCharacterMovementComponent* Bewegung = Kreatur->GetCharacterMovement();
 		const float Soll = mLaufTempo * TempoFaktor * BremsFaktor();
 		if (Bewegung && Soll > 0.f && !FMath::IsNearlyEqual(Bewegung->MaxWalkSpeed, Soll, 1.f))
@@ -705,8 +724,16 @@ void UTDGegnerHirn::Marschiere(AFGCreature* Kreatur, float DeltaTime)
 				// kein Festhaengen - nicht versetzen, weiter warten (der Vordermann laeuft weiter oder greift an)
 				if (const AFGCreature* Vordermann = Cast<AFGCreature>(Hindernis.GetActor()); Vordermann && Vordermann->Tags.Contains(TEXT("FicsitTD")))
 				{
-					mStill = 0.f;
-					return;
+					// 0.9.4: das Warten zaehlt als Stau (vorher unbegrenzt - zwei Gegner, die sich gegenseitig vorn sahen, warteten ewig,
+					// bis das Nachzuegler-Netz sie nach 25 s versetzte). Nach Gegner.StauGeduld greift das Versetzen im Hirn.
+					mStau += mStill;
+					mVordermannSumme += mStill;
+					if (mStau < TDBalance::Wert(TEXT("Gegner.StauGeduld"), 40.f))
+					{
+						mStill = 0.f;
+						return;
+					}
+					UE_LOG(LogFicsitTD, Log, TEXT("Hirn: %s wartet %.0f s hinter %s, wird versetzt"), *Kreatur->GetClass()->GetName(), mStau, *Vordermann->GetClass()->GetName());
 				}
 				// 0.78.6: Modell des Hindernisses (welche Pflanze, welcher Fels?)
 				FString Modell = Hindernis.GetComponent() ? Hindernis.GetComponent()->GetName() : FString(TEXT("-"));
@@ -854,12 +881,12 @@ void UTDGegnerHirn::Greife(AFGCreature* Kreatur, float DeltaTime)
 	// Marius 04.11.2026: Gegner muessen den Kern erreichen. Wer direkt am Kern steht (Mitte + Kern.AngriffsAbstand + eigene Reichweite),
 	// greift an, auch wenn der gewaehlte Koeder hinter einer Ecke des 8-m-Sockels liegt
 	const bool bAmKern = mKern.IsValid() && Koeder->GetActiveTarget() == mKern.Get()
-		&& FVector::Dist2D(Kreatur->GetActorLocation(), mKern->GetActorLocation()) <= TDBalance::Wert(TEXT("Kern.AngriffsAbstand"), 6.f) * 100.f + mWerte.Reichweite;
+		&& FVector::Dist2D(Kreatur->GetActorLocation(), mKern->GetActorLocation()) <= TDBalance::Wert(TEXT("Kern.AngriffsAbstand"), 10.f) * 100.f + mWerte.Reichweite;
 	// 0.65 (Marius: Stau am Kern, die hinteren kommen nicht heran): wer im Gedraenge um den Kern (Kern.Gedraenge m) einige Sekunden
 	// nicht naeher kommt, greift von dort an
 	const bool bKernZiel = mKern.IsValid() && Koeder->GetActiveTarget() == mKern.Get();
 	const bool bImGedraenge = bKernZiel
-		&& FVector::Dist2D(Kreatur->GetActorLocation(), mKern->GetActorLocation()) <= TDBalance::Wert(TEXT("Kern.Gedraenge"), 16.f) * 100.f;
+		&& FVector::Dist2D(Kreatur->GetActorLocation(), mKern->GetActorLocation()) <= TDBalance::Wert(TEXT("Kern.Gedraenge"), 20.f) * 100.f;
 	const bool bGedraenge = bImGedraenge && (mGedraenge
 		|| (mPhase == ETDHirnPhase::Anlauf && mAnlaufStill >= TDBalance::Wert(TEXT("Kern.GedraengeSekunden"), 3.f)));
 	if (bGedraenge && !mGedraenge)
@@ -1075,19 +1102,32 @@ FString UTDGegnerHirn::Diagnose() const
 	const UCharacterMovementComponent* Bewegung = Kreatur ? Kreatur->GetCharacterMovement() : nullptr;
 	static const TCHAR* Phasen[] = { TEXT("Marsch"), TEXT("Anlauf"), TEXT("Angriff"), TEXT("tot") };
 	const float ZielAbstand = mZiel.IsValid() && Kreatur ? FVector::Dist2D(mZiel->GetActorLocation(), Kreatur->GetActorLocation()) / 100.f : -1.f;
-	return FString::Printf(TEXT("%s, Weg %s, Rest %.0f m, Tempo %.0f/%.0f, %s, aktiv %s, gesehen vor %.0f s, versetzt %d, Ziel %s in %.0f m, Schaden %.0f an %s"),
+	return FString::Printf(TEXT("%s, Weg %s, Rest %.0f m, Tempo %.0f/%.0f, %s, aktiv %s, gesehen vor %.0f s, versetzt %d, Ziel %s in %.0f m, Schaden %.0f an %s, Stau %.0f s, hinter Vordermann %.0f s, Ausweichen %s"),
 		Phasen[static_cast<int32>(mPhase)], mWegVoll ? TEXT("frei") : TEXT("VERSPERRT"), GetRestweg() / 100.f,
 		Bewegung ? Bewegung->Velocity.Size2D() : 0.f, Bewegung ? Bewegung->GetMaxSpeed() : 0.f,
 		Bewegung ? *UEnum::GetValueAsString(Bewegung->MovementMode.GetValue()) : TEXT("?"),
 		Kreatur && Kreatur->GetIsEnabled() ? TEXT("ja") : TEXT("NEIN"),
 		Kreatur && GetWorld() ? GetWorld()->GetTimeSeconds() - Kreatur->GetLastRenderTime() : 0.f,
 		mVersetzt + 100 * mAbgestuerzt, mZiel.IsValid() && mZiel->GetActiveTarget() ? *mZiel->GetActiveTarget()->GetName() : TEXT("-"), ZielAbstand,
-		mSchaden, mLetztesOpfer.IsEmpty() ? TEXT("-") : *mLetztesOpfer);
+		mSchaden, mLetztesOpfer.IsEmpty() ? TEXT("-") : *mLetztesOpfer, mStau, mVordermannSumme, Bewegung && Bewegung->bUseRVOAvoidance ? TEXT("an") : TEXT("aus"));
 }
 
 float UTDGegnerHirn::BremsFaktor() const
 {
-	return GetWorld() && GetWorld()->GetTimeSeconds() < mBremseBis ? mBremseFaktor : 1.f;
+	if (!GetWorld())
+	{
+		return 1.f;
+	}
+	const double Jetzt = GetWorld()->GetTimeSeconds();
+	float Staerkste = 1.f;
+	for (int32 i = 0; i < BremsPlaetze; ++i)
+	{
+		if (Jetzt < mBremseBis[i])
+		{
+			Staerkste = FMath::Min(Staerkste, mBremseFaktor[i]);
+		}
+	}
+	return Staerkste;
 }
 
 void UTDGegnerHirn::Bremse(AFGCreature* Kreatur, float Faktor, float Dauer)
@@ -1096,15 +1136,61 @@ void UTDGegnerHirn::Bremse(AFGCreature* Kreatur, float Faktor, float Dauer)
 	{
 		return;
 	}
-	const bool bNeu = BremsFaktor() >= 1.f;
-	mBremseFaktor = FMath::Clamp(Faktor, 0.1f, 1.f);
-	mBremseBis = GetWorld()->GetTimeSeconds() + Dauer;
-	if (UCharacterMovementComponent* Bewegung = Kreatur->GetCharacterMovement())
+	const double Jetzt = GetWorld()->GetTimeSeconds();
+	const float Vorher = BremsFaktor();
+	Faktor = FMath::Clamp(Faktor, 0.05f, 1.f);
+	const double Bis = Jetzt + Dauer;
+	// Gleich starke Bremse verlaengert ihren Platz, sonst freier Platz, sonst die schwaechste ersetzen (wenn die neue staerker ist)
+	int32 Platz = INDEX_NONE;
+	for (int32 i = 0; i < BremsPlaetze && Platz == INDEX_NONE; ++i)
 	{
-		if (bNeu && mLaufTempo > 0.f)
+		if (Jetzt < mBremseBis[i] && FMath::IsNearlyEqual(mBremseFaktor[i], Faktor, 0.01f))
 		{
-			Bewegung->MaxWalkSpeed = mLaufTempo * TempoFaktor * mBremseFaktor;
+			Platz = i;
 		}
 	}
-	mPflege = FMath::Min(mPflege, Dauer + 0.05f);   // nach dem Ende spaetestens dann wieder volles Tempo
+	for (int32 i = 0; i < BremsPlaetze && Platz == INDEX_NONE; ++i)
+	{
+		if (Jetzt >= mBremseBis[i])
+		{
+			Platz = i;
+		}
+	}
+	if (Platz == INDEX_NONE)
+	{
+		int32 Schwaechste = 0;
+		for (int32 i = 1; i < BremsPlaetze; ++i)
+		{
+			if (mBremseFaktor[i] > mBremseFaktor[Schwaechste])
+			{
+				Schwaechste = i;
+			}
+		}
+		if (Faktor < mBremseFaktor[Schwaechste])
+		{
+			Platz = Schwaechste;
+		}
+	}
+	if (Platz != INDEX_NONE)
+	{
+		const bool bVerlaengern = Jetzt < mBremseBis[Platz] && FMath::IsNearlyEqual(mBremseFaktor[Platz], Faktor, 0.01f);
+		mBremseFaktor[Platz] = Faktor;
+		mBremseBis[Platz] = bVerlaengern ? FMath::Max(mBremseBis[Platz], Bis) : Bis;
+	}
+	const float Nachher = BremsFaktor();
+	if (UCharacterMovementComponent* Bewegung = Kreatur->GetCharacterMovement())
+	{
+		if (!FMath::IsNearlyEqual(Vorher, Nachher) && mLaufTempo > 0.f)
+		{
+			Bewegung->MaxWalkSpeed = mLaufTempo * TempoFaktor * Nachher;
+		}
+	}
+	// Die Pflege muss wach sein, wenn die kuerzeste Bremse endet, damit die naechste (oder volles Tempo) sofort greift
+	for (int32 i = 0; i < BremsPlaetze; ++i)
+	{
+		if (Jetzt < mBremseBis[i])
+		{
+			mPflege = FMath::Min(mPflege, float(mBremseBis[i] - Jetzt) + 0.05f);
+		}
+	}
 }

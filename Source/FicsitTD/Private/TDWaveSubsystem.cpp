@@ -97,7 +97,6 @@ static const TCHAR* SandkastenRezepte[] = {
 	TEXT("/FicsitTD/Buildings/NobeliskLauncher/Recipe_TD_Nobelisk_Pulse.Recipe_TD_Nobelisk_Pulse_C"),
 	TEXT("/FicsitTD/Buildings/NobeliskLauncher/Recipe_TD_Nobelisk_Cluster.Recipe_TD_Nobelisk_Cluster_C"),
 	TEXT("/FicsitTD/Buildings/NobeliskLauncher/Recipe_TD_Nobelisk_Nuke.Recipe_TD_Nobelisk_Nuke_C"),
-	TEXT("/FicsitTD/Buildings/RepairStation/Recipe_TD_RepairStation.Recipe_TD_RepairStation_C"),
 	TEXT("/FicsitTD/Buildings/Gate/Recipe_TD_Gate.Recipe_TD_Gate_C"),
 	TEXT("/FicsitTD/Buildings/LureBeacon/Recipe_TD_LureBeacon.Recipe_TD_LureBeacon_C"),
 	TEXT("/FicsitTD/Buildings/LureBeacon/Recipe_TD_Lure_Coal.Recipe_TD_Lure_Coal_C"),
@@ -115,15 +114,15 @@ static const TCHAR* SandkastenRezepte[] = {
 	TEXT("/FicsitTD/Buildings/FieldProjector/Recipe_TD_Feld_SAM.Recipe_TD_Feld_SAM_C"),
 	TEXT("/FicsitTD/Buildings/SingularityLauncher/Recipe_TD_SingularityLauncher.Recipe_TD_SingularityLauncher_C"),
 	TEXT("/FicsitTD/Buildings/SingularityLauncher/Recipe_TD_Singularitaet_Ficsonium.Recipe_TD_Singularitaet_Ficsonium_C"),
-	TEXT("/FicsitTD/Buildings/DimensionalDepot/Recipe_TD_DimensionalDepot.Recipe_TD_DimensionalDepot_C"),
 	TEXT("/FicsitTD/Recipes/Recipe_TD_FlakKanister.Recipe_TD_FlakKanister_C"),
+	TEXT("/FicsitTD/Buildings/DronePort/Recipe_TD_DronePort.Recipe_TD_DronePort_C"),
+	TEXT("/FicsitTD/Buildings/DronePort/Recipe_TD_Drohne_Reparatur.Recipe_TD_Drohne_Reparatur_C"),
+	TEXT("/FicsitTD/Buildings/DronePort/Recipe_TD_Drohne_ReparaturVerstaerkt.Recipe_TD_Drohne_ReparaturVerstaerkt_C"),
+	TEXT("/FicsitTD/Buildings/DronePort/Recipe_TD_Drohne_Kampf.Recipe_TD_Drohne_Kampf_C"),
 	TEXT("/FicsitTD/Buildings/GunTurret/Recipe_TD_Gun_Panzer.Recipe_TD_Gun_Panzer_C"),
 	TEXT("/FicsitTD/Buildings/GunTurret/Recipe_TD_Gun_Brand.Recipe_TD_Gun_Brand_C"),
 	TEXT("/FicsitTD/Recipes/Recipe_TD_PatronePanzer.Recipe_TD_PatronePanzer_C"),
 	TEXT("/FicsitTD/Recipes/Recipe_TD_PatroneBrand.Recipe_TD_PatroneBrand_C"),
-	TEXT("/FicsitTD/Buildings/RepairStation/Recipe_TD_Repair_IronPlate.Recipe_TD_Repair_IronPlate_C"),
-	TEXT("/FicsitTD/Buildings/RepairStation/Recipe_TD_Repair_Reinforced.Recipe_TD_Repair_Reinforced_C"),
-	TEXT("/FicsitTD/Buildings/RepairStation/Recipe_TD_Repair_SteelBeam.Recipe_TD_Repair_SteelBeam_C"),
 	TEXT("/FicsitTD/Buildings/GunTurret/Recipe_TD_GunTurret.Recipe_TD_GunTurret_C"),
 	TEXT("/FicsitTD/Buildings/GunTurret/Recipe_TD_Gun_Standard.Recipe_TD_Gun_Standard_C"),
 	TEXT("/FicsitTD/Buildings/GunTurret/Recipe_TD_Gun_Homing.Recipe_TD_Gun_Homing_C"),
@@ -859,7 +858,9 @@ bool UTDWaveSubsystem::PfadAmZiel(const UNavigationPath* Pfad, const FVector& Zi
 	}
 	const FVector Ende = Pfad->PathPoints.Last();
 	// 8 m: der Kern selbst ist nicht begehbar, aber Mauern direkt am Kern sollen als Sperre zaehlen (Test 0.18.3: mit 20 m galt ein eingemauerter Kern als frei)
-	return FVector::Dist2D(Ende, Ziel) <= 800.f && FMath::Abs(Ende.Z - Ziel.Z) <= 800.f;
+	// 0.9.3a (BautenP2 09.11.: 0 von 16 Fronten gueltig, alle "teilweise"): der Kern ist 16 x 16 m, der Weg endet 8-9 m vor der Mitte.
+	// Gleicher Abstand zur Kernkante wie vorher (halbe Breite 4 m + 4 m) -> halbe Breite 8,1 m + 4 m.
+	return FVector::Dist2D(Ende, Ziel) <= 1210.f && FMath::Abs(Ende.Z - Ziel.Z) <= 800.f;
 }
 
 /** Steht eine Verteidigung (Turm) in 60 m? Dort sollen keine Gegner erscheinen (Test 0.16.4: Turm an der Front erschoss Welle 1 in 2 s) */
@@ -2223,7 +2224,9 @@ void UTDWaveSubsystem::SpawneKernWelle(int32 Nummer)
 	// Lebenspunkte wachsen mit der Welle; die Zusammensetzung steht im Wellenplan (T3, in der Bauphase festgelegt)
 	const FTDStufe& S = GetStufe(mStufe);
 	mElites = 0;
-	const float LPFaktor = S.LP * (1.f + TDBalance::Wert(TEXT("Wellen.LPJeWelle"), 0.08f) * (Nummer - 1));
+	// 0.9.1 (Simulation 09.11.): ab W31 waechst das Leben schneller, Phase 4-5 hatte im Modell zu viel Luft. Im Spiel nachmessen.
+	const float JeWelle = TDBalance::Wert(TEXT("Wellen.LPJeWelle"), 0.08f);
+	const float LPFaktor = S.LP * (1.f + JeWelle * FMath::Min(Nummer - 1, 30) + TDBalance::Wert(TEXT("Wellen.LPJeWelleAb31"), 0.1f) * FMath::Max(Nummer - 31, 0));
 	if (mPlanWelle != Nummer)
 	{
 		PlaneWelle(Nummer);

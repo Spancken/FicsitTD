@@ -51,13 +51,13 @@ def tabellen(B, ns):
         z.append(f"| {p} | {w(f'Phasen.{p}.BossAnzahl')} | {w(f'Phasen.{p}.BossLP')} |")
     # Belohnung
     z += ["", "### Belohnung je Welle", "",
-          f"- **EP** = {w('Einsatz.EP.Grund')} + {w('Einsatz.EP.JeWelle')} × N, +{w('Einsatz.EP.KernVoll')} bei vollem Kern bzw. +{w('Einsatz.EP.KernAb75')} ab 75 %; Bosswelle × {w('Einsatz.EP.BossFaktor')} + {w('Einsatz.EP.BossBonus')}",
+          f"- **Coupons** = {w('Einsatz.EP.Grund')} + {w('Einsatz.EP.JeWelle')} × N, +{w('Einsatz.EP.KernVoll')} bei vollem Kern bzw. +{w('Einsatz.EP.KernAb75')} ab 75 %; Bosswelle × {w('Einsatz.EP.BossFaktor')} + {w('Einsatz.EP.BossBonus')}",
           f"- **FP** = {w('Einsatz.FP.JeWelle')}, +{w('Einsatz.FP.KernAb75')} bei Kern ab 75 %, +{w('Einsatz.FP.Boss')} im Boss",
           f"- Biomasse {w('Einsatz.Biomasse.JeWelle')}; Kern-Grundreparatur {zahl(100 * B.get('Kern.Grundreparatur', 0))} % je Welle",
           ""]
     z += ["| Beute | Normal | Elite | Boss |", "|---|---|---|---|"]
     for art in ("Kampfdaten", "EP", "Munition", "Splitter"):
-        z.append(f"| {art} (Chance) | " + " | ".join(w(f"Loot.{art}.{s}") for s in ("Normal", "Elite", "Boss")) + " |")
+        z.append(f"| {'Coupons' if art == 'EP' else art} (Chance) | " + " | ".join(w(f"Loot.{art}.{s}") for s in ("Normal", "Elite", "Boss")) + " |")
     # Laden
     z += ["", "### Laden (Kontingente)", "", "Preis = Grundpreis × (1 + Aufschlag × bisher gekauft); Paket = Gebäude je Kauf.", "",
           "| Eintrag | Grundpreis | Aufschlag | Paket | Start |", "|---|---|---|---|---|"]
@@ -67,7 +67,7 @@ def tabellen(B, ns):
     z += ["", "### Türme", "", "| Turm | Reichweite (m) | LP |", "|---|---|---|"]
     for t in ("Bolzenturm", "Gewehrturm", "Teslaspule", "Flammenwerfer", "Nobelisk-Werfer", "Reparaturstation"):
         z.append(f"| {t} | {w(f'Tuerme.{t}.Reichweite')} | {w(f'Tuerme.{t}.LP')} |")
-    z += ["", f"Turmlevel kosten {w('Tuerme.Level.Preis2')} / {w('Tuerme.Level.Preis3')} / {w('Tuerme.Level.Preis4')} / {w('Tuerme.Level.Preis5')} EP (Level 2–5). "
+    z += ["", f"Turmlevel kosten {w('Tuerme.Level.Preis2')} / {w('Tuerme.Level.Preis3')} / {w('Tuerme.Level.Preis4')} / {w('Tuerme.Level.Preis5')} Coupons (Level 2–5). "
           f"Doktrin: Schaden +{zahl(100 * B.get('Doktrin.Schaden', 0))} %, Level −{zahl(100 * B.get('Doktrin.LevelRabatt', 0))} %.", "",
           "| Level-Wirkung | Wert |", "|---|---|"]
     for k in sorted(k for k in B if k.startswith("Tuerme.Level.") and ".L" in k):

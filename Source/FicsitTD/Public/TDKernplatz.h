@@ -82,6 +82,7 @@ private:
 	void WarteNetzFuerEinsatz();
 	TWeakObjectPtr<class ATDDefenseCore> mNeuerKern;
 	int32 mEinsatzWarten = 0;
+	bool mNetzAufgefrischt = false;   // 0.9.4: Netz um die neue Plattform einmal neu erzeugen lassen
 	TWeakObjectPtr<AActor> mInvoker;
 
 	// ---- Scan (0.68) ----

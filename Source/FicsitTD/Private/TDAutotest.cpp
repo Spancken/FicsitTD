@@ -166,6 +166,7 @@ void UTDAutotest::StartePlan()
 	mKlickUnten = false;
 	mBauplatz = 0;
 	mBauplatzInnen = 0;
+	mBauplatzWeg = 0;
 	mKernGefallen = false;
 	TDNetz::Zuruecksetzen();
 	mNachzueglerUhr = 0.f;
@@ -475,7 +476,7 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		static const TMap<FString, FString> Ordner = { { TEXT("Bolzenturm"), TEXT("BoltTurret") }, { TEXT("Gewehrturm"), TEXT("GunTurret") },
 			{ TEXT("Teslaspule"), TEXT("TeslaCoil") }, { TEXT("Flammenwerfer"), TEXT("FlameTurret") }, { TEXT("Nobelisk-Werfer"), TEXT("NobeliskLauncher") },
 			{ TEXT("Tor"), TEXT("Gate") }, { TEXT("Lockfeuer"), TEXT("LureBeacon") }, { TEXT("Oelschlick"), TEXT("SlickPlate") },   // 0.81 passive Bauten P1
-			{ TEXT("Elektrozaun"), TEXT("ConductorWall") }, { TEXT("Funkmast"), TEXT("RadioMast") }, { TEXT("Schildgenerator"), TEXT("ShieldGenerator") }, { TEXT("Himmelsturm"), TEXT("FlakTurret") }, { TEXT("Stoerfeld"), TEXT("FieldProjector") }, { TEXT("Singularitaet"), TEXT("SingularityLauncher") }, { TEXT("Dimensionslager"), TEXT("DimensionalDepot") } };   // 0.83 Bauten P2/P3
+			{ TEXT("Elektrozaun"), TEXT("ConductorWall") }, { TEXT("Funkmast"), TEXT("RadioMast") }, { TEXT("Schildgenerator"), TEXT("ShieldGenerator") }, { TEXT("Himmelsturm"), TEXT("FlakTurret") }, { TEXT("Stoerfeld"), TEXT("FieldProjector") }, { TEXT("Singularitaet"), TEXT("SingularityLauncher") }, { TEXT("Dimensionslager"), TEXT("DimensionalDepot") }, { TEXT("Drohnenplatz"), TEXT("DronePort") } };   // 0.83 Bauten P2/P3, 0.9.3 Drohnenplatz
 		const FString* O = Ordner.Find(Wort);
 		UClass* Klasse = O ? LoadClass<AFGBuildable>(nullptr, *FString::Printf(TEXT("/FicsitTD/Buildings/%s/Build_TD_%s.Build_TD_%s_C"), **O, **O, **O)) : nullptr;
 		UClass* BauRezept = O ? LoadClass<UFGRecipe>(nullptr, *FString::Printf(TEXT("/FicsitTD/Buildings/%s/Recipe_TD_%s.Recipe_TD_%s_C"), **O, **O, **O)) : nullptr;
@@ -486,18 +487,93 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		const int32 Level = S->HasField(TEXT("level")) ? static_cast<int32>(S->GetNumberField(TEXT("level"))) : 1;
 		// Plaetze: Ring um den Kern im 8-m-Raster, abwechselnd die Seiten, damit sich die Tuerme verteilen.
 		// 0.78.1 (Pruefstand: Flammenwerfer auf 16 m hatte nur 32 % Zeit mit Ziel): "ring": "innen" nimmt den 8-m-Ring
-		static const FVector2D Aussen[] = { {16, 0}, {-16, 0}, {0, 16}, {0, -16}, {16, 16}, {-16, -16}, {16, -16}, {-16, 16}, {8, 16}, {-8, -16}, {16, 8}, {-16, -8},
-			{-8, 16}, {8, -16}, {-16, 8}, {16, -8} };
-		static const FVector2D Innen[] = { {0, 8}, {0, -8}, {8, 0}, {-8, 0}, {8, 8}, {-8, -8}, {8, -8}, {-8, 8} };
+		// 0.9.3a: Kern 16 x 16 m (Kante 8,1 m) -> innerer Ring von 8 auf 12 m, aeusserer von 16 auf 20 m (Plattform 48 m, Kante 24 m)
+		static const FVector2D Aussen[] = { {20, 0}, {-20, 0}, {0, 20}, {0, -20}, {20, 20}, {-20, -20}, {20, -20}, {-20, 20}, {10, 20}, {-10, -20}, {20, 10}, {-20, -10},
+			{-10, 20}, {10, -20}, {-20, 10}, {20, -10} };
+		static const FVector2D Innen[] = { {0, 12}, {0, -12}, {12, 0}, {-12, 0}, {12, 12}, {-12, -12}, {12, -12}, {-12, 12} };
 		const bool bInnen = S->HasField(TEXT("ring")) && S->GetStringField(TEXT("ring")) == TEXT("innen");
 		const FVector2D* Raster = bInnen ? Innen : Aussen;
 		const int32 Plaetze = bInnen ? UE_ARRAY_COUNT(Innen) : UE_ARRAY_COUNT(Aussen);
-		int32& Platz = bInnen ? mBauplatzInnen : mBauplatz;
-		int32 Gebaut = 0;
-		for (int32 i = 0; i < Anzahl && Kern && Klasse && Bau && Platz < Plaetze; ++i, ++Platz)
+		int32 WegZaehler = 0;
+		int32& Platz = S->HasField(TEXT("ring")) && S->GetStringField(TEXT("ring")) == TEXT("weg") ? WegZaehler : bInnen ? mBauplatzInnen : mBauplatz;
+		// 0.9.4 (Nachtest094: Stoerfeld und Zaun 0 gebaut): direkt nach dem Spielstart ist das Netz noch nicht fertig, die Fronten sind
+		// ungeprueft und haben keinen Weg. Das Spiel sucht sie alle 15 s neu -> bis 90 s auf einen Frontweg warten.
+		if (S->HasField(TEXT("ring")) && S->GetStringField(TEXT("ring")) == TEXT("weg") && mSchrittUhr < 90.f)
 		{
-			const FVector Ort = Kern->GetActorLocation() + FVector(Raster[Platz].X * 100.f, Raster[Platz].Y * 100.f, 0.f);
-			const FTransform T(FRotator::ZeroRotator, Ort);
+			bool bWegDa = false;
+			if (UTDWaveSubsystem* Waves = World->GetSubsystem<UTDWaveSubsystem>())
+			{
+				for (const FTDFront& Fr : Waves->GetFronten())
+				{
+					bWegDa |= Fr.Punkte.Num() >= 2;
+				}
+			}
+			if (!bWegDa)
+			{
+				return false;
+			}
+		}
+		int32 Gebaut = 0;
+		// 0.9.1 (Pruefung091: Oelschlick lag auf dem Ring neben dem Weg, nie ein Gegner darauf): "ring": "weg" setzt den Bau auf den
+		// Weg der ersten aktiven Front, 18 m vom Kern und dann je 10 m weiter nach aussen
+		const bool bWeg = S->HasField(TEXT("ring")) && S->GetStringField(TEXT("ring")) == TEXT("weg");
+		const TArray<FVector>* WegPunkte = nullptr;
+		if (bWeg)
+		{
+			if (UTDWaveSubsystem* Waves = World->GetSubsystem<UTDWaveSubsystem>())
+			{
+				for (const FTDFront& Fr : Waves->GetFronten())
+				{
+					if (Fr.Punkte.Num() >= 2) { WegPunkte = &Fr.Punkte; break; }
+				}
+			}
+		}
+		for (int32 i = 0; i < Anzahl && Kern && Klasse && Bau && (bWeg || Platz < Plaetze); ++i, ++Platz)
+		{
+			FVector Ort = Kern->GetActorLocation() + FVector(Raster[FMath::Min(Platz, Plaetze - 1)].X * 100.f, Raster[FMath::Min(Platz, Plaetze - 1)].Y * 100.f, 0.f);
+			FRotator Dreh = FRotator::ZeroRotator;
+			if (bWeg)
+			{
+				if (!WegPunkte)
+				{
+					break;
+				}
+				// 0.9.4 (Nachtest094: Oelschlick 0 Takte mit Ziel): die Wegpunkte liegen bis zu 50 m auseinander, der naechste Punkt war
+				// das Wegende am Kern. Jetzt wird jedes Teilstueck in 1-m-Schritten abgetastet, so liegt der Bau genau auf dem Weg im Sollabstand.
+				// 0.9.4: Kern 16 x 16 m -> erster Platz 22 m (vorher 18 m bei 8 x 8 m)
+				// 0.9.4 (Pruefung091b: Leiter 0-mal, Teslas am Kern, Zaun 22-32 m draussen): "abstand" setzt den Sollabstand fest
+				// (ohne den Zaehler weiterzuschieben), "seite" stellt den Bau so viele Meter neben den Weg (abwechselnd links/rechts)
+				const float Soll = S->HasField(TEXT("abstand")) ? static_cast<float>(S->GetNumberField(TEXT("abstand"))) * 100.f : (22.f + 10.f * mBauplatzWeg++) * 100.f;
+				float Best = TNumericLimits<float>::Max();
+				for (int32 p = 0; p + 1 < WegPunkte->Num(); ++p)
+				{
+					const FVector A = (*WegPunkte)[p], B = (*WegPunkte)[p + 1];
+					const int32 Schritte = FMath::Max(1, FMath::CeilToInt(FVector::Dist(A, B) / 100.f));
+					for (int32 k = 0; k <= Schritte; ++k)
+					{
+						const FVector P = FMath::Lerp(A, B, float(k) / Schritte);
+						const float D = FMath::Abs(FVector::Dist2D(P, Kern->GetActorLocation()) - Soll);
+						if (D < Best)
+						{
+							Best = D;
+							Ort = P;
+							Dreh = FRotator(0.f, (B - A).Rotation().Yaw, 0.f);
+						}
+					}
+				}
+				// 0.9.4: "quer" stellt den Bau quer zum Weg (Elektrozaun als Sperre, wie man ihn baut)
+				if (S->HasField(TEXT("quer")) && S->GetBoolField(TEXT("quer")))
+				{
+					Dreh.Yaw += 90.f;
+				}
+				if (S->HasField(TEXT("seite")))
+				{
+					const float Seite = static_cast<float>(S->GetNumberField(TEXT("seite"))) * 100.f * ((i % 2) ? -1.f : 1.f);
+					Ort += FRotator(0.f, Dreh.Yaw + 90.f, 0.f).Vector() * Seite;
+				}
+				UE_LOG(LogFicsitTD, Log, TEXT("Autotest: %s auf dem Weg, %.0f m vom Kern (Soll %.0f m)"), *Wort, FVector::Dist2D(Ort, Kern->GetActorLocation()) / 100.f, Soll / 100.f);
+			}
+			const FTransform T(Dreh, Ort);
 			if (AFGBuildable* Neu = Bau->BeginSpawnBuildable(Klasse, T))
 			{
 				Neu->SetBuiltWithRecipe(BauRezept);
@@ -874,6 +950,36 @@ bool UTDAutotest::Pruefe(UWorld* World, const TSharedPtr<FJsonObject>& S, FStrin
 		}
 		OutIst = FString::Printf(TEXT("%s %s = %.3f (Soll %.3f)"), *Typ, *Wert, Ist, Soll);
 		return FMath::Abs(Ist - Soll) <= Tol;
+	}
+	if (Name == TEXT("Kombo"))
+	{
+		// 0.9.1: Kombination hat mindestens "min"-mal ausgeloest (Zaehler der Sitzung)
+		const FString K = S->GetStringField(TEXT("kombo"));
+		const int32 Ist = TDKombo::Anzahl(*K);
+		const int32 Min = S->HasField(TEXT("min")) ? int32(S->GetNumberField(TEXT("min"))) : 1;
+		OutIst = FString::Printf(TEXT("%s %d-mal (mindestens %d)"), *K, Ist, Min);
+		return Ist >= Min;
+	}
+	if (Name == TEXT("Bausperre"))
+	{
+		// 0.9.1 (Review 09.11.): Sperrentscheidung des Einsatzes fuer eine Bauklasse an einem Ort ("kern" = 20 m neben dem Kern,
+		// "fern" = 2 km entfernt). soll: "" (erlaubt), "Welle", "Sink" oder "Kontingent". Prueft die Logik von PruefeHologramm.
+		UClass* Klasse = LoadClass<UObject>(nullptr, *S->GetStringField(TEXT("klasse")));
+		UTDEinsatzSubsystem* Einsatz = World->GetSubsystem<UTDEinsatzSubsystem>();
+		const ATDDefenseCore* Kern = nullptr;
+		for (TActorIterator<ATDDefenseCore> It(World); It; ++It) { Kern = *It; break; }
+		if (!Klasse || !Einsatz || !Kern)
+		{
+			OutIst = !Klasse ? TEXT("Klasse nicht gefunden") : !Einsatz ? TEXT("kein Einsatz-Subsystem") : TEXT("kein Kern");
+			return false;
+		}
+		const bool bFern = S->HasField(TEXT("ort")) && S->GetStringField(TEXT("ort")) == TEXT("fern");
+		const FVector Ort = Kern->GetActorLocation() + FVector(bFern ? 200000.f : 2000.f, 0.f, 0.f);
+		const int32 Anzahl = S->HasField(TEXT("anzahl")) ? int32(S->GetNumberField(TEXT("anzahl"))) : 1;
+		const FString Ist = Einsatz->SperrGrund(Klasse, Ort, Anzahl);
+		const FString Soll = S->HasField(TEXT("soll")) ? S->GetStringField(TEXT("soll")) : FString();
+		OutIst = FString::Printf(TEXT("%s %s: %s"), *Klasse->GetName(), bFern ? TEXT("fern") : TEXT("am Kern"), Ist.IsEmpty() ? TEXT("erlaubt") : *Ist);
+		return Ist == Soll;
 	}
 	if (Name == TEXT("ForschungZustand"))
 	{

@@ -5,23 +5,29 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
 #include "TDSprache.h"
+#include "TDSlickPlate.h"
 
 TArray<TWeakObjectPtr<ATDLureBeacon>> ATDLureBeacon::sAlle;
 
 // Lage der beweglichen Teile aus Modelle\td_lockfeuer.py (m -> cm)
 static constexpr float LockKlappenRadius = 74.f;
 static constexpr float LockKlappenZ = 320.f;
-static const FVector LockLeuchteOrt(-55.f, 55.f, 445.f);
+static const FVector LockLeuchteOrt(0.f, 0.f, 445.f);   // 0.9.3: Leuchte mittig auf der Krone
 
 ATDLureBeacon::ATDLureBeacon()
 {
 	mTurmName = TEXT("Lockfeuer");
 	mDreht = false;
 	mRange = 4000.f;                              // Tuerme.Lockfeuer.Reichweite: lockt nur, wenn Gegner in 40 m sind
-	mDrehpunkt = FVector(40.f, 0.f, 215.f);       // Lautsprecher am Mast (Pivot TD_Horn)
+	mDrehpunkt = FVector(0.f, 0.f, 215.f);        // 0.9.3: Horn dreht um die Mastmitte (Pivot TD_Horn)
 	mMuendung = FVector(0.f, 0.f, 0.f);
 	mHalbmasse = FVector(100.f, 100.f, 45.f);
-	mLampenOrt = FVector(80.f, -101.f, 60.f);
+	mLampenOrt = FVector(45.f, 125.f, 340.f);   // 0.9.3: Lampe auf dem Original-Statusmast
+	// 0.9.3 Original-Anschluesse (Modelle\Original_Anschluesse.json, Gebaeude-Review)
+	OriginalTeil(TDOriginal::Eingang, FVector(-160.f, 0.f, 0.f), 90.f);
+	OriginalTeil(TDOriginal::Strom, FVector(30.f, -100.f, 50.f), -90.f);
+	OriginalTeil(TDOriginal::Mast, FVector(45.f, 125.f, 0.f), 180.f);
+
 	mKlarraumHoehe = 450.f;
 	mKlarraumHalb = FVector2D(105.f, 105.f);
 	mBaseMaxHealth = 2000.f;
@@ -160,6 +166,8 @@ void ATDLureBeacon::Animieren(float DeltaSeconds, AFGCreature* Ziel)
 		if (mGlutTakt <= 0.f)
 		{
 			mGlutTakt = 0.9f;
+			// 0.9.1 Oelbrand: das offene Feuer zuendet nasse Oelschlick-Felder im Umkreis
+			ATDSlickPlate::EntzuendeUmkreis(GetWorld(), GetActorLocation(), TDBalance::Wert(TEXT("Tuerme.Lockfeuer.Zuendradius"), 12.f) * 100.f, this);
 			ZeigeLeuchten(GetActorLocation() + FVector(0.f, 0.f, 380.f), FLinearColor(1.f, 0.45f, 0.08f), 2.5f, 1.f, 0.f, true, 30.f);
 		}
 	}

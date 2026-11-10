@@ -1,0 +1,157 @@
+{
+  "Name": "BautenE3a",
+  "_Hinweis": "0.9.1 E3: Oelbrand, Engstelle am Tor, Lockfeuer-Sammelpunkt. Bauten auf dem Gegnerweg (ring weg: 18, 28, 38 m).",
+  "NeuesSpiel": {
+    "Startort": "Rocky Desert"
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 25,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warte": 15
+    },
+    {
+      "befehl": "td einsatz stop"
+    },
+    {
+      "befehl": "td kern stop"
+    },
+    {
+      "befehl": "td einsatz start normal 30"
+    },
+    {
+      "befehl": "td einsatz frei an"
+    },
+    {
+      "stromfrei": true
+    },
+    {
+      "erforsche": "Tor"
+    },
+    {
+      "erforsche": "Lockfeuer"
+    },
+    {
+      "erforsche": "Oelschlick"
+    },
+    {
+      "erforsche": "Flammenwerfer"
+    },
+    {
+      "erforsche": "NobeliskWerfer"
+    },
+    {
+      "versorgung": {
+        "Bolzenturm": 50,
+        "Flammenwerfer": 6000,
+        "Nobelisk-Werfer": 15,
+        "Lockfeuer": 8,
+        "Oelschlick": 10000
+      }
+    },
+    {
+      "baue": "Oelschlick",
+      "anzahl": 1,
+      "rezept": "Recipe_TD_Slick_HeavyOil",
+      "ring": "weg"
+    },
+    {
+      "baue": "Lockfeuer",
+      "anzahl": 1,
+      "rezept": "Recipe_TD_Lure_Coal",
+      "ring": "weg"
+    },
+    {
+      "baue": "Tor",
+      "anzahl": 1,
+      "ring": "weg"
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 4,
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "baue": "Flammenwerfer",
+      "anzahl": 2,
+      "level": 2,
+      "rezept": "Recipe_TD_Flame_Fuel",
+      "ring": "innen"
+    },
+    {
+      "baue": "Nobelisk-Werfer",
+      "anzahl": 2,
+      "level": 2,
+      "rezept": "Recipe_TD_Nobelisk_Explosive",
+      "ring": "innen"
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "BautenE3a_W00"
+    },
+    {
+      "wellenlauf": 10,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "BautenE3a_W10"
+    },
+    {
+      "pruefe": "KernLebt",
+      "text": "Kern hat Welle 10 überstanden"
+    },
+    {
+      "pruefe": "TurmWert",
+      "turm": "Oelschlick",
+      "wert": "Gebremst",
+      "min": 1,
+      "text": "Ölschlick hat Gegner gebremst"
+    },
+    {
+      "pruefe": "Kombo",
+      "kombo": "Oelbrand",
+      "min": 1,
+      "text": "Kombo Ölbrand ausgelöst"
+    },
+    {
+      "pruefe": "TurmWert",
+      "turm": "Oelschlick",
+      "wert": "Brandschaden",
+      "min": 1,
+      "text": "Ölbrand hat Schaden gemacht (inkl. Nachbrennen)"
+    },
+    {
+      "pruefe": "Kombo",
+      "kombo": "Engstelle",
+      "min": 1,
+      "text": "Kombo Engstelle ausgelöst"
+    },
+    {
+      "pruefe": "Kombo",
+      "kombo": "Sammelpunkt",
+      "min": 1,
+      "text": "Kombo Sammelpunkt ausgelöst"
+    },
+    {
+      "pruefe": "Sicherheitsnetze",
+      "text": "kein Sicherheitsnetz ausgelöst"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}

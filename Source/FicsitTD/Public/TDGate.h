@@ -1,13 +1,24 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "Buildables/FGBuildable.h"
 #include "FGClearanceData.h"
 #include "TDDamageable.h"
+#include "FGPowerConnectionComponent.h"
 #include "TDGate.generated.h"
 
 class ATDDecoy;
 class UBoxComponent;
+class UFGPowerInfoComponent;
+
+/** 0.9.3 Stromanschluss des Tors (eigene Klasse, weil die Zahl der Kabel nur in Unterklassen gesetzt werden kann) */
+UCLASS()
+class FICSITTD_API UTDTorStromAnschluss : public UFGPowerConnectionComponent
+{
+	GENERATED_BODY()
+public:
+	UTDTorStromAnschluss() { mMaxNumConnectionLinks = 2; }
+};
 
 /**
  * Tor (P1, Konzept-Rohstoffe-Tuerme-Bauten-2026-11-07): 8 m breites Mauerstueck mit 4 x 4 m Oeffnung. Spieler und Fahrzeuge kommen
@@ -23,6 +34,8 @@ public:
 	ATDGate();
 
 	virtual void BeginPlay() override;
+	/** 0.9.3 Gegencheck: Strominfo vor BeginPlay an den Anschluss, damit geladene Spielstaende mit Kabel sofort Strom haben */
+	virtual void PostInitializeComponents() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual float TakeDamage(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 	virtual void GetClearanceData_Implementation(TArray<FFGClearanceData>& out_data) const override;
@@ -57,6 +70,19 @@ protected:
 	/** Sperre fuer das Navigationsnetz in der Oeffnung: Gegner planen nie hindurch, Spieler laufen (ueberlappend) durch */
 	UPROPERTY(VisibleAnywhere, Category = "Tower Defense")
 	TObjectPtr<UBoxComponent> mNavSperre;
+	/** 0.9.3 (Marius 09.11.2026): ohne Strom bleibt das Tor in der Welle offen und Kreaturen kommen durch */
+	UPROPERTY(VisibleAnywhere, Category = "Tower Defense")
+	TObjectPtr<UTDTorStromAnschluss> mStrom;
+	UPROPERTY(VisibleAnywhere, Category = "Tower Defense")
+	TObjectPtr<UFGPowerInfoComponent> mStromInfo;
+	UPROPERTY(Transient)
+	TObjectPtr<UStaticMeshComponent> mStatusLampe;
+	UPROPERTY(Transient)
+	TObjectPtr<UStaticMeshComponent> mStromDose;
+	UPROPERTY(Transient)
+	TObjectPtr<class UMaterialInstanceDynamic> mLampenMaterial;
+	bool mOhneStromOffen = false;
+	int32 mLampe = -1;
 
 private:
 	void Schritt();

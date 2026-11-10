@@ -28,6 +28,8 @@
 #include "InstanceData.h"
 #include "TDEinsatz.h"
 #include "TDGameInstanceModule.h"
+#include "TDGegnerHirn.h"
+#include "AI/Navigation/NavigationTypes.h"
 #include "FGHUD.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundBase.h"
@@ -1573,6 +1575,7 @@ void UTDKernplatz::BaueJetzt()
 		*mId, Stapel, Gesetzt, Rampen, Ecken, Geraeumt));
 	mNeuerKern = Cast<ATDDefenseCore>(Kern);
 	mEinsatzWarten = 0;
+	mNetzAufgefrischt = false;
 	if (!mNeuerKern.IsValid())
 	{
 		Melde(TDT(TEXT("Einsatz nicht gestartet: Kern fehlt."), TEXT("Operation not started: Core missing.")));
@@ -1589,6 +1592,33 @@ void UTDKernplatz::WarteNetzFuerEinsatz()
 	if (Kern && Auf < 14 && ++mEinsatzWarten < 30)
 	{
 		return;
+	}
+	// 0.9.4 (Selbsttest 09.11.: nach dem Start bis 4 min "0 von 16 Richtungen begehbar", alle Wege teilweise): das Netz liegt draussen,
+	// ist aber noch nicht mit der neuen Plattform verbunden. Erst ein Bau oder der Wellenstart frischt es auf. Darum hier pruefen, ob aus
+	// 100 m ein voller Weg zum Kern fuehrt, sonst das Gebiet um die Plattform einmal neu erzeugen lassen und weiter warten (hoechstens 60 s).
+	if (Kern && mEinsatzWarten < 30)
+	{
+		bool bVerbunden = false;
+		for (int32 r = 0; r < 8 && !bVerbunden; ++r)
+		{
+			bool bVoll = false;
+			UTDGegnerHirn::BerechneWeg(GetWorld(), Kern->GetActorLocation() + FRotator(0.f, 45.f * r, 0.f).Vector() * 10000.f, Kern, &bVoll);
+			bVerbunden = bVoll;
+		}
+		if (!bVerbunden)
+		{
+			if (!mNetzAufgefrischt)
+			{
+				mNetzAufgefrischt = true;
+				if (UNavigationSystemV1* Nav = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld()))
+				{
+					Nav->AddDirtyArea(FBox::BuildAABB(Kern->GetActorLocation(), FVector(6000.f, 6000.f, 3000.f)), ENavigationDirtyFlag::All);
+				}
+				UE_LOG(LogFicsitTD, Log, TEXT("Kernplatz: kein voller Weg aus 100 m zum Kern - Netz um die Plattform wird neu erzeugt"));
+			}
+			++mEinsatzWarten;
+			return;
+		}
 	}
 	GetWorld()->GetTimerManager().ClearTimer(mTimer);
 	UTDEinsatzSubsystem* Einsatz = GetWorld()->GetSubsystem<UTDEinsatzSubsystem>();

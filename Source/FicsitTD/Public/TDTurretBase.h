@@ -29,6 +29,8 @@ namespace TDKombo
 	FICSITTD_API void Melde(const TCHAR* Name, const ATDTurretBase* Turm, float Schaden);
 	/** Zeilen fuer das Turmfenster: "Name n× (+Schaden)" */
 	FICSITTD_API FString Zeile(const ATDTurretBase* Turm);
+	/** Selbsttest: wie oft eine Kombination in dieser Sitzung ausgeloest hat */
+	FICSITTD_API int32 Anzahl(const TCHAR* Name);
 }
 
 enum class ETDSchadensart : uint8
@@ -58,6 +60,15 @@ struct FTDKennwert
  * Lebenspunkte und Koeder, Statuslampe, Reichweitenkreis und Statustexte. Unterklassen setzen im Konstruktor die Masse
  * (m...-Konfiguration) und ueberschreiben Feuern()/Animieren().
  */
+/** 0.9.3 Pfade der Original-Anschluesse (Spielinhalt, wird nicht mitgeliefert) */
+namespace TDOriginal
+{
+	static constexpr const TCHAR* Eingang = TEXT("/Game/FactoryGame/Buildable/Factory/FactoryInputs/Mesh/SM_Input_01.SM_Input_01");
+	static constexpr const TCHAR* Rohr = TEXT("/Game/FactoryGame/Buildable/Factory/FactoryInputs/Mesh/SM_Pipe_InPut_01.SM_Pipe_InPut_01");
+	static constexpr const TCHAR* Strom = TEXT("/Game/FactoryGame/Buildable/Factory/PowerPoleWall/Mesh/SM_PowerPoleWall_MK1.SM_PowerPoleWall_MK1");
+	static constexpr const TCHAR* Mast = TEXT("/Game/FactoryGame/Buildable/Factory/-Shared/ProductionIndicator/Mesh/SM_ProductionLight_01.SM_ProductionLight_01");
+}
+
 UCLASS(Abstract)
 class FICSITTD_API ATDTurretBase : public AFGBuildableManufacturer, public ITDDamageable
 {
@@ -388,6 +399,15 @@ private:
 private:
 	/** Stufen-Optik (Marius 04.11.2026: Level am Turm sichtbar): Anbauteile SM_TD_<Turm>_<Teil>_S<n>, sichtbar ab Level n */
 	void BaueStufenTeile();
+protected:
+	/** 0.9.3 Original-Anschluesse des Spiels (Bandeingang, Rohreingang, Wand-Stromanschluss, Statusmast): per Pfad geladen, nicht mitgeliefert */
+	void BaueOriginalTeile();
+	void OriginalTeil(const TCHAR* Modell, const FVector& Ort, float Gier) { mOriginalTeile.Add({ Modell, Ort, Gier }); }
+	struct FTDOriginalTeil { FString Modell; FVector Ort; float Gier = 0.f; };
+	TArray<FTDOriginalTeil> mOriginalTeile;
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<UStaticMeshComponent>> mOriginalKomponenten;
+private:
 	void ZeigeStufenTeile();
 	/** Lack (Primitivdaten) des Drehteils auf die Anbauteile uebertragen */
 	void GleicheLackAb();

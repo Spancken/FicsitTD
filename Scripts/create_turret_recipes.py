@@ -45,6 +45,12 @@ REZEPTE = {
         ("Nobelisk_Cluster", item(f"{G}/Equipment/NobeliskDetonator/Ammo/Desc_NobeliskCluster"), 1, "Streu-Nobelisk abfeuern", 4.0, 4.0),
         ("Nobelisk_Nuke", item(f"{G}/Equipment/NobeliskDetonator/Ammo/Desc_NobeliskNuke"), 1, "Nuke-Nobelisk abfeuern", 30.0, 5.0),
     ],
+    # 0.9.3 Drohnenplatz: ein Zyklus = ein Drohneneinsatz; Reparatur wie die alte Reparaturstation, Kampf mit Gewehrmunition
+    "DronePort": [
+        ("Drohne_Reparatur", item(f"{PARTS}/IronPlate/Desc_IronPlate"), 2, "Reparaturdrohne mit Eisenplatten (800 LP)", 3.0, 1.0),
+        ("Drohne_ReparaturVerstaerkt", item(f"{PARTS}/IronPlateReinforced/Desc_IronPlateReinforced"), 1, "Reparaturdrohne mit verstärkten Platten (3000 LP)", 3.0, 2.0),
+        ("Drohne_Kampf", item(f"{PARTS}/CartridgeStandard/Desc_CartridgeStandard"), 2, "Kampfdrohne mit Gewehrmunition", 2.0, 1.0),
+    ],
     "RepairStation": [
         ("Repair_IronPlate", item(f"{PARTS}/IronPlate/Desc_IronPlate"), 2, "Reparieren mit Eisenplatten (800 LP)", 4.0, 1.0),
         ("Repair_Reinforced", item(f"{PARTS}/IronPlateReinforced/Desc_IronPlateReinforced"), 1, "Reparieren mit verstärkten Eisenplatten (3000 LP)", 4.0, 2.0),

@@ -1,6 +1,6 @@
 {
   "Name": "BautenP1",
-  "_Hinweis": "0.81: Tor, Lockfeuer, Oelschlick-Feld im Einsatz (frei bauen, Strom frei, Versorgung fest). Im Log: Lockruf, entzuendet, Tor.",
+  "_Hinweis": "0.81/0.9.1: Tor, Lockfeuer, Oelschlick-Feld im Einsatz (frei bauen, Strom frei, Versorgung fest). 0.9.1 misst Bremsung und Kombo Oelbrand (Entzuendungen, Brandschaden).",
   "NeuesSpiel": {
     "Startort": "Rocky Desert"
   },
@@ -55,12 +55,14 @@
     {
       "baue": "Oelschlick",
       "anzahl": 1,
-      "rezept": "Recipe_TD_Slick_HeavyOil"
+      "rezept": "Recipe_TD_Slick_HeavyOil",
+      "ring": "weg"
     },
     {
       "baue": "Lockfeuer",
       "anzahl": 1,
-      "rezept": "Recipe_TD_Lure_Coal"
+      "rezept": "Recipe_TD_Lure_Coal",
+      "ring": "weg"
     },
     {
       "baue": "Tor",
@@ -86,6 +88,55 @@
     {
       "pruefe": "KernLebt",
       "text": "Kern hat Welle 10 überstanden"
+    },
+    {
+      "pruefe": "TurmWert",
+      "turm": "Oelschlick",
+      "wert": "Gebremst",
+      "min": 1,
+      "text": "Ölschlick hat Gegner gebremst"
+    },
+    {
+      "pruefe": "TurmWert",
+      "turm": "Oelschlick",
+      "wert": "Entzuendet",
+      "min": 1,
+      "text": "Ölschlick wurde entzündet (Kombo Ölbrand)"
+    },
+    {
+      "pruefe": "TurmWert",
+      "turm": "Oelschlick",
+      "wert": "Brandschaden",
+      "min": 0,
+      "text": "Ölbrand-Schaden inkl. Nachbrennen (Info)"
+    },
+    {
+      "pruefe": "TurmWert",
+      "turm": "Oelschlick",
+      "wert": "Zyklen",
+      "min": 0,
+      "text": "Ölschlick Ölzyklen (Diagnose)"
+    },
+    {
+      "pruefe": "TurmWert",
+      "turm": "Oelschlick",
+      "wert": "ZielTakte",
+      "min": 0,
+      "text": "Ölschlick Takte mit Ziel (Diagnose)"
+    },
+    {
+      "pruefe": "TurmWert",
+      "turm": "Oelschlick",
+      "wert": "NassTakte",
+      "min": 0,
+      "text": "Ölschlick Takte nass (Diagnose)"
+    },
+    {
+      "pruefe": "TurmWert",
+      "turm": "Oelschlick",
+      "wert": "NahTakte",
+      "min": 0,
+      "text": "Ölschlick Ziel an der Platte (Diagnose)"
     },
     {
       "pruefe": "Sicherheitsnetze",

@@ -1,6 +1,6 @@
 {
   "Name": "BautenP2",
-  "_Hinweis": "0.83: Bauten P2/P3 im Einsatz (frei bauen, Strom frei, Versorgung fest). Im Log: Schildgenerator, Singularitaet, Dimensionslager. Himmelsturm ohne Flieger nur gebaut.",
+  "_Hinweis": "0.83: Bauten P2/P3 im Einsatz (frei bauen, Strom frei, Versorgung fest). Im Log: Schildgenerator, Singularitaet. Himmelsturm ohne Flieger nur gebaut. 0.9.3: Dimensionslager gestrichen, Drohnenplatz (Kampfdrohnen) dazu; im Log auch Radar (Front-Markierungen).",
   "NeuesSpiel": {
     "Startort": "Rocky Desert"
   },
@@ -36,7 +36,8 @@
         "Bolzenturm": 50,
         "Stoerfeld": 2,
         "Singularitaet": 8,
-        "Himmelsturm": 30
+        "Himmelsturm": 30,
+        "Drohnenplatz": 20
       }
     },
     {
@@ -60,7 +61,8 @@
     {
       "baue": "Stoerfeld",
       "anzahl": 1,
-      "rezept": "Recipe_TD_Feld_SAM"
+      "rezept": "Recipe_TD_Feld_SAM",
+      "ring": "weg"
     },
     {
       "baue": "Singularitaet",
@@ -75,11 +77,14 @@
     {
       "baue": "Elektrozaun",
       "anzahl": 2,
-      "rezept": "Recipe_TD_Zaun_Strom"
+      "rezept": "Recipe_TD_Zaun_Strom",
+      "ring": "weg"
     },
     {
-      "baue": "Dimensionslager",
-      "anzahl": 1
+      "baue": "Drohnenplatz",
+      "anzahl": 1,
+      "rezept": "Recipe_TD_Drohne_Kampf",
+      "ring": "innen"
     },
     {
       "ueberblick": true
@@ -143,6 +148,20 @@
       "wert": "Schlaege",
       "min": 0,
       "text": "Elektrozaun (Schläge, Info)"
+    },
+    {
+      "pruefe": "TurmWert",
+      "turm": "Drohnenplatz",
+      "wert": "Drohnen",
+      "soll": 2,
+      "text": "Drohnenplatz hat 2 Drohnen"
+    },
+    {
+      "pruefe": "TurmWert",
+      "turm": "Drohnenplatz",
+      "wert": "Einsaetze",
+      "min": 1,
+      "text": "Kampfdrohnen sind geflogen"
     },
     {
       "pruefe": "Sicherheitsnetze",

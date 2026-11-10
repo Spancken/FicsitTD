@@ -1,5 +1,6 @@
 ﻿#include "TDTurretBase.h"
 #include "TDForschung.h"
+#include "TDLureBeacon.h"
 #include "TDBautenErweitert.h"
 #include "FGSchematicManager.h"
 #include "FGInventoryComponent.h"
@@ -193,6 +194,11 @@ static const FTDLevelStandard TDLevelStandards[] = {
 	{ TEXT("Teslaspule"), 3, TEXT("Schaden"), 0.2f }, { TEXT("Teslaspule"), 4, TEXT("Takt"), 0.3f },
 	{ TEXT("Flammenwerfer"), 2, TEXT("Schaden"), 0.2f }, { TEXT("Flammenwerfer"), 3, TEXT("Kegel"), 0.5f },
 	{ TEXT("Flammenwerfer"), 4, TEXT("Reichweite"), 0.15f }, { TEXT("Flammenwerfer"), 4, TEXT("Nachbrennen"), 0.5f },
+	// 0.9.2 (Marius 09.11.2026: Tuerme inkl. Ausbaustufen): auch die Spezialtuerme haben Level 2-5, Meisterstufe = +30 % Schaden
+	{ TEXT("Himmelsturm"), 2, TEXT("Schaden"), 0.2f }, { TEXT("Himmelsturm"), 3, TEXT("Takt"), 0.25f },
+	{ TEXT("Himmelsturm"), 4, TEXT("Reichweite"), 0.15f }, { TEXT("Himmelsturm"), 5, TEXT("Schaden"), 0.3f },
+	{ TEXT("Singularitaet"), 2, TEXT("Schaden"), 0.2f }, { TEXT("Singularitaet"), 3, TEXT("Takt"), 0.2f },
+	{ TEXT("Singularitaet"), 4, TEXT("Reichweite"), 0.15f }, { TEXT("Singularitaet"), 5, TEXT("Schaden"), 0.3f },
 };
 static const TCHAR* TDLevelWerte[] = { TEXT("Schaden"), TEXT("Takt"), TEXT("Reichweite"), TEXT("Magazin"), TEXT("Durchschlag"),
 	TEXT("Spruenge"), TEXT("Radius"), TEXT("Kegel"), TEXT("Nachbrennen") };
@@ -278,6 +284,8 @@ FString ATDTurretBase::LevelDiffText(int32 Von, int32 Bis) const
 			: mTurmName == TEXT("Nobelisk-Werfer") ? TDT(TEXT("Meisterstufe Salvenkopf: drei Nobelisken je Salve"), TEXT("Master Tier Salvo Head: three Nobelisks per salvo"))
 			: mTurmName == TEXT("Teslaspule") ? TDT(TEXT("Meisterstufe Spannungsfeld: bremst Gegner bis 10 m"), TEXT("Master Tier Voltage Field: slows enemies within 10 m"))
 			: mTurmName == TEXT("Flammenwerfer") ? TDT(TEXT("Meisterstufe Feuerteppich: der Boden brennt 6 s"), TEXT("Master Tier Fire Carpet: the ground burns for 6 s"))
+			: mTurmName == TEXT("Himmelsturm") ? TDT(TEXT("Meisterstufe Sperrfeuer: +30 % Schaden"), TEXT("Master Tier Barrage: +30 % damage"))
+			: mTurmName == TEXT("Singularitaet") ? TDT(TEXT("Meisterstufe Ereignishorizont: +30 % Schaden"), TEXT("Master Tier Event Horizon: +30 % damage"))
 			: TDT(TEXT("Meisterstufe"), TEXT("Master Tier")));
 	}
 	if (Teile.Num() == 0)
@@ -296,6 +304,8 @@ static const TCHAR* TurmKnoten(const FString& Turm, bool& bHatLevel)
 	if (Turm == TEXT("Teslaspule")) return TEXT("Teslaspule");
 	if (Turm == TEXT("Flammenwerfer")) return TEXT("Flammenwerfer");
 	if (Turm == TEXT("Nobelisk-Werfer")) return TEXT("NobeliskWerfer");
+	if (Turm == TEXT("Himmelsturm")) return TEXT("Himmelsturm");       // 0.9.2
+	if (Turm == TEXT("Singularitaet")) return TEXT("Singularitaet");   // 0.9.2
 	bHatLevel = false;
 	return nullptr;
 }
@@ -533,6 +543,7 @@ void ATDTurretBase::BeginPlay()
 		mStatusLampe->SetRelativeLocation(mLampenOrt);
 	}
 	BaueStufenTeile();
+	BaueOriginalTeile();
 	// Gegnertakt-Recherche 16: bewegte Teile (Drehteil, Kopf, Laeufe, Effekte) duerfen die Navigation nicht beeinflussen,
 	// sonst baut das NavMesh bei jeder Drehung die Kachel neu (65-80 ms je Ruckel-Bild). Der Sockel (Instanz-Proxy) bleibt Hindernis.
 	int32 OhneNavigation = 0;
@@ -633,8 +644,9 @@ void ATDTurretBase::BeginPlay()
 
 USceneComponent* ATDTurretBase::StufenZiel(const FString& Teil) const
 {
+	// 0.9.3: Himmelsturm und Singularitaet nennen die Kanzel "Pitch"
 	return Teil == TEXT("Base") ? GetRootComponent() : Teil == TEXT("Yaw") ? static_cast<USceneComponent*>(mYawMesh)
-		: Teil == TEXT("Head") ? static_cast<USceneComponent*>(mHeadMesh) : nullptr;
+		: (Teil == TEXT("Head") || Teil == TEXT("Pitch")) ? static_cast<USceneComponent*>(mHeadMesh) : nullptr;
 }
 
 void ATDTurretBase::BaueStufenTeile()
@@ -651,7 +663,7 @@ void ATDTurretBase::BaueStufenTeile()
 	{
 		return;
 	}
-	static const TCHAR* Teile[] = { TEXT("Base"), TEXT("Yaw"), TEXT("Head"), TEXT("Barrels") };
+	static const TCHAR* Teile[] = { TEXT("Base"), TEXT("Yaw"), TEXT("Head"), TEXT("Barrels"), TEXT("Pitch") };
 	for (const TCHAR* Teil : Teile)
 	{
 		USceneComponent* Ziel = StufenZiel(Teil);
@@ -687,6 +699,41 @@ void ATDTurretBase::BaueStufenTeile()
 	}
 }
 
+void ATDTurretBase::BaueOriginalTeile()
+{
+	// 0.9.3 (Marius 09.11.2026, Weg 1): die echten Spielmodelle an den Turm setzen. Lage und Gier aus Satisfactory\Modelle\Original_Anschluesse.json.
+	// Lack wie an den Stufenteilen ueber Primitivdaten (GleicheLackAb) - Versuch gegen die schwarzen Flaechen von 0.10.1.
+	if (mOriginalTeile.Num() == 0 || IsRunningDedicatedServer())
+	{
+		return;
+	}
+	FString Fehlt;
+	for (const FTDOriginalTeil& T : mOriginalTeile)
+	{
+		UStaticMesh* Modell = LoadObject<UStaticMesh>(nullptr, *T.Modell, nullptr, LOAD_NoWarn | LOAD_Quiet);
+		if (!Modell)
+		{
+			Fehlt += T.Modell + TEXT(" ");
+			continue;
+		}
+		UStaticMeshComponent* K = NewObject<UStaticMeshComponent>(this);
+		K->SetStaticMesh(Modell);
+		K->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		K->SetCanEverAffectNavigation(false);
+		K->SetupAttachment(RootComponent);
+		K->SetRelativeLocation(T.Ort);
+		K->SetRelativeRotation(FRotator(0.f, T.Gier, 0.f));
+		K->RegisterComponent();
+		mOriginalKomponenten.Add(K);
+	}
+	UE_LOG(LogFicsitTD, Log, TEXT("%s: %d Original-Anschluesse%s%s"), *GetName(), mOriginalKomponenten.Num(), Fehlt.IsEmpty() ? TEXT("") : TEXT(", FEHLEN: "), *Fehlt);
+	GleicheLackAb();
+	if (!GetWorldTimerManager().IsTimerActive(mLackTimer))
+	{
+		GetWorldTimerManager().SetTimer(mLackTimer, this, &ATDTurretBase::GleicheLackAb, 2.f, true, 0.3f);
+	}
+}
+
 void ATDTurretBase::ZeigeStufenTeile()
 {
 	const int32 Stufe = GetLevel();
@@ -714,7 +761,10 @@ void ATDTurretBase::GleicheLackAb()
 		return;
 	}
 	const TArray<float>& Daten = Vorbild->GetCustomPrimitiveData().Data;
-	for (UStaticMeshComponent* K : mStufenTeile)
+	TArray<UStaticMeshComponent*> Alle;
+	for (UStaticMeshComponent* K : mStufenTeile) { Alle.Add(K); }
+	for (UStaticMeshComponent* K : mOriginalKomponenten) { Alle.Add(K); }
+	for (UStaticMeshComponent* K : Alle)
 	{
 		if (K && K->GetCustomPrimitiveData().Data != Daten)
 		{
@@ -1368,6 +1418,12 @@ namespace TDKombo
 		// 0.84.3 (Review 08.11.: nur Stinger und Krabben hatten Durchschlag < 1, Hitzeriss loeste nie aus): gilt fuer Kugel und Durchschlag,
 		// also genau gegen die gepanzerte Hog-Familie (Kugel 0,75). Braucht nur den Flammenwerfer - Bolzen und Gewehr hat jeder.
 		if (N == TEXT("Hitzeriss")) return TDForschung::Hat(Kontext, TEXT("Flammenwerfer"));
+		// 0.9.1 (Review 09.11.): Oelbrand - Feuer zuendet das nasse Oelschlick-Feld, wer hindurchlaeuft, brennt nach
+		if (N == TEXT("Oelbrand")) return TDForschung::Hat(Kontext, TEXT("Oelschlick"));
+		// 0.9.1 E3 Stuetzbau je Linie (Endgame-Konzept 09.11.)
+		if (N == TEXT("Engstelle")) return TDForschung::Hat(Kontext, TEXT("Tor"));
+		if (N == TEXT("Sammelpunkt")) return TDForschung::Hat(Kontext, TEXT("Lockfeuer"));
+		if (N == TEXT("Leiter")) return TDForschung::Hat(Kontext, TEXT("Elektrozaun")) && TDForschung::Hat(Kontext, TEXT("Teslaspule"));
 		return false;
 	}
 
@@ -1397,6 +1453,10 @@ namespace TDKombo
 		if (Name == TEXT("Verpuffung")) return TDTX(TEXT("Verpuffung"), TEXT("Deflagration"));
 		if (Name == TEXT("Blitzableiter")) return TDTX(TEXT("Blitzableiter"), TEXT("Lightning Rod"));
 		if (Name == TEXT("Hitzeriss")) return TDTX(TEXT("Hitzeriss"), TEXT("Heat Crack"));
+		if (Name == TEXT("Oelbrand")) return TDTX(TEXT("Ölbrand"), TEXT("Oil Fire"));
+		if (Name == TEXT("Engstelle")) return TDTX(TEXT("Engstelle"), TEXT("Choke Point"));
+		if (Name == TEXT("Sammelpunkt")) return TDTX(TEXT("Sammelpunkt"), TEXT("Rally Point"));
+		if (Name == TEXT("Leiter")) return TDTX(TEXT("Leiter"), TEXT("Conductor"));
 		return FText::FromString(Name);
 	}
 
@@ -1409,6 +1469,14 @@ namespace TDKombo
 			TEXT("Combo Lightning Rod: Bolts stuck in an enemy conduct the Tesla lightning. It jumps once more at full strength."));
 		if (Name == TEXT("Hitzeriss")) return TDTX(TEXT("Kombination Hitzeriss: Brennender Panzer wird spröde. Kugeln und Bolzen ignorieren solange die Panzerung."),
 			TEXT("Combo Heat Crack: Burning armor turns brittle. Bullets and bolts ignore armor while it burns."));
+		if (Name == TEXT("Oelbrand")) return TDTX(TEXT("Kombination Ölbrand: Feuer hat ein Ölschlick-Feld entzündet. Wer hindurchläuft, brennt danach weiter."),
+			TEXT("Combo Oil Fire: Fire ignited an Oil Slick Field. Enemies walking through keep burning afterwards."));
+		if (Name == TEXT("Engstelle")) return TDTX(TEXT("Kombination Engstelle: Am Tor laufen die Gegner in einer Reihe. Ein Bolzen durchschlägt einen Gegner mehr."),
+			TEXT("Combo Choke Point: At the gate enemies line up. A bolt pierces one more enemy."));
+		if (Name == TEXT("Sammelpunkt")) return TDTX(TEXT("Kombination Sammelpunkt: Das Lockfeuer hält Gegner dicht beisammen. Explosionen treffen sie 25 % härter."),
+			TEXT("Combo Rally Point: The Lure Fire keeps enemies packed together. Explosions hit them 25 % harder."));
+		if (Name == TEXT("Leiter")) return TDTX(TEXT("Kombination Leiter: Ein Elektrozaun leitet die Entladung der Teslaspule an bis zu drei Gegner, die ihn berühren."),
+			TEXT("Combo Conductor: An Electric Fence carries the Tesla Coil discharge to up to three enemies touching it."));
 		return FText::FromString(Name);
 	}
 
@@ -1450,6 +1518,12 @@ namespace TDKombo
 		}
 	}
 
+	int32 Anzahl(const TCHAR* Name)
+	{
+		const FVector2D* G = GGesamt.Find(Name);
+		return G ? FMath::RoundToInt(G->X) : 0;
+	}
+
 	FString Zeile(const ATDTurretBase* Turm)
 	{
 		const TMap<FString, FVector2D>* M = GJeTurm.Find(Turm);
@@ -1487,6 +1561,13 @@ namespace TDKombo
 
 void ATDTurretBase::TrefferArt(AFGCreature* Ziel, float Schaden, const FVector& Richtung, float Betaeubung, float Verzoegerung, ETDSchadensart Art)
 {
+	// 0.9.1 E3 Sammelpunkt (Endgame-Konzept 09.11.): vom Lockfeuer gebuendelte Gegner nehmen mehr Explosionsschaden
+	if (Art == ETDSchadensart::Explosion && Ziel && TDKombo::Aktiv(this, TEXT("Sammelpunkt")) && ATDLureBeacon::LockKoeder(GetWorld(), Ziel->GetActorLocation()))
+	{
+		const float Plus = Schaden * (TDBalance::Wert(TEXT("Kombo.Sammelpunkt.Faktor"), 1.25f) - 1.f);
+		Schaden += Plus;
+		TDKombo::Melde(TEXT("Sammelpunkt"), this, Plus);
+	}
 	const float Roh = Schaden;
 	// 0.84 Hitzeriss: brennender Panzer laesst Durchschlag durch - die Resistenz der Gegnerart entfaellt (Funken am Ziel)
 	if (TDKombo::Hitzeriss(this, Ziel, Art) && Resistenz(Art, Ziel) < 1.f)

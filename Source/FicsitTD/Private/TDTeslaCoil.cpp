@@ -7,6 +7,8 @@
 #include "Engine/StaticMesh.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "TDSprache.h"
+#include "TDBautenErweitert.h"
+#include "EngineUtils.h"
 
 /** Blitz-Modelle im Vorrat: begrenzt die Spruenge aus der Balance-Datei */
 static constexpr int32 TeslaBlitzVorrat = 8;
@@ -37,7 +39,7 @@ ATDTeslaCoil::ATDTeslaCoil()
 	// Masse aus Modelle\TD_TeslaCoil_Stufen.blend (0.62, nach Marius' Stufenbildern), Unreal-cm
 	mDrehpunkt = FVector(0.f, 0.f, 90.f);           // Spule steht fest auf dem Deck (liegt in mYawMesh)
 	mMuendung = FVector(0.f, 0.f, 594.f);           // Kugelmitte im Spulen-Raum
-	mLampenOrt = FVector(60.f, -120.f, 90.f);
+	mLampenOrt = FVector(-60.f, 170.f, 340.f);   // 0.9.3: Lampe oben auf dem Original-Statusmast
 	mRange = 3000.f;
 	mKlarraumHoehe = 900.f;
 	mYawModell = TEXT("/FicsitTD/Buildings/TeslaCoil/Mesh/SM_TD_TeslaCoil_Coil.SM_TD_TeslaCoil_Coil");
@@ -52,6 +54,10 @@ ATDTeslaCoil::ATDTeslaCoil()
 		Blitz->SetVisibility(false);
 		mBlitze.Add(Blitz);
 	}
+	// 0.9.3 Original-Anschluesse (Lagen aus Modelle\Original_Anschluesse.json)
+	OriginalTeil(TDOriginal::Strom, FVector(-45.f, -165.f, 49.f), -90.f);
+	OriginalTeil(TDOriginal::Mast, FVector(-60.f, 170.f, 0.f), 180.f);
+
 }
 
 void ATDTeslaCoil::BeginPlay()
@@ -101,8 +107,15 @@ void ATDTeslaCoil::Feuern(AFGCreature* Ziel)
 	FVector Von = GetMuzzleLocation();
 	AFGCreature* Aktuell = Ziel;
 	float Schaden = TeslaSchaden() * SchadenBonus() * TeslaUeberlast(this);
+	// 0.9.1 E2 Hochspannung (Endgame-Konzept 09.11.): Spule nach dem Treibstoffkraftwerk, Strom-Schaden x1,3
+	if (TDForschung::Hat(this, TEXT("Hochspannung")))
+	{
+		Schaden *= TDBalance::Wert(TEXT("Tuerme.Teslaspule.Hochspannung"), 1.3f);
+	}
+	const float GrundSchaden = Schaden;
 	const int32 Ziele = TeslaZieleMit(this, TeslaZiele() + FMath::RoundToInt(LevelWert(TEXT("Spruenge"))));
-	const bool bBlitzableiter = TDKombo::Aktiv(this, TEXT("Blitzableiter"));
+	// 0.9.1 (Review 09.11.): Ueberlast heisst "keine Spruenge" - der Blitzableiter darf sie nicht wieder einfuehren
+	const bool bBlitzableiter = TDKombo::Aktiv(this, TEXT("Blitzableiter")) && TeslaUeberlast(this) <= 1.f;
 	int32 ZusatzZiele = 0;   // je Blitzableiter ein Sprung mehr, hoechstens TeslaBlitzVorrat Blitze
 	for (int32 i = 0; i < FMath::Min(Ziele + ZusatzZiele, TeslaBlitzVorrat) && Aktuell; ++i)
 	{
@@ -149,6 +162,41 @@ void ATDTeslaCoil::Feuern(AFGCreature* Ziel)
 		else
 		{
 			Schaden *= TDBalance::Wert(TEXT("Munition.Tesla.SprungFaktor"), 0.5f);
+		}
+	}
+	// 0.9.1 E3 Leiter (Endgame-Konzept 09.11.): ein Elektrozaun in Reichweite leitet die Entladung an alle Gegner, die ihn beruehren
+	if (TDKombo::Aktiv(this, TEXT("Leiter")))
+	{
+		const float Radius = TDBalance::Wert(TEXT("Kombo.Leiter.Radius"), 4.f) * 100.f;
+		const float Anteil = TDBalance::Wert(TEXT("Kombo.Leiter.Anteil"), 0.5f);
+		for (TActorIterator<ATDConductorWall> It(GetWorld()); It; ++It)
+		{
+			if (!It->IsTDIntact() || FVector::Dist(It->GetActorLocation(), GetActorLocation()) > GetReichweite())
+			{
+				continue;
+			}
+			float Summe = 0.f;
+			int32 AmZaun = 0;
+			const int32 MaxZiele = TDBalance::Ganz(TEXT("Kombo.Leiter.MaxZiele"), 3);
+			for (AFGCreature* F : Feinde)
+			{
+				// 0.9.4 (BautenE3b: Leiter nie, naechstes Ziel 10,5 m von der Zaunmitte): Abstand zur ganzen Zaunlaenge (8 m, lokale X-Achse),
+				// nicht zur Mitte - sonst zaehlten Gegner an den Zaunenden nie als "beruehrt"
+				const FVector Lokal = F ? It->GetActorTransform().InverseTransformPosition(F->GetActorLocation()) : FVector::ZeroVector;
+				const float ZaunAbstand = FVector(FMath::Max(FMath::Abs(Lokal.X) - 400.f, 0.f), Lokal.Y, Lokal.Z * 0.5f).Size();
+				if (AmZaun < MaxZiele && F && F->IsAliveAndWell() && !Getroffen.Contains(F) && ZaunAbstand < Radius)
+				{
+					Treffer(F, GrundSchaden * Anteil, FVector::UpVector, 1.f);
+					Getroffen.Add(F);
+					++AmZaun;
+					Summe += GrundSchaden * Anteil;
+				}
+			}
+			if (Summe > 0.f)
+			{
+				TDKombo::Melde(TEXT("Leiter"), this, Summe);
+				ZeigeLeuchten(It->GetActorLocation() + FVector(0.f, 0.f, 250.f), FLinearColor(0.5f, 0.8f, 1.f), 3.f, 0.35f);
+			}
 		}
 	}
 	mBlitzRest = TeslaBlitzDauer;

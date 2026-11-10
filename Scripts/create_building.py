@@ -111,6 +111,20 @@ GEBAEUDE = [
                  ("/Game/FactoryGame/Resource/Parts/Wire/Desc_Wire.Desc_Wire_C", 20)],
     ),
     dict(
+        # 0.9.3 Drohnenplatz (Marius 09.11.2026, ersetzt die Reparaturstation)
+        name="DronePort",
+        cpp="/Script/FicsitTD.TDDronePort",
+        src_build="/Game/FactoryGame/Buildable/Factory/ConstructorMk1/Build_ConstructorMk1",
+        src_desc="/Game/FactoryGame/Buildable/Factory/ConstructorMk1/Desc_ConstructorMk1",
+        src_recipe="/Game/FactoryGame/Recipes/Buildings/Recipe_ConstructorMk1",
+        entferne=["FGVertexAnimatedMeshComponent"],
+        anzeige="Drohnenplatz",
+        text="Landeplattform mit 2 bis 4 Drohnen (Level 3 und 5 je eine mehr). Reparaturdrohnen fliegen zu beschaedigten Bauten in 40 m und reparieren sie mit Platten, Kampfdrohnen fliegen zu Gegnern in 40 m und schiessen mit Gewehrmunition. Braucht 30 MW.",
+        zutaten=[("/Game/FactoryGame/Resource/Parts/ModularFrameHeavy/Desc_ModularFrameHeavy.Desc_ModularFrameHeavy_C", 2),
+                 ("/Game/FactoryGame/Resource/Parts/Computer/Desc_Computer.Desc_Computer_C", 2),
+                 ("/Game/FactoryGame/Resource/Parts/Motor/Desc_Motor.Desc_Motor_C", 4)],
+    ),
+    dict(
         name="Barrier",
         cpp="/Script/FicsitTD.TDBarrier",
         src_build="/Game/FactoryGame/Buildable/Factory/LookoutTower/Build_LookoutTower",
@@ -203,7 +217,8 @@ GEBAEUDE += [
         text="Radarmast mit Leitsender: Tuerme im Umkreis von 30 m erhalten +10 % Reichweite (mehrere Masten wirken nicht zusammen). Braucht dauernd Strom (15 MW).",
         zutaten=[("/Game/FactoryGame/Resource/Parts/SteelPlate/Desc_SteelPlate.Desc_SteelPlate_C", 6),
                  ("/Game/FactoryGame/Resource/Parts/Cable/Desc_Cable.Desc_Cable_C", 30),
-                 ("/Game/FactoryGame/Resource/Parts/CrystalOscillator/Desc_CrystalOscillator.Desc_CrystalOscillator_C", 2)],
+                 # 0.9.1 (Review 09.11.): Quarzoszillator kommt aus dem Fertiger, der im Einsatz kein Kontingent hat -> Quarzkristall
+                 ("/Game/FactoryGame/Resource/Parts/QuartzCrystal/Desc_QuartzCrystal.Desc_QuartzCrystal_C", 10)],
     ),
     dict(
         name="ShieldGenerator",
@@ -214,7 +229,8 @@ GEBAEUDE += [
         entferne=["FGVertexAnimatedMeshComponent"],
         anzeige="Schildgenerator",
         text="Kuppel 20 m: schluckt Schaden an Mauern, Tuermen und Bauten (nicht am Abwehrkern), 3000 Schildpunkte. Gebrochen laedt er 20 s nach. Braucht dauernd Strom (60 MW).",
-        zutaten=[("/Game/FactoryGame/Resource/Parts/Battery/Desc_Battery.Desc_Battery_C", 10),
+        # 0.9.1 (Endgame-Konzept 09.11.): Batterien kommen aus dem Mischer (W35), der Schild soll mit dem Fertiger (W25) baubar sein
+        zutaten=[("/Game/FactoryGame/Resource/Parts/Cable/Desc_Cable.Desc_Cable_C", 30),
                  ("/Game/FactoryGame/Resource/Parts/AluminumPlateReinforced/Desc_AluminumPlateReinforced.Desc_AluminumPlateReinforced_C", 5),
                  ("/Game/FactoryGame/Resource/Parts/Computer/Desc_Computer.Desc_Computer_C", 2)],
     ),

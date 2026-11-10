@@ -1,0 +1,13 @@
+{
+  "Name": "Pruefung091b",
+  "_Hinweis": "0.9.1 Pakete E1-E3: Sperren und spaete Maschinen, Stuetzbauten je Linie (Oelbrand, Engstelle, Sammelpunkt, Leiter), Hochspannung, Gegenprobe mit zwei Strategie-Plaenen.",
+  "Plaene": [
+    "Grundtest",
+    "Sperren091",
+    "BautenE3a",
+    "BautenE3b",
+    "LeiterE3",
+    "Strat-Gewehr-Flamme",
+    "Strat-Gewehr-Tesla"
+  ]
+}

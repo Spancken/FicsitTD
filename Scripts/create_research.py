@@ -33,7 +33,9 @@ KOHLE = f"{G}/Resource/RawResources/Coal/Desc_Coal"
 SCHRAUBE = f"{P}/IronScrew/Desc_IronScrew"
 
 KUPFER = [f"{R}/Smelter/Recipe_IngotCopper", f"{R}/Constructor/Recipe_Wire", f"{R}/Constructor/Recipe_Cable", f"{R}/Constructor/Recipe_CopperSheet"]
-EISEN2 = [f"{R}/Constructor/Recipe_IronPlate", f"{R}/Constructor/Recipe_Screw", f"{R}/Assembler/Recipe_IronPlateReinforced", f"{R}/Assembler/Recipe_Rotor", f"{R}/Buildings/Recipe_AssemblerMk1"]
+EISEN2 = [f"{R}/Constructor/Recipe_IronPlate", f"{R}/Constructor/Recipe_Screw", f"{R}/Assembler/Recipe_IronPlateReinforced", f"{R}/Assembler/Recipe_Rotor", f"{R}/Buildings/Recipe_AssemblerMk1",
+          # 0.9.1 (Endgame-Konzept 09.11.): Beton (Mauer, Tor) und Modulare Rahmen (Nobelisk-Werfer, Flammenwerfer) kamen nur ueber den HUB
+          f"{R}/Constructor/Recipe_Concrete", f"{R}/Assembler/Recipe_ModularFrame"]
 
 # Baum: (Schluessel, Anzeigename, Beschreibung, Icon-Item, Knoten)
 # Knoten: (Schluessel, Name, Beschreibung, (x, y), [Eltern-Schluessel], Kosten [(Item, n)], Zeit s, Rezepte, Icon-Item)
@@ -44,7 +46,8 @@ FP = "/FicsitTD/Items/Desc_TD_Kampfdaten"
 ZEIT = 3.0   # Marius 02.11.: keine Forschung laenger als 3 s
 DURCH = "/FicsitTD/Items/Desc_TD_Durchschlagbolzen"
 TDR = "/FicsitTD/Recipes"
-STAHL = [f"{R}/Buildings/Recipe_SmelterMk1", f"{R}/Smelter/Recipe_IngotSteel", f"{R}/Constructor/Recipe_SteelPipe", f"{R}/Constructor/Recipe_SteelBeam"]
+STAHL = [f"{R}/Buildings/Recipe_SmelterMk1", f"{R}/Smelter/Recipe_IngotSteel", f"{R}/Constructor/Recipe_SteelPipe", f"{R}/Constructor/Recipe_SteelBeam",
+         f"{R}/Assembler/Recipe_Stator", f"{R}/Assembler/Recipe_Motor"]   # 0.9.1: Motoren fuer Nobelisk-Werfer und Himmelsturm
 # 0.83.1 (Marius 07.11.: "soll sich je Seite von 2-3 Ursprungsknoten raus entwickeln", gesperrt ohne Icon und mit Verbindung):
 # jede Seite hat 2-3 Wurzeln, alle anderen Knoten haengen mit Linie an einem Elternknoten. Das MAM zeigt Kinder grau ohne Icon,
 # bis der Elternknoten erforscht ist. Eltern so gewaehlt, dass Freigabe-Welle und FP-Preis jedes Knotens gleich bleiben.
@@ -57,10 +60,10 @@ DOKTRIN = "DOKTRIN (Hauptlinie, nur eine je Einsatz): "
 BAEUME = [
     # Spalten: Strom 0 | Fertigung 1-2 | Logistik 3-4
     ("Industrie", "FICSIT-Abwehr: Industrie", "Was deine Fabrik herstellen kann: Teile, Stahl, Öl, Strom und schnellere Bänder. Hier wird nichts ausgeschlossen.", f"{P}/IronPlateReinforced/Desc_IronPlateReinforced", [
-        ("Kohlekraft", "Kohlekraftwerk", "Kohlekraftwerk (75 MW statt 30 MW), Wasserextraktor und Rohre. Öffnet den Baum Elementar (Teslaspule, Flammenwerfer).",
+        ("Kohlekraft", "Kohlekraftwerk", "Kohlekraftwerk (75 MW statt 30 MW), Wasserextraktor und Rohre. Voraussetzung für Teslaspule und Flammenwerfer.",
          (0, 0), [], [], ZEIT,
          [f"{R}/Buildings/Recipe_GeneratorCoal", f"{R}/Buildings/Recipe_WaterPump", f"{R}/Buildings/Recipe_Pipeline", f"{R}/Buildings/Recipe_PipeSupport", f"{R}/Buildings/Recipe_PipelineJunction_Cross"], KOHLE),
-        ("Assembler", "Assembler und Eisenteile", "Assembler, Eisenplatten, Schrauben, verstärkte Eisenplatten und Rotoren. Grundlage für fast jede bessere Munition. Öffnet den Baum Ballistik.",
+        ("Assembler", "Assembler und Eisenteile", "Assembler, Eisenplatten, Schrauben, verstärkte Eisenplatten und Rotoren. Grundlage für fast jede bessere Munition.",
          (1, 0), [], [], ZEIT, EISEN2, f"{P}/IronPlateReinforced/Desc_IronPlateReinforced"),
         ("Kupfer", "Kupferverarbeitung", "Kupferbarren, Draht, Kabel und Kupferblech: der zweite Rohstoff. Für Gewehrmunition, Schockbolzen und Stromtechnik.",
          (3, 0), [], [], ZEIT, KUPFER, KUPFERBARREN),
@@ -72,14 +75,15 @@ BAEUME = [
          (1, 1), ["Assembler"], [], ZEIT, STAHL, f"{P}/SteelIngot/Desc_SteelIngot"),
         ("BandMk3", "Förderband Mk3", "Bänder und Lifte mit 270 Teilen pro Minute (Baumaterial: Stahlträger). Alle Bänder und Lifte werden automatisch aufgerüstet.",
          (3, 2), ["BandMk2"], [], ZEIT, [f"{R}/Buildings/Recipe_ConveyorBeltMk3", f"{R}/Buildings/Recipe_ConveyorLiftMk3"], f"{P}/SteelPlate/Desc_SteelPlate"),
-        ("Raffinerie", "Raffinerie und Öl", "Ölpumpe und Raffinerie (beide im Laden kaufbar), Kunststoff und Gummi. Voraussetzung für Flammenwerfer und Treibstoffkraftwerk.",
+        ("Raffinerie", "Raffinerie und Öl", "Ölpumpe, Raffinerie und Flüssigkeitspuffer (im Laden kaufbar), Kunststoff und Gummi. Voraussetzung für Flammenwerfer und Treibstoffkraftwerk.",
          (1, 2), ["Giesserei"], [], ZEIT,
-         [f"{R}/Buildings/Recipe_OilPump", f"{R}/Buildings/Recipe_OilRefinery", f"{R}/OilRefinery/Recipe_Plastic", f"{R}/OilRefinery/Recipe_Rubber"], f"{P}/Plastic/Desc_Plastic"),
-        ("Treibstoffkraft", "Treibstoffkraftwerk", "Treibstoffkraftwerk (150 MW, im Laden kaufbar): verbrennt Treibstoff oder Biotreibstoff aus der Raffinerie.",
+         [f"{R}/Buildings/Recipe_OilPump", f"{R}/Buildings/Recipe_OilRefinery", f"{R}/OilRefinery/Recipe_Plastic", f"{R}/OilRefinery/Recipe_Rubber",
+          f"{R}/Buildings/Recipe_PipeStorageTank", f"{R}/Buildings/Recipe_IndustrialTank"], f"{P}/Plastic/Desc_Plastic"),
+        ("Treibstoffkraft", "Treibstoffkraftwerk", "Treibstoffkraftwerk (150 MW, im Laden kaufbar): verbrennt Treibstoff aus der Raffinerie.",
          (2, 3), ["Raffinerie"], [], ZEIT,
          [f"{R}/Buildings/Recipe_GeneratorFuel", f"{R}/OilRefinery/Recipe_LiquidFuel"], f"{P}/Fuel/Desc_LiquidFuel"),
         # 0.82 Rohstoff-Knoten (Konzept-Rohstoffe-Tuerme-Bauten-2026-11-07): jede Gabelung der Munition braucht einen davon
-        ("Schwefel", "Schwefel", "Schwefel-Vorkommen abbauen (Miner). Schwarzpulver wie im Originalspiel aus Kohle und Schwefel. Grundlage für Nobelisk, Brandmunition, Gas-Nobelisk und Kompaktkohle.",
+        ("Schwefel", "Schwefel", "Schwefel-Vorkommen abbauen (Miner). Schwefel steckt in Schwarzpulver (Nobelisk), Brandmunition, Gas-Nobelisk und Kompaktkohle; die Rezepte kommen mit den jeweiligen Knoten. Dieser Knoten ist der Zugang zu ihnen.",
          (0, 2), ["Giesserei"], [], ZEIT, [], f"{G}/Resource/RawResources/Sulfur/Desc_Sulfur"),
         ("Quarz", "Quarzverarbeitung", "Rohquarz abbauen (Miner) und im Konstruktor zu Quarzkristall verarbeiten. Für Streubolzen und Puls-Nobelisk.",
          (2, 1), ["Assembler"], [], ZEIT, [f"{R}/Constructor/Recipe_QuartzCrystal"], f"{P}/QuartzCrystal/Desc_QuartzCrystal"),
@@ -87,10 +91,19 @@ BAEUME = [
          (5, 1), ["Kupfer"], [], ZEIT, [f"{R}/Smelter/Recipe_IngotCaterium", f"{R}/Constructor/Recipe_Quickwire"], f"{P}/HighSpeedWire/Desc_HighSpeedWire"),
         ("Bauxit", "Bauxit und Aluminium", "Bauxit abbauen, Aluminiumbarren in der Gießerei aus Bauxit und Kohle (FICSIT-Feldrezept, ohne Wasser), Aluminiumgehäuse im Konstruktor. Für Turbomunition.",
          (1, 3), ["Raffinerie"], [], ZEIT, [f"{TDR}/Recipe_TD_Aluminiumbarren", f"{R}/Constructor/Recipe_AluminumCasing"], f"{P}/AluminumCasing/Desc_AluminumCasing"),
+        # 0.9.1 Endgame-Konzept (Marius 09.11.2026): spaete Maschinen ins Kontingent - Fertiger in Phase 3, Mischer in Phase 4
+        ("Schwerindustrie", "Schwerindustrie", "Fertiger (im Laden kaufbar), Computer, Leiterplatten, Schwere Modulare Rahmen, Stahlbeton-Träger, Aluminiumbleche und Kühlkörper. Damit werden Schildgenerator und Himmelsturm baubar.",
+         (1, 4), ["Bauxit"], [], ZEIT,
+         [f"{R}/Buildings/Recipe_ManufacturerMk1", f"{R}/Assembler/Recipe_CircuitBoard", f"{R}/Manufacturer/Recipe_Computer", f"{R}/Manufacturer/Recipe_ModularFrameHeavy",
+          f"{R}/Assembler/Recipe_EncasedIndustrialBeam", f"{R}/Constructor/Recipe_AluminumSheet", f"{R}/Assembler/Recipe_HeatSink"], f"{P}/ModularFrameHeavy/Desc_ModularFrameHeavy"),
+        ("Mischtechnik", "Mischtechnik", "Mischer, Abfüller und Ressourcenbrunnen für Stickstoff (im Laden kaufbar), Fusionierte Modulare Rahmen und SAM-Fluktuatoren. Damit wird der Störfeld-Projektor baubar. Der Druckerzeuger des Ressourcenbrunnens braucht 150 MW: ein Treibstoffkraftwerk einplanen.",
+         (1, 5), ["Schwerindustrie"], [], ZEIT,
+         [f"{R}/Buildings/Recipe_Blender", f"{R}/Buildings/Recipe_Packager", f"{R}/Buildings/Recipe_FrackingSmasher", f"{R}/Buildings/Recipe_FrackingExtractor",
+          f"{R}/Blender/Recipe_FusedModularFrame", f"{R}/Assembler/Recipe_SAMFluctuator"], f"{P}/ModularFrameFused/Desc_ModularFrameFused"),
     ]),
     # 0.73 Spezialisierung, 0.78.3 schmaler (Marius: MAM scrollt nicht nach rechts): Bolzenturm 0-2 | Gewehrturm 3-5 | Nobelisk-Werfer 0-2 ab Zeile 3
     ("Ballistik", "FICSIT-Abwehr: Ballistik", "Türme und Munition, die Projektile verschießen: Bolzenturm, Gewehrturm, Nobelisk-Werfer. Jede Linie hat eine Gabelung.", BOLZEN, [
-        ("Durchschlagbolzen", "Durchschlagbolzen", "Bolzenturm Stufe 2: Armierungsbolzen + Schrauben im Assembler. Durchschlägt das Ziel und trifft bis zu 2 weitere Gegner in der Schusslinie.",
+        ("Durchschlagbolzen", "Durchschlagbolzen", "Bolzenturm Stufe 2: Armierungsbolzen + Schrauben im Assembler. 32 Schaden, durchschlägt das Ziel und trifft bis zu 2 weitere Gegner in der Schusslinie mit halbem Schaden.",
          (1, 0), [], [], ZEIT, [f"{TD}/BoltTurret/Recipe_TD_Shoot_Durchschlag", f"{TDR}/Recipe_TD_Durchschlagbolzen"], DURCH),
         ("Gewehrturm", "Gewehrturm", "Neuer Turm mit Dauerfeuer, stark gegen flinke Gegner. Munition: Kupferblech + Eisenstange im Assembler. Level 2 im Turmfenster ist damit freigeschaltet.",
          (4, 0), [], [], ZEIT,
@@ -101,7 +114,7 @@ BAEUME = [
         ("Streubolzen", "Streubolzen", GABEL + "Bolzenturm Stufe 2: Durchschlagbolzen + Quarzkristall. Zerfällt in 3 Splitter auf weitere Ziele, stark gegen Schwärme.",
          (0, 1), ["Durchschlagbolzen"], [], ZEIT,
          [f"{TD}/BoltTurret/Recipe_TD_Shoot_Spreadshot", f"{TDR}/Recipe_TD_Streubolzen"], f"{G}/Equipment/RebarGun/Ammo/Desc_Rebar_Spreadshot"),
-        ("Zielsuchmunition", "Zielsuchmunition", GABEL + "Gewehrturm Stufe 2: Gewehrmunition + Turbodraht (Caterium). Trifft immer, auch schnelle Ziele, doppelter Schaden je Schuss.",
+        ("Zielsuchmunition", "Zielsuchmunition", GABEL + "Gewehrturm Stufe 2: Gewehrmunition + Turbodraht (Caterium). Trifft immer, auch schnelle Ziele: 20 statt 12 Schaden je Schuss bei 5 statt 6 Schuss pro Sekunde, Magazin 20 (rund 40 % mehr Schaden pro Sekunde).",
          (3, 1), ["Gewehrturm"], [], ZEIT,
          [f"{TD}/GunTurret/Recipe_TD_Gun_Homing", f"{TDR}/Recipe_TD_Zielsuchmunition"], f"{G}/Equipment/Rifle/Ammo/Desc_CartridgeSmartProjectile"),
         ("Panzerbrechend", "Panzerbrechende Munition", GABEL + "Gewehrturm Stufe 2: 2 Gewehrmunition + Stahlrohr im Assembler. Durchschlag-Schaden statt Kugel: geht durch die Panzerung der Hogs.",
@@ -119,7 +132,7 @@ BAEUME = [
         ("GasNobelisk", "Gas-Nobelisk", GABEL + "Nobelisk + 2 Schwefel: Giftwolke, die Gegner darin über Zeit schädigt. Gift-Schaden, gegen den keine Gegnerart geschützt ist.",
          (0, 4), ["NobeliskWerfer"], [], ZEIT,
          [f"{TD}/NobeliskLauncher/Recipe_TD_Nobelisk_Gas", f"{TDR}/Recipe_TD_NobeliskGas"], f"{G}/Equipment/NobeliskDetonator/Ammo/Desc_NobeliskGas"),
-        ("PulsNobelisk", "Puls-Nobelisk", GABEL + "Nobelisk + 2 Quarzkristall: Druckwelle, die Gegner zurückwirft und betäubt.",
+        ("PulsNobelisk", "Puls-Nobelisk", GABEL + "Nobelisk + 2 Quarzkristall: Druckwelle, die alle Gegner im Umkreis 2 s betäubt.",
          (2, 4), ["NobeliskWerfer"], [], ZEIT,
          [f"{TD}/NobeliskLauncher/Recipe_TD_Nobelisk_Pulse", f"{TDR}/Recipe_TD_NobeliskPuls"], f"{G}/Equipment/NobeliskDetonator/Ammo/Desc_NobeliskShockwave"),
         ("Turbomunition", "Turbomunition", "Gewehrturm Stufe 3 (spät): 2 Gewehrmunition + Aluminiumgehäuse. Doppelte Feuerrate, Magazin mit 75 Schuss.",
@@ -129,22 +142,25 @@ BAEUME = [
          (1, 5), ["NobeliskWerfer"], [], ZEIT,
          [f"{TD}/NobeliskLauncher/Recipe_TD_Nobelisk_Cluster", f"{TDR}/Recipe_TD_NobeliskStreu", f"{R}/Equipment/Recipe_GunpowderMK2"], f"{G}/Equipment/NobeliskDetonator/Ammo/Desc_NobeliskCluster"),
         # 0.83 Bauten P3
-        ("Himmelsturm", "Himmelsturm", "Neuer Turm: Flugabwehr gegen fliegende Krabben (60 m, 200 Schaden in 6 m). Munition: Flak-Kanister = Aluminiumgehäuse + 2 Schwarzpulver im Assembler. Greift keine Bodengegner an.",
+        ("Himmelsturm", "Himmelsturm", "Neuer Turm: Flugabwehr gegen fliegende Gegner (60 m, 200 Schaden in 6 m). Munition: Flak-Kanister = Aluminiumgehäuse + 2 Schwarzpulver im Assembler. Greift keine Bodengegner an. Fliegende Krabben kommen ab Welle 43 aus Krabbennestern (noch nicht gebaut). Braucht Schwerindustrie und 25 MW.",
          (3, 4), ["NobeliskWerfer"], [], ZEIT, [f"{TD}/FlakTurret/Recipe_TD_FlakTurret", f"{TD}/FlakTurret/Recipe_TD_Flak_Shoot", f"{TDR}/Recipe_TD_FlakKanister"], f"{P}/AluminumCasing/Desc_AluminumCasing"),
-        ("Singularitaet", "Singularitätswerfer", "Neuer Turm (Endspiel): Ficsonium-Ladung hält alle Gegner in 12 m fest und sprengt sie nach 1,5 s mit 1500 Explosionsschaden. Ficsonium aus dem Teilchenbeschleuniger.",
+        ("Singularitaet", "Singularitätswerfer", "Neuer Turm (Endspiel): Ficsonium-Ladung hält alle Gegner in 12 m fest und sprengt sie nach 1,5 s mit 1500 Explosionsschaden. Ficsonium aus dem Teilchenbeschleuniger. Erst in den Überstunden (ab Welle 51). Braucht 150 MW.",
          (3, 5), ["Himmelsturm"], [], ZEIT, [f"{TD}/SingularityLauncher/Recipe_TD_SingularityLauncher", f"{TD}/SingularityLauncher/Recipe_TD_Singularitaet_Ficsonium"], f"{P}/Ficsonium/Desc_Ficsonium"),
     ]),
     # Spalten: Teslaspule 0-2 | Flammenwerfer 4
-    ("Elementar", "FICSIT-Abwehr: Elementar", "Türme ohne Projektile: Strom (Teslaspule) und Feuer (Flammenwerfer). Erscheint mit dem Kohlekraftwerk.", DRAHT, [
-        ("Teslaspule", "Teslaspule", "Neuer Turm: Kettenblitz aus Strom, ohne Munition, springt auf weitere Gegner. Braucht beim Aufladen 75 MW. Level 2 im Turmfenster ist damit freigeschaltet.",
+    ("Elementar", "FICSIT-Abwehr: Elementar", "Türme ohne Projektile: Strom (Teslaspule) und Feuer (Flammenwerfer). Beide brauchen das Kohlekraftwerk aus dem Baum Industrie.", DRAHT, [
+        ("Teslaspule", "Teslaspule", "Neuer Turm: Kettenblitz aus Strom, ohne Munition, springt auf 3 weitere Gegner. Braucht beim Aufladen 125 MW. Level 2 im Turmfenster ist damit freigeschaltet.",
          (1, 0), [], [], ZEIT,
          [f"{TD}/TeslaCoil/Recipe_TD_TeslaCoil", f"{TD}/TeslaCoil/Recipe_TD_Tesla_Discharge"], DRAHT),
-        ("Kettenblitz", "Kettenblitz", GABEL + "Jede Entladung springt auf 3 weitere Gegner. Stark gegen Brut und Schwärme.",
+        ("Kettenblitz", "Kettenblitz", GABEL + "Jede Entladung springt 3-mal mehr, also auf bis zu 6 weitere Gegner (höchstens 8 Ziele mit allen Boni). Stark gegen Brut und Schwärme.",
          (0, 1), ["Teslaspule"], [], ZEIT, [], DRAHT),
         ("Ueberlast", "Überlast", GABEL + "Die ganze Ladung geht in das Hauptziel: Schaden x2,5, dafür keine Sprünge. Stark gegen Elite und Bosse.",
          (2, 1), ["Teslaspule"], [], ZEIT, [], DRAHT),
         ("Akkubank", "Akkubank", "Teslaspulen laden aus einem Puffer: beim Aufladen ziehen sie nur noch die Hälfte der Leistung aus dem Netz.",
          (1, 2), ["Teslaspule"], [], ZEIT, [], KABEL),
+        # 0.9.1 E2 (Endgame-Konzept 09.11.): dritte Stufe der Tesla-Linie
+        ("Hochspannung", "Hochspannung", "Teslaspulen entladen mit Hochspannung aus dem Treibstoffkraftwerk: 30 % mehr Schaden. Stark gegen Wasserspucker.",
+         (1, 3), ["Akkubank"], [], ZEIT, [], f"{P}/HighSpeedConnector/Desc_HighSpeedConnector"),
         # 0.82 (Marius 07.11.): Flamme startet mit Oel, kein Biotreibstoff mehr (Biomasse kommt im Einsatz nicht aus der Fabrik)
         ("Flammenwerfer", "Flammenwerfer", "Neuer Turm: Flammenkegel mit Nachbrennen, trifft alles im Kegel. Treibstoff aus Rohöl (Ölpumpe, Raffinerie) per Rohr. Level 2 im Turmfenster ist damit freigeschaltet.",
          (4, 0), [], [], ZEIT,
@@ -152,11 +168,18 @@ BAEUME = [
         ("Turbotreibstoff", "Turbotreibstoff", "Flammenwerfer Stufe 2: Treibstoff + Kompaktkohle in der Raffinerie, 50 % mehr Schaden. Kompaktkohle: 5 Kohle + 5 Schwefel im Assembler.",
          (4, 3), ["Flammenwerfer"], [], ZEIT,
          [f"{TD}/FlameTurret/Recipe_TD_Flame_Turbo", f"{R}/AlternateRecipes/Parts/Recipe_Alternate_Turbofuel", f"{TDR}/Recipe_TD_Kompaktkohle"], f"{P}/Turbofuel/Desc_LiquidTurboFuel"),
+        # 0.9.1 E2 (Endgame-Konzept 09.11.): spaete Flamme mit Stickstoff (Mischer) und Energie-Splittern
+        ("Raketentreibstoff", "Raketentreibstoff", "Flammenwerfer Stufe 3: Raketentreibstoff aus Turbotreibstoff und Salpetersäure im Mischer (Salpetersäure aus Stickstoff, Wasser und Eisenplatten). 140 Schaden pro Sekunde, längeres Nachbrennen. FICSIT schenkt dazu ein Paket Förderanlagen für den Stickstoff.",
+         (4, 4), ["Turbotreibstoff"], [], ZEIT,
+         [f"{TD}/FlameTurret/Recipe_TD_Flame_Rocket", f"{R}/Blender/Recipe_RocketFuel", f"{R}/Blender/Recipe_NitricAcid"], f"{P}/RocketFuel/Desc_RocketFuel"),
+        ("Plasmaflamme", "Plasmaflamme", "Flammenwerfer Stufe 4: ionisierter Treibstoff aus Raketentreibstoff und Energie-Splittern in der Raffinerie. 160 Schaden pro Sekunde als Strom statt Feuer: wirkt gegen hitzefeste Wüsten- und Wasserspucker, betäubt kurz.",
+         (4, 5), ["Raketentreibstoff"], [], ZEIT,
+         [f"{TD}/FlameTurret/Recipe_TD_Flame_Ionized", f"{R}/OilRefinery/Recipe_IonizedFuel"], f"{P}/IonizedFuel/Desc_IonizedFuel"),
         # 0.81 passive Bauten P1
-        ("Oelschlick", "Ölschlick-Feld", "Neues Gebäude: Bodenplatte 8 x 8 m, per Rohr mit Schwerölrückstand aus der Raffinerie versorgt. Gegner darauf laufen 35 % langsamer; trifft ein Flammenwerfer einen Gegner darauf, brennt die Platte 5 s.",
+        ("Oelschlick", "Ölschlick-Feld", "Neues Gebäude: Bodenplatte 8 x 8 m, per Rohr mit Schwerölrückstand aus der Raffinerie versorgt. Gegner darauf laufen 35 % langsamer. Kombination Ölbrand: Flammenwerfer, Brandmunition, Feuerteppich oder ein Lockfeuer in 12 m entzünden die nasse Platte 5 s lang (20 Schaden/s), und wer hindurchläuft, brennt danach 3 s weiter. Braucht 2 MW.",
          (5, 2), ["Flammenwerfer"], [], ZEIT, [f"{TD}/SlickPlate/Recipe_TD_SlickPlate", f"{TD}/SlickPlate/Recipe_TD_Slick_HeavyOil"], f"{P}/HeavyOilResidue/Desc_HeavyOilResidue"),
         # 0.83 Bauten P2 (Gabel G mit dem Oelschlick: Kontrolle durch Feuer oder durch Strom)
-        ("Elektrozaun", "Elektrozaun", GABEL + "Neues Gebäude: Mauerstück 8 x 4 m mit Kupferstäben. Für Gegner eine Mauer; wer ihn angreift, bekommt einen Stromschlag (15 Schaden, 1 s Betäubung). Braucht 2 MW.",
+        ("Elektrozaun", "Elektrozaun", "Neues Gebäude: Mauerstück 8 x 4 m mit Kupferstäben. Für Gegner eine Mauer; wer ihn angreift, bekommt einen Stromschlag (15 Schaden, 1 s Betäubung). Kombination Leiter: eine Teslaspule in Reichweite leitet ihre Entladung über den Zaun an bis zu 3 Gegner, die ihn berühren (30 % Schaden). Braucht 2 MW.",
          (3, 2), ["Teslaspule"], [], ZEIT, [f"{TD}/ConductorWall/Recipe_TD_ConductorWall", f"{TD}/ConductorWall/Recipe_TD_Zaun_Strom"], f"{P}/CopperSheet/Desc_CopperSheet"),
     ]),
     # 0.78.3 fuenf Spalten: Kern 0-3 | Mauern 4 (Zeilen 0-1) | Reparaturstation 3 und Turmfertigung 4 ab Zeile 2 | Doktrinen Zeile 5
@@ -167,9 +190,13 @@ BAEUME = [
          (1, 1), ["KernPanzer"], [], ZEIT, [], EISENPLATTE),
         ("MauerMk2", "Verstärkte Mauern", "Alle Mauern haben doppelte Lebenspunkte.",
          (4, 0), [], [], ZEIT, [], f"{P}/Cement/Desc_Cement"),
-        ("Reparaturstation", "Reparaturstation", "Neues Gebäude: repariert Mauern, Türme und Kern im Umkreis von 25 m. Verbraucht Eisenplatten oder verstärkte Platten.",
-         (1, 2), ["KernNotrep"], [], ZEIT,
-         [f"{TD}/RepairStation/Recipe_TD_RepairStation", f"{TD}/RepairStation/Recipe_TD_Repair_IronPlate", f"{TD}/RepairStation/Recipe_TD_Repair_Reinforced"], EISENPLATTE),
+        # 0.9.3 (Marius 09.11.2026): Reparaturstation durch den Drohnenplatz ersetzt (Gabelung Reparatur- oder Kampfdrohnen, ab Welle 40)
+        ("Reparaturdrohnen", "Reparaturdrohnen", GABEL + "Neues Gebäude: Drohnenplatz mit 2 bis 4 Drohnen. Sie fliegen zu beschädigten Mauern, Türmen und Bauten in 40 m und reparieren sie mit Eisenplatten oder verstärkten Platten. Braucht 30 MW.",
+         (0, 3), ["Schildgenerator"], [], ZEIT,
+         [f"{TD}/DronePort/Recipe_TD_DronePort", f"{TD}/DronePort/Recipe_TD_Drohne_Reparatur", f"{TD}/DronePort/Recipe_TD_Drohne_ReparaturVerstaerkt"], EISENPLATTE),
+        ("Kampfdrohnen", "Kampfdrohnen", GABEL + "Neues Gebäude: Drohnenplatz mit 2 bis 4 Drohnen. Sie fliegen über die Front zu Gegnern in 40 m und schießen mit Gewehrmunition, auch auf Fernkämpfer hinter den Mauern. Braucht 30 MW.",
+         (2, 3), ["Schildgenerator"], [], ZEIT,
+         [f"{TD}/DronePort/Recipe_TD_DronePort", f"{TD}/DronePort/Recipe_TD_Drohne_Kampf"], f"{P}/CartridgeStandard/Desc_CartridgeStandard"),
         ("KernSchild", "Kern-Schild", GABEL + "Ein Schild fängt in jeder Welle die ersten 2000 Schaden am Kern ab und lädt sich zum Start der nächsten Welle neu.",
          (0, 1), ["KernPanzer"], [], ZEIT, [], f"{P}/IronPlateReinforced/Desc_IronPlateReinforced"),
         ("KernGeschuetz", "Kern-Geschütz", GABEL + "Der Kern schießt selbst: alle 1,5 s ein Bolzen mit 60 Schaden auf den nächsten Gegner in 30 m. Die letzte Linie, kein Ersatz für Türme.",
@@ -190,34 +217,33 @@ BAEUME = [
          (3, 5), ["Turmfertigung2"], [], ZEIT, [], DRAHT),
         ("DoktrinFlamme", "Doktrin: Flammenwerfer", DOKTRIN + "Flammenwerfer machen 25 % mehr Schaden, ihre Level kosten 25 % weniger Coupons und Level 5 gibt es schon mit Turmfertigung III.",
          (4, 5), ["Turmfertigung2"], [], ZEIT, [], f"{P}/BioFuel/Desc_LiquidBiofuel"),
-        ("Turmfertigung4", "Turmfertigung IV: Meisterstufe", "Alle Türme können auf Level 5 gebracht werden (40 Coupons je Turm). Jeder Turm bekommt eine eigene Fähigkeit: Bolzenturm Doppellauf, Gewehrturm Dauerfeuer, Nobelisk-Werfer Streuschuss, Teslaspule Spannungsfeld, Flammenwerfer Feuerteppich.",
+        ("Turmfertigung4", "Turmfertigung IV: Meisterstufe", "Alle Türme können auf Level 5 gebracht werden (40 Coupons je Turm). Jeder bekommt eine eigene Fähigkeit: Bolzenturm Doppellauf, Gewehrturm Gurttrommel (Dauerfeuer ohne Nachladen), Nobelisk-Werfer Salvenkopf (drei Nobelisken je Salve), Teslaspule Spannungsfeld, Flammenwerfer Feuerteppich, Himmelsturm Sperrfeuer, Singularitätswerfer Ereignishorizont.",
          (5, 6), ["Turmfertigung3"], [], ZEIT, [], f"{P}/ModularFrame/Desc_ModularFrame"),
         # 0.81 passive Bauten P1 (Konzept-Rohstoffe-Tuerme-Bauten-2026-11-07)
-        ("Tor", "Tor", "Neues Gebäude: Tor für die Mauerlinie (8 m breit, Öffnung 4 x 4 m). Öffnet sich für dich und Fahrzeuge, Gegner kommen nie durch und greifen es wie eine Mauer an. Ein Förderband passt unten durch.",
+        ("Tor", "Tor", "Neues Gebäude: Tor für die Mauerlinie (8 m breit, Öffnung 4 x 4 m). Öffnet sich für dich und Fahrzeuge, Gegner kommen nie durch und greifen es wie eine Mauer an. Ein Förderband passt unten durch. Kombination Engstelle: am Tor laufen Gegner in einer Reihe, Bolzen durchschlagen dort einen Gegner mehr.",
          (3, 1), ["MauerMk2"], [], ZEIT, [f"{TD}/Gate/Recipe_TD_Gate"], f"{P}/Cement/Desc_Cement"),
-        ("Lockfeuer", "Lockfeuer", "Neues Gebäude: verbrennt Kohle und lockt dabei 15 s lang alle Gegner in 40 m an, danach 30 s Pause. Lenkt Wellen auf eine Turmgruppe. Braucht Strom.",
+        ("Lockfeuer", "Lockfeuer", "Neues Gebäude: verbrennt Kohle und lockt dabei 15 s lang alle Gegner in 40 m an, danach 30 s Pause. Lenkt Wellen auf eine Turmgruppe. Kombination Sammelpunkt: gelockte Gegner nehmen 25 % mehr Explosionsschaden. Sein Feuer entzündet nasse Ölschlick-Felder in 12 m. Braucht 5 MW.",
          (3, 2), ["Tor"], [], ZEIT, [f"{TD}/LureBeacon/Recipe_TD_LureBeacon", f"{TD}/LureBeacon/Recipe_TD_Lure_Coal", f"{TD}/LureBeacon/Recipe_TD_Lure_CompactedCoal"], KOHLE),
         # 0.83 Bauten P2/P3 (Gabel H: Schildgenerator oder Stoerfeld-Projektor)
         ("Funkmast", "Funkmast", "Neues Gebäude: Radarmast mit Leitsender. Türme in 30 m bekommen +10 % Reichweite. Braucht dauernd 15 MW.",
          (5, 1), ["MauerMk2"], [], ZEIT, [f"{TD}/RadioMast/Recipe_TD_RadioMast", f"{TD}/RadioMast/Recipe_TD_Funk_Strom"], f"{P}/CrystalOscillator/Desc_CrystalOscillator"),
-        ("Schildgenerator", "Schildgenerator", GABEL + "Neues Gebäude: Kuppel 20 m schluckt Schaden an Mauern, Türmen und Bauten (nicht am Kern), 3000 Schildpunkte, gebrochen 20 s Ladezeit. Braucht dauernd 60 MW.",
-         (1, 3), ["Reparaturstation"], [], ZEIT, [f"{TD}/ShieldGenerator/Recipe_TD_ShieldGenerator", f"{TD}/ShieldGenerator/Recipe_TD_Schild_Strom"], f"{P}/Battery/Desc_Battery"),
-        ("Stoerfeld", "Störfeld-Projektor", GABEL + "Neues Gebäude: verbraucht reanimiertes SAM (1 Barren je 60 s), solange Gegner in 15 m sind, und bremst sie alle um 40 %.",
+        ("Schildgenerator", "Schildgenerator", GABEL + "Neues Gebäude: Kuppel 20 m schluckt Schaden an Mauern, Türmen und Bauten (nicht am Kern), 3000 Schildpunkte, gebrochen 20 s Ladezeit. Braucht Schwerindustrie und dauernd 60 MW.",
+         (1, 2), ["KernNotrep"], [], ZEIT, [f"{TD}/ShieldGenerator/Recipe_TD_ShieldGenerator", f"{TD}/ShieldGenerator/Recipe_TD_Schild_Strom"], f"{P}/Battery/Desc_Battery"),
+        ("Stoerfeld", "Störfeld-Projektor", GABEL + "Neues Gebäude: verbraucht reanimiertes SAM (1 Barren je 60 s), solange Gegner in 15 m sind, und bremst sie alle um 40 %. Braucht Mischtechnik und 80 MW.",
          (4, 7), ["Turmfertigung4"], [], ZEIT, [f"{TD}/FieldProjector/Recipe_TD_FieldProjector", f"{TD}/FieldProjector/Recipe_TD_Feld_SAM", f"{R}/Smelter/Recipe_IngotSAM"], f"{P}/SAMIngot/Desc_SAMIngot"),
-        ("Dimensionslager", "Dimensionslager", "Neues Gebäude: Lager mit Mercer-Kugel, versorgt alle Türme in 30 m direkt mit der passenden Munition aus seinem Inhalt. Kostet eine Mercer-Kugel.",
-         (3, 7), ["Turmfertigung4"], [], ZEIT, [f"{TD}/DimensionalDepot/Recipe_TD_DimensionalDepot"], "/Game/FactoryGame/Prototype/WAT/Desc_WAT2"),
+        # 0.9.3 (Marius 09.11.2026): Dimensionslager gestrichen (Konzept drahtlose Munition verworfen)
     ]),
 ]
 
 # Alter Ordner je Knoten: Pfad des Schematics bleibt gleich (Spielstaende)
 ORDNER = {}
 for _o, _ks in {
-    "Produktion": ["Assembler", "Kupfer", "Giesserei", "BandMk2", "Raffinerie", "Schwefel", "Quarz", "Caterium", "Bauxit"],
+    "Produktion": ["Assembler", "Kupfer", "Giesserei", "BandMk2", "Raffinerie", "Schwefel", "Quarz", "Caterium", "Bauxit", "Schwerindustrie", "Mischtechnik"],
     "Ballistik": ["Durchschlagbolzen", "Gewehrturm", "Explosivbolzen", "Streubolzen", "Zielsuchmunition", "Schockbolzen", "Turbomunition", "Panzerbrechend", "Brandmunition"],
-    "Energie": ["Kohlekraft", "Teslaspule", "Treibstoffkraft", "Kettenblitz", "Ueberlast", "Akkubank"],
+    "Energie": ["Kohlekraft", "Teslaspule", "Treibstoffkraft", "Kettenblitz", "Ueberlast", "Akkubank", "Hochspannung"],
     "Doktrin": ["DoktrinBolzen", "DoktrinGewehr", "DoktrinNobelisk", "DoktrinTesla", "DoktrinFlamme"],
-    "Befestigung": ["Reparaturstation", "Tor", "Lockfeuer", "Elektrozaun", "Funkmast", "Schildgenerator", "Stoerfeld", "Dimensionslager"],
-    "Feuer": ["Flammenwerfer", "Turbotreibstoff", "Oelschlick"],
+    "Befestigung": ["Reparaturdrohnen", "Kampfdrohnen", "Tor", "Lockfeuer", "Elektrozaun", "Funkmast", "Schildgenerator", "Stoerfeld"],
+    "Feuer": ["Flammenwerfer", "Turbotreibstoff", "Oelschlick", "Raketentreibstoff", "Plasmaflamme"],
     "Chemie": ["NobeliskWerfer", "GasNobelisk", "PulsNobelisk", "StreuNobelisk", "Himmelsturm", "Singularitaet"],
     "Upgrades": ["Turmfertigung2", "Turmfertigung3", "Turmfertigung4"],
     "Kern": ["KernPanzer", "KernNotrep", "KernSchild", "KernGeschuetz"],
@@ -233,31 +259,31 @@ KURZ = {
     "BandMk3": "Bänder Mk3 (270/min), Umbau automatisch", "Raffinerie": "Ölpumpe, Raffinerie, Kunststoff", "Treibstoffkraft": "Treibstoffkraftwerk 150 MW",
     "Durchschlagbolzen": "Bolzen St. 2: trifft 3 in Reihe", "Gewehrturm": "Neuer Turm: Dauerfeuer", "Explosivbolzen": "Bolzen St. 3: großer Flächenschaden",
     "Streubolzen": "Bolzen St. 2: 3 Splitter (Quarz)", "Zielsuchmunition": "Gewehr St. 2: trifft immer (Caterium)", "Schockbolzen": "Bolzen St. 2: Strom, betäubt 3 s (Caterium)",
-    "Schwefel": "Schwefel: Schwarzpulver, Kompaktkohle", "Quarz": "Quarzkristall", "Caterium": "Caterium, Turbodraht", "Bauxit": "Aluminiumgehäuse",
-    "NobeliskWerfer": "Neuer Turm: Nobelisk im Bogen", "Turbomunition": "Gewehr St. 4: doppelte Feuerrate", "GasNobelisk": "Giftwolke, Schaden über Zeit",
-    "PulsNobelisk": "Druckwelle wirft zurück", "StreuNobelisk": "Nobelisk St. 3: Streusprengsätze", "Teslaspule": "Neuer Turm: Kettenblitz, 75 MW",
+    "Schwefel": "Schwefel: Schwarzpulver, Kompaktkohle", "Quarz": "Quarzkristall", "Caterium": "Caterium, Turbodraht", "Bauxit": "Aluminiumgehäuse", "Schwerindustrie": "Fertiger, Computer, Schwere Rahmen", "Mischtechnik": "Mischer, Abfüller, Stickstoff",
+    "NobeliskWerfer": "Neuer Turm: Nobelisk im Bogen", "Turbomunition": "Gewehrmunition spät: doppelte Feuerrate", "GasNobelisk": "Giftwolke, Schaden über Zeit",
+    "PulsNobelisk": "Druckwelle betäubt 2 s", "StreuNobelisk": "Nobelisk St. 3: Streusprengsätze", "Teslaspule": "Neuer Turm: Kettenblitz, 125 MW",
     "Flammenwerfer": "Neuer Turm: Flammenkegel", "Turbotreibstoff": "Flamme St. 2: Turbotreibstoff",
-    "KernPanzer": "Kern +30 % Lebenspunkte", "KernNotrep": "Kern heilt 10 % je Welle", "Panzersperre": "Sperre lenkt Gegnerwege",
+    "KernPanzer": "Kern +30 % Lebenspunkte", "KernNotrep": "Kern heilt 10 % je Welle",
     "KernSchild": "Schild fängt 2000 Schaden je Welle", "KernGeschuetz": "Kern schießt selbst (30 m)", "Turmfertigung2": "Alle Türme bis Level 3",
-    "MauerMk2": "Mauern LP x2", "Reparaturstation": "Repariert alles in 25 m", "Turmfertigung3": "Alle Türme bis Level 4",
+    "MauerMk2": "Mauern LP x2", "Reparaturdrohnen": "Drohnen reparieren in 40 m", "Kampfdrohnen": "Drohnen kämpfen in 40 m", "Turmfertigung3": "Alle Türme bis Level 4",
     "Stachelmauer": "Angreifer nehmen 25 % zurück", "Turmfertigung4": "Level 5 mit Meisterfähigkeit",
-    "Panzerbrechend": "Gewehr St. 2: Durchschlag statt Kugel", "Brandmunition": "Gewehr St. 3: Treffer brennen nach",
-    "Kettenblitz": "Tesla: +3 Sprünge", "Ueberlast": "Tesla: Hauptziel x2,5, keine Sprünge", "Akkubank": "Tesla lädt mit halber Netzlast",
+    "Panzerbrechend": "Gewehr St. 2: Durchschlag statt Kugel", "Brandmunition": "Gewehrmunition: Treffer brennen, zündet Ölschlick",
+    "Kettenblitz": "Tesla: 3 Sprünge mehr", "Ueberlast": "Tesla: Hauptziel x2,5, keine Sprünge", "Akkubank": "Tesla lädt mit halber Netzlast", "Hochspannung": "Tesla +30 % Schaden", "Raketentreibstoff": "Flamme St. 3: 140/s (Stickstoff)", "Plasmaflamme": "Flamme St. 4: 160/s, betäubt",
     "DoktrinBolzen": "Hauptlinie Bolzenturm: +25 % Schaden", "DoktrinGewehr": "Hauptlinie Gewehrturm: +25 % Schaden",
     "DoktrinNobelisk": "Hauptlinie Nobelisk-Werfer: +25 % Schaden", "DoktrinTesla": "Hauptlinie Teslaspule: +25 % Schaden",
     "DoktrinFlamme": "Hauptlinie Flammenwerfer: +25 % Schaden",
-    "Tor": "Tor: du kommst durch, Gegner nicht", "Lockfeuer": "Lockt Gegner in 40 m an", "Oelschlick": "Bodenplatte bremst um 35 %, brennt",
-    "Elektrozaun": "Mauer mit Stromschlag", "Funkmast": "Türme in 30 m +10 % Reichweite", "Schildgenerator": "Kuppel schluckt 3000 Schaden",
-    "Stoerfeld": "Bremst alles in 15 m um 40 % (SAM)", "Dimensionslager": "Munition ohne Band in 30 m", "Himmelsturm": "Neuer Turm: Flugabwehr",
+    "Tor": "Tor: Engstelle für Bolzen", "Lockfeuer": "Lockt an, Sammelpunkt für Explosionen", "Oelschlick": "Bremst um 35 %, Kombo Ölbrand",
+    "Elektrozaun": "Mauer mit Stromschlag, leitet Tesla", "Funkmast": "Türme in 30 m +10 % Reichweite", "Schildgenerator": "Kuppel schluckt 3000 Schaden",
+    "Stoerfeld": "Bremst alles in 15 m um 40 % (SAM)", "Dimensionslager": "Munition ohne Band in 30 m", "Himmelsturm": "Neuer Turm: Flugabwehr (noch ohne Ziele)",
     "Singularitaet": "Neuer Turm: Ficsonium-Singularität",
 }
 
 # 0.58: einheitlicher Aufbau der Beschreibung (Marius: MAM nicht transparent genug). Laden = was danach im Laden kaufbar ist,
 # Gegen = wofuer der Knoten gut ist. "Ab Welle" und "Braucht" ergaenzt das Skript selbst.
 LADEN = {
-    "Assembler": "Assembler", "Giesserei": "Gießerei", "Raffinerie": "Ölpumpe, Raffinerie", "Gewehrturm": "Gewehrturm",
+    "Assembler": "Assembler", "Giesserei": "Gießerei", "Raffinerie": "Ölpumpe, Raffinerie, Flüssigkeitspuffer", "Schwerindustrie": "Fertiger", "Mischtechnik": "Mischer, Abfüller, Ressourcenbrunnen", "Gewehrturm": "Gewehrturm",
     "Kohlekraft": "Kohlekraftwerk, Wasserpumpe", "Teslaspule": "Teslaspule", "Treibstoffkraft": "Treibstoffkraftwerk",
-    "Panzersperre": "Panzersperre", "Reparaturstation": "Reparaturstation", "Flammenwerfer": "Flammenwerfer", "NobeliskWerfer": "Nobelisk-Werfer",
+    "Reparaturdrohnen": "Drohnenplatz", "Kampfdrohnen": "Drohnenplatz", "Flammenwerfer": "Flammenwerfer", "NobeliskWerfer": "Nobelisk-Werfer",
     "Tor": "Tor", "Lockfeuer": "Lockfeuer", "Oelschlick": "Ölschlick-Feld",
     "Elektrozaun": "Elektrozaun", "Funkmast": "Funkmast", "Schildgenerator": "Schildgenerator", "Stoerfeld": "Störfeld-Projektor",
     "Dimensionslager": "Dimensionslager", "Himmelsturm": "Himmelsturm", "Singularitaet": "Singularitätswerfer",
@@ -266,8 +292,8 @@ GEGEN = {
     "Durchschlagbolzen": "Gegner in einer Reihe (Hogs)", "Gewehrturm": "schnelle Gegner (Stinger)", "Explosivbolzen": "Hogs und Gruppen",
     "Streubolzen": "Schwärme", "Zielsuchmunition": "schnelle Stinger", "Schockbolzen": "Stinger, Wasserspucker (Strom)", "Panzerbrechend": "Hogs (Panzer)", "Brandmunition": "Waldspucker (Feuer)", "Kettenblitz": "Brut und Schwärme", "Ueberlast": "Elite und Bosse", "Turbomunition": "Massen",
     "Teslaspule": "Gruppen, Wasserspucker", "Flammenwerfer": "Schwärme, Waldspucker", "Turbotreibstoff": "Schwärme",
-    "NobeliskWerfer": "Gruppen auf Entfernung", "GasNobelisk": "dichte Pulks, Stinger (Gift)", "PulsNobelisk": "Durchbrüche (zurückwerfen)", "StreuNobelisk": "große Wellen",
-    "Panzersperre": "Wege lenken", "Reparaturstation": "lange Wellen", "KernSchild": "Durchbrüche am Kern", "KernGeschuetz": "einzelne Durchbrüche",
+    "NobeliskWerfer": "Gruppen auf Entfernung", "GasNobelisk": "dichte Pulks, Stinger (Gift)", "PulsNobelisk": "Durchbrüche (betäuben)", "StreuNobelisk": "große Wellen",
+    "Reparaturdrohnen": "lange Wellen", "Kampfdrohnen": "Fernkämpfer und Durchbrüche", "KernSchild": "Durchbrüche am Kern", "KernGeschuetz": "einzelne Durchbrüche",
     "Stachelmauer": "Gegner an Mauern", "MauerMk2": "Angriffe auf Mauern", "Tor": "eingemauerte Basis", "Lockfeuer": "Wellen auf die Türme lenken", "Oelschlick": "Massen vor Flammenwerfern", "Elektrozaun": "Gegner an Mauern (Strom)", "Funkmast": "Türme mit knapper Reichweite", "Schildgenerator": "Spucker und Durchbrüche an Bauten", "Stoerfeld": "Bosse und Massen", "Dimensionslager": "Türme ohne Bandanschluss", "Himmelsturm": "fliegende Krabben", "Singularitaet": "Endwellen", "Turmfertigung2": "stärkere Wellen", "Turmfertigung3": "späte Wellen", "Turmfertigung4": "Bosse und Endwellen",
 }
 
@@ -304,12 +330,15 @@ VORAUSSETZUNGEN = {
     ("Festung", "DoktrinFlamme"): [("Elementar", "Flammenwerfer")],
     ("Elementar", "Teslaspule"): [("Industrie", "Kohlekraft")],
     ("Elementar", "Flammenwerfer"): [("Industrie", "Kohlekraft"), ("Industrie", "Raffinerie")],
-    ("Festung", "Reparaturstation"): [("Industrie", "Assembler")],
+    ("Festung", "Reparaturdrohnen"): [("Industrie", "Schwerindustrie")], ("Festung", "Kampfdrohnen"): [("Industrie", "Schwerindustrie")],
     ("Elementar", "Oelschlick"): [("Industrie", "Raffinerie")],
     # 0.83 Bauten P2/P3
     ("Festung", "Funkmast"): [("Industrie", "Quarz")],
-    ("Festung", "Schildgenerator"): [("Elementar", "Akkubank")],
-    ("Ballistik", "Himmelsturm"): [("Industrie", "Bauxit")],
+    ("Festung", "Schildgenerator"): [("Elementar", "Akkubank"), ("Industrie", "Schwerindustrie")],
+    ("Festung", "Stoerfeld"): [("Industrie", "Mischtechnik")],
+    ("Elementar", "Hochspannung"): [("Industrie", "Treibstoffkraft")],
+    ("Elementar", "Raketentreibstoff"): [("Industrie", "Mischtechnik")],
+    ("Ballistik", "Himmelsturm"): [("Industrie", "Bauxit"), ("Industrie", "Schwerindustrie")],
     ("Ballistik", "Singularitaet"): [("Festung", "Turmfertigung4")],   # 0.81: als Voraussetzung statt Elternlinie (die Linie liefe durch Notreparatur)
 }
 
@@ -323,8 +352,9 @@ AB_WELLE = {
     ("Festung", "Tor"): 6,
     ("Festung", "Lockfeuer"): 8,
     ("Elementar", "Oelschlick"): 15,
-    ("Elementar", "Elektrozaun"): 12, ("Festung", "Funkmast"): 12, ("Festung", "Schildgenerator"): 25, ("Ballistik", "Himmelsturm"): 25,
-    ("Festung", "Stoerfeld"): 40, ("Ballistik", "Singularitaet"): 45, ("Festung", "Dimensionslager"): 45,
+    ("Elementar", "Elektrozaun"): 12, ("Festung", "Funkmast"): 12, ("Festung", "Schildgenerator"): 25, ("Ballistik", "Himmelsturm"): 35,
+    ("Festung", "Stoerfeld"): 35, ("Festung", "Reparaturdrohnen"): 40, ("Festung", "Kampfdrohnen"): 40, ("Ballistik", "Singularitaet"): 51,   # 0.9.1: Ueberstunden
+    ("Industrie", "Schwerindustrie"): 25, ("Industrie", "Mischtechnik"): 35,
     ("Industrie", "Kohlekraft"): 6,
     ("Industrie", "Raffinerie"): 15,
     ("Industrie", "Treibstoffkraft"): 15,
@@ -341,6 +371,7 @@ AB_WELLE = {
     ("Elementar", "Akkubank"): 15,
     ("Elementar", "Flammenwerfer"): 15,
     ("Elementar", "Turbotreibstoff"): 25,
+    ("Elementar", "Hochspannung"): 25, ("Elementar", "Raketentreibstoff"): 35, ("Elementar", "Plasmaflamme"): 38,
     ("Festung", "KernSchild"): 8,
     ("Festung", "KernGeschuetz"): 10,
     ("Festung", "MauerMk2"): 6,
@@ -354,7 +385,7 @@ AB_WELLE = {
 
 # Gabelungen (nur eine Seite je Einsatz); dieselben Paare stehen in TDForschungVoraussetzungen.inl (TDForschungAbzweigungen)
 GRUPPEN = [("Ballistik", ["Streubolzen", "Schockbolzen"]), ("Ballistik", ["Zielsuchmunition", "Panzerbrechend"]), ("Ballistik", ["GasNobelisk", "PulsNobelisk"]),
-           ("Elementar", ["Kettenblitz", "Ueberlast"]), ("Elementar", ["Oelschlick", "Elektrozaun"]), ("Festung", ["Schildgenerator", "Stoerfeld"]), ("Festung", ["KernSchild", "KernGeschuetz"]),
+           ("Elementar", ["Kettenblitz", "Ueberlast"]), ("Festung", ["Schildgenerator", "Stoerfeld"]), ("Festung", ["Reparaturdrohnen", "Kampfdrohnen"]), ("Festung", ["KernSchild", "KernGeschuetz"]),
            ("Festung", ["DoktrinBolzen", "DoktrinGewehr", "DoktrinNobelisk", "DoktrinTesla", "DoktrinFlamme"])]
 def andere_von(b_key, k_key):
     for g_b, glieder in GRUPPEN:
@@ -446,7 +477,7 @@ GEBAEUDE_REZEPTE = ("Recipe_TD_GunTurret", "Recipe_TD_TeslaCoil", "Recipe_TD_Fla
                     "Recipe_TD_Gate", "Recipe_TD_LureBeacon", "Recipe_TD_SlickPlate",
                     # 0.83: ohne diese Eintraege galten die Baurezepte als stille Aktionsrezepte, die Knoten zeigten "0 Rezepte"
                     "Recipe_TD_ConductorWall", "Recipe_TD_RadioMast", "Recipe_TD_ShieldGenerator", "Recipe_TD_FlakTurret",
-                    "Recipe_TD_FieldProjector", "Recipe_TD_SingularityLauncher", "Recipe_TD_DimensionalDepot")
+                    "Recipe_TD_FieldProjector", "Recipe_TD_SingularityLauncher", "Recipe_TD_DimensionalDepot", "Recipe_TD_DronePort")
 def ist_aktion(r):
     return r.startswith(TD + "/") and r.rsplit("/", 1)[1] not in GEBAEUDE_REZEPTE
 # 0.83.1 (Marius 07.11.: "was brauche ich fuer die Herstellung der Munition, wo wird das gebaut und welche Forschung brauche ich
@@ -579,6 +610,15 @@ KOMBOS = [
      "Bolzen stecken einige Sekunden im Gegner. Der Tesla-Blitz springt bevorzugt auf solche Gegner, ungeschwächt und einmal weiter. Erkennbar am steckenden Bolzen und blauen Funken."),
     ("Hitzeriss", ("Flammenwerfer",), {"Flammenwerfer": "Bolzen- und Gewehrturm"},
      "Brennender Panzer wird spröde: Kugeln und Bolzen ignorieren solange die Panzerung (z. B. der Hogs). Erkennbar am orangen Funken."),
+    # 0.9.1 Oelbrand und Stuetzbauten je Linie (Endgame-Konzept 09.11.)
+    ("Ölbrand", ("Oelschlick",), {"Oelschlick": "Flammenwerfer, Brandmunition, Lockfeuer"},
+     "Feuer entzündet das nasse Feld: Es brennt 5 s, wer hindurchläuft, brennt 3 s weiter. Erkennbar an Funken auf der Platte."),
+    ("Engstelle", ("Tor",), {"Tor": "Bolzenturm"},
+     "Am Tor laufen die Gegner in einer Reihe: Bolzen durchschlagen dort einen Gegner mehr."),
+    ("Sammelpunkt", ("Lockfeuer",), {"Lockfeuer": "Nobelisk-Werfer"},
+     "Gegner, die das Lockfeuer festhält, stehen dicht: Explosionen treffen sie 25 % härter."),
+    ("Leiter", ("Elektrozaun",), {"Elektrozaun": "Teslaspule"},
+     "Steht ein Elektrozaun in Reichweite einer Teslaspule, leitet er jede Entladung an bis zu 3 Gegner, die ihn berühren (30 % Schaden). Erkennbar am blauen Leuchten über dem Zaun."),
 ]
 
 def _knoten_baum(k_key):

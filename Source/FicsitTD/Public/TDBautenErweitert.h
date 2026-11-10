@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "TDTurretBase.h"
@@ -20,7 +20,23 @@ public:
 	virtual void BeginPlay() override;
 	/** Aus UTDGegnerHirn::Greife: Angreifer bekommt einen Schlag */
 	static void Schlag(AActor* Zaun, class AFGCreature* Angreifer);
-	virtual float ZusatzTestWert(const FString& Name) const override { return Name == TEXT("Schlaege") ? mSchlaege : -1.f; }
+	virtual float ZusatzTestWert(const FString& Name) const override
+	{
+		// 0.9.4 Diagnose (Leiter loest nie aus): naechster Abstand eines Ziels zum Zaun (m), Takte mit Ziel, Takte mit Ziel unter 4 m
+		return Name == TEXT("Schlaege") ? mSchlaege : Name == TEXT("NahMin") ? mDiagNahMin / 100.f : Name == TEXT("ZielTakte") ? float(mDiagZiel)
+			: Name == TEXT("NahTakte") ? float(mDiagNah) : Name == TEXT("Intakt") ? (IsTDIntact() ? 1.f : 0.f) : -1.f;
+	}
+	virtual void Animieren(float DeltaSeconds, AFGCreature* Ziel) override
+	{
+		Super::Animieren(DeltaSeconds, Ziel);
+		if (Ziel)
+		{
+			const float D = FVector::Dist(Ziel->GetActorLocation(), GetActorLocation());
+			mDiagNahMin = FMath::Min(mDiagNahMin, D);
+			++mDiagZiel;
+			mDiagNah += D < 400.f ? 1 : 0;
+		}
+	}
 	virtual bool HatMunition() const override { return true; }
 protected:
 	virtual bool BereitZumProduzieren(AFGCreature* Ziel) const override { return Ziel != nullptr; }
@@ -31,6 +47,9 @@ protected:
 	TObjectPtr<UStaticMeshComponent> mTuer2;
 private:
 	int32 mSchlaege = 0;
+	float mDiagNahMin = 1.e7f;
+	int32 mDiagZiel = 0;
+	int32 mDiagNah = 0;
 };
 
 /** Funkmast (P2, Radarmast + Leitsender): laeuft dauernd mit Strom, Tuerme in 30 m bekommen +10 % Reichweite.
@@ -59,6 +78,15 @@ protected:
 private:
 	float mZeit = 0.f;
 	static TArray<TWeakObjectPtr<ATDRadioMast>> sAlle;
+	/** 0.9.3 Radar (Marius 09.11.2026): Wellen-Markierungen an den Fronten und Rohstoffe der Umgebung auf Karte und Kompass */
+	void RadarTakt();
+	void RaeumeWellenMarker();
+	FTimerHandle mRadarTimer;
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<class UFGActorRepresentation>> mWellenMarker;
+	int32 mMarkerWelle = -1;
+	float mRessourcenRest = 0.f;
+	int32 mGescannt = 0;
 };
 
 /** Schildgenerator (P2, Gabel H mit Stoerfeld): Kuppel 20 m schluckt Schaden an Bauten (nicht am Kern), 3000 Schild-LP,
@@ -121,12 +149,65 @@ protected:
 	virtual FString ZusatzInfo() const override;
 	virtual void Kampfwerte(TArray<FTDKennwert>& Out) const override;
 	UPROPERTY(VisibleAnywhere, Category = "Tower Defense")
-	TObjectPtr<UStaticMeshComponent> mRadar;
+	TObjectPtr<UStaticMeshComponent> mRadar;   // 0.9.3: Radar entfernt (Marius), Komponente bleibt leer fuer alte Spielstaende
+	/** 0.9.3 sichtbare Munition: 6 Flak-Kanister in den Rohren, je Schuss einer weg, nach dem Nachladen gleitet er wieder hinein */
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<UStaticMeshComponent>> mKanister;
+	float mKanisterRest[6] = { 0.f, 0.f, 0.f, 0.f, 0.f, 0.f };
+	int32 mKanisterNaechster = 0;
 private:
 	AActor* SucheFlieger() const;
 	TWeakObjectPtr<AActor> mFlieger;
 	float mSuchTakt = 0.f;
 	int32 mTreffer = 0;
+};
+
+/**
+ * 0.9.3 Drohnenplatz (Marius 09.11.2026, ersetzt die Reparaturstation): Landeplattform mit 2-4 Drohnen. Gabelung im MAM:
+ * Reparaturdrohnen (Platten, fliegen zu beschaedigten Bauten in 40 m) oder Kampfdrohnen (Gewehrmunition, fliegen zu Gegnern in 40 m).
+ * Ein Rezeptzyklus = ein Einsatz einer Drohne. Drohnen fliegen ohne Navigationsnetz: steigen, Reiseflug in 15 m, sinken zum Ziel.
+ */
+UCLASS()
+class FICSITTD_API ATDDronePort : public ATDTurretBase
+{
+	GENERATED_BODY()
+public:
+	ATDDronePort();
+	virtual void BeginPlay() override;
+	virtual float ZusatzTestWert(const FString& Name) const override
+	{
+		return Name == TEXT("Einsaetze") ? float(mEinsaetze) : Name == TEXT("Geheilt") ? mGeheilt : Name == TEXT("Drohnen") ? float(mDrohnen.Num()) : -1.f;
+	}
+protected:
+	virtual bool BereitZumProduzieren(AFGCreature* Ziel) const override;
+	virtual void Feuern(AFGCreature* Ziel) override;
+	virtual void Animieren(float DeltaSeconds, AFGCreature* Ziel) override;
+	virtual bool ZielErlaubt(const AFGCreature* Ziel, float Abstand) const override { return IstKampf(); }
+	virtual FString ZusatzInfo() const override;
+	virtual void Kampfwerte(TArray<FTDKennwert>& Out) const override;
+private:
+	struct FDrohne
+	{
+		int32 Zustand = 0;   // 0 parkt, 1 Aufstieg, 2 Hinflug, 3 Arbeit, 4 Rueckflug, 5 Landung
+		FVector Ort = FVector::ZeroVector;
+		FVector Platz = FVector::ZeroVector;
+		TWeakObjectPtr<AActor> Ziel;
+		float Arbeit = 0.f;
+		float Takt = 0.f;
+		float Menge = 0.f;
+	};
+	bool IstKampf() const;
+	int32 SollDrohnen() const;
+	AActor* SucheBeschaedigt() const;
+	int32 FreieDrohne() const;
+	void BaueDrohnen();
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<USceneComponent>> mDrohnenTeile;
+	TArray<FDrohne> mDrohnen;
+	float mSuchTakt = 0.f;
+	bool mGibtArbeit = false;
+	int32 mEinsaetze = 0;
+	float mGeheilt = 0.f;
 };
 
 /** Stoerfeld-Projektor (P3, Gabel H mit Schildgenerator): verbraucht reanimiertes SAM und bremst alle Gegner in 15 m um 40 %. */
@@ -163,6 +244,7 @@ class FICSITTD_API ATDSingularityLauncher : public ATDTurretBase
 	GENERATED_BODY()
 public:
 	ATDSingularityLauncher();
+	virtual void BeginPlay() override;
 	virtual float ZusatzTestWert(const FString& Name) const override { return Name == TEXT("Getroffen") ? mGetroffen : -1.f; }
 protected:
 	virtual void Feuern(AFGCreature* Ziel) override;

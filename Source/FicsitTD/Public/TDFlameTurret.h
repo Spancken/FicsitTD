@@ -16,6 +16,20 @@ struct FTDTreibstoffWerte
 	FLinearColor Hell = FLinearColor(1.f, 0.75f, 0.35f);
 	FLinearColor Rot = FLinearColor(1.f, 0.18f, 0.02f);
 	float Flackern = 5.f;
+	/** 0.9.1 (Simulation 09.11.): Plasmaflamme trifft als Strom - wirkt gegen hitzefeste Wuesten- und Wasserspucker */
+	ETDSchadensart Art = ETDSchadensart::Feuer;
+};
+
+/** 0.9.3 Feuer-Flipbook: eine wandernde Feuerwolke des Strahls (Sprite mit M_TD_FeuerWolke) */
+struct FTDFeuerWolke
+{
+	float Alter = 1.f;          // 0..1, >= 1 = frei
+	float Lebensdauer = 0.6f;   // s
+	FVector Start = FVector::ZeroVector;
+	FVector Weg = FVector::ZeroVector;    // Strecke bis zum Lebensende (Welt, cm)
+	float GroesseStart = 40.f;
+	float GroesseEnde = 300.f;
+	float Steigen = 60.f;       // cm am Lebensende nach oben
 };
 
 /** Brennender Boden (Level 5 Feuerteppich) */
@@ -31,7 +45,7 @@ struct FTDBrand
 
 /**
  * Flammenwerfer: Treibstoff per Rohr (Anschluss hinten), Rezept je Treibstoff. Ein Zyklus = 1 s Flamme: alle Kreaturen im
- * Kegel (Reichweite, 15 Grad zur Seite) nehmen Schaden und brennen nach. Flammenstrahl als flackernder Kegel (SM_TD_FlameJet).
+ * Kegel (Reichweite, 15 Grad zur Seite) nehmen Schaden und brennen nach. Flammenstrahl ab 0.9.3 aus wandernden Feuerwolken (Flipbook aus Blender, M_TD_FeuerWolke); Rueckfall auf den Kegel SM_TD_FlameJet, falls das Material fehlt.
  */
 UCLASS()
 class FICSITTD_API ATDFlameTurret : public ATDTurretBase
@@ -64,6 +78,16 @@ protected:
 private:
 	UPROPERTY(Transient)
 	TObjectPtr<class UMaterialInstanceDynamic> mFlammenMaterial;
+
+	/** 0.9.3 Feuer-Flipbook (Marius 09.11.2026): Strahl aus wandernden Feuerwolken statt Kegel-Modell */
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<class UMaterialBillboardComponent>> mWolkenSprites;
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<class UMaterialInstanceDynamic>> mWolkenMaterial;
+	TArray<FTDFeuerWolke> mWolken;
+	float mWolkenTakt = 0.f;
+	void ErzeugeWolken();
+	void BewegeWolken(float DeltaSeconds, bool bNeue, const FTDTreibstoffWerte& W, float Kegel);
 
 	/** Anschluss musste von Hand eingehaengt werden -> Rohr selbst abpumpen */
 	bool mSelbstPumpen = false;

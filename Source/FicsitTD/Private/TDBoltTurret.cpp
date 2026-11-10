@@ -10,6 +10,8 @@
 #include "Components/CapsuleComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "TDSprache.h"
+#include "TDGate.h"
+#include "EngineUtils.h"
 
 /** Level 5 Doppellauf (0.64): zweiter Lauf neben dem ersten, Versatz im Kanzel-Raum (Modelle\TD_BoltTurret_Stufen.blend) */
 static const FVector BolzenZweiterLauf(0.f, 95.f, 0.f);   // neben dem ersten (Blender -0,95 m = Unreal +95)
@@ -20,12 +22,18 @@ ATDBoltTurret::ATDBoltTurret()
 {
 	// Masse des Blender-Modells (Ursprung Boden-Mitte): Sockel 4x4 m, Drehpunkt auf 2,25 m, Neigeachse 1,9 m darueber
 	mTurmName = TEXT("Bolzenturm");
-	mDrehpunkt = FVector(0.f, 0.f, 225.f);
+	mDrehpunkt = FVector(0.f, 0.f, 290.f);   // 0.9.3: Sockel 65 cm hoeher (Bandeingang passt in die Wand)
 	mNeigeachse = FVector(5.f, 0.f, 190.f);
 	mMuendung = FVector(385.f, 0.f, 5.f);
 	mYawModell = TEXT("/FicsitTD/Buildings/BoltTurret/Mesh/SM_TD_BoltTurret_Yaw.SM_TD_BoltTurret_Yaw");
 	mHeadModell = TEXT("/FicsitTD/Buildings/BoltTurret/Mesh/SM_TD_BoltTurret_Head.SM_TD_BoltTurret_Head");
 	mStandardRezept = TEXT("/FicsitTD/Buildings/BoltTurret/Recipe_TD_Shoot_SpikedRebar.Recipe_TD_Shoot_SpikedRebar_C");
+	mLampenOrt = FVector(-90.f, 205.f, 340.f);   // 0.9.3: Lampe oben auf dem Original-Statusmast
+	// 0.9.3 Original-Anschluesse (Lagen aus Modelle\Original_Anschluesse.json)
+	OriginalTeil(TDOriginal::Eingang, FVector(-210.f, 0.f, 0.f), 90.f);
+	OriginalTeil(TDOriginal::Strom, FVector(0.f, -160.f, 130.f), -90.f);
+	OriginalTeil(TDOriginal::Mast, FVector(-90.f, 205.f, 0.f), 180.f);
+
 }
 
 FTDBolzenWerte ATDBoltTurret::WerteFuer(const UClass* MunitionsKlasse)
@@ -203,7 +211,18 @@ void ATDBoltTurret::Schuss(AFGCreature* Ziel, const FVector& Muendung, const FTD
 	}
 
 	// Level 4: ein Gegner mehr (bei Bolzen ohne Durchschlag mit 60 % Folgeschaden)
-	const int32 Durchschlag = W.Durchschlag + FMath::Max(0, FMath::RoundToInt(LevelWert(TEXT("Durchschlag"))));
+	int32 Durchschlag = W.Durchschlag + FMath::Max(0, FMath::RoundToInt(LevelWert(TEXT("Durchschlag"))));
+	// 0.9.1 E3 Engstelle (Endgame-Konzept 09.11.): am Tor laufen die Gegner in einer Reihe - der Bolzen trifft einen mehr
+	bool bEngstelle = false;
+	if (Ziel && TDKombo::Aktiv(this, TEXT("Engstelle")))
+	{
+		const float Radius = TDBalance::Wert(TEXT("Kombo.Engstelle.Radius"), 12.f) * 100.f;
+		for (TActorIterator<ATDGate> It(GetWorld()); It && !bEngstelle; ++It)
+		{
+			bEngstelle = FVector::Dist(It->GetActorLocation(), Ziel->GetActorLocation()) < Radius;
+		}
+		Durchschlag += bEngstelle ? TDBalance::Ganz(TEXT("Kombo.Engstelle.Ziele"), 1) : 0;
+	}
 	const float Folgeschaden = W.Durchschlag > 0 ? W.Folgeschaden : 0.6f;
 	TArray<AFGCreature*> Feinde;
 	if (W.FlaechenRadius > 0.f || W.Splitter > 0 || Durchschlag > 0)
@@ -238,6 +257,10 @@ void ATDBoltTurret::Schuss(AFGCreature* Ziel, const FVector& Muendung, const FTD
 			Folge *= Folgeschaden;
 			Treffer(Andere, Folge, Richtung, 0.f, Flugzeit(Andere->GetActorLocation()));
 			Ende = Andere->GetActorLocation();
+			if (bEngstelle && i == Durchschlag - 1)
+			{
+				TDKombo::Melde(TEXT("Engstelle"), this, Folge);   // der Zusatz-Treffer
+			}
 		}
 		// weisse Spur durch alle Getroffenen (0.64)
 		ZeigeSpur(Muendung, Ende + Richtung * 150.f, FLinearColor(0.9f, 0.95f, 1.f), Flugzeit(Ende) + 0.15f, 0.2f);

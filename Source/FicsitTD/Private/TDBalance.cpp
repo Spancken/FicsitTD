@@ -85,6 +85,8 @@ namespace TDBalanceIntern
 		{ TEXT("Tuerme.Lockfeuer.Reichweite"), 40.f }, { TEXT("Tuerme.Lockfeuer.LP"), 2000.f }, { TEXT("Tuerme.Lockfeuer.Radius"), 40.f }, { TEXT("Tuerme.Lockfeuer.Pause"), 30.f },
 		{ TEXT("Tuerme.Oelschlick.Reichweite"), 6.5f }, { TEXT("Tuerme.Oelschlick.LP"), 3000.f }, { TEXT("Tuerme.Oelschlick.Bremse"), 0.65f },
 		{ TEXT("Tuerme.Oelschlick.BrandSchaden"), 20.f }, { TEXT("Tuerme.Oelschlick.BrandDauer"), 5.f }, { TEXT("Tuerme.Oelschlick.Nachlauf"), 3.f },
+		// 0.9.1 Oelbrand als Kombo (Review 09.11.): wer durch die brennende Platte laeuft, brennt danach weiter; Lockfeuer zuendet Platten im Umkreis
+		{ TEXT("Tuerme.Oelschlick.Nachbrennen"), 10.f }, { TEXT("Tuerme.Oelschlick.NachbrennDauer"), 3.f }, { TEXT("Tuerme.Lockfeuer.Zuendradius"), 12.f },
 		// 0.83 Bauten P2/P3: Reichweite m, LP; Wirkung je Bau (Faktoren: Bremse = Tempofaktor, Bonus = Anteil)
 		{ TEXT("Tuerme.Elektrozaun.Reichweite"), 15.f }, { TEXT("Tuerme.Elektrozaun.LP"), 4000.f }, { TEXT("Tuerme.Elektrozaun.Schaden"), 15.f }, { TEXT("Tuerme.Elektrozaun.Betaeubung"), 1.f },
 		{ TEXT("Tuerme.Funkmast.Reichweite"), 60.f }, { TEXT("Tuerme.Funkmast.LP"), 2500.f }, { TEXT("Tuerme.Funkmast.Radius"), 30.f }, { TEXT("Tuerme.Funkmast.Bonus"), 0.1f },
@@ -130,7 +132,7 @@ namespace TDBalanceIntern
 		{ TEXT("Munition.Treibstoff.Treibstoff.SchadenProSekunde"), 80.f }, { TEXT("Munition.Treibstoff.Treibstoff.Nachbrennen"), 10.f }, { TEXT("Munition.Treibstoff.Treibstoff.NachbrennDauer"), 3.f },
 		{ TEXT("Munition.Treibstoff.Biotreibstoff.SchadenProSekunde"), 35.f }, { TEXT("Munition.Treibstoff.Biotreibstoff.Nachbrennen"), 8.f }, { TEXT("Munition.Treibstoff.Biotreibstoff.NachbrennDauer"), 2.f },
 		{ TEXT("Munition.Treibstoff.Turbotreibstoff.SchadenProSekunde"), 120.f }, { TEXT("Munition.Treibstoff.Turbotreibstoff.Nachbrennen"), 15.f }, { TEXT("Munition.Treibstoff.Turbotreibstoff.NachbrennDauer"), 4.f },
-		{ TEXT("Munition.Treibstoff.Raketentreibstoff.SchadenProSekunde"), 120.f }, { TEXT("Munition.Treibstoff.Raketentreibstoff.Nachbrennen"), 20.f }, { TEXT("Munition.Treibstoff.Raketentreibstoff.NachbrennDauer"), 3.f },
+		{ TEXT("Munition.Treibstoff.Raketentreibstoff.SchadenProSekunde"), 140.f }, { TEXT("Munition.Treibstoff.Raketentreibstoff.Nachbrennen"), 20.f }, { TEXT("Munition.Treibstoff.Raketentreibstoff.NachbrennDauer"), 3.f },
 		{ TEXT("Munition.Treibstoff.Ionisiert.SchadenProSekunde"), 160.f }, { TEXT("Munition.Treibstoff.Ionisiert.Nachbrennen"), 25.f }, { TEXT("Munition.Treibstoff.Ionisiert.NachbrennDauer"), 5.f },
 		{ TEXT("Munition.Nobelisk.Nobelisk.Schaden"), 150.f }, { TEXT("Munition.Nobelisk.Nobelisk.Radius"), 6.f },
 		{ TEXT("Munition.Nobelisk.Gas.Schaden"), 20.f }, { TEXT("Munition.Nobelisk.Gas.Radius"), 6.f }, { TEXT("Munition.Nobelisk.Gas.GasSchaden"), 20.f }, { TEXT("Munition.Nobelisk.Gas.GasDauer"), 10.f },
@@ -234,7 +236,7 @@ namespace TDBalanceIntern
 		{ TEXT("Einsatz.Laden.Panzersperre.Grundpreis"), 3.f }, { TEXT("Einsatz.Laden.Panzersperre.Aufschlag"), 0.2f }, { TEXT("Einsatz.Laden.Panzersperre.Paket"), 5.f },
 		{ TEXT("Einsatz.Laden.Reparaturstation.Grundpreis"), 8.f }, { TEXT("Einsatz.Laden.Reparaturstation.Aufschlag"), 0.4f }, { TEXT("Einsatz.Laden.Reparaturstation.Paket"), 1.f },
 		{ TEXT("Einsatz.Laden.Tor.Grundpreis"), 4.f }, { TEXT("Einsatz.Laden.Tor.Aufschlag"), 0.3f }, { TEXT("Einsatz.Laden.Tor.Paket"), 1.f },
-		{ TEXT("Einsatz.Laden.Lockfeuer.Grundpreis"), 6.f }, { TEXT("Einsatz.Laden.Lockfeuer.Aufschlag"), 0.4f }, { TEXT("Einsatz.Laden.Lockfeuer.Paket"), 1.f },
+		{ TEXT("Einsatz.Laden.Lockfeuer.Grundpreis"), 4.f }, { TEXT("Einsatz.Laden.Lockfeuer.Aufschlag"), 0.4f }, { TEXT("Einsatz.Laden.Lockfeuer.Paket"), 1.f },
 		{ TEXT("Einsatz.Laden.Oelschlick.Grundpreis"), 4.f }, { TEXT("Einsatz.Laden.Oelschlick.Aufschlag"), 0.3f }, { TEXT("Einsatz.Laden.Oelschlick.Paket"), 1.f },
 		{ TEXT("Einsatz.Laden.Elektrozaun.Grundpreis"), 5.f }, { TEXT("Einsatz.Laden.Elektrozaun.Aufschlag"), 0.3f }, { TEXT("Einsatz.Laden.Elektrozaun.Paket"), 1.f },
 		{ TEXT("Einsatz.Laden.Funkmast.Grundpreis"), 8.f }, { TEXT("Einsatz.Laden.Funkmast.Aufschlag"), 0.5f }, { TEXT("Einsatz.Laden.Funkmast.Paket"), 1.f },
@@ -257,6 +259,12 @@ namespace TDBalanceIntern
 		{ TEXT("Einsatz.Laden.Gewehr.Grundpreis"), 10.f }, { TEXT("Einsatz.Laden.Gewehr.Aufschlag"), 0.f }, { TEXT("Einsatz.Laden.Gewehr.Paket"), 1.f }, { TEXT("Einsatz.Laden.Gewehr.Max"), 1.f },
 		{ TEXT("Einsatz.Laden.Nobelisken-Zünder.Grundpreis"), 12.f }, { TEXT("Einsatz.Laden.Nobelisken-Zünder.Aufschlag"), 0.f }, { TEXT("Einsatz.Laden.Nobelisken-Zünder.Paket"), 1.f }, { TEXT("Einsatz.Laden.Nobelisken-Zünder.Max"), 1.f },
 		{ TEXT("Einsatz.Laden.Treibstoffkraftwerk.Grundpreis"), 8.f }, { TEXT("Einsatz.Laden.Treibstoffkraftwerk.Aufschlag"), 0.4f }, { TEXT("Einsatz.Laden.Treibstoffkraftwerk.Paket"), 1.f },
+		// 0.9.1 Endgame-Konzept: spaete Maschinen (Schwerindustrie W25, Mischtechnik W35), Fluessigkeitspuffer mit der Raffinerie
+		{ TEXT("Einsatz.Laden.Fluessigkeitspuffer.Grundpreis"), 3.f }, { TEXT("Einsatz.Laden.Fluessigkeitspuffer.Aufschlag"), 0.3f }, { TEXT("Einsatz.Laden.Fluessigkeitspuffer.Paket"), 1.f },
+		{ TEXT("Einsatz.Laden.Fertiger.Grundpreis"), 14.f }, { TEXT("Einsatz.Laden.Fertiger.Aufschlag"), 0.5f }, { TEXT("Einsatz.Laden.Fertiger.Paket"), 1.f },
+		{ TEXT("Einsatz.Laden.Mischer.Grundpreis"), 10.f }, { TEXT("Einsatz.Laden.Mischer.Aufschlag"), 0.5f }, { TEXT("Einsatz.Laden.Mischer.Paket"), 1.f },
+		{ TEXT("Einsatz.Laden.Abfueller.Grundpreis"), 8.f }, { TEXT("Einsatz.Laden.Abfueller.Aufschlag"), 0.4f }, { TEXT("Einsatz.Laden.Abfueller.Paket"), 1.f },
+		{ TEXT("Einsatz.Laden.Foerderanlage.Grundpreis"), 6.f }, { TEXT("Einsatz.Geschenk.Raketentreibstoff.Foerderanlage"), 3.f }, { TEXT("Wellen.LPJeWelleAb31"), 0.1f }, { TEXT("Einsatz.Laden.Foerderanlage.Aufschlag"), 0.4f }, { TEXT("Einsatz.Laden.Foerderanlage.Paket"), 3.f },
 		// Beute der Kreaturen (UTDLaufProtokoll, 0.55): Chance je Art und Gegnerstufe, Boss dreifache Menge; Rest nach N s an den Kern
 		{ TEXT("Loot.An"), 1.f }, { TEXT("Loot.EinsammelnNachSekunden"), 60.f },
 		{ TEXT("Loot.Kampfdaten.Normal"), 0.02f }, { TEXT("Loot.Kampfdaten.Elite"), 0.15f }, { TEXT("Loot.Kampfdaten.Boss"), 1.f },
@@ -277,12 +285,12 @@ namespace TDBalanceIntern
 		// Spielstand vor und nach jeder Welle (FicsitTD_W05_Start / _Ende), 0 = aus
 		{ TEXT("Lauf.Spielstaende"), 1.f },
 		// Abstand von der Kernmitte (m), ab dem ein Gegner zusaetzlich zur eigenen Reichweite den Kern angreift (Tiefbohrer 0.61: Sockel 4,1 m)
-		{ TEXT("Kern.AngriffsAbstand"), 6.f }, { TEXT("Gegner.AbsturzGrenze"), 150.f }, { TEXT("Wellen.SpawnHoehe"), 4.f }, { TEXT("Gegner.Abgrund"), 6.f }, { TEXT("Gegner.StauGeduld"), 40.f }, { TEXT("Wellen.VariationJeEinsatz"), 0.f }, { TEXT("Wellen.BossBudget"), 0.6f },
+		{ TEXT("Kern.AngriffsAbstand"), 10.f }, { TEXT("Gegner.AbsturzGrenze"), 150.f }, { TEXT("Wellen.SpawnHoehe"), 4.f }, { TEXT("Gegner.Abgrund"), 6.f }, { TEXT("Gegner.StauGeduld"), 40.f }, { TEXT("Gegner.Ausweichen"), 1.f }, { TEXT("Gegner.AusweichRadius"), 5.f }, { TEXT("Wellen.VariationJeEinsatz"), 0.f }, { TEXT("Wellen.BossBudget"), 0.6f },
 		{ TEXT("Kombo.Aktiv"), 1.f }, { TEXT("Kombo.Verpuffung.Faktor"), 1.5f }, { TEXT("Kombo.Blitzableiter.Dauer"), 5.f },
-		{ TEXT("Kombo.Blitzableiter.Reichweite"), 1.5f }, { TEXT("Kombo.Hitzeriss.Dauer"), 3.f }, { TEXT("Gegner.BewuchsRaeumen"), 4.f }, { TEXT("Wellen.WegRaeumen"), 3.f }, { TEXT("Treffer.Rundungsrest"), 0.01f },
+		{ TEXT("Kombo.Blitzableiter.Reichweite"), 1.5f }, { TEXT("Kombo.Hitzeriss.Dauer"), 3.f }, { TEXT("Kombo.Engstelle.Radius"), 12.f }, { TEXT("Kombo.Engstelle.Ziele"), 1.f }, { TEXT("Kombo.Sammelpunkt.Faktor"), 1.25f }, { TEXT("Kombo.Leiter.Radius"), 4.f }, { TEXT("Kombo.Leiter.Anteil"), 0.3f }, { TEXT("Kombo.Leiter.MaxZiele"), 3.f }, { TEXT("Tuerme.Teslaspule.Hochspannung"), 1.3f }, { TEXT("Forschung.Hochspannung.AbWelle"), 25.f }, { TEXT("Forschung.Raketentreibstoff.AbWelle"), 35.f }, { TEXT("Forschung.Plasmaflamme.AbWelle"), 38.f }, { TEXT("Gegner.BewuchsRaeumen"), 4.f }, { TEXT("Wellen.WegRaeumen"), 3.f }, { TEXT("Treffer.Rundungsrest"), 0.01f },
 		// 0.79 Breite Front (Option, Standard aus - Marius 06.11.: technisch vorhanden, jetzige Spielversion unveraendert)
 		{ TEXT("Wellen.BreiteFront"), 0.f }, { TEXT("Wellen.BreiteVersatz"), 12.f }, { TEXT("Wellen.BreiteTempo"), 0.12f },
-		{ TEXT("Wellen.BreiteKern"), 40.f }, { TEXT("Wellen.BreiteAbstand"), 4.f }, { TEXT("Wellen.BreiteAbstandGewicht"), 0.6f }, { TEXT("Gegner.AngriffHoehe"), 12.f }, { TEXT("Kern.Gedraenge"), 16.f }, { TEXT("Kern.GedraengeSekunden"), 3.f },
+		{ TEXT("Wellen.BreiteKern"), 40.f }, { TEXT("Wellen.BreiteAbstand"), 4.f }, { TEXT("Wellen.BreiteAbstandGewicht"), 0.6f }, { TEXT("Gegner.AngriffHoehe"), 12.f }, { TEXT("Kern.Gedraenge"), 20.f }, { TEXT("Kern.GedraengeSekunden"), 3.f },
 		// 0.65 (Lauf 04.11.: Kern 82 % -> 10 % bis W10): Grundreparatur nach jeder Welle, Warnung mit Hinweis auf die Kernreparatur im Laden
 		{ TEXT("Kern.Grundreparatur"), 0.05f }, { TEXT("Kern.Warnung"), 50.f },
 		// 0.58 Forschung: Kern-Ausbau, Logistik/Befestigung, Spezialisierung
@@ -297,15 +305,28 @@ namespace TDBalanceIntern
 		{ TEXT("Tuerme.Nobelisk-Werfer.StreuAbstand"), 4.5f }, { TEXT("Tuerme.Teslaspule.FeldRadius"), 10.f }, { TEXT("Tuerme.Teslaspule.FeldTempo"), 0.6f },
 		{ TEXT("Tuerme.Teslaspule.FeldSchaden"), 15.f }, { TEXT("Tuerme.Flammenwerfer.TeppichDauer"), 6.f }, { TEXT("Tuerme.Flammenwerfer.TeppichAnteil"), 0.4f },
 		{ TEXT("Tuerme.Flammenwerfer.TeppichRadius"), 3.f },
+		// 0.9.1 Plasmaflamme (Ionisiert) trifft als Strom (1 = an)
+		{ TEXT("Munition.Treibstoff.Ionisiert.AlsStrom"), 1.f },
+		// 0.9.3 Feuer-Flipbook: Anzahl Feuerwolken je Flammenwerfer, Lebensdauer einer Wolke (s), Leuchtkraft
+		{ TEXT("Tuerme.Himmelsturm.Nachladen"), 1.5f },   // 0.9.3 sichtbare Kanister: Sekunden bis ein Rohr wieder geladen ist
+		{ TEXT("Tuerme.Funkmast.RessourcenRadius"), 150.f }, { TEXT("Tuerme.Funkmast.Vorwarnung"), 30.f },   // 0.9.3 Radar
+		{ TEXT("Tuerme.Drohnenplatz.Tempo"), 1500.f }, { TEXT("Tuerme.Drohnenplatz.Flughoehe"), 15.f }, { TEXT("Tuerme.Drohnenplatz.KampfSchaden"), 25.f },
+		{ TEXT("Tuerme.Drohnenplatz.KampfDauer"), 3.f }, { TEXT("Tuerme.Drohnenplatz.ReparaturDauer"), 2.f }, { TEXT("Tuerme.Drohnenplatz.DrohnenGroesse"), 0.2f },
+		{ TEXT("Tuerme.Drohnenplatz.LP"), 4000.f }, { TEXT("Tuerme.Drohnenplatz.Reichweite"), 40.f }, { TEXT("Tuerme.Drohnenplatz.Startmunition"), 0.f },
+		{ TEXT("Einsatz.Laden.Drohnenplatz.Grundpreis"), 14.f }, { TEXT("Einsatz.Laden.Drohnenplatz.Aufschlag"), 0.5f }, { TEXT("Einsatz.Laden.Drohnenplatz.Paket"), 1.f },
+		{ TEXT("Forschung.Reparaturdrohnen.AbWelle"), 40.f }, { TEXT("Forschung.Kampfdrohnen.AbWelle"), 40.f },
+		{ TEXT("Bauten.Tor.Strom"), 2.f }, { TEXT("Bauten.Tor.OhneStromOffen"), 1.f },   // 0.9.3 Tor: MW, ohne Strom in der Welle offen (1 = an)
+		{ TEXT("Effekte.Oelbrand.Flammen"), 36.f }, { TEXT("Effekte.Oelbrand.Lebensdauer"), 0.9f }, { TEXT("Effekte.Oelbrand.Staerke"), 7.f },   // 0.9.3 Flammen beim Oelbrand
+		{ TEXT("Effekte.Flamme.Wolken"), 28.f }, { TEXT("Effekte.Flamme.Lebensdauer"), 0.6f }, { TEXT("Effekte.Flamme.Staerke"), 8.f },
 		// 0.58 Pionier-Rang: XP je Welle (Grund + je Welle, Kern voll, Boss x2), je eigenem Abschuss; Rang-Schwelle Grund + Schritt x Rang
 		{ TEXT("Pionier.XPWelle"), 40.f }, { TEXT("Pionier.XPJeWelle"), 6.f }, { TEXT("Pionier.XPKernVoll"), 20.f },
 		{ TEXT("Pionier.XPAbschuss"), 3.f }, { TEXT("Pionier.XPAbschussElite"), 10.f }, { TEXT("Pionier.XPAbschussBoss"), 50.f },
 		{ TEXT("Pionier.XPGrund"), 50.f }, { TEXT("Pionier.XPSchritt"), 50.f }, { TEXT("Pionier.MaxRang"), 30.f }, { TEXT("Pionier.NeuVerteilenPreis"), 20.f },
 		{ TEXT("Tuerme.Bolzenturm.GeschossGroesse"), 3.f }, { TEXT("Forschung.Kohlekraft.AbWelle"), 6.f }, { TEXT("Forschung.Tor.AbWelle"), 6.f }, { TEXT("Forschung.Lockfeuer.AbWelle"), 8.f }, { TEXT("Forschung.Oelschlick.AbWelle"), 15.f }, { TEXT("Forschung.UpgBolzen.AbWelle"), 3.f },
 		// 0.83 Bauten P2/P3
-		{ TEXT("Forschung.Elektrozaun.AbWelle"), 12.f }, { TEXT("Forschung.Funkmast.AbWelle"), 12.f }, { TEXT("Forschung.Schildgenerator.AbWelle"), 25.f }, { TEXT("Forschung.Himmelsturm.AbWelle"), 25.f }, { TEXT("Forschung.Stoerfeld.AbWelle"), 40.f }, { TEXT("Forschung.Singularitaet.AbWelle"), 45.f }, { TEXT("Forschung.Dimensionslager.AbWelle"), 45.f },
+		{ TEXT("Forschung.Elektrozaun.AbWelle"), 12.f }, { TEXT("Forschung.Funkmast.AbWelle"), 12.f }, { TEXT("Forschung.Schildgenerator.AbWelle"), 25.f }, { TEXT("Forschung.Himmelsturm.AbWelle"), 35.f }, { TEXT("Forschung.Stoerfeld.AbWelle"), 35.f }, { TEXT("Forschung.Singularitaet.AbWelle"), 51.f }, { TEXT("Forschung.Dimensionslager.AbWelle"), 51.f },
 		{ TEXT("Forschung.Gewehrturm.AbWelle"), 5.f }, { TEXT("Forschung.Teslaspule.AbWelle"), 5.f }, { TEXT("Forschung.Raffinerie.AbWelle"), 15.f },
-		{ TEXT("Forschung.Treibstoffkraft.AbWelle"), 15.f }, { TEXT("Forschung.Flammenwerfer.AbWelle"), 15.f }, { TEXT("Forschung.Schwefel.AbWelle"), 5.f }, { TEXT("Forschung.Quarz.AbWelle"), 10.f }, { TEXT("Forschung.Caterium.AbWelle"), 12.f }, { TEXT("Forschung.Bauxit.AbWelle"), 25.f }, { TEXT("Forschung.Explosivbolzen.AbWelle"), 25.f },
+		{ TEXT("Forschung.Treibstoffkraft.AbWelle"), 15.f }, { TEXT("Forschung.Flammenwerfer.AbWelle"), 15.f }, { TEXT("Forschung.Schwefel.AbWelle"), 5.f }, { TEXT("Forschung.Quarz.AbWelle"), 10.f }, { TEXT("Forschung.Caterium.AbWelle"), 12.f }, { TEXT("Forschung.Bauxit.AbWelle"), 25.f }, { TEXT("Forschung.Schwerindustrie.AbWelle"), 25.f }, { TEXT("Forschung.Mischtechnik.AbWelle"), 35.f }, { TEXT("Forschung.Explosivbolzen.AbWelle"), 25.f },
 		{ TEXT("Forschung.NobeliskWerfer.AbWelle"), 10.f }, { TEXT("Forschung.GasNobelisk.AbWelle"), 15.f }, { TEXT("Forschung.PulsNobelisk.AbWelle"), 15.f },
 		{ TEXT("Forschung.Turbomunition.AbWelle"), 25.f }, { TEXT("Forschung.Turbotreibstoff.AbWelle"), 25.f }, { TEXT("Forschung.StreuNobelisk.AbWelle"), 25.f },
 		// Startkontingent je Einsatz

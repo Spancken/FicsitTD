@@ -1,0 +1,12 @@
+{
+  "Name": "Pruefung091",
+  "_Hinweis": "0.9.1 nach Review 09.11.: Bremsen stapeln, Kombo Oelbrand, Texte, Bausperren. Grundtest, Sperren, Bauten P1/P2, zwei Strategie-Plaene als Gegenprobe.",
+  "Plaene": [
+    "Grundtest",
+    "Sperren091",
+    "BautenP1",
+    "BautenP2",
+    "Strat-Gewehr-Flamme",
+    "Strat-Gewehr-Tesla"
+  ]
+}

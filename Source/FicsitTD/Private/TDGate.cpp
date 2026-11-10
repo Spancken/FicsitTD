@@ -1,4 +1,4 @@
-#include "TDGate.h"
+﻿#include "TDGate.h"
 #include "FicsitTDModule.h"
 #include "TDBalance.h"
 #include "TDDecoy.h"
@@ -13,6 +13,10 @@
 #include "FGCharacterPlayer.h"
 #include "NavAreas/NavArea_Null.h"
 #include "TimerManager.h"
+#include "FGPowerInfoComponent.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "TDTurretBase.h"
+#include "TDWaveSubsystem.h"
 #include "WheeledVehicles/FGWheeledVehicle.h"
 #include "TDSprache.h"
 
@@ -53,6 +57,21 @@ ATDGate::ATDGate()
 	mNavSperre->bDynamicObstacle = true;
 	mNavSperre->SetAreaClassOverride(UNavArea_Null::StaticClass());   // setzt auch bUseSystemDefaultObstacleAreaClass = false
 	mNavSperre->SetHiddenInGame(true);
+	// 0.9.3 Strom: Anschluss an der Original-Dose hinten an der linken Saeule (Modelle\Original_Anschluesse.json, Bau_Tor)
+	mStrom = CreateDefaultSubobject<UTDTorStromAnschluss>(TEXT("TorStrom"));
+	mStrom->SetupAttachment(RootComponent);
+	mStrom->SetRelativeLocation(FVector(-300.f, -180.f, 160.f));
+	mStromInfo = CreateDefaultSubobject<UFGPowerInfoComponent>(TEXT("TorStromInfo"));
+}
+
+void ATDGate::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+	if (mStrom && mStromInfo)
+	{
+		mStrom->SetPowerInfo(mStromInfo);
+		mStromInfo->SetTargetConsumption(TDBalance::Wert(TEXT("Bauten.Tor.Strom"), 2.f));
+	}
 }
 
 void ATDGate::BeginPlay()
@@ -69,6 +88,32 @@ void ATDGate::BeginPlay()
 	Modell(mFluegelR, TEXT("LeafR"));
 	Modell(mLeuchteL, TEXT("BeaconL"));
 	Modell(mLeuchteR, TEXT("BeaconR"));
+	// 0.9.3: Original-Stromdose und Statuslampe (gruen = Strom, rot = kein Strom, in der Welle offen)
+	if (!IsRunningDedicatedServer())
+	{
+		mStromDose = NewObject<UStaticMeshComponent>(this);
+		mStromDose->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, TDOriginal::Strom, nullptr, LOAD_NoWarn | LOAD_Quiet));
+		mStromDose->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		mStromDose->SetupAttachment(RootComponent);
+		mStromDose->SetRelativeLocation(FVector(-300.f, -90.f, 160.f));
+		mStromDose->SetRelativeRotation(FRotator(0.f, -90.f, 0.f));
+		mStromDose->RegisterComponent();
+		mStatusLampe = NewObject<UStaticMeshComponent>(this);
+		mStatusLampe->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, TEXT("/FicsitTD/Buildings/BoltTurret/Mesh/SM_TD_StatusLight.SM_TD_StatusLight"), nullptr, LOAD_NoWarn | LOAD_Quiet));
+		mStatusLampe->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		mStatusLampe->SetupAttachment(RootComponent);
+		mStatusLampe->SetRelativeLocation(FVector(0.f, 0.f, 525.f));
+		mStatusLampe->RegisterComponent();
+		if (mStatusLampe->GetStaticMesh() && mStatusLampe->GetNumMaterials() > 1)
+		{
+			mLampenMaterial = mStatusLampe->CreateDynamicMaterialInstance(1);
+		}
+	}
+	if (mStrom && mStromInfo)
+	{
+		mStrom->SetPowerInfo(mStromInfo);
+		mStromInfo->SetTargetConsumption(TDBalance::Wert(TEXT("Bauten.Tor.Strom"), 2.f));
+	}
 	GetWorldTimerManager().SetTimer(mAnimTimer, this, &ATDGate::Animieren, TorAnimIntervall, true);
 	if (!HasAuthority())
 	{
@@ -108,7 +153,28 @@ void ATDGate::Schritt()
 	{
 		mGegnerNah = It->IsAliveAndWell() && UTDGegnerHirn::Von(*It) && FVector::Dist2D(It->GetActorLocation(), Mitte) < Sperre;
 	}
-	mSoll = (bJemand && !mGegnerNah && IsTDIntact()) ? 1.f : 0.f;
+	// 0.9.3: ohne Strom bleibt das Tor in der Welle offen, und die Sperre im Navigationsnetz faellt weg (Kreaturen kommen durch)
+	const UTDWaveSubsystem* Wellen = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
+	const bool bStrom = mStromInfo && mStromInfo->HasPower();
+	const bool bOffenOhneStrom = !bStrom && Wellen && Wellen->LaeuftWelle() && TDBalance::Wert(TEXT("Bauten.Tor.OhneStromOffen"), 1.f) > 0.f;
+	if (bOffenOhneStrom != mOhneStromOffen)
+	{
+		mOhneStromOffen = bOffenOhneStrom;
+		if (mNavSperre)
+		{
+			mNavSperre->SetCanEverAffectNavigation(!bOffenOhneStrom);
+		}
+		UE_LOG(LogFicsitTD, Log, TEXT("Tor %s: %s"), *GetName(), bOffenOhneStrom ? TEXT("kein Strom in der Welle - bleibt offen, Gegner kommen durch") : TEXT("Strom da oder Bauphase - normal"));
+	}
+	mSoll = bOffenOhneStrom ? 1.f : (bJemand && !mGegnerNah && IsTDIntact()) ? 1.f : 0.f;
+	const int32 Lampe = !IsTDIntact() ? 0 : bOffenOhneStrom ? 1 : bStrom ? 3 : 2;
+	if (mLampenMaterial && Lampe != mLampe)
+	{
+		mLampe = Lampe;
+		static const FLinearColor Farben[] = { FLinearColor(0.02f, 0.02f, 0.02f), FLinearColor(1.f, 0.03f, 0.01f), FLinearColor(1.f, 0.55f, 0.02f), FLinearColor(0.1f, 1.f, 0.1f) };
+		mLampenMaterial->SetVectorParameterValue(TEXT("Farbe"), Farben[Lampe]);
+		mLampenMaterial->SetScalarParameterValue(TEXT("Leuchtkraft"), Lampe == 0 ? 0.f : 20.f);
+	}
 }
 
 void ATDGate::Animieren()

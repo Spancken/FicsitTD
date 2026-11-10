@@ -1,4 +1,11 @@
-#include "TDBautenErweitert.h"
+﻿#include "TDBautenErweitert.h"
+#include "FGActorRepresentationManager.h"
+#include "FGActorRepresentation.h"
+#include "Resources/FGResourceNodeBase.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Engine/SkeletalMesh.h"
+#include "TDDamageable.h"
+#include "TDRepairStation.h"
 #include "FicsitTDModule.h"
 #include "TDBalance.h"
 #include "TDGegnerHirn.h"
@@ -60,7 +67,11 @@ ATDConductorWall::ATDConductorWall()
 	mDrehpunkt = ZaunTuer0;
 	mMuendung = FVector::ZeroVector;
 	mHalbmasse = FVector(400.f, 30.f, 200.f);
-	mLampenOrt = FVector(330.f, -45.f, 120.f);
+	mLampenOrt = FVector(-60.f, -75.f, 340.f);   // 0.9.3: Mauer weg, Original-Mast hinten
+	// 0.9.3 Original-Anschluesse (Modelle\Original_Anschluesse.json, Gebaeude-Review)
+	OriginalTeil(TDOriginal::Strom, FVector(0.f, -30.f, 80.f), -90.f);
+	OriginalTeil(TDOriginal::Mast, FVector(-60.f, -75.f, 0.f), 0.f);
+
 	mKlarraumHoehe = 420.f;
 	mKlarraumHalb = FVector2D(400.f, 30.f);
 	mBaseMaxHealth = 4000.f;
@@ -125,7 +136,11 @@ ATDRadioMast::ATDRadioMast()
 	mDrehpunkt = FVector(0.f, 0.f, 1064.f);
 	mMuendung = FVector::ZeroVector;
 	mHalbmasse = FVector(200.f, 200.f, 60.f);
-	mLampenOrt = FVector(170.f, -170.f, 90.f);
+	mLampenOrt = FVector(-60.f, 140.f, 352.f);
+	// 0.9.3 Original-Anschluesse (Modelle\Original_Anschluesse.json, Gebaeude-Review)
+	OriginalTeil(TDOriginal::Strom, FVector(100.f, 30.f, 75.f), 0.f);
+	OriginalTeil(TDOriginal::Mast, FVector(-60.f, 140.f, 12.f), 180.f);
+
 	mKlarraumHoehe = 1250.f;
 	mKlarraumHalb = FVector2D(205.f, 205.f);
 	mBaseMaxHealth = 2500.f;
@@ -142,11 +157,136 @@ void ATDRadioMast::BeginPlay()
 	SetzeModell(mKleineSchuessel, TDErw::Modell(TEXT("RadioMast"), TEXT("SmallDish")));
 	sAlle.RemoveAll([](const TWeakObjectPtr<ATDRadioMast>& M) { return !M.IsValid(); });
 	sAlle.AddUnique(this);
+	GetWorldTimerManager().SetTimer(mRadarTimer, this, &ATDRadioMast::RadarTakt, 2.f, true, 2.f);
+}
+
+void ATDRadioMast::RaeumeWellenMarker()
+{
+	if (AFGActorRepresentationManager* Rep = AFGActorRepresentationManager::Get(GetWorld()))
+	{
+		for (UFGActorRepresentation* M : mWellenMarker)
+		{
+			if (M)
+			{
+				Rep->RemoveRepresentation(M);
+			}
+		}
+	}
+	mWellenMarker.Reset();
+	mMarkerWelle = -1;
+}
+
+void ATDRadioMast::RadarTakt()
+{
+	// 0.9.3 Radar: nur mit Strom. Ressourcen lokal (jeder Spieler sieht sie), Wellen-Markierungen vom Server (repliziert)
+	const bool bStrom = !GetPowerInfo() || HasPower();
+	if (!bStrom || !IsTDIntact())
+	{
+		if (HasAuthority() && mWellenMarker.Num() > 0)
+		{
+			RaeumeWellenMarker();
+		}
+		return;
+	}
+	// Rohstoffvorkommen in 150 m: wie der Ressourcenscanner, alle 30 s erneuert (Scan haelt 35 s)
+	mRessourcenRest -= 2.f;
+	if (mRessourcenRest <= 0.f && !IsRunningDedicatedServer())
+	{
+		mRessourcenRest = 30.f;
+		const float R = TDBalance::Wert(TEXT("Tuerme.Funkmast.RessourcenRadius"), 150.f) * 100.f;
+		mGescannt = 0;
+		for (TActorIterator<AFGResourceNodeBase> It(GetWorld()); It; ++It)
+		{
+			if (FVector::Dist2D(It->GetActorLocation(), GetActorLocation()) < R)
+			{
+				It->ScanResourceNode_Local(35.f);
+				++mGescannt;
+			}
+		}
+	}
+	if (!HasAuthority())
+	{
+		return;
+	}
+	// Wellen-Markierung: nur ein Radar (das erste gueltige) setzt sie, 30 s vor dem Start bis zum Ende der Welle
+	for (const TWeakObjectPtr<ATDRadioMast>& M : sAlle)
+	{
+		if (M.IsValid() && M.Get() != this && M->IsTDIntact() && (!M->GetPowerInfo() || M->HasPower()))
+		{
+			if (sAlle.IndexOfByKey(M) < sAlle.IndexOfByKey(this))
+			{
+				return;
+			}
+		}
+	}
+	UTDWaveSubsystem* Wellen = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
+	if (!Wellen)
+	{
+		return;
+	}
+	const FTDWellenVorschau V = Wellen->GetVorschau();
+	const bool bZeigen = V.bGueltig && (V.bLaeuft || (V.Countdown >= 0.f && V.Countdown <= TDBalance::Wert(TEXT("Tuerme.Funkmast.Vorwarnung"), 30.f)));
+	if (!bZeigen)
+	{
+		if (mWellenMarker.Num() > 0)
+		{
+			RaeumeWellenMarker();
+		}
+		return;
+	}
+	if (mMarkerWelle == V.Welle)
+	{
+		return;
+	}
+	RaeumeWellenMarker();
+	AFGActorRepresentationManager* Rep = AFGActorRepresentationManager::Get(GetWorld());
+	if (!Rep)
+	{
+		return;
+	}
+	// Text: Welle, Arten mit Anzahl, Flieger-Warnung
+	FString Text = TDF(TEXT("Welle %d:"), TEXT("Wave %d:"), V.Welle);
+	bool bFlieger = false;
+	for (const FTDPlanGruppe& G : V.Gruppen)
+	{
+		const FTDKreaturSteckbrief S = UTDWaveSubsystem::Steckbrief(G.Pfad);
+		Text += V.bZusammensetzung ? FString::Printf(TEXT(" %dx %s"), G.Anzahl, *S.Name) : FString::Printf(TEXT(" %s"), *S.Name);
+		bFlieger |= G.Pfad.Contains(TEXT("Flying"));
+	}
+	if (bFlieger)
+	{
+		Text += TDT(TEXT(" - FLIEGER!"), TEXT(" - FLYERS!"));
+	}
+	UTexture2D* Symbol = LoadObject<UTexture2D>(nullptr, TEXT("/Game/FactoryGame/Interface/UI/Assets/MonochromeIcons/TXUI_MIcon_Aggro.TXUI_MIcon_Aggro"));
+	const FLinearColor Farbe = bFlieger ? FLinearColor(0.3f, 0.6f, 1.f) : FLinearColor(1.f, 0.15f, 0.05f);
+	const TArray<FTDFront>& Fronten = Wellen->GetFronten();
+	const int32 Aktiv = FMath::Min(Wellen->AktiveFrontenFuer(V.Welle), Fronten.Num());
+	FTextProperty* TextFeld = FindFProperty<FTextProperty>(UFGActorRepresentation::StaticClass(), TEXT("mRepresentationText"));
+	for (int32 i = 0; i < Aktiv; ++i)
+	{
+		UFGActorRepresentation* M = Rep->CreateAndAddNewRepresentationNoActor(Fronten[i].Ort + FVector(0.f, 0.f, 300.f), Symbol, Farbe, 900.f, true, true, ERepresentationType::RT_Default);
+		if (M)
+		{
+			if (TextFeld)
+			{
+				TextFeld->SetPropertyValue_InContainer(M, FText::FromString(Text));
+				Rep->UpdateRepresentation(M);
+			}
+			mWellenMarker.Add(M);
+		}
+	}
+	mMarkerWelle = V.Welle;
+	UE_LOG(LogFicsitTD, Log, TEXT("Radar %s: %d Front-Markierungen fuer Welle %d (%s), %d Rohstoffe gescannt"), *GetName(), mWellenMarker.Num(), V.Welle, *Text, mGescannt);
 }
 
 void ATDRadioMast::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	sAlle.Remove(this);
+	GetWorldTimerManager().ClearTimer(mRadarTimer);
+	if (HasAuthority())
+	{
+		RaeumeWellenMarker();
+	}
 	Super::EndPlay(EndPlayReason);
 }
 
@@ -229,7 +369,11 @@ ATDShieldGenerator::ATDShieldGenerator()
 	mDrehpunkt = FVector(0.f, 0.f, 290.f);
 	mMuendung = FVector::ZeroVector;
 	mHalbmasse = FVector(280.f, 280.f, 60.f);
-	mLampenOrt = FVector(260.f, -260.f, 80.f);
+	mLampenOrt = FVector(-260.f, 260.f, 400.f);
+	// 0.9.3 Original-Anschluesse (Modelle\Original_Anschluesse.json, Gebaeude-Review)
+	OriginalTeil(TDOriginal::Strom, FVector(-200.f, -295.f, 110.f), -90.f);
+	OriginalTeil(TDOriginal::Mast, FVector(-260.f, 260.f, 60.f), 180.f);
+
 	mKlarraumHoehe = 620.f;
 	mKlarraumHalb = FVector2D(300.f, 300.f);
 	mBaseMaxHealth = 3500.f;
@@ -385,8 +529,12 @@ ATDFlakTurret::ATDFlakTurret()
 	mSchadensart = ETDSchadensart::Explosion;
 	mDreht = true;
 	mRange = 6000.f;
-	mDrehpunkt = FVector(0.f, 0.f, 225.f);
+	mDrehpunkt = FVector(0.f, 0.f, 290.f);   // 0.9.3: Bolzensockel 65 cm hoeher
 	mNeigeachse = FVector(0.f, 0.f, 208.f);
+	mLampenOrt = FVector(-90.f, 205.f, 340.f);
+	OriginalTeil(TDOriginal::Eingang, FVector(-210.f, 0.f, 0.f), 90.f);
+	OriginalTeil(TDOriginal::Strom, FVector(0.f, -160.f, 130.f), -90.f);
+	OriginalTeil(TDOriginal::Mast, FVector(-90.f, 205.f, 0.f), 180.f);
 	mMuendung = FVector(172.f, 0.f, 0.f);
 	mNeigungMin = -5.f;
 	mNeigungMax = 80.f;
@@ -397,10 +545,33 @@ ATDFlakTurret::ATDFlakTurret()
 	mRadar = TDErw::Teil(this, mHeadMesh ? static_cast<USceneComponent*>(mHeadMesh) : RootComponent.Get(), TEXT("FlakRadar"), FVector(-26.f, 71.5f, 156.f));
 }
 
+// Plaetze der 6 Kanister im Werferkasten (relativ zum Neigepunkt, mit Kopf-Skalierung 1,3; td_umbau_093.py himmel())
+static const FVector FlakKanister[6] = { FVector(130.f, 80.6f, 54.6f), FVector(130.f, 0.f, 54.6f), FVector(130.f, -80.6f, 54.6f),
+	FVector(130.f, 80.6f, -26.f), FVector(130.f, 0.f, -26.f), FVector(130.f, -80.6f, -26.f) };
+
 void ATDFlakTurret::BeginPlay()
 {
 	Super::BeginPlay();
-	SetzeModell(mRadar, TDErw::Modell(TEXT("FlakTurret"), TEXT("Radar")));
+	if (mRadar)
+	{
+		mRadar->SetVisibility(false);   // 0.9.3: Radar entfernt
+	}
+	UStaticMesh* Kanister = LoadObject<UStaticMesh>(nullptr, *TDErw::Modell(TEXT("FlakTurret"), TEXT("Rakete")), nullptr, LOAD_NoWarn | LOAD_Quiet);
+	if (Kanister && mHeadMesh && !IsRunningDedicatedServer())
+	{
+		for (int32 i = 0; i < 6; ++i)
+		{
+			UStaticMeshComponent* K = NewObject<UStaticMeshComponent>(this);
+			K->SetStaticMesh(Kanister);
+			K->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			K->SetCanEverAffectNavigation(false);
+			K->SetupAttachment(mHeadMesh);
+			K->SetRelativeLocation(FlakKanister[i]);
+			K->RegisterComponent();
+			mKanister.Add(K);
+		}
+	}
+	UE_LOG(LogFicsitTD, Log, TEXT("Himmelsturm %s: %d sichtbare Kanister"), *GetName(), mKanister.Num());
 }
 
 AActor* ATDFlakTurret::SucheFlieger() const
@@ -438,9 +609,18 @@ void ATDFlakTurret::Animieren(float DeltaSeconds, AFGCreature* Ziel)
 		mSuchTakt = 0.4f;
 		mFlieger = IsTDIntact() && GetCurrentRecipe() ? SucheFlieger() : nullptr;
 	}
-	if (mRadar)
+	// Kanister: leerer Platz wartet die Nachladezeit, in den letzten 0,4 s gleitet ein neuer von hinten (60 cm) ins Rohr
+	const float Gleiten = 0.4f;
+	for (int32 i = 0; i < mKanister.Num(); ++i)
 	{
-		mRadar->AddLocalRotation(FRotator(0.f, 120.f * DeltaSeconds, 0.f));
+		if (mKanisterRest[i] <= 0.f || !mKanister[i])
+		{
+			continue;
+		}
+		mKanisterRest[i] = FMath::Max(0.f, mKanisterRest[i] - DeltaSeconds);
+		const bool bSichtbar = mKanisterRest[i] < Gleiten;
+		mKanister[i]->SetVisibility(bSichtbar);
+		mKanister[i]->SetRelativeLocation(FlakKanister[i] - FVector(60.f * FMath::Clamp(mKanisterRest[i] / Gleiten, 0.f, 1.f), 0.f, 0.f));
 	}
 	const AActor* F = mFlieger.Get();
 	if (!F || !mYawMesh || !mHeadMesh)
@@ -469,7 +649,16 @@ void ATDFlakTurret::Feuern(AFGCreature* Ziel)
 	}
 	++mSchuesse;
 	const FVector Ort = F->GetActorLocation();
-	const FVector Muendung = GetMuzzleLocation();
+	FVector Muendung = GetMuzzleLocation();
+	if (mKanister.Num() == 6)
+	{
+		// naechster volle Platz feuert: Kanister weg, Schuss kommt aus diesem Rohr
+		const int32 i = mKanisterNaechster;
+		mKanisterNaechster = (mKanisterNaechster + 1) % 6;
+		mKanister[i]->SetVisibility(false);
+		mKanisterRest[i] = TDBalance::Wert(TEXT("Tuerme.Himmelsturm.Nachladen"), 1.5f);
+		Muendung = mHeadMesh->GetComponentTransform().TransformPosition(FlakKanister[i] + FVector(60.f, 0.f, 0.f));
+	}
 	const float Flugzeit = FVector::Dist(Muendung, Ort) / 6000.f;
 	ZeigeSpur(Muendung, Ort, FLinearColor(1.f, 0.75f, 0.3f), 0.08f, 2.f);
 	ZeigeLeuchten(Ort, FLinearColor(1.f, 0.55f, 0.15f), 5.f, 0.4f, Flugzeit, false, 30.f);
@@ -525,15 +714,21 @@ ATDFieldProjector::ATDFieldProjector()
 	mTurmName = TEXT("Stoerfeld");
 	mDreht = false;
 	mRange = 1500.f;
-	mDrehpunkt = FVector(0.f, 0.f, 460.f);
+	mDrehpunkt = FVector(0.f, 0.f, 525.f);   // 0.9.3: Bolzensockel 65 cm hoeher
+	mLampenOrt = FVector(-90.f, 205.f, 340.f);
+	// 0.9.3 Original-Anschluesse (Modelle\Original_Anschluesse.json, Gebaeude-Review)
+	OriginalTeil(TDOriginal::Eingang, FVector(-210.f, 0.f, 0.f), 90.f);
+	OriginalTeil(TDOriginal::Strom, FVector(0.f, -160.f, 130.f), -90.f);
+	OriginalTeil(TDOriginal::Mast, FVector(-90.f, 205.f, 0.f), 180.f);
+
 	mMuendung = FVector::ZeroVector;
 	mBaseMaxHealth = 3500.f;
 	mKlarraumHoehe = 640.f;
 	mYawModell = TDErw::Modell(TEXT("FieldProjector"), TEXT("Core"));
 	mStandardRezept = TDErw::Rezept(TEXT("FieldProjector"), TEXT("Feld_SAM"));
-	mRing0 = TDErw::Teil(this, RootComponent, TEXT("FeldRing0"), FVector(0.f, 0.f, 460.f), FRotator(0.f, 0.f, 0.f));
-	mRing1 = TDErw::Teil(this, RootComponent, TEXT("FeldRing1"), FVector(0.f, 0.f, 460.f), FRotator(0.f, 0.f, 90.f));
-	mRing2 = TDErw::Teil(this, RootComponent, TEXT("FeldRing2"), FVector(0.f, 0.f, 460.f), FRotator(90.f, 0.f, 0.f));
+	mRing0 = TDErw::Teil(this, RootComponent, TEXT("FeldRing0"), FVector(0.f, 0.f, 525.f), FRotator(0.f, 0.f, 0.f));
+	mRing1 = TDErw::Teil(this, RootComponent, TEXT("FeldRing1"), FVector(0.f, 0.f, 525.f), FRotator(0.f, 0.f, 90.f));
+	mRing2 = TDErw::Teil(this, RootComponent, TEXT("FeldRing2"), FVector(0.f, 0.f, 525.f), FRotator(90.f, 0.f, 0.f));
 }
 
 void ATDFieldProjector::BeginPlay()
@@ -610,7 +805,10 @@ ATDSingularityLauncher::ATDSingularityLauncher()
 	mNeigeachse = FVector(0.f, 0.f, 230.f);
 	mMuendung = FVector(230.f, 0.f, 0.f);
 	mHalbmasse = FVector(300.f, 300.f, 55.f);
-	mLampenOrt = FVector(280.f, -280.f, 120.f);
+	mLampenOrt = FVector(-150.f, 305.f, 340.f);   // 0.9.3: Lampe auf dem Original-Statusmast
+	OriginalTeil(TDOriginal::Eingang, FVector(-350.f, 0.f, 0.f), 90.f);
+	OriginalTeil(TDOriginal::Strom, FVector(-240.f, -300.f, 75.f), -90.f);
+	OriginalTeil(TDOriginal::Mast, FVector(-150.f, 305.f, 0.f), 180.f);
 	mKlarraumHoehe = 620.f;
 	mKlarraumHalb = FVector2D(305.f, 305.f);
 	mBaseMaxHealth = 5000.f;
@@ -621,12 +819,19 @@ ATDSingularityLauncher::ATDSingularityLauncher()
 	mStandardRezept = TDErw::Rezept(TEXT("SingularityLauncher"), TEXT("Singularitaet_Ficsonium"));
 }
 
+void ATDSingularityLauncher::BeginPlay()
+{
+	Super::BeginPlay();
+}
+
 void ATDSingularityLauncher::Feuern(AFGCreature* Ziel)
 {
 	if (!Ziel)
 	{
 		return;
 	}
+	// 0.9.3: Lauf waechst mit den Stufen (L3 Verlaengerung bis 3,4 m, L5 Feldemitter bis 4,2 m)
+	mMuendung = FVector(GetLevel() >= 5 ? 420.f : GetLevel() >= 3 ? 340.f : 230.f, 0.f, 0.f);
 	++mSchuesse;
 	const FVector Ort = Ziel->GetActorLocation();
 	const FVector Muendung = GetMuzzleLocation();
@@ -698,4 +903,263 @@ void ATDSingularityLauncher::Kampfwerte(TArray<FTDKennwert>& Out) const
 	Out.Add({ TDT(TEXT("Sog"), TEXT("Pull")), TDF(TEXT("%.1f s festgehalten"), TEXT("%.1f s held"), TDBalance::Wert(TEXT("Tuerme.Singularitaet.Sogzeit"), 1.5f)), true });
 	Out.Add({ TDT(TEXT("Feuerrate"), TEXT("Fire rate")), FString::Printf(TEXT("%.1f s"), Zykluszeit()), true });
 	Out.Add({ TDT(TEXT("Getroffen"), TEXT("Hit")), FString::Printf(TEXT("%d"), mGetroffen), true });
+}
+
+
+// =====================================================================================================================
+// 0.9.3 Drohnenplatz (td_drohnenplatz.py: Plattform 6 x 6 m, vier Landefelder bei +-1,5 m auf 1,0 m Hoehe)
+
+static const FVector DrohnenFelder[4] = { FVector(150.f, 150.f, 110.f), FVector(150.f, -150.f, 110.f), FVector(-150.f, 150.f, 110.f), FVector(-150.f, -150.f, 110.f) };
+
+ATDDronePort::ATDDronePort()
+{
+	mTurmName = TEXT("Drohnenplatz");
+	mDreht = false;
+	mRange = 4000.f;
+	mMuendung = FVector::ZeroVector;
+	mHalbmasse = FVector(300.f, 300.f, 60.f);
+	mKlarraumHoehe = 500.f;
+	mKlarraumHalb = FVector2D(305.f, 305.f);
+	mBaseMaxHealth = 4000.f;
+	mLampenOrt = FVector(-150.f, 345.f, 340.f);
+	OriginalTeil(TDOriginal::Eingang, FVector(-350.f, 0.f, 0.f), 90.f);
+	OriginalTeil(TDOriginal::Strom, FVector(150.f, 300.f, 60.f), 90.f);   // Dose an der Unreal-+Y-Seite, ragt nach aussen
+	OriginalTeil(TDOriginal::Mast, FVector(-150.f, 345.f, 0.f), 180.f);
+	mYawModell = TDErw::Modell(TEXT("DronePort"), TEXT("Tower"));
+	mStandardRezept = TDErw::Rezept(TEXT("DronePort"), TEXT("Drohne_Reparatur"));
+}
+
+void ATDDronePort::BeginPlay()
+{
+	Super::BeginPlay();
+	BaueDrohnen();
+}
+
+bool ATDDronePort::IstKampf() const
+{
+	const UClass* R = GetCurrentRecipe();
+	return R && R->GetName().Contains(TEXT("Kampf"));
+}
+
+int32 ATDDronePort::SollDrohnen() const
+{
+	return 2 + (GetLevel() >= 3 ? 1 : 0) + (GetLevel() >= 5 ? 1 : 0);
+}
+
+void ATDDronePort::BaueDrohnen()
+{
+	// Original-Drohne des Spiels (Skelettmodell, per Pfad geladen); faellt sie aus, eigene Drohne aus dem Mod
+	USkeletalMesh* Original = LoadObject<USkeletalMesh>(nullptr, TEXT("/Game/FactoryGame/Buildable/Factory/DroneStation/Mesh/SK_DroneTransport_01.SK_DroneTransport_01"), nullptr, LOAD_NoWarn | LOAD_Quiet);
+	UStaticMesh* Eigene = Original ? nullptr : LoadObject<UStaticMesh>(nullptr, *TDErw::Modell(TEXT("DronePort"), TEXT("Drone")), nullptr, LOAD_NoWarn | LOAD_Quiet);
+	const float Groesse = TDBalance::Wert(TEXT("Tuerme.Drohnenplatz.DrohnenGroesse"), 0.2f);
+	while (mDrohnen.Num() < SollDrohnen())
+	{
+		const int32 i = mDrohnen.Num();
+		USceneComponent* Teil = nullptr;
+		if (Original)
+		{
+			USkeletalMeshComponent* K = NewObject<USkeletalMeshComponent>(this);
+			K->SetSkeletalMesh(Original);
+			Teil = K;
+		}
+		else if (Eigene)
+		{
+			UStaticMeshComponent* K = NewObject<UStaticMeshComponent>(this);
+			K->SetStaticMesh(Eigene);
+			Teil = K;
+		}
+		else
+		{
+			Teil = NewObject<USceneComponent>(this);
+		}
+		if (UPrimitiveComponent* P = Cast<UPrimitiveComponent>(Teil))
+		{
+			P->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			P->SetCanEverAffectNavigation(false);
+		}
+		Teil->SetupAttachment(RootComponent);
+		Teil->SetUsingAbsoluteLocation(true);
+		Teil->SetWorldScale3D(FVector(Groesse));
+		Teil->RegisterComponent();
+		FDrohne D;
+		D.Platz = GetActorTransform().TransformPosition(DrohnenFelder[i % 4]);
+		D.Ort = D.Platz;
+		Teil->SetWorldLocation(D.Ort);
+		mDrohnenTeile.Add(Teil);
+		mDrohnen.Add(D);
+	}
+	UE_LOG(LogFicsitTD, Log, TEXT("Drohnenplatz %s: %d Drohnen (%s)"), *GetName(), mDrohnen.Num(), Original ? TEXT("Original-Drohne") : Eigene ? TEXT("eigene Drohne") : TEXT("ohne Modell"));
+}
+
+int32 ATDDronePort::FreieDrohne() const
+{
+	for (int32 i = 0; i < mDrohnen.Num(); ++i)
+	{
+		if (mDrohnen[i].Zustand == 0)
+		{
+			return i;
+		}
+	}
+	return INDEX_NONE;
+}
+
+AActor* ATDDronePort::SucheBeschaedigt() const
+{
+	// Am staerksten beschaedigter Bau in Reichweite, der noch keine Drohne hat
+	AActor* Best = nullptr;
+	float BestAnteil = 0.995f;
+	for (TActorIterator<AActor> It(GetWorld()); It; ++It)
+	{
+		const ITDDamageable* D = Cast<ITDDamageable>(*It);
+		if (!D || !D->IsTDIntact() || FVector::Dist(It->GetActorLocation(), GetActorLocation()) > GetReichweite())
+		{
+			continue;
+		}
+		const float Anteil = D->GetTDHealth() / FMath::Max(D->GetTDMaxHealth(), 1.f);
+		bool bVergeben = false;
+		for (const FDrohne& X : mDrohnen)
+		{
+			bVergeben |= X.Zustand != 0 && X.Ziel.Get() == *It;
+		}
+		if (!bVergeben && Anteil < BestAnteil)
+		{
+			BestAnteil = Anteil;
+			Best = *It;
+		}
+	}
+	return Best;
+}
+
+bool ATDDronePort::BereitZumProduzieren(AFGCreature* Ziel) const
+{
+	if (FreieDrohne() == INDEX_NONE)
+	{
+		return false;
+	}
+	return IstKampf() ? Ziel != nullptr : mGibtArbeit;
+}
+
+void ATDDronePort::Feuern(AFGCreature* Ziel)
+{
+	// Ein Zyklus = eine Drohne startet zu ihrem Ziel
+	const int32 i = FreieDrohne();
+	if (i == INDEX_NONE)
+	{
+		return;
+	}
+	AActor* Auftrag = IstKampf() ? static_cast<AActor*>(Ziel) : SucheBeschaedigt();
+	if (!Auftrag)
+	{
+		return;
+	}
+	FDrohne& D = mDrohnen[i];
+	D.Ziel = Auftrag;
+	D.Zustand = 1;
+	D.Arbeit = IstKampf() ? TDBalance::Wert(TEXT("Tuerme.Drohnenplatz.KampfDauer"), 3.f) : TDBalance::Wert(TEXT("Tuerme.Drohnenplatz.ReparaturDauer"), 2.f);
+	D.Takt = 0.f;
+	D.Menge = IstKampf() ? TDBalance::Wert(TEXT("Tuerme.Drohnenplatz.KampfSchaden"), 25.f) * SchadenBonus()
+		: ATDRepairStation::ReparaturFuer(AktuelleMunition()) * SchadenBonus();
+	++mEinsaetze;
+	++mSchuesse;
+}
+
+void ATDDronePort::Animieren(float DeltaSeconds, AFGCreature* Ziel)
+{
+	if (mDrohnen.Num() < SollDrohnen())
+	{
+		BaueDrohnen();
+	}
+	mSuchTakt -= DeltaSeconds;
+	if (mSuchTakt <= 0.f)
+	{
+		mSuchTakt = 1.f;
+		mGibtArbeit = !IstKampf() && SucheBeschaedigt() != nullptr;
+	}
+	const float Tempo = TDBalance::Wert(TEXT("Tuerme.Drohnenplatz.Tempo"), 1500.f) * DeltaSeconds;
+	const float Reise = TDBalance::Wert(TEXT("Tuerme.Drohnenplatz.Flughoehe"), 15.f) * 100.f;
+	const float Basis = GetActorLocation().Z;
+	for (int32 i = 0; i < mDrohnen.Num(); ++i)
+	{
+		FDrohne& D = mDrohnen[i];
+		USceneComponent* Teil = mDrohnenTeile.IsValidIndex(i) ? mDrohnenTeile[i].Get() : nullptr;
+		AActor* Z = D.Ziel.Get();
+		if (D.Zustand >= 1 && D.Zustand <= 3 && (!Z || (Cast<ITDDamageable>(Z) && !Cast<ITDDamageable>(Z)->IsTDIntact())))
+		{
+			D.Zustand = 4;   // Ziel weg: zurueck
+		}
+		FVector Soll = D.Ort;
+		switch (D.Zustand)
+		{
+		case 1: Soll = FVector(D.Ort.X, D.Ort.Y, Basis + Reise); if (FMath::IsNearlyEqual(D.Ort.Z, Soll.Z, 5.f)) D.Zustand = 2; break;
+		case 2:
+		{
+			const FVector ZOrt = Z->GetActorLocation();
+			Soll = FVector(ZOrt.X, ZOrt.Y, Basis + Reise);
+			if (FVector::Dist2D(D.Ort, ZOrt) < 150.f) D.Zustand = 3;
+			break;
+		}
+		case 3:
+		{
+			const FVector ZOrt = Z->GetActorLocation();
+			Soll = ZOrt + FVector(0.f, 0.f, IstKampf() ? 600.f : 450.f);
+			D.Arbeit -= DeltaSeconds;
+			D.Takt -= DeltaSeconds;
+			if (D.Takt <= 0.f)
+			{
+				D.Takt = 0.35f;
+				if (AFGCreature* F = Cast<AFGCreature>(Z))
+				{
+					Treffer(F, D.Menge, (ZOrt - D.Ort).GetSafeNormal(), 0.f);
+					ZeigeSpur(D.Ort, ZOrt + FVector(0.f, 0.f, 40.f), FLinearColor(1.f, 0.75f, 0.3f), 0.06f, 0.6f);
+				}
+				else if (ITDDamageable* B = Cast<ITDDamageable>(Z))
+				{
+					const float Teil0 = D.Menge * 0.35f / FMath::Max(TDBalance::Wert(TEXT("Tuerme.Drohnenplatz.ReparaturDauer"), 2.f), 0.35f);
+					mGeheilt += B->HealTD(Teil0);
+					ZeigeSpur(D.Ort, ZOrt + FVector(0.f, 0.f, 150.f), FLinearColor(0.2f, 1.f, 0.35f), 0.3f, 0.8f);
+				}
+			}
+			if (D.Arbeit <= 0.f) D.Zustand = 4;
+			break;
+		}
+		case 4: Soll = FVector(D.Platz.X, D.Platz.Y, Basis + Reise); if (FVector::Dist2D(D.Ort, D.Platz) < 30.f) D.Zustand = 5; break;
+		case 5: Soll = D.Platz; if (FVector::Dist(D.Ort, D.Platz) < 5.f) { D.Zustand = 0; D.Ziel.Reset(); } break;
+		default: Soll = D.Platz; break;
+		}
+		const FVector Weg = Soll - D.Ort;
+		D.Ort += Weg.GetClampedToMaxSize(D.Zustand == 3 ? Tempo * 0.5f : Tempo);
+		if (Teil)
+		{
+			Teil->SetWorldLocation(D.Ort);
+			if (!Weg.IsNearlyZero(1.f) && D.Zustand != 0)
+			{
+				Teil->SetWorldRotation(FRotator(0.f, Weg.Rotation().Yaw, 0.f));
+			}
+		}
+	}
+}
+
+FString ATDDronePort::ZusatzInfo() const
+{
+	int32 Unterwegs = 0;
+	for (const FDrohne& D : mDrohnen)
+	{
+		Unterwegs += D.Zustand != 0 ? 1 : 0;
+	}
+	return TDF(TEXT("%s: %d von %d Drohnen unterwegs, %d Einsaetze"), TEXT("%s: %d of %d drones out, %d sorties"),
+		*(IstKampf() ? TDT(TEXT("Kampfdrohnen"), TEXT("Combat drones")) : TDT(TEXT("Reparaturdrohnen"), TEXT("Repair drones"))), Unterwegs, mDrohnen.Num(), mEinsaetze);
+}
+
+void ATDDronePort::Kampfwerte(TArray<FTDKennwert>& Out) const
+{
+	Out.Add({ TDT(TEXT("Drohnen"), TEXT("Drones")), FString::Printf(TEXT("%d"), SollDrohnen()), true });
+	Out.Add({ TDT(TEXT("Umkreis"), TEXT("Radius")), FString::Printf(TEXT("%.0f m"), GetReichweite() / 100.f), true });
+	if (IstKampf())
+	{
+		Out.Add({ TDT(TEXT("Schaden je Treffer"), TEXT("Damage per hit")), FString::Printf(TEXT("%.0f"), TDBalance::Wert(TEXT("Tuerme.Drohnenplatz.KampfSchaden"), 25.f) * SchadenBonus()), true });
+	}
+	else
+	{
+		Out.Add({ TDT(TEXT("Reparatur je Einsatz"), TEXT("Repair per sortie")), TDF(TEXT("%.0f LP"), TEXT("%.0f HP"), ATDRepairStation::ReparaturFuer(AktuelleMunition()) * SchadenBonus()), true });
+	}
 }

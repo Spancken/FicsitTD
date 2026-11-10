@@ -113,6 +113,7 @@ private:
 	float mFortschritt = 0.f;
 	float mBester = 0.f;
 	float mStill = 0.f;
+	float mVordermannSumme = 0.f;   // 0.9.4 Diagnose: Sekunden insgesamt hinter einem Wellengegner gewartet
 	float mStau = 0.f;   // 0.83.1: Sekunden im Stau hinter einem Wellengegner
 	FVector mAusweich = FVector::ZeroVector;
 	/** geglaettete Laufrichtung (keine Spruenge beim Ausweichen) */
@@ -155,8 +156,11 @@ private:
 	/** Stand der Logistik-Liste des Wellen-Subsystems, die die Kapsel ignoriert */
 	int32 mLogistikVersion = -1;
 	float mPflege = 0.f;
-	float mBremseFaktor = 1.f;
-	double mBremseBis = 0.0;
+	/** 0.9.1: Bremsen stapeln nicht mehr "letzte gewinnt". Bis zu drei Bremsen laufen nebeneinander, es wirkt die staerkste.
+	 *  Endet sie, greift die naechstschwaechere, die noch laeuft (Review 09.11.: Stoerfeld/Oelschlick/Tesla hoben den Haltegriff der Singularitaet auf). */
+	static constexpr int32 BremsPlaetze = 3;
+	float mBremseFaktor[BremsPlaetze] = { 1.f, 1.f, 1.f };
+	double mBremseBis[BremsPlaetze] = { 0.0, 0.0, 0.0 };
 	float BremsFaktor() const;
 public:
 	/** T4c: Toenungskopie des Modells (Leader-Pose). Sie wird nur gezeigt, solange das Original selbst gezeichnet wird -

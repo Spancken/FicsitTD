@@ -4,6 +4,7 @@
 #include "TDBalance.h"
 #include "FicsitTDModule.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/MaterialBillboardComponent.h"
 #include "Creature/FGCreature.h"
 #include "FGInventoryComponent.h"
 #include "FGPipeConnectionFactory.h"
@@ -14,16 +15,16 @@
 
 // Masse aus Modelle\TD_FlameTurret_Stufen.blend (0.62, nach Marius' Stufenbildern), Unreal-cm
 static const FVector FlammeDuese(150.f, 0.f, 0.f);           // Duesenspitze in der Kanzel
-static const FVector FlammeRohr(-215.f, 0.f, 75.f);          // Rohranschluss hinten am Sockel (Flansch mit Ventil)
+static const FVector FlammeRohr(-175.f, 0.f, 120.f);         // 0.9.3: Mitte des Original-Rohreingangs (SM_Pipe_InPut_01) auf der Rueckwand
 static constexpr float FlammeKegel = 15.f;                    // Grad zur Seite
 
 ATDFlameTurret::ATDFlameTurret()
 {
 	mTurmName = TEXT("Flammenwerfer");
 	mSchadensart = ETDSchadensart::Feuer;
-	mDrehpunkt = FVector(0.f, 0.f, 150.f);
+	mDrehpunkt = FVector(0.f, 0.f, 315.f);   // 0.9.3: Sockel 165 cm hoeher
 	mNeigeachse = FVector(0.f, 0.f, 95.f);
-	mLampenOrt = FVector(-60.f, -138.f, 123.f);
+	mLampenOrt = FVector(-60.f, 180.f, 340.f);   // 0.9.3: Lampe oben auf dem Original-Statusmast
 	mMuendung = FlammeDuese;
 	mRange = 2000.f;   // Test G2: 15 m zu kurz (Balance-Datei: Tuerme.Flammenwerfer.Reichweite)
 	mTurnSpeed = 120.f;
@@ -47,6 +48,11 @@ ATDFlameTurret::ATDFlameTurret()
 	mFlamme->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	mFlamme->SetCastShadow(false);
 	mFlamme->SetVisibility(false);
+	// 0.9.3 Original-Anschluesse (Lagen aus Modelle\Original_Anschluesse.json)
+	OriginalTeil(TDOriginal::Rohr, FVector(-175.f, 0.f, 120.f), 90.f);
+	OriginalTeil(TDOriginal::Strom, FVector(-45.f, -175.f, 82.f), -90.f);
+	OriginalTeil(TDOriginal::Mast, FVector(-60.f, 180.f, 0.f), 180.f);
+
 }
 
 void ATDFlameTurret::NachMaschinenStart()
@@ -75,6 +81,115 @@ void ATDFlameTurret::BeginPlay()
 	}
 	mFlamme->SetVisibility(false);
 	mFlammenMaterial = mFlamme->CreateDynamicMaterialInstance(0);
+	ErzeugeWolken();
+}
+
+void ATDFlameTurret::ErzeugeWolken()
+{
+	// 0.9.3: Vorrat an Sprites, nur auf dem Client sichtbar (keine Kollision, kein Schatten). Fehlt das Material, bleibt der alte Kegel.
+	UMaterialInterface* Basis = LoadObject<UMaterialInterface>(nullptr, TEXT("/FicsitTD/Effects/M_TD_FeuerWolke.M_TD_FeuerWolke"));
+	if (!Basis || IsRunningDedicatedServer())
+	{
+		UE_LOG(LogFicsitTD, Log, TEXT("Flammenwerfer %s: Feuerwolken %s"), *GetName(), Basis ? TEXT("aus (Server)") : TEXT("FEHLEN, Kegel bleibt"));
+		return;
+	}
+	const int32 Anzahl = FMath::Clamp(FMath::RoundToInt(TDBalance::Wert(TEXT("Effekte.Flamme.Wolken"), 28.f)), 4, 64);
+	for (int32 i = 0; i < Anzahl; ++i)
+	{
+		UMaterialBillboardComponent* S = NewObject<UMaterialBillboardComponent>(this, NAME_None, RF_Transient);
+		S->SetupAttachment(RootComponent);
+		S->SetUsingAbsoluteLocation(true);
+		S->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		S->SetCastShadow(false);
+		S->bReceivesDecals = false;
+		UMaterialInstanceDynamic* M = UMaterialInstanceDynamic::Create(Basis, this);
+		M->SetScalarParameterValue(TEXT("SpiegelU"), (i & 1) ? 1.f : 0.f);
+		M->SetScalarParameterValue(TEXT("SpiegelV"), (i & 2) ? 1.f : 0.f);
+		S->AddElement(M, nullptr, false, 100.f, 100.f, nullptr);
+		S->SetVisibility(false);
+		S->RegisterComponent();
+		mWolkenSprites.Add(S);
+		mWolkenMaterial.Add(M);
+		mWolken.AddDefaulted();
+	}
+	UE_LOG(LogFicsitTD, Log, TEXT("Flammenwerfer %s: %d Feuerwolken"), *GetName(), Anzahl);
+}
+
+void ATDFlameTurret::BewegeWolken(float DeltaSeconds, bool bNeue, const FTDTreibstoffWerte& W, float Kegel)
+{
+	// Neue Wolken an der Duese fliegen in Rohrrichtung (Streuung im Kegel) bis ans Strahlende, wachsen, spielen das Flipbook
+	// einmal ab und kuehlen ab (Material: Alter). Laufende Wolken leben nach dem Abschalten zu Ende.
+	const float Leben = TDBalance::Wert(TEXT("Effekte.Flamme.Lebensdauer"), 0.6f);
+	const float Takt = Leben / FMath::Max(mWolkenSprites.Num() * 0.85f, 1.f);
+	if (bNeue)
+	{
+		mWolkenTakt += DeltaSeconds;
+		const FVector Duese = GetMuzzleLocation();
+		const FVector Vorne = mHeadMesh ? mHeadMesh->GetForwardVector() : GetActorForwardVector();
+		const float Halb = FMath::DegreesToRadians(FlammeKegel * Kegel * 0.6f);
+		while (mWolkenTakt >= Takt)
+		{
+			mWolkenTakt -= Takt;
+			int32 Frei = INDEX_NONE;
+			float Aeltestes = -1.f;
+			for (int32 i = 0; i < mWolken.Num(); ++i)
+			{
+				if (mWolken[i].Alter >= 1.f) { Frei = i; break; }
+				if (mWolken[i].Alter > Aeltestes) { Aeltestes = mWolken[i].Alter; Frei = i; }
+			}
+			if (Frei == INDEX_NONE)
+			{
+				break;
+			}
+			FTDFeuerWolke& N = mWolken[Frei];
+			N.Alter = FMath::FRandRange(0.f, 0.06f);
+			N.Lebensdauer = Leben * FMath::FRandRange(0.85f, 1.15f);
+			N.Start = Duese;
+			N.Weg = FMath::VRandCone(Vorne, Halb) * mFlammenLaenge * FMath::FRandRange(0.85f, 1.05f);
+			N.GroesseStart = FMath::FRandRange(35.f, 60.f);
+			N.GroesseEnde = FMath::Clamp(mFlammenLaenge * 0.42f * Kegel, 150.f, 700.f) * FMath::FRandRange(0.85f, 1.15f);
+			N.Steigen = FMath::FRandRange(30.f, 90.f);
+		}
+	}
+	else
+	{
+		mWolkenTakt = 0.f;
+	}
+	const float Staerke = TDBalance::Wert(TEXT("Effekte.Flamme.Staerke"), 8.f);
+	for (int32 i = 0; i < mWolken.Num(); ++i)
+	{
+		FTDFeuerWolke& N = mWolken[i];
+		UMaterialBillboardComponent* S = mWolkenSprites[i];
+		if (!S)
+		{
+			continue;
+		}
+		if (N.Alter >= 1.f)
+		{
+			if (S->IsVisible()) { S->SetVisibility(false); }
+			continue;
+		}
+		N.Alter = FMath::Min(1.f, N.Alter + DeltaSeconds / FMath::Max(N.Lebensdauer, 0.05f));
+		const float A = N.Alter;
+		const float Flug = 1.f - FMath::Square(1.f - A);   // schnell aus der Duese, am Ende langsamer
+		S->SetWorldLocation(N.Start + N.Weg * Flug + FVector(0.f, 0.f, N.Steigen * A * A));
+		const float G = FMath::Lerp(N.GroesseStart, N.GroesseEnde, FMath::Pow(A, 0.8f));
+		TArray<FMaterialSpriteElement> E = S->Elements;
+		if (E.Num() > 0)
+		{
+			E[0].BaseSizeX = E[0].BaseSizeY = G;
+			S->SetElements(E);
+		}
+		if (UMaterialInstanceDynamic* M = mWolkenMaterial[i])
+		{
+			M->SetScalarParameterValue(TEXT("Bild"), A);
+			M->SetScalarParameterValue(TEXT("Alter"), A);
+			M->SetScalarParameterValue(TEXT("Staerke"), Staerke);
+			M->SetVectorParameterValue(TEXT("Hell"), W.Hell);
+			M->SetVectorParameterValue(TEXT("Rot"), W.Rot);
+		}
+		if (!S->IsVisible()) { S->SetVisibility(true); }
+	}
 }
 
 void ATDFlameTurret::Factory_Tick(float dt)
@@ -122,6 +237,10 @@ FTDTreibstoffWerte ATDFlameTurret::WerteFuer(const UClass* Treibstoff)
 	{
 		W.Hell = FLinearColor(1.f, 0.85f, 1.f); W.Rot = FLinearColor(0.6f, 0.1f, 1.f); W.Betaeubung = 0.3f; W.Flackern = 6.f;
 	}
+	if (Art == TEXT("Ionisiert") && TDBalance::Wert(TEXT("Munition.Treibstoff.Ionisiert.AlsStrom"), 1.f) > 0.f)
+	{
+		W.Art = ETDSchadensart::Strom;
+	}
 	W.Kegel = TDBalance::Wert(V + TEXT("Kegel"), W.Kegel);
 	W.Betaeubung = TDBalance::Wert(V + TEXT("Betaeubung"), W.Betaeubung);
 	return W;
@@ -148,11 +267,11 @@ void ATDFlameTurret::Feuern(AFGCreature* Ziel)
 			continue;
 		}
 		++Getroffen;
-		ATDSlickPlate::Entzuende(GetWorld(), F->GetActorLocation());   // 0.81: nasses Oelschlick-Feld unter dem Ziel brennt
+		ATDSlickPlate::Entzuende(GetWorld(), F->GetActorLocation(), this);   // 0.81: nasses Oelschlick-Feld unter dem Ziel brennt (0.9.1 Kombo Oelbrand)
 		ATDNobeliskLauncher::EntzuendeWolke(GetWorld(), F->GetActorLocation(), this);   // 0.84 Verpuffung: Gaswolke um das Ziel brennt
 		for (int32 t = 0; t < 4; ++t)   // Schaden ueber die Sekunde verteilt
 		{
-			Treffer(F, W.SchadenProSekunde * Faktor / 4.f, Zu.GetSafeNormal(), t == 0 ? W.Betaeubung : 0.f, 0.25f * t);
+			TrefferArt(F, W.SchadenProSekunde * Faktor / 4.f, Zu.GetSafeNormal(), t == 0 ? W.Betaeubung : 0.f, 0.25f * t, W.Art);
 		}
 		for (int32 s = 1; s <= FMath::RoundToInt(W.BrennDauer * Nach); ++s)
 		{
@@ -198,6 +317,7 @@ void ATDFlameTurret::Animieren(float DeltaSeconds, AFGCreature* Ziel)
 				{
 					SammleFeinde(Feinde);
 				}
+				ATDSlickPlate::EntzuendeUmkreis(GetWorld(), B.Ort, Radius, this);   // 0.9.1 Oelbrand: der Feuerteppich zuendet nasse Platten
 				for (AFGCreature* F : Feinde)
 				{
 					if (F && F->IsAliveAndWell() && FVector::Dist2D(F->GetActorLocation(), B.Ort) <= Radius)
@@ -222,6 +342,15 @@ void ATDFlameTurret::Animieren(float DeltaSeconds, AFGCreature* Ziel)
 	const float SollLaenge = bBrennt ? (Ziel ? FMath::Min(GetReichweite(), FVector::Dist(GetMuzzleLocation(), Ziel->GetActorLocation()) + 250.f) : GetReichweite()) : 0.f;
 	mFlammenLaenge = FMath::FInterpConstantTo(mFlammenLaenge, SollLaenge, DeltaSeconds, bBrennt ? 5000.f : 8000.f);
 	const bool bSichtbar = mFlammenLaenge > 20.f;
+	const FTDTreibstoffWerte W = WerteFuer(AktuelleMunition());
+	const float Kegel = (1.f + LevelWert(TEXT("Kegel"))) * W.Kegel;
+	if (mWolkenSprites.Num() > 0)
+	{
+		// 0.9.3: Feuerwolken statt Kegel
+		mFlamme->SetVisibility(false);
+		BewegeWolken(DeltaSeconds, bSichtbar, W, Kegel);
+		return;
+	}
 	mFlamme->SetVisibility(bSichtbar);
 	if (!bSichtbar)
 	{
@@ -229,8 +358,6 @@ void ATDFlameTurret::Animieren(float DeltaSeconds, AFGCreature* Ziel)
 	}
 	// Kegel ist 1 m lang und am Ende 1 m breit; flackert in Laenge, Breite, Drehung und Helligkeit
 	const float Breite = (0.3f + 0.5f * mFlammenLaenge / FMath::Max(GetReichweite(), 1.f)) * FMath::FRandRange(0.93f, 1.08f);
-	const FTDTreibstoffWerte W = WerteFuer(AktuelleMunition());
-	const float Kegel = (1.f + LevelWert(TEXT("Kegel"))) * W.Kegel;
 	mFlamme->SetRelativeScale3D(FVector(mFlammenLaenge / 100.f * FMath::FRandRange(0.92f, 1.05f), 2.5f * Breite * Kegel, 2.5f * Breite * Kegel));
 	mFlamme->SetRelativeRotation(FRotator(0.f, 0.f, FMath::FRandRange(0.f, 360.f)));
 	if (mFlammenMaterial)
