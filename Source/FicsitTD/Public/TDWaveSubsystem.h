@@ -334,6 +334,8 @@ public:
 	/** Marius 02.11.: Logistik (Baender, Masten, Leitungen, Rohre, Splitter) ist fuer Wellengegner kein Hindernis -
 	 *  sonst liessen sich Wege mit billigen Baendern lenken. Sammelt sie im Umkreis von 500 m und nimmt sie aus dem Navigationsnetz. */
 	void EntschaerfeLogistik(const FVector& Mitte);
+	/** 0.9.4: Kernort, fuer den Erzvorkommen, Steinknoten, Nester und Buesche schon ins Navigationsnetz genommen sind */
+	FVector mHindernisMitte = FVector(TNumericLimits<float>::Max());
 	const TArray<TWeakObjectPtr<AActor>>& GetLogistik() const { return mLogistik; }
 	/** Zaehlt mit jeder Neusammlung hoch; das Gegnerhirn uebernimmt die Liste nur bei neuer Version */
 	int32 GetLogistikVersion() const { return mLogistikVersion; }

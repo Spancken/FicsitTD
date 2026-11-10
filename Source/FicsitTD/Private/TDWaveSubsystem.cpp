@@ -1,4 +1,6 @@
 ﻿#include "TDWaveSubsystem.h"
+#include "NavModifierComponent.h"
+#include "NavAreas/NavArea_Null.h"
 #include "TDSprache.h"
 #include "TDSicherheitsnetz.h"
 #include "TDKernplatz.h"
@@ -2915,6 +2917,63 @@ void UTDWaveSubsystem::EntschaerfeLogistik(const FVector& Mitte)
 		}
 	}
 	UE_LOG(LogFicsitTD, Log, TEXT("Logistik: %d Gebaeude im Umkreis kein Hindernis (%d Teile aus dem Navigationsnetz genommen)"), mLogistik.Num(), Komponenten);
+	// 0.9.4 (Mono-Tesla bis W50, Kapselprobe der Festgefahrenen: 15x Erzvorkommen, 7x Steinknoten, 5x Krabbennest, 5x Nussbusch):
+	// diese Weltobjekte halten die Gegner auf, das Netz fuehrt aber ueber sie hinweg (begehbare Huegel). Einmal je
+	// Kernort im Umkreis Gegner.HindernisRadius (Standard 400 m) ins Netz nehmen, damit die Wege um sie herum fuehren.
+	if (TDBalance::Wert(TEXT("Gegner.HindernisseInsNetz"), 1.f) > 0.f && !mHindernisMitte.Equals(Mitte, 100.f))
+	{
+		mHindernisMitte = Mitte;
+		static const TCHAR* Namen[] = { TEXT("ResourceDeposit"), TEXT("NodeMeshActor"), TEXT("CrabHatcher"), TEXT("NutBush"), TEXT("BerryBush") };
+		const float Radius = TDBalance::Wert(TEXT("Gegner.HindernisRadius"), 400.f) * 100.f;
+		int32 Objekte = 0, Gefunden = 0;
+		for (TActorIterator<AActor> It(GetWorld()); It; ++It)
+		{
+			if (FVector::DistSquared2D(It->GetActorLocation(), Mitte) > FMath::Square(Radius) || (It->IsA<APawn>() && !It->GetClass()->GetName().Contains(TEXT("CrabHatcher"))))
+			{
+				continue;
+			}
+			const FString Klasse = It->GetClass()->GetName();
+			bool bTreffer = false;
+			for (const TCHAR* N : Namen)
+			{
+				bTreffer |= Klasse.Contains(N);
+			}
+			if (!bTreffer)
+			{
+				continue;
+			}
+			TArray<UPrimitiveComponent*> Komp;
+			It->GetComponents<UPrimitiveComponent>(Komp);
+			++Gefunden;
+			// 0.9.5 (Diagnose): die Modelle stehen schon im Netz, gelten dort aber als begehbare Huegel. Deshalb die blockierende
+			// Grundflaeche mit NavArea_Null ausschneiden; Ausloese-Boxen ohne Pawn-Block vorher aus der Rechnung nehmen.
+			bool bBlockt = false;
+			for (UPrimitiveComponent* Teil : Komp)
+			{
+				if (!Teil)
+				{
+					continue;
+				}
+				if (Teil->IsCollisionEnabled() && Teil->GetCollisionResponseToChannel(ECC_Pawn) == ECR_Block && Teil->GetCollisionEnabled() != ECollisionEnabled::QueryOnly)
+				{
+					bBlockt = true;
+				}
+				else if (Teil->CanEverAffectNavigation())
+				{
+					Teil->SetCanEverAffectNavigation(false);
+				}
+			}
+			if (!bBlockt || It->FindComponentByClass<UNavModifierComponent>())
+			{
+				continue;
+			}
+			UNavModifierComponent* Mod = NewObject<UNavModifierComponent>(*It, TEXT("TDHindernisNetz"));
+			Mod->SetAreaClass(UNavArea_Null::StaticClass());
+			Mod->RegisterComponent();
+			++Objekte;
+		}
+		UE_LOG(LogFicsitTD, Log, TEXT("Hindernisse: %d Weltobjekte (Erz, Steinknoten, Nester, Buesche) in %.0f m als Sperrflaeche ins Navigationsnetz genommen (%d passende Objekte)"), Objekte, Radius / 100.f, Gefunden);
+	}
 }
 
 void UTDWaveSubsystem::MarkiereFronten()
