@@ -204,7 +204,7 @@ UTDGegnerHirn* UTDGegnerHirn::Von(const AActor* Kreatur)
 	return Kreatur ? Kreatur->FindComponentByClass<UTDGegnerHirn>() : nullptr;
 }
 
-TArray<FVector> UTDGegnerHirn::BerechneWeg(UWorld* World, const FVector& Ort, const ATDDefenseCore* Kern, bool* bVoll)
+TArray<FVector> UTDGegnerHirn::BerechneWeg(UWorld* World, const FVector& Ort, const ATDDefenseCore* Kern, bool* bVoll, const APawn* Wer)
 {
 	TArray<FVector> Weg;
 	if (bVoll)
@@ -212,33 +212,71 @@ TArray<FVector> UTDGegnerHirn::BerechneWeg(UWorld* World, const FVector& Ort, co
 		*bVoll = false;
 	}
 	UNavigationSystemV1* Nav = World ? FNavigationSystem::GetCurrent<UNavigationSystemV1>(World) : nullptr;
-	FNavLocation Start, Ziel;
-	// Zielpunkt am Kern: seit 0.61 (Tiefbohrer, 8 x 8 m) liegt der naechste begehbare Boden erst 4,5-5 m von der Mitte -> 12 m suchen
-	// 0.9.5 (Mono-Tesla bis W50, Verlauf der 83 Nachzuegler: 56 bekamen bei der Neuberechnung ~200 m Umweg, 17 einen 3-m-Teilweg,
-	// immer an denselben Stellen): der 15-m-Suchkasten setzte den Start von der Koerpermitte aus auf einen Absatz oder eine Insel
-	// daneben. Erst eng um den Gegner projizieren (Gegner.StartSuche, Standard 2 m seitlich, 3 m hoch), nur ohne Treffer weit.
-	const float Eng = TDBalance::Wert(TEXT("Gegner.StartSuche"), 2.f) * 100.f;
-	const bool bStart = Nav && Kern && ((Eng > 0.f && Nav->ProjectPointToNavigation(Ort, Start, FVector(Eng, Eng, 300.f)))
-		|| Nav->ProjectPointToNavigation(Ort, Start, FVector(1500.f, 1500.f, 1000.f)));
-	const bool bZiel = bStart && Nav->ProjectPointToNavigation(Kern->GetActorLocation(), Ziel, FVector(1200.f, 1200.f, 1000.f));
-	if (bStart && !bZiel)
+	if (!Nav || !Kern)
 	{
-		static double Gemeldet = -100.0;
-		if (FPlatformTime::Seconds() - Gemeldet > 30.0)
+		return Weg;
+	}
+	// 0.9.5 (Mono-Tesla bis W50: 33 von 46 Festgefahrenen waren Spucker-Alphas mit 2,2 m Kapsel, verkeilt in einer Engstelle):
+	// gesucht wurde immer im Standardnetz, auch fuer grosse Gegner. Das Spiel hat eigene Netze je Groesse (FGAlphaNavMesh,
+	// FGCritterNavMesh) - jetzt das Netz zur Agentengroesse des Gegners; ohne vollen Weg dort zurueck aufs Standardnetz.
+	const ANavigationData* Eigenes = nullptr;
+	if (Wer && TDBalance::Wert(TEXT("Gegner.EigenesNetz"), 1.f) > 0.f)
+	{
+		Eigenes = Nav->GetNavDataForProps(Wer->GetNavAgentPropertiesRef(), Ort);
+		static TSet<FName> Gemeldet;
+		if (!Gemeldet.Contains(Wer->GetClass()->GetFName()))
 		{
-			Gemeldet = FPlatformTime::Seconds();
-			UE_LOG(LogFicsitTD, Warning, TEXT("Hirn: kein Navigationsnetz in 12 m um den Kern - Gegner finden keinen Weg zum Kern"));
+			Gemeldet.Add(Wer->GetClass()->GetFName());
+			const FNavAgentProperties& A = Wer->GetNavAgentPropertiesRef();
+			UE_LOG(LogFicsitTD, Log, TEXT("Hirn: %s (Agent Radius %.0f, Hoehe %.0f) sucht Wege im Netz %s"), *Wer->GetClass()->GetName(),
+				A.AgentRadius, A.AgentHeight, Eigenes ? *Eigenes->GetName() : TEXT("Standard"));
 		}
 	}
-	if (bStart && bZiel)
+	const ANavigationData* Standard = Nav->GetDefaultNavDataInstance(FNavigationSystem::DontCreate);
+	for (int32 Durchgang = 0; Durchgang < 2; ++Durchgang)
 	{
-		const UNavigationPath* Pfad = UNavigationSystemV1::FindPathToLocationSynchronously(World, Start.Location, Ziel.Location, nullptr, UTDNavFilter::StaticClass());
+		const ANavigationData* Daten = Durchgang == 0 ? (Eigenes ? Eigenes : Standard) : Standard;
+		if (Durchgang == 1 && (!Eigenes || Eigenes == Standard))
+		{
+			break;
+		}
+		FNavLocation Start, Ziel;
+		// 0.9.5 (Mono-Tesla bis W50, Verlauf der Nachzuegler): erst eng um den Gegner projizieren (Gegner.StartSuche, Standard
+		// 2 m seitlich, 3 m hoch), nur ohne Treffer im 15-m-Kasten - damit der Start nicht auf einem Absatz daneben landet
+		const float Eng = TDBalance::Wert(TEXT("Gegner.StartSuche"), 2.f) * 100.f;
+		const bool bStart = (Eng > 0.f && Nav->ProjectPointToNavigation(Ort, Start, FVector(Eng, Eng, 300.f), Daten))
+			|| Nav->ProjectPointToNavigation(Ort, Start, FVector(1500.f, 1500.f, 1000.f), Daten);
+		// Zielpunkt am Kern: seit 0.61 (Tiefbohrer, 8 x 8 m) liegt der naechste begehbare Boden erst 4,5-5 m von der Mitte -> 12 m suchen
+		const bool bZiel = bStart && Nav->ProjectPointToNavigation(Kern->GetActorLocation(), Ziel, FVector(1200.f, 1200.f, 1000.f), Daten);
+		if (bStart && !bZiel && Daten == Standard)
+		{
+			static double Gemeldet = -100.0;
+			if (FPlatformTime::Seconds() - Gemeldet > 30.0)
+			{
+				Gemeldet = FPlatformTime::Seconds();
+				UE_LOG(LogFicsitTD, Warning, TEXT("Hirn: kein Navigationsnetz in 12 m um den Kern - Gegner finden keinen Weg zum Kern"));
+			}
+		}
+		if (!bStart || !bZiel)
+		{
+			continue;
+		}
+		const UNavigationPath* Pfad = UNavigationSystemV1::FindPathToLocationSynchronously(World, Start.Location, Ziel.Location,
+			const_cast<ANavigationData*>(Daten), UTDNavFilter::StaticClass());
 		if (Pfad && Pfad->IsValid() && Pfad->PathPoints.Num() >= 2)
 		{
-			Weg = Pfad->PathPoints;
-			if (bVoll)
+			const bool bAmZiel = UTDWaveSubsystem::PfadAmZiel(Pfad, Ziel.Location);
+			if (bAmZiel || Durchgang == 1 || Daten == Standard || Weg.Num() == 0)
 			{
-				*bVoll = UTDWaveSubsystem::PfadAmZiel(Pfad, Ziel.Location);
+				Weg = Pfad->PathPoints;
+				if (bVoll)
+				{
+					*bVoll = bAmZiel;
+				}
+			}
+			if (bAmZiel)
+			{
+				break;
 			}
 		}
 	}
@@ -276,6 +314,29 @@ AFGCreature* UTDGegnerHirn::Spawne(UWorld* World, UClass* Klasse, const FVector&
 			Bewegung->AvoidanceConsiderationRadius = TDBalance::Wert(TEXT("Gegner.AusweichRadius"), 5.f) * 100.f;
 			Bewegung->AvoidanceWeight = 0.5f;
 			Bewegung->SetAvoidanceEnabled(true);
+		}
+	}
+	// 0.9.5 (Mono-Tesla bis W50: 37 von 50 Festgefahrenen waren Spucker-Alphas, 29 davon 40 s hinter einem anderen Alpha,
+	// geblockt von dessen BodyCollision): Zusatzkoerper neben der Kapsel ragen ueber den Kapselradius hinaus, mit dem Ausweichen
+	// und Netz rechnen - zwei grosse Gegner verkeilten sich. Fuer Wellengegner blockieren nur noch die Kapseln andere Pawns.
+	if (TDBalance::Wert(TEXT("Gegner.KoerperDurchlaessig"), 1.f) > 0.f)
+	{
+		int32 Teile = 0;
+		TArray<UPrimitiveComponent*> Koerper;
+		Kreatur->GetComponents<UPrimitiveComponent>(Koerper);
+		for (UPrimitiveComponent* Teil : Koerper)
+		{
+			if (Teil && Teil != Kreatur->GetCapsuleComponent() && Teil->GetCollisionResponseToChannel(ECC_Pawn) == ECR_Block)
+			{
+				Teil->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+				++Teile;
+			}
+		}
+		static TSet<FName> Gemeldet;
+		if (Teile > 0 && !Gemeldet.Contains(Klasse->GetFName()))
+		{
+			Gemeldet.Add(Klasse->GetFName());
+			UE_LOG(LogFicsitTD, Log, TEXT("Hirn: %s - %d Zusatzkoerper blockieren keine Pawns mehr"), *Klasse->GetName(), Teile);
 		}
 	}
 	// Tag zuerst: der Hook auf AFGCreature::SetEnabled (FicsitTDModule) verhindert damit das Abschalten durch das Spiel
@@ -638,7 +699,7 @@ void UTDGegnerHirn::NeuerWeg(const AFGCreature* Kreatur)
 {
 	mNeuWeg = 10.f;
 	bool bVoll = false;
-	TArray<FVector> Weg = BerechneWeg(GetWorld(), Kreatur->GetActorLocation(), mKern.Get(), &bVoll);
+	TArray<FVector> Weg = BerechneWeg(GetWorld(), Kreatur->GetActorLocation(), mKern.Get(), &bVoll, Kreatur);
 	if (Weg.Num() < 2)
 	{
 		return;   // kein Netz hier (kurz neben dem Weg?) - alten Weg behalten

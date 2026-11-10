@@ -82,7 +82,7 @@ public:
 	static AFGCreature* Spawne(UWorld* World, UClass* Klasse, const FVector& Ort, const TArray<FVector>& Weg, ATDDefenseCore* Kern, float LPFaktor);
 	/** Weg von Ort zum Kern ueber das Navigationsnetz, Wasser gesperrt; leer, wenn keiner gefunden.
 	 *  bVoll = false: der Weg endet vor dem Kern (versperrt, z. B. eingemauert) */
-	static TArray<FVector> BerechneWeg(UWorld* World, const FVector& Ort, const ATDDefenseCore* Kern, bool* bVoll = nullptr);
+	static TArray<FVector> BerechneWeg(UWorld* World, const FVector& Ort, const ATDDefenseCore* Kern, bool* bVoll = nullptr, const APawn* Wer = nullptr);
 	static UTDGegnerHirn* Von(const AActor* Kreatur);
 
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
