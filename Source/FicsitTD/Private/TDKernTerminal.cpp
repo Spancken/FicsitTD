@@ -451,6 +451,10 @@ void UTDKernTerminal::BaueOberflaeche()
 	UButton* MeldenKnopf = NeuerKnopf(TDT(TEXT("Fehler melden / Idee"), TEXT("Report bug / idea")), Knopftext);
 	MeldenKnopf->OnClicked.AddDynamic(this, &UTDKernTerminal::ReiterMelden);
 	Aktion(MeldenKnopf);
+	// 0.9.6 (Marius 12.11.): Unterstuetzen ueber Ko-fi - oeffnet nur den Browser, die Mod sendet nichts
+	UButton* KofiKnopf = NeuerKnopf(TDT(TEXT("Mod unterstützen (Ko-fi)"), TEXT("Support the mod (Ko-fi)")), Knopftext);
+	KofiKnopf->OnClicked.AddDynamic(this, &UTDKernTerminal::OeffneKofi);
+	Aktion(KofiKnopf);
 
 	mLaengeKnopf = NeuerKnopf(TDT(TEXT("Länge: Standard (50)"), TEXT("Length: Standard (50)")), Knopftext);
 	mLaengeText = Knopftext;
@@ -902,6 +906,16 @@ void UTDKernTerminal::ReiterPionier()
 void UTDKernTerminal::ReiterStatistik()
 {
 	ZeigeAnsicht(4);
+}
+
+void UTDKernTerminal::OeffneKofi()
+{
+	FString Fehler;
+	FPlatformProcess::LaunchURL(TEXT("https://ko-fi.com/mariusspancken"), nullptr, &Fehler);
+	UE_LOG(LogFicsitTD, Log, TEXT("Ko-fi: Browser geoeffnet%s"), Fehler.IsEmpty() ? TEXT("") : *(TEXT(", Fehler: ") + Fehler));
+	Melde(Fehler.IsEmpty()
+		? TDT(TEXT("Danke! Ko-fi öffnet sich in deinem Browser."), TEXT("Thank you! Ko-fi opens in your browser."))
+		: TDT(TEXT("Browser ließ sich nicht öffnen: ko-fi.com/mariusspancken"), TEXT("Could not open the browser: ko-fi.com/mariusspancken")));
 }
 
 void UTDKernTerminal::ReiterMelden()

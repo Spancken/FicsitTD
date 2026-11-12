@@ -157,6 +157,9 @@ private:
 	void MeldeArtIdee();
 	UFUNCTION()
 	void MeldungAbschicken();
+	/** 0.9.6: Ko-fi-Seite im Browser oeffnen */
+	UFUNCTION()
+	void OeffneKofi();
 	/** Gegenstands-Kachel wie im Spiel: hellgraues Feld mit Bild, unten rechts orange Mengen-Plakette (leer = keine) */
 	UWidget* NeueKachel(class UTexture2D* Bild, float Kante, const FString& Plakette);
 	/** Testphase (Balance Test.WellenSprung): zur in der Zeitleiste gewaehlten Welle springen */
