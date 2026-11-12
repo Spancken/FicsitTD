@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en" data-lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FICSIT Tower Defense – Player Guide</title>
+<meta name="description" content="Player guide for FICSIT Tower Defense, a Satisfactory mod: your factory makes the ammo, the turrets protect the factory.">
+<link rel="icon" href="img/modicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Noto+Sans:wght@400;600;700&display=swap">
+<style>
+:root {
+  --bg: #1b1b1b; --panel: #2e2e2e; --well: #161616; --head: #181818; --line: #444240;
+  --fg: #ebebeb; --muted: #a8a59f; --accent: #fa9549; --accent-ink: #1a1208; --good: #96d77d; --warn: #e8c15a;
+  --f-display: "Barlow Condensed", "Arial Narrow", sans-serif; --f-body: "Noto Sans", "Segoe UI", system-ui, sans-serif;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) {
+  --bg: #ecebe8; --panel: #ffffff; --well: #e3e1dc; --head: #1d1d1d; --line: #cfcbc4;
+  --fg: #23211d; --muted: #5f5b54; --accent: #c4661a; --accent-ink: #fff8f0; --good: #3f8a2a; --warn: #8a6608; color-scheme: light } }
+:root[data-theme="light"] {
+  --bg: #ecebe8; --panel: #ffffff; --well: #e3e1dc; --head: #1d1d1d; --line: #cfcbc4;
+  --fg: #23211d; --muted: #5f5b54; --accent: #c4661a; --accent-ink: #fff8f0; --good: #3f8a2a; --warn: #8a6608; color-scheme: light }
+* { box-sizing: border-box }
+html { scroll-padding-top: 64px }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.6 var(--f-body) }
+[data-lang="en"] .de, [data-lang="de"] .en { display: none !important }
+.wrap { max-width: 1100px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)) }
+h1, h2, h3 { font-family: var(--f-display); font-weight: 700; margin: 0; text-wrap: balance; letter-spacing: .01em }
+h2 { font-size: 2rem; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 12px }
+h3 { font-size: 1.3rem; margin-bottom: 6px }
+p { margin: 0 0 10px; max-width: 72ch }
+a { color: var(--accent) }
+ul, ol { margin: 0 0 10px; padding-left: 22px; max-width: 76ch }
+li { margin-bottom: 4px }
+code { background: var(--well); padding: 1px 6px; border-radius: 3px; font-size: .9em }
+header.top { background: #181818; color: #ebebeb; border-bottom: 3px solid #fa9549; position: sticky; top: 0; z-index: 5 }
+header.top .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; padding-block: 10px }
+.brand { display: flex; align-items: center; gap: 10px; font: 700 1.2rem/1 var(--f-display); letter-spacing: .12em; text-transform: uppercase; color: #ebebeb; text-decoration: none }
+.brand img { width: 32px; height: 32px }
+.brand b { color: #fa9549 }
+nav.toc { display: flex; flex-wrap: wrap; gap: 4px 14px; flex: 1 }
+nav.toc a { color: #c8c6c2; text-decoration: none; font: 600 .95rem/1 var(--f-display); text-transform: uppercase; letter-spacing: .06em }
+nav.toc a:hover { color: #fff }
+.lang { display: flex; border: 1px solid #555 }
+.lang button { background: transparent; color: #c8c6c2; border: 0; padding: 5px 10px; font: 600 .9rem/1 var(--f-display); cursor: pointer }
+.lang button[aria-pressed="true"] { background: #fa9549; color: #1a1208 }
+.hero { padding-block: 40px 28px }
+.hero h1 { font-size: clamp(2.2rem, 6vw, 3.8rem); line-height: 1; text-transform: uppercase }
+.hero h1 span { color: var(--accent) }
+.hero .lead { font-size: 1.12rem; margin-top: 14px; max-width: 66ch }
+.buttons { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px }
+.btn { display: inline-block; padding: 10px 16px; background: var(--panel); border: 1px solid var(--line); color: var(--fg); text-decoration: none; font: 700 1rem/1 var(--f-display); text-transform: uppercase; letter-spacing: .06em }
+.btn.main { background: var(--accent); color: var(--accent-ink); border-color: var(--accent) }
+.btn:hover { filter: brightness(1.1) }
+.shot { margin: 22px 0 0; border: 1px solid var(--line); background: var(--well) }
+.shot img { display: block; width: 100%; height: auto }
+.shot figcaption { padding: 8px 12px; font-size: .88rem; color: var(--muted) }
+section { padding-block: 34px; border-top: 1px solid var(--line) }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px }
+.card { background: var(--panel); border: 1px solid var(--line); padding: 14px; min-width: 0 }
+.card img { width: 88px; height: 88px; float: right; margin: -4px -4px 6px 10px }
+.card .tag { display: inline-block; font: 700 .72rem/1 var(--f-display); text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-bottom: 4px }
+.card ul { padding-left: 18px; font-size: .94rem }
+.steps { counter-reset: s; display: grid; gap: 10px; max-width: 820px }
+.steps div { background: var(--panel); border: 1px solid var(--line); padding: 12px 14px 12px 56px; position: relative; counter-increment: s }
+.steps div::before { content: counter(s); position: absolute; left: 0; top: 0; bottom: 0; width: 42px; display: grid; place-items: center; background: var(--accent); color: var(--accent-ink); font: 700 1.4rem var(--f-display) }
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 22px; align-items: start }
+.scroll { overflow-x: auto }
+table { border-collapse: collapse; width: 100%; font-size: .93rem; min-width: 520px }
+th { text-align: left; font: 700 .8rem/1.2 var(--f-display); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 7px 8px; border-bottom: 2px solid var(--line) }
+td { padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top }
+td.hi { color: var(--good); font-weight: 700 } td.lo { color: var(--warn); font-weight: 700 }
+.note { background: var(--well); border-left: 3px solid var(--accent); padding: 10px 14px; margin: 12px 0; max-width: 80ch }
+details { background: var(--panel); border: 1px solid var(--line); padding: 10px 14px; margin-bottom: 8px; max-width: 900px }
+summary { cursor: pointer; font-weight: 700 }
+footer { padding-block: 28px; color: var(--muted); font-size: .86rem; border-top: 1px solid var(--line) }
+@media (max-width: 800px) { .two { grid-template-columns: minmax(0, 1fr) } nav.toc { order: 3; flex-basis: 100% } }
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="#top"><img src="img/modicon.png" alt=""><span>FICSIT <b>TD</b></span></a>
+  <nav class="toc">
+    <a href="#start"><span class="en">Start</span><span class="de">Start</span></a>
+    <a href="#operation"><span class="en">Operation</span><span class="de">Einsatz</span></a>
+    <a href="#turrets"><span class="en">Turrets</span><span class="de">Türme</span></a>
+    <a href="#buildings"><span class="en">Buildings</span><span class="de">Bauten</span></a>
+    <a href="#enemies"><span class="en">Enemies</span><span class="de">Gegner</span></a>
+    <a href="#research"><span class="en">Research</span><span class="de">Forschung</span></a>
+    <a href="#faq">FAQ</a>
+  </nav>
+  <div class="lang" role="group" aria-label="Language"><button type="button" data-set="en" aria-pressed="true">EN</button><button type="button" data-set="de" aria-pressed="false">DE</button></div>
+</div></header>
+
+<main id="top">
+<div class="wrap hero">
+  <h1><span class="en">Your factory makes the ammo. <span>The turrets protect the factory.</span></span><span class="de">Die Fabrik baut die Munition. <span>Die Türme schützen die Fabrik.</span></span></h1>
+  <p class="lead en">FICSIT Tower Defense turns Satisfactory into a factory-fed tower defense. A FICSIT Defense Core stands in your start biome, and waves of native fauna attack it from up to three fronts. Every turret fires real ammunition from your own production lines, delivered by conveyor belt or pipe. Fifty waves lead you from simple iron rebar to plasma flames.</p>
+  <p class="lead de">FICSIT Tower Defense macht aus Satisfactory ein Tower Defense, das von deiner Fabrik lebt. Ein FICSIT-Abwehrkern steht in deinem Startbiom, und Wellen der heimischen Fauna greifen ihn aus bis zu drei Richtungen an. Jeder Turm verschießt echte Munition aus deinen eigenen Produktionsketten, per Förderband oder Rohr. Fünfzig Wellen führen vom einfachen Armierungsbolzen bis zur Plasmaflamme.</p>
+  <div class="buttons">
+    <a class="btn main" href="https://ficsit.app/mod/FicsitTD"><span class="en">Get it on ficsit.app</span><span class="de">Auf ficsit.app laden</span></a>
+    <a class="btn" href="https://github.com/Spancken/FicsitTD">GitHub</a>
+    <a class="btn" href="https://github.com/Spancken/FicsitTD/issues"><span class="en">Report a bug</span><span class="de">Fehler melden</span></a>
+    <a class="btn" href="KOFI_URL"><span class="en">Support on Ko-fi</span><span class="de">Unterstützen auf Ko-fi</span></a>
+  </div>
+  <figure class="shot"><img src="img/kernmenue.jpg" alt="Core Menu with shop, quotas and wave status" loading="lazy">
+    <figcaption><span class="en">The Core Menu (press E at the Defense Core): wave status, shop by category, your building quotas. Screenshot with German game language.</span><span class="de">Das Kern-Menü (E am Abwehrkern): Wellenstand, Laden nach Kategorien, deine Kontingente.</span></figcaption></figure>
+</div>
+
+<section id="start"><div class="wrap">
+  <h2><span class="en">Quick start</span><span class="de">Schnellstart</span></h2>
+  <div class="steps">
+    <div><span class="en"><b>Install</b> with the Satisfactory Mod Manager (SMM). Back up your saves first, this is an alpha.</span><span class="de"><b>Installieren</b> mit dem Satisfactory Mod Manager (SMM). Sichere vorher deine Spielstände, es ist eine Alpha.</span></div>
+    <div><span class="en">Start a <b>new game</b> and enable <b>“FICSIT Tower Defense”</b> in the session settings.</span><span class="de">Starte ein <b>neues Spiel</b> und schalte in den Sitzungseinstellungen <b>„FICSIT Tower Defense“</b> ein.</span></div>
+    <div><span class="en">After landing, the mod builds a platform with the <b>Defense Core</b> near your start, and ADA briefs you. You get a starter kit.</span><span class="de">Nach der Landung baut der Mod nahe deinem Start eine Plattform mit dem <b>Abwehrkern</b>, und ADA weist dich ein. Du bekommst ein Startkit.</span></div>
+    <div><span class="en">Build miners, smelters and constructors, then a <b>Bolt Turret</b>. Feed it rebar by conveyor and connect power.</span><span class="de">Baue Miner, Schmelzofen und Konstruktor, dann einen <b>Bolzenturm</b>. Versorge ihn per Band mit Armierungsbolzen und schließe Strom an.</span></div>
+    <div><span class="en">Press <b>E</b> at the Core and hit <b>“Start wave”</b> when you are ready. There is no timer.</span><span class="de">Drücke <b>E</b> am Kern und starte mit <b>„Welle starten“</b>, wenn du bereit bist. Es gibt keinen Zeitdruck.</span></div>
+  </div>
+</div></section>
+
+<section id="operation"><div class="wrap">
+  <h2><span class="en">How an operation works</span><span class="de">So läuft ein Einsatz</span></h2>
+  <div class="two">
+    <div>
+      <h3><span class="en">Build phase</span><span class="de">Aufbauphase</span></h3>
+      <ul class="en">
+        <li>No time pressure. You start the next wave yourself; the Core checks first that every turret has ammo and power.</li>
+        <li><b>Quotas</b>: production and defense buildings are limited per type. Logistics is free: belts, splitters, pipes, power lines, foundations.</li>
+        <li><b>FICSIT Coupons</b> from the Core buy more quota in the shop, plus gear and core repairs. Turret levels are bought in the turret window.</li>
+        <li>New technology only comes from the <b>MAM</b> (research points from waves). HUB milestones and blueprints are locked during an operation.</li>
+      </ul>
+      <ul class="de">
+        <li>Ohne Zeitdruck. Die nächste Welle startest du selbst; vorher prüft der Kern, ob jeder Turm Munition und Strom hat.</li>
+        <li><b>Kontingente</b>: Produktions- und Verteidigungsgebäude sind je Typ begrenzt. Logistik ist frei: Bänder, Splitter, Rohre, Stromleitungen, Fundamente.</li>
+        <li><b>FICSIT-Coupons</b> vom Kern kaufen im Laden mehr Kontingent, Ausrüstung und Kernreparatur. Turmlevel kauft man im Turmfenster.</li>
+        <li>Neue Technik gibt es nur im <b>MAM</b> (Forschungspunkte aus den Wellen). Meilensteine am HUB und Blaupausen sind im Einsatz gesperrt.</li>
+      </ul>
+    </div>
+    <div>
+      <h3><span class="en">Wave</span><span class="de">Welle</span></h3>
+      <ul class="en">
+        <li>Enemies walk real paths from 1–3 fronts to the Core. All defenses heal to 100 % when a wave starts.</li>
+        <li>Inside the defense zone you cannot place quota buildings while a wave runs. Logistics and power still work.</li>
+        <li>You cannot save during a wave. The mod saves before and after every wave.</li>
+        <li>After the wave: Coupons, research points, biomass and a small core repair. The report shows your best turrets and your own damage share.</li>
+      </ul>
+      <ul class="de">
+        <li>Gegner laufen echte Wege aus 1–3 Fronten zum Kern. Zu Beginn heilen alle Verteidigungsbauten auf 100 %.</li>
+        <li>Im Verteidigungsfeld kannst du während der Welle keine Kontingent-Gebäude setzen. Logistik und Strom gehen weiter.</li>
+        <li>In der Welle kann nicht gespeichert werden. Der Mod speichert vor und nach jeder Welle.</li>
+        <li>Nach der Welle: Coupons, Forschungspunkte, Biomasse und eine kleine Kernreparatur. Der Bericht zeigt die besten Türme und deinen eigenen Schadensanteil.</li>
+      </ul>
+    </div>
+  </div>
+  <h3 style="margin-top:14px"><span class="en">Victory and defeat</span><span class="de">Sieg und Niederlage</span></h3>
+  <p class="en">An operation has <b>50 waves</b> in five phases, with a boss every tenth wave. Losing never deletes your factory. If the Core falls, the Core Menu offers <b>Retry wave</b> (loads the save from the start of that wave), <b>Restart</b> (wave 1 at the same site, factory stays) or <b>End operation</b> (no more quotas, the Core can be dismantled).</p>
+  <p class="de">Ein Einsatz hat <b>50 Wellen</b> in fünf Phasen, jede zehnte Welle mit Boss. Eine Niederlage löscht nie deine Fabrik. Fällt der Kern, bietet das Kern-Menü <b>Welle wiederholen</b> (lädt den Stand vom Start dieser Welle), <b>Neu starten</b> (Welle 1 am selben Ort, die Fabrik bleibt) oder <b>Einsatz beenden</b> (keine Kontingente mehr, der Kern lässt sich abreißen).</p>
+  <figure class="shot"><img src="img/niederlage.jpg" alt="Core Menu after a defeat with Retry, Restart and End buttons" loading="lazy">
+    <figcaption><span class="en">After a defeat: retry the wave, restart or end the operation.</span><span class="de">Nach einer Niederlage: Welle wiederholen, neu starten oder Einsatz beenden.</span></figcaption></figure>
+</div></section>
+
+<section id="turrets"><div class="wrap">
+  <h2><span class="en">Turrets</span><span class="de">Türme</span></h2>
+  <p class="en">Turrets are machines: you pick the ammo recipe in the machine window, and each production cycle is one action (shot, magazine, discharge or one second of flame). Every line has an ammo ladder: each step needs one more ingredient and does more. Levels 1–5 are bought with Coupons in the turret window and are visible on the model; level 5 unlocks a master ability.</p>
+  <p class="de">Türme sind Maschinen: Im Maschinenfenster wählst du das Munitionsrezept, und jeder Produktionszyklus ist eine Aktion (Schuss, Magazin, Entladung oder eine Sekunde Flamme). Jede Linie hat eine Munitionsleiter: Jede Stufe braucht eine Zutat mehr und kann mehr. Level 1–5 kaufst du mit Coupons im Turmfenster, sie sind am Modell zu sehen; Level 5 schaltet eine Meisterfähigkeit frei.</p>
+  <div class="grid">
+    <div class="card"><img src="img/BoltTurret.png" alt=""><span class="tag">Piercing</span><h3><span class="en">Bolt Turret</span><span class="de">Bolzenturm</span></h3>
+      <ul class="en"><li>Rebar bolt (40) → piercing bolt (hits up to 2 more)</li><li>Branch: shrapnel bolt (splits) <i>or</i> stun bolt (electric, 3 s stun)</li><li>Late: explosive bolt</li><li>Master: twin barrel</li></ul>
+      <ul class="de"><li>Armierungsbolzen (40) → Durchschlagbolzen (trifft bis zu 2 weitere)</li><li>Gabelung: Streubolzen (zerfällt) <i>oder</i> Schockbolzen (Strom, 3 s betäubt)</li><li>Spät: Explosivbolzen</li><li>Meister: Doppellauf</li></ul></div>
+    <div class="card"><img src="img/GunTurret.png" alt=""><span class="tag">Bullet</span><h3><span class="en">Rifle Turret</span><span class="de">Gewehrturm</span></h3>
+      <ul class="en"><li>Rifle ammo (12 per shot, continuous fire)</li><li>Branch: homing <i>or</i> armor-piercing</li><li>Incendiary ammo → turbo ammo (double fire rate)</li><li>Master: belt drum, no reloading</li></ul>
+      <ul class="de"><li>Gewehrmunition (12 je Schuss, Dauerfeuer)</li><li>Gabelung: Zielsuch <i>oder</i> panzerbrechend</li><li>Brandmunition → Turbomunition (doppelte Feuerrate)</li><li>Meister: Gurttrommel, ohne Nachladen</li></ul></div>
+    <div class="card"><img src="img/NobeliskLauncher.png" alt=""><span class="tag">Explosion</span><h3><span class="en">Nobelisk Launcher</span><span class="de">Nobelisk-Werfer</span></h3>
+      <ul class="en"><li>Nobelisk (150, area damage, lobbed)</li><li>Branch: gas cloud (poison) <i>or</i> pulse (2 s stun)</li><li>Late: cluster nobelisk</li><li>Master: salvo of three</li></ul>
+      <ul class="de"><li>Nobelisk (150, Flächenschaden, im Bogen)</li><li>Gabelung: Gaswolke (Gift) <i>oder</i> Puls (2 s betäubt)</li><li>Spät: Streu-Nobelisk</li><li>Meister: Salve aus drei</li></ul></div>
+    <div class="card"><img src="img/TeslaCoil.png" alt=""><span class="tag">Electric</span><h3><span class="en">Tesla Coil</span><span class="de">Teslaspule</span></h3>
+      <ul class="en"><li>No ammo, needs power: 125 MW while charging</li><li>Chain lightning to 3 more enemies</li><li>Branch: bigger chain <i>or</i> overload (×2.5 on one target)</li><li>Battery bank, high voltage; master: voltage field</li></ul>
+      <ul class="de"><li>Keine Munition, braucht Strom: 125 MW beim Aufladen</li><li>Kettenblitz auf 3 weitere Gegner</li><li>Gabelung: längere Kette <i>oder</i> Überlast (×2,5 auf ein Ziel)</li><li>Akkubank, Hochspannung; Meister: Spannungsfeld</li></ul></div>
+    <div class="card"><img src="img/FlameTurret.png" alt=""><span class="tag">Fire</span><h3><span class="en">Flamethrower</span><span class="de">Flammenwerfer</span></h3>
+      <ul class="en"><li>Fuel by pipe: 80 damage/s in a cone, afterburn</li><li>Turbofuel 120 → rocket fuel 140 → ionized fuel 160 (electric)</li><li>Afterburn stacks up to three times</li><li>Master: fire carpet</li></ul>
+      <ul class="de"><li>Treibstoff per Rohr: 80 Schaden/s im Kegel, Nachbrennen</li><li>Turbotreibstoff 120 → Raketentreibstoff 140 → ionisierter Treibstoff 160 (Strom)</li><li>Nachbrennen stapelt bis dreifach</li><li>Meister: Feuerteppich</li></ul></div>
+    <div class="card"><img src="img/FlakTurret.png" alt=""><span class="tag">Air</span><h3><span class="en">Sky Tower and Singularity</span><span class="de">Himmelsturm und Singularität</span></h3>
+      <p class="en" style="font-size:.94rem">Late turrets: the Sky Tower fires flak at flying enemies (flyers are still in development). The Singularity Launcher holds and crushes groups in overtime waves.</p>
+      <p class="de" style="font-size:.94rem">Späte Türme: Der Himmelsturm schießt Flak auf fliegende Gegner (die Flieger sind noch in Arbeit). Der Singularitätswerfer hält Gruppen fest und zerdrückt sie in den Überstunden.</p></div>
+  </div>
+  <h3 style="margin-top:22px"><span class="en">Combos</span><span class="de">Kombos</span></h3>
+  <div class="scroll"><table>
+    <thead><tr><th><span class="en">Combo</span><span class="de">Kombo</span></th><th><span class="en">Effect</span><span class="de">Wirkung</span></th></tr></thead>
+    <tbody class="en">
+      <tr><td>Lightning Rod</td><td>Tesla lightning prefers enemies with a stuck bolt.</td></tr>
+      <tr><td>Heat Crack</td><td>Burning enemies lose their armor against bullets and bolts.</td></tr>
+      <tr><td>Deflagration</td><td>A flame ignites the gas cloud of a gas nobelisk.</td></tr>
+      <tr><td>Oil Fire</td><td>Fire ignites a wet oil slick field: 5 s burning, walkers keep burning.</td></tr>
+      <tr><td>Chokepoint</td><td>Bolts pierce one extra enemy near a gate.</td></tr>
+      <tr><td>Rally Point</td><td>Enemies held by a lure fire take 25 % more explosion damage.</td></tr>
+      <tr><td>Conductor</td><td>An electric fence passes Tesla discharges to up to 3 enemies touching it.</td></tr>
+    </tbody>
+    <tbody class="de">
+      <tr><td>Blitzableiter</td><td>Der Tesla-Blitz springt bevorzugt auf Gegner mit steckendem Bolzen.</td></tr>
+      <tr><td>Hitzeriss</td><td>Brennende Gegner verlieren ihre Panzerung gegen Kugeln und Bolzen.</td></tr>
+      <tr><td>Verpuffung</td><td>Eine Flamme entzündet die Gaswolke eines Gas-Nobelisken.</td></tr>
+      <tr><td>Ölbrand</td><td>Feuer entzündet ein nasses Ölschlick-Feld: 5 s Brand, wer hindurchläuft, brennt weiter.</td></tr>
+      <tr><td>Engstelle</td><td>Am Tor durchschlagen Bolzen einen Gegner mehr.</td></tr>
+      <tr><td>Sammelpunkt</td><td>Vom Lockfeuer festgehaltene Gegner nehmen 25 % mehr Explosionsschaden.</td></tr>
+      <tr><td>Leiter</td><td>Ein Elektrozaun leitet Tesla-Entladungen an bis zu 3 Gegner, die ihn berühren.</td></tr>
+    </tbody>
+  </table></div>
+  <div class="note"><span class="en">Line of sight: machines and walls block turret sight, foundations and logistics do not. Plan your factory behind the turrets.</span><span class="de">Sichtlinie: Maschinen und Mauern nehmen den Türmen die Sicht, Fundamente und Logistik nicht. Plane die Fabrik hinter den Türmen.</span></div>
+</div></section>
+
+<section id="buildings"><div class="wrap">
+  <h2><span class="en">Defensive buildings</span><span class="de">Verteidigungsbauten</span></h2>
+  <div class="grid">
+    <div class="card"><img src="img/DefenseWall.png" alt=""><h3><span class="en">Walls and Gate</span><span class="de">Mauern und Tor</span></h3><p class="en">Enemies attack what blocks their path. The gate lets you and vehicles through; without power it stays open during a wave.</p><p class="de">Gegner greifen an, was ihnen den Weg versperrt. Das Tor lässt dich und Fahrzeuge durch; ohne Strom bleibt es in der Welle offen.</p></div>
+    <div class="card"><img src="img/LureBeacon.png" alt=""><h3><span class="en">Lure Fire</span><span class="de">Lockfeuer</span></h3><p class="en">Burns coal and pulls all enemies within 40 m for 15 s, then rests 30 s. Steer waves onto your turret groups.</p><p class="de">Verbrennt Kohle und zieht 15 s lang alle Gegner in 40 m an, dann 30 s Pause. Lenkt Wellen auf deine Turmgruppen.</p></div>
+    <div class="card"><img src="img/SlickPlate.png" alt=""><h3><span class="en">Oil Slick Field</span><span class="de">Ölschlick-Feld</span></h3><p class="en">8 × 8 m plate fed with heavy oil residue: enemies on it walk 35 % slower. Fire turns it into a trap.</p><p class="de">8 × 8 m Platte mit Schwerölrückstand: Gegner darauf laufen 35 % langsamer. Feuer macht daraus eine Falle.</p></div>
+    <div class="card"><img src="img/ConductorWall.png" alt=""><h3><span class="en">Electric Fence</span><span class="de">Elektrozaun</span></h3><p class="en">Blocks like a wall; attackers get shocked and stunned. Works with the Tesla Coil.</p><p class="de">Blockt wie eine Mauer; wer angreift, bekommt einen Schlag und ist betäubt. Arbeitet mit der Teslaspule.</p></div>
+    <div class="card"><img src="img/RadioMast.png" alt=""><h3><span class="en">Radio Mast</span><span class="de">Funkmast</span></h3><p class="en">+10 % range for turrets within 30 m, shows nearby resources and marks every front with enemy types 30 s before a wave.</p><p class="de">+10 % Reichweite für Türme in 30 m, zeigt Rohstoffe in der Nähe und markiert 30 s vor der Welle jede Front mit den Gegnerarten.</p></div>
+    <div class="card"><img src="img/ShieldGenerator.png" alt=""><h3><span class="en">Shield Generator</span><span class="de">Schildgenerator</span></h3><p class="en">A 20 m dome absorbs damage on buildings (not the Core) and recharges.</p><p class="de">Eine Kuppel mit 20 m schluckt Schaden an Bauten (nicht am Kern) und lädt sich wieder auf.</p></div>
+    <div class="card"><img src="img/FieldProjector.png" alt=""><h3><span class="en">Jammer Projector</span><span class="de">Störfeld-Projektor</span></h3><p class="en">Slows all enemies within 15 m to 60 % speed. Late game, needs reanimated SAM.</p><p class="de">Bremst alle Gegner in 15 m auf 60 % Tempo. Spätes Spiel, braucht reanimiertes SAM.</p></div>
+    <div class="card"><img src="img/DronePort.png" alt=""><h3><span class="en">Drone Pad</span><span class="de">Drohnenplatz</span></h3><p class="en">Repair drones <i>or</i> combat drones, 2–4 drones by level. They fly to damaged buildings or to enemies within 40 m.</p><p class="de">Reparaturdrohnen <i>oder</i> Kampfdrohnen, 2–4 Drohnen je nach Level. Sie fliegen zu beschädigten Bauten oder zu Gegnern in 40 m.</p></div>
+  </div>
+</div></section>
+
+<section id="enemies"><div class="wrap">
+  <h2><span class="en">Enemies and phases</span><span class="de">Gegner und Phasen</span></h2>
+  <div class="scroll"><table>
+    <thead><tr><th><span class="en">Phase</span><span class="de">Phase</span></th><th><span class="en">Waves</span><span class="de">Wellen</span></th><th><span class="en">New enemies</span><span class="de">Neue Gegner</span></th></tr></thead>
+    <tbody class="en">
+      <tr><td>1 Herd</td><td>1–10</td><td>Hog, Alpha Hog (5), Cliff Hog (7)</td></tr>
+      <tr><td>2 Swarm</td><td>11–20</td><td>Small Stinger (13), Stinger (15)</td></tr>
+      <tr><td>3 Forest</td><td>21–30</td><td>Spitter (21), Red Spitter (25), Alpha Spitter (28)</td></tr>
+      <tr><td>4 Desert and Water</td><td>31–40</td><td>Desert and Water Spitters, Elite Stinger (38)</td></tr>
+      <tr><td>5 Finale</td><td>41–50</td><td>Nuclear Hog (41), Johnny (46)</td></tr>
+    </tbody>
+    <tbody class="de">
+      <tr><td>1 Herde</td><td>1–10</td><td>Hog, Alpha-Hog (5), Klippen-Hog (7)</td></tr>
+      <tr><td>2 Schwarm</td><td>11–20</td><td>Kleiner Stinger (13), Stinger (15)</td></tr>
+      <tr><td>3 Wald</td><td>21–30</td><td>Spucker (21), Roter Spucker (25), Alpha-Spucker (28)</td></tr>
+      <tr><td>4 Wüste und Wasser</td><td>31–40</td><td>Wüsten- und Wasserspucker, Elite-Stinger (38)</td></tr>
+      <tr><td>5 Finale</td><td>41–50</td><td>Nuklear-Hog (41), Johnny (46)</td></tr>
+    </tbody>
+  </table></div>
+  <p style="margin-top:12px" class="en">Every tenth wave is a boss fight. Elites have 2.5× health and are tinted. Wave enemies never attack the player, only your defenses and the Core.</p>
+  <p style="margin-top:12px" class="de">Jede zehnte Welle ist ein Bosskampf. Eliten haben 2,5-fache Lebenspunkte und sind eingefärbt. Wellengegner greifen nie den Spieler an, nur deine Verteidigung und den Kern.</p>
+  <h3 style="margin-top:18px"><span class="en">Resistances (damage factor)</span><span class="de">Resistenzen (Schadensfaktor)</span></h3>
+  <div class="scroll"><table>
+    <thead><tr><th></th><th><span class="en">Piercing</span><span class="de">Durchschlag</span></th><th><span class="en">Bullet</span><span class="de">Kugel</span></th><th><span class="en">Fire</span><span class="de">Feuer</span></th><th><span class="en">Electric</span><span class="de">Strom</span></th><th>Explosion</th><th><span class="en">Poison</span><span class="de">Gift</span></th></tr></thead>
+    <tbody>
+      <tr><td>Hog</td><td>1</td><td class="lo">0.75</td><td>1</td><td>1</td><td class="hi">1.25</td><td>1</td></tr>
+      <tr><td>Stinger</td><td class="lo">0.8</td><td class="hi">1.25</td><td class="hi">1.2</td><td class="hi">1.2</td><td class="lo">0.85</td><td>1</td></tr>
+      <tr><td><span class="en">Spitter</span><span class="de">Spucker</span></td><td>1</td><td>1</td><td class="hi">1.3</td><td class="lo">0.85</td><td>1</td><td>1</td></tr>
+      <tr><td><span class="en">Desert Spitter</span><span class="de">Wüstenspucker</span></td><td>1</td><td class="hi">1.2</td><td class="lo">0.75</td><td>1</td><td>1</td><td>1</td></tr>
+      <tr><td><span class="en">Water Spitter</span><span class="de">Wasserspucker</span></td><td>1</td><td>1</td><td class="lo">0.8</td><td class="hi">1.3</td><td>1</td><td>1</td></tr>
+    </tbody>
+  </table></div>
+</div></section>
+
+<section id="research"><div class="wrap">
+  <h2><span class="en">Research, gear and the Pioneer</span><span class="de">Forschung, Ausrüstung und Pionier</span></h2>
+  <div class="two">
+    <div>
+      <h3>MAM</h3>
+      <ul class="en">
+        <li>Four trees: <b>Industry</b> (machines, steel, oil, belts), <b>Ballistics</b> (bolt, rifle, nobelisk), <b>Elemental</b> (tesla, flame), <b>Fortress</b> (core, walls, doctrines, turret fabrication).</li>
+        <li>Paid only with research points (FICSIT Combat Data) from waves. Nodes unlock from a certain wave.</li>
+        <li><b>Branches</b>: only one side per operation. A red X marks the side you can no longer research.</li>
+        <li><b>Doctrine</b>: pick one main turret line for more damage and cheaper levels.</li>
+      </ul>
+      <ul class="de">
+        <li>Vier Bäume: <b>Industrie</b> (Maschinen, Stahl, Öl, Bänder), <b>Ballistik</b> (Bolzen, Gewehr, Nobelisk), <b>Elementar</b> (Tesla, Flamme), <b>Festung</b> (Kern, Mauern, Doktrinen, Turmfertigung).</li>
+        <li>Bezahlt nur mit Forschungspunkten (FICSIT-Kampfdaten) aus den Wellen. Knoten werden ab einer bestimmten Welle frei.</li>
+        <li><b>Gabelungen</b>: nur eine Seite je Einsatz. Ein rotes X markiert die Seite, die du nicht mehr erforschen kannst.</li>
+        <li><b>Doktrin</b>: eine Hauptlinie wählen, mehr Schaden und billigere Level.</li>
+      </ul>
+    </div>
+    <div>
+      <h3><span class="en">Shop gear and the Pioneer</span><span class="de">Ausrüstung und Pionier</span></h3>
+      <ul class="en">
+        <li>The shop sells inventory slots, hand slots, Rebar Gun, Blade Runners, Rifle, Nobelisk Detonator and Core repairs.</li>
+        <li>Your hand weapons use the same ammo values as the turrets and grow with the waves. Resistances apply.</li>
+        <li>The wave report shows your damage and share: “You: 1,240 damage (11 %), 9 kills”.</li>
+        <li>The Pioneer tab in the Core Menu shows rank, XP and talents. The talent tree is being reworked.</li>
+      </ul>
+      <ul class="de">
+        <li>Der Laden verkauft Inventarplätze, Handplätze, Armierpistole, Klingenläufer, Gewehr, Nobelisken-Zünder und Kernreparatur.</li>
+        <li>Deine Handwaffen nutzen dieselben Munitionswerte wie die Türme und wachsen mit den Wellen. Resistenzen gelten.</li>
+        <li>Der Wellenbericht zeigt deinen Schaden und Anteil: „Du: 1240 Schaden (11 %), 9 Abschüsse“.</li>
+        <li>Der Reiter Pionier im Kern-Menü zeigt Rang, XP und Talente. Der Talentbaum wird gerade überarbeitet.</li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<section id="faq"><div class="wrap">
+  <h2>FAQ</h2>
+  <details><summary><span class="en">Does it work with my existing save?</span><span class="de">Geht es mit meinem bestehenden Spielstand?</span></summary><p class="en">The operation is meant for a new game with the session setting. Turrets and research also appear in existing worlds, but quotas and waves start only through the Core.</p><p class="de">Der Einsatz ist für ein neues Spiel mit dem Sitzungsschalter gedacht. Türme und Forschung erscheinen auch in bestehenden Welten, Kontingente und Wellen starten aber nur über den Kern.</p></details>
+  <details><summary><span class="en">Multiplayer or dedicated server?</span><span class="de">Mehrspieler oder dedizierter Server?</span></summary><p class="en">Not supported yet. Single-player only.</p><p class="de">Noch nicht unterstützt. Nur Einzelspieler.</p></details>
+  <details><summary><span class="en">Enemies get stuck on terrain</span><span class="de">Gegner bleiben im Gelände hängen</span></summary><p class="en">The mod blocks the obstacle for the following enemies and moves stuck ones after a while. Please report the spot with your log file.</p><p class="de">Der Mod sperrt das Hindernis für die folgenden Gegner und versetzt hängende nach einer Weile. Bitte melde die Stelle mit deiner Logdatei.</p></details>
+  <details><summary><span class="en">How do I report a bug or suggest an idea?</span><span class="de">Wie melde ich einen Fehler oder schlage etwas vor?</span></summary><p class="en">In the Core Menu, press <b>Report bug / idea</b>, choose bug or suggestion and describe it. The mod opens a prefilled GitHub issue in your browser (version, wave and language are added) and a folder with your log and a screenshot to drag into the issue. The mod itself sends nothing.</p><p class="de">Im Kern-Menü auf <b>Fehler melden / Idee</b> drücken, Fehler oder Vorschlag wählen und beschreiben. Die Mod öffnet im Browser ein ausgefülltes GitHub-Issue (Version, Welle und Sprache stehen schon drin) und einen Ordner mit Log und Bildschirmfoto zum Hineinziehen. Die Mod selbst sendet nichts.</p></details>
+  <details><summary><span class="en">Where is the log?</span><span class="de">Wo liegt das Log?</span></summary><p><code>%LOCALAPPDATA%\FactoryGame\Saved\Logs\FactoryGame.log</code></p></details>
+  <details><summary><span class="en">Which languages?</span><span class="de">Welche Sprachen?</span></summary><p class="en">English and German, following the game language.</p><p class="de">Englisch und Deutsch, je nach Spielsprache.</p></details>
+  <div class="note"><span class="en"><b>Status: alpha (0.9.6).</b> Balance is work in progress. Feedback and bug reports are very welcome on GitHub.</span><span class="de"><b>Stand: Alpha (0.9.6).</b> Die Balance ist in Arbeit. Rückmeldungen und Fehlerberichte sind auf GitHub sehr willkommen.</span></div>
+</div></section>
+</main>
+
+<footer><div class="wrap">
+  <p class="en">FICSIT Tower Defense is a fan-made mod and not affiliated with Coffee Stain Studios. Satisfactory is a trademark of Coffee Stain Studios. Screenshots are taken in the game; turret icons are renders of the mod's own models. This mod and guide were developed with substantial help of AI (Anthropic Claude) under the direction of the author.</p>
+  <p class="de">FICSIT Tower Defense ist eine Fan-Mod und gehört nicht zu Coffee Stain Studios. Satisfactory ist eine Marke von Coffee Stain Studios. Die Screenshots sind im Spiel aufgenommen; die Turm-Icons sind Renderings der eigenen Modelle der Mod. Mod und Handbuch sind mit viel Hilfe von KI (Anthropic Claude) unter der Leitung des Autors entstanden.</p>
+</div></footer>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  function setze(l) {
+    root.setAttribute('data-lang', l); root.lang = l;
+    document.querySelectorAll('.lang button').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.set === l ? 'true' : 'false'); });
+    try { localStorage.setItem('ficsittd-lang', l); } catch (e) {}
+  }
+  var start = 'en';
+  try { start = localStorage.getItem('ficsittd-lang') || ((navigator.language || '').toLowerCase().indexOf('de') === 0 ? 'de' : 'en'); } catch (e) {}
+  setze(start);
+  document.querySelectorAll('.lang button').forEach(function (b) { b.addEventListener('click', function () { setze(b.dataset.set); }); });
+})();
+</script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-﻿#include "TDAutotest.h"
+#include "TDAutotest.h"
 #include "FicsitTDModule.h"
 #include "TDDefenseCore.h"
 #include "TDTurretBase.h"
@@ -28,6 +28,10 @@
 #include "HAL/PlatformMisc.h"
 #include "Interfaces/IPluginManager.h"
 #include "Kismet/GameplayStatics.h"
+#include "GameFramework/DamageType.h"
+#include "TDPionier.h"
+#include "TDKernTerminal.h"
+#include "UObject/UObjectIterator.h"
 #include "Misc/FileHelper.h"
 #include "Misc/OutputDevice.h"
 #include "Misc/OutputDeviceRedirector.h"
@@ -746,6 +750,38 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		mLadenImPlan = true;
 		LadeSpielstand(World, Wort);
 		return false;   // weiter geht es nach dem Laden (Phase Laedt setzt den naechsten Schritt)
+	}
+	if (S->HasField(TEXT("kernansicht")))
+	{
+		// 0.9.6: Ansicht im offenen Kern-Menue umschalten (5 = Fehler melden / Idee), fuer Fotos
+		const int32 Ansicht = static_cast<int32>(S->GetNumberField(TEXT("kernansicht")));
+		bool bOffen = false;
+		for (TObjectIterator<UTDKernTerminal> It; It; ++It)
+		{
+			if (It->GetWorld() == World && It->GetCachedWidget().IsValid())
+			{
+				It->ZeigeAnsicht(Ansicht);
+				bOffen = true;
+			}
+		}
+		Ergebnis(TEXT("Kern-Menue"), FString::Printf(TEXT("Ansicht %d"), Ansicht), bOffen, bOffen ? TEXT("umgeschaltet") : TEXT("Kern-Menue nicht offen"));
+		return true;
+	}
+	if (S->HasField(TEXT("spielertreffer")))
+	{
+		// 0.9.6 P0: Spielertreffer auf den ersten lebenden Wellengegner (Ausloeser = Spieler) - prueft die Zaehlung des Spielerschadens
+		const float Menge = S->GetNumberField(TEXT("spielertreffer"));
+		APlayerController* PC = World->GetFirstPlayerController();
+		const UTDWaveSubsystem* Waves = World->GetSubsystem<UTDWaveSubsystem>();
+		const TArray<AFGCreature*> Lebend = Waves ? Waves->GetLivingWaveCreatures() : TArray<AFGCreature*>();
+		if (PC && PC->GetPawn() && Lebend.Num() > 0)
+		{
+			UGameplayStatics::ApplyDamage(Lebend[0], Menge, PC, PC->GetPawn(), UDamageType::StaticClass());
+		}
+		const UTDPionier* Pionier = UTDPionier::Get(World);
+		Ergebnis(TEXT("Spieler"), FString::Printf(TEXT("Treffer %.0f"), Menge), Pionier && Pionier->GetWellenBilanz().Treffer > 0,
+			Pionier ? FString::Printf(TEXT("Wellenbilanz %.0f Schaden, %d Treffer"), Pionier->GetWellenBilanz().Schaden, Pionier->GetWellenBilanz().Treffer) : TEXT("kein Pionier"));
+		return true;
 	}
 	if (S->HasField(TEXT("kernfaellt")))
 	{

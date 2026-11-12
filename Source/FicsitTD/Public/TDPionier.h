@@ -57,7 +57,25 @@ public:
 	/** Aus den Schadens-Hooks: Faktor auf den Schaden. Merkt Spielertreffer (XP) und loest die Abschluss-Talente aus. */
 	static float Schadensfaktor(AActor* Getroffen, AController* Ausloeser, AActor* Verursacher, float Menge, bool bWellenKreatur, bool bVonKreatur);
 
+	/** 0.9.6 P0 (Analyse-Spieler-und-Pionier 12.11.): was der Spieler in der laufenden Welle bewirkt hat */
+	struct FSpielerBilanz
+	{
+		float Schaden = 0.f;
+		int32 Treffer = 0;
+		int32 Abschuesse = 0;
+		int32 Eliten = 0;
+		int32 Bosse = 0;
+		int32 XP = 0;
+	};
+	const FSpielerBilanz& GetWellenBilanz() const { return mBilanz; }
+	/** Zeile fuer die Wellenmeldung ("Du: 1240 Schaden (11 %), 9 Abschuesse ..."); leer, wenn der Spieler nichts getroffen hat */
+	FString WellenZeile(float TurmSchaden) const;
+
 private:
+	/** 0.9.6 P1: Handwaffen nutzen die Munitionswerte der Tuerme - Faktor = Tabellenwert x HandFaktor x Wellenzuwachs x Resistenz / Spielwert */
+	float HandFaktor(int32 W, const AActor* Verursacher, const AActor* Getroffen, FString& OutMunition, float& OutSkalierung, float& OutResistenz) const;
+	FSpielerBilanz mBilanz;
+	TSet<FString> mGemeldeteTreffer;
 	ATDDefenseCore* Kern() const;
 	void GibXP(int32 XP, const FString& Grund);
 	void Melde(const FString& Text) const;

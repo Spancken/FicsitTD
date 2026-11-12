@@ -1,0 +1,20 @@
+{
+  "Name": "Melden",
+  "_Hinweis": "0.9.6 (Marius 12.11.): Ansicht 'Fehler melden / Idee' im Kern-Menue fotografieren. Abgeschickt wird im Test nichts (wuerde den Browser oeffnen).",
+  "Spielstand": "Autotest_Marius_W06",
+  "Quelle": "Marius_W06_Plateau.sav",
+  "ErweiterteEinstellungen": true,
+  "WarteNachLaden": 25,
+  "MaxMinuten": 6,
+  "Schritte": [
+    { "pruefe": "Version", "soll": "{VERSION}", "text": "richtige Mod-Version geladen" },
+    { "oeffne": "Kern" },
+    { "warte": 2 },
+    { "kernansicht": 5 },
+    { "warte": 2 },
+    { "foto": "Melden" },
+    { "kernansicht": 0 },
+    { "schliesse": true },
+    { "pruefe": "KeineWarnungen", "text": "keine Warnungen oder Fehler des Mods im Log" }
+  ]
+}

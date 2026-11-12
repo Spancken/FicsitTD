@@ -43,6 +43,14 @@
 #include "UObject/UObjectIterator.h"
 #include "Components/WidgetSwitcher.h"
 #include "Kismet/GameplayStatics.h"
+#include "Components/MultiLineEditableTextBox.h"
+#include "Interfaces/IPluginManager.h"
+#include "UnrealClient.h"
+#include "HAL/FileManager.h"
+#include "HAL/PlatformProcess.h"
+#include "Misc/App.h"
+#include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
 
 /** Pausenmenue offen: eigene Anzeigen ausblenden (Marius 04.11.2026: Wellenanzeige lag ueber dem Pausenmenue) */
 static void TDPauseAusblenden(UUserWidget* W)
@@ -440,6 +448,10 @@ void UTDKernTerminal::BaueOberflaeche()
 	FreiKnopf->OnClicked.AddDynamic(this, &UTDKernTerminal::FreiUmschalten);
 	Aktion(FreiKnopf);
 
+	UButton* MeldenKnopf = NeuerKnopf(TDT(TEXT("Fehler melden / Idee"), TEXT("Report bug / idea")), Knopftext);
+	MeldenKnopf->OnClicked.AddDynamic(this, &UTDKernTerminal::ReiterMelden);
+	Aktion(MeldenKnopf);
+
 	mLaengeKnopf = NeuerKnopf(TDT(TEXT("Länge: Standard (50)"), TEXT("Length: Standard (50)")), Knopftext);
 	mLaengeText = Knopftext;
 	mLaengeKnopf->OnClicked.AddDynamic(this, &UTDKernTerminal::LaengeWechseln);
@@ -550,6 +562,7 @@ void UTDKernTerminal::BaueOberflaeche()
 	Reiterflaeche(mForschung, mForschungInhalt);
 	Reiterflaeche(mPionier, mPionierInhalt);
 	Reiterflaeche(mStatistik, mStatistikInhalt);
+	Reiterflaeche(mMelden, mMeldenInhalt);
 
 	UBorder* Meldefeld = NeuesFeld(TDUI::Feld, FMargin(14.f, 8.f));
 	mMeldung = NeuerText(TEXT(" "), 13, TDUI::Gut);
@@ -891,6 +904,149 @@ void UTDKernTerminal::ReiterStatistik()
 	ZeigeAnsicht(4);
 }
 
+void UTDKernTerminal::ReiterMelden()
+{
+	ZeigeAnsicht(mAnsicht == 5 ? 0 : 5);
+}
+
+void UTDKernTerminal::MeldeArtFehler()
+{
+	mMeldeArt = 0;
+	const FText Alt = mMeldeText ? mMeldeText->GetText() : FText::GetEmpty();
+	BaueMelden();
+	if (mMeldeText) { mMeldeText->SetText(Alt); }
+}
+
+void UTDKernTerminal::MeldeArtIdee()
+{
+	mMeldeArt = 1;
+	const FText Alt = mMeldeText ? mMeldeText->GetText() : FText::GetEmpty();
+	BaueMelden();
+	if (mMeldeText) { mMeldeText->SetText(Alt); }
+}
+
+void UTDKernTerminal::BaueMelden()
+{
+	if (!mMeldenInhalt)
+	{
+		return;
+	}
+	mMeldenInhalt->ClearChildren();
+	auto Abschnitt = [&](UWidget* W, float Unten)
+	{
+		if (UVerticalBoxSlot* S = mMeldenInhalt->AddChildToVerticalBox(W))
+		{
+			S->SetPadding(FMargin(0.f, 0.f, 0.f, Unten));
+		}
+	};
+	Abschnitt(NeuerText(TDT(TEXT("Fehler melden oder Idee vorschlagen"), TEXT("Report a bug or suggest an idea")), 18, TDUI::Akzent, true), 4.f);
+	UTextBlock* Erklaerung = NeuerText(TDT(
+		TEXT("Beschreibe kurz, was passiert ist oder was du dir wünschst. Mit \"Auf GitHub öffnen\" startet dein Browser mit einem ausgefüllten Issue (Version, Welle, Stufe und Sprache trägt die Mod ein). Zusätzlich öffnet sich ein Ordner mit Log und Bildschirmfoto: Zieh die Dateien bei einem Fehler ins Issue. Die Mod selbst sendet nichts, du schickst das Issue ab. Für GitHub brauchst du ein kostenloses Konto."),
+		TEXT("Briefly describe what happened or what you would like. \"Open on GitHub\" starts your browser with a prefilled issue (the mod adds version, wave, difficulty and language). A folder with the log and a screenshot opens as well: for a bug, drag the files into the issue. The mod itself sends nothing, you submit the issue. GitHub needs a free account.")), 13, TDUI::Grau);
+	Erklaerung->SetAutoWrapText(true);
+	Abschnitt(Erklaerung, 10.f);
+	// Art: Fehler oder Idee (gewaehlte orange)
+	UHorizontalBox* Arten = WidgetTree->ConstructWidget<UHorizontalBox>();
+	UTextBlock* T = nullptr;
+	UButton* Fehler = NeuerKnopf(TDT(TEXT("Fehler"), TEXT("Bug")), T, mMeldeArt == 0);
+	Fehler->OnClicked.AddDynamic(this, &UTDKernTerminal::MeldeArtFehler);
+	UButton* Idee = NeuerKnopf(TDT(TEXT("Vorschlag / Idee"), TEXT("Suggestion / idea")), T, mMeldeArt == 1);
+	Idee->OnClicked.AddDynamic(this, &UTDKernTerminal::MeldeArtIdee);
+	if (UHorizontalBoxSlot* S = Arten->AddChildToHorizontalBox(Fehler)) { S->SetPadding(FMargin(0.f, 0.f, 8.f, 0.f)); }
+	Arten->AddChildToHorizontalBox(Idee);
+	Abschnitt(Arten, 10.f);
+	// Text
+	mMeldeText = WidgetTree->ConstructWidget<UMultiLineEditableTextBox>();
+	mMeldeText->SetHintText(mMeldeArt == 0
+		? TDTX(TEXT("Was ist passiert? Was hast du davor gemacht? Was hättest du erwartet?"), TEXT("What happened? What did you do before? What did you expect?"))
+		: TDTX(TEXT("Was möchtest du ändern oder neu haben, und warum?"), TEXT("What would you like to change or add, and why?")));
+	USizeBox* TextHoehe = WidgetTree->ConstructWidget<USizeBox>();
+	TextHoehe->SetHeightOverride(220.f);
+	TextHoehe->AddChild(mMeldeText);
+	Abschnitt(TextHoehe, 10.f);
+	UButton* Senden = NeuerKnopf(TDT(TEXT("Auf GitHub öffnen"), TEXT("Open on GitHub")), T, true);
+	Senden->OnClicked.AddDynamic(this, &UTDKernTerminal::MeldungAbschicken);
+	UHorizontalBox* Knoepfe = WidgetTree->ConstructWidget<UHorizontalBox>();
+	Knoepfe->AddChildToHorizontalBox(Senden);
+	Abschnitt(Knoepfe, 6.f);
+}
+
+/** 0.9.6: Prozent-Kodierung fuer die Issue-Adresse (UTF-8, nur unreservierte Zeichen bleiben) */
+static FString TDUrlKodiert(const FString& Text)
+{
+	const FTCHARToUTF8 Utf8(*Text);
+	FString Aus;
+	for (int32 i = 0; i < Utf8.Length(); ++i)
+	{
+		const uint8 C = static_cast<uint8>(Utf8.Get()[i]);
+		if ((C >= 'A' && C <= 'Z') || (C >= 'a' && C <= 'z') || (C >= '0' && C <= '9') || C == '-' || C == '_' || C == '.' || C == '~')
+		{
+			Aus.AppendChar(static_cast<TCHAR>(C));
+		}
+		else
+		{
+			Aus += FString::Printf(TEXT("%%%02X"), C);
+		}
+	}
+	return Aus;
+}
+
+void UTDKernTerminal::MeldungAbschicken()
+{
+	const FString Text = mMeldeText ? mMeldeText->GetText().ToString().TrimStartAndEnd() : FString();
+	if (Text.Len() < 5)
+	{
+		Melde(TDT(TEXT("Bitte beschreibe kurz, worum es geht."), TEXT("Please describe briefly what it is about.")));
+		return;
+	}
+	UWorld* World = GetWorld();
+	const UTDWaveSubsystem* Waves = World ? World->GetSubsystem<UTDWaveSubsystem>() : nullptr;
+	const UTDEinsatzSubsystem* Einsatz = World ? World->GetSubsystem<UTDEinsatzSubsystem>() : nullptr;
+	const TSharedPtr<IPlugin> Plugin = IPluginManager::Get().FindPlugin(TEXT("FicsitTD"));
+	const FString Version = Plugin.IsValid() ? Plugin->GetDescriptor().VersionName : FString(TEXT("?"));
+	const bool bFehler = mMeldeArt == 0;
+	// Angaben ohne persoenliche Daten: Version, Spielstand des Einsatzes, Sprache
+	const FString Info = FString::Printf(TEXT("FicsitTD %s, Satisfactory %s, %s, wave %d/%d, difficulty %d, operation %s, language %s"),
+		*Version, FApp::GetBuildVersion(), *FPlatformMisc::GetOSVersion(),
+		Waves ? Waves->GetWelle() : 0, Waves ? Waves->mWellenGesamt : 0, Waves ? Waves->GetLaufStufe() : -1,
+		Einsatz && Einsatz->IstAktiv() ? TEXT("active") : TEXT("off"), TDSprache::Englisch() ? TEXT("en") : TEXT("de"));
+	// Ordner mit Meldung, Log und Bildschirmfoto (das Foto kommt mit dem naechsten Bild, ohne das Menue)
+	const FString Ordner = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("FicsitTD"), TEXT("Meldungen"),
+		FDateTime::Now().ToString(TEXT("%Y-%m-%d_%H%M%S"))));
+	IFileManager::Get().MakeDirectory(*Ordner, true);
+	FFileHelper::SaveStringToFile(FString::Printf(TEXT("%s\n\n%s\n\n%s\n"), bFehler ? TEXT("Bug") : TEXT("Suggestion"), *Text, *Info),
+		*FPaths::Combine(Ordner, TEXT("Meldung.txt")), FFileHelper::EEncodingOptions::ForceUTF8);
+	if (bFehler)
+	{
+		GLog->Flush();
+		IFileManager::Get().Copy(*FPaths::Combine(Ordner, TEXT("FactoryGame.log")), *FPaths::Combine(FPaths::ProjectLogDir(), TEXT("FactoryGame.log")));
+		FScreenshotRequest::RequestScreenshot(FPaths::Combine(Ordner, TEXT("Screenshot.png")), false, false);
+	}
+	// Issue-Adresse: Titel aus der ersten Zeile, Text und Angaben im Inhalt, Label bug bzw. enhancement
+	FString Titel = Text.Left(70);
+	Titel.Split(TEXT("\n"), &Titel, nullptr);
+	Titel = FString(bFehler ? TEXT("[Bug] ") : TEXT("[Idea] ")) + Titel.TrimEnd();
+	FString Inhalt = FString::Printf(TEXT("%s\n\n---\n%s\n"), *Text.Left(5000), *Info);
+	if (bFehler)
+	{
+		Inhalt += TEXT("\n_Log and screenshot: please drag `FactoryGame.log` and `Screenshot.png` from the folder that opened into this issue._\n");
+	}
+	const FString Adresse = FString::Printf(TEXT("https://github.com/Spancken/FicsitTD/issues/new?labels=%s&title=%s&body=%s"),
+		bFehler ? TEXT("bug") : TEXT("enhancement"), *TDUrlKodiert(Titel), *TDUrlKodiert(Inhalt));
+	FString Fehlertext;
+	FPlatformProcess::LaunchURL(*Adresse, nullptr, &Fehlertext);
+	FPlatformProcess::ExploreFolder(*Ordner);
+	UE_LOG(LogFicsitTD, Log, TEXT("Meldung (%s): Browser mit GitHub-Issue geoeffnet, Ordner %s%s"), bFehler ? TEXT("Fehler") : TEXT("Idee"), *Ordner,
+		Fehlertext.IsEmpty() ? TEXT("") : *(TEXT(", Browser-Fehler: ") + Fehlertext));
+	Melde(Fehlertext.IsEmpty()
+		? TDF(TEXT("Dein Browser öffnet ein ausgefülltes GitHub-Issue. Log und Bildschirmfoto liegen in %s."), TEXT("Your browser opens a prefilled GitHub issue. Log and screenshot are in %s."), *Ordner)
+		: TDF(TEXT("Browser ließ sich nicht öffnen. Deine Meldung liegt in %s, bitte auf github.com/Spancken/FicsitTD/issues einstellen."), TEXT("Could not open the browser. Your report is in %s, please post it at github.com/Spancken/FicsitTD/issues."), *Ordner));
+	if (mMeldeText)
+	{
+		mMeldeText->SetText(FText::GetEmpty());
+	}
+}
+
 UWidget* UTDKernTerminal::NeueKachel(UTexture2D* Bild, float Kante, const FString& Plakette)
 {
 	USizeBox* Rahmen = WidgetTree->ConstructWidget<USizeBox>();
@@ -961,8 +1117,12 @@ void UTDKernTerminal::ZeigeAnsicht(int32 Ansicht)
 	{
 		BaueStatistik();
 	}
-	UWidget* Flaechen[5] = { mSpalten, mVorschau, mForschung, mPionier, mStatistik };
-	for (int32 i = 0; i < 5; ++i)
+	else if (Ansicht == 5)
+	{
+		BaueMelden();
+	}
+	UWidget* Flaechen[6] = { mSpalten, mVorschau, mForschung, mPionier, mStatistik, mMelden };
+	for (int32 i = 0; i < 6; ++i)
 	{
 		if (Flaechen[i])
 		{

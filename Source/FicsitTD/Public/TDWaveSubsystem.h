@@ -242,6 +242,9 @@ public:
 	int32 GetWelle() const { return mWelle; }
 	/** 0.9.6: Stufe des laufenden bzw. letzten Durchgangs (Neustart nach Sieg/Niederlage) */
 	int32 GetLaufStufe() const { return mStufe; }
+	/** 0.9.6 P1: LP-Zuwachs der laufenden Welle ohne Stufe (Welle 1 = 1,0); der Spielerschaden waechst anteilig mit */
+	float GetWellenWachstum() const { return mWellenWachstum; }
+	float mWellenWachstum = 1.f;
 	/** T3: Vorschau der naechsten (im Aufbau) bzw. laufenden Welle; plant sie bei Bedarf */
 	FTDWellenVorschau GetVorschau(int32 Welle = -1);
 	/** T3: alle Wellen des Laufs fuer die Zeitleiste (Zustand, Boss, neue Front, neue Arten) */

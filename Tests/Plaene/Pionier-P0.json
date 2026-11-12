@@ -1,0 +1,19 @@
+{
+  "Name": "Pionier-P0",
+  "_Hinweis": "0.9.6 P0/P1 (Analyse-Spieler-und-Pionier 12.11.): Spielerschaden wird je Welle gezaehlt (Log 'Pionier Welle N', Metriken.csv Spalten Spieler_Schaden/Spieler_Anteil_Proz, Wellenmeldung 'Du: ...'). Der Pruefstand kann nicht mit Handwaffen schiessen; 'spielertreffer' loest einen Treffer mit dem Spieler als Ausloeser aus. Die Munitionsumrechnung je Waffe zeigt erst ein Handspiel (Log 'Pionier: Handtreffer').",
+  "Spielstand": "Autotest_Marius_W06",
+  "Quelle": "Marius_W06_Plateau.sav",
+  "ErweiterteEinstellungen": true,
+  "WarteNachLaden": 30,
+  "MaxMinuten": 12,
+  "Schritte": [
+    { "pruefe": "Version", "soll": "{VERSION}", "text": "richtige Mod-Version geladen" },
+    { "befehl": "td kern weiter" },
+    { "warte": 15 },
+    { "spielertreffer": 20 },
+    { "spielertreffer": 20 },
+    { "spielertreffer": 20 },
+    { "wellenlauf": 6, "zeitraffer": 2, "max": 300 },
+    { "pruefe": "KeineWarnungen", "text": "keine Warnungen oder Fehler des Mods im Log" }
+  ]
+}

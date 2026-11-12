@@ -127,8 +127,10 @@ private:
 	void PionierUmschalten();
 	UFUNCTION()
 	void TalenteNeu();
-	/** 0 Laden, 1 Wellenvorschau, 2 Forschung, 3 Pionier */
+public:
+	/** 0 Laden, 1 Wellenvorschau, 2 Forschung, 3 Pionier, 4 Statistik, 5 Fehler melden (0.9.6 oeffentlich fuer den Selbsttest) */
 	void ZeigeAnsicht(int32 Ansicht);
+private:
 	void BaueForschung();
 	void BauePionier();
 	/** 0.60 (Skill satisfactory-design): Reiter in der Kopfleiste statt Knoepfen */
@@ -144,6 +146,17 @@ private:
 	UFUNCTION()
 	void ReiterStatistik();
 	void BaueStatistik();
+	/** 0.9.6 (Marius 12.11.): Fehler melden oder Aenderung vorschlagen - oeffnet ein vorausgefuelltes GitHub-Issue im Browser,
+	 *  legt Meldung, Log und Bildschirmfoto in einen Ordner. Die Mod selbst sendet nichts. */
+	UFUNCTION()
+	void ReiterMelden();
+	void BaueMelden();
+	UFUNCTION()
+	void MeldeArtFehler();
+	UFUNCTION()
+	void MeldeArtIdee();
+	UFUNCTION()
+	void MeldungAbschicken();
 	/** Gegenstands-Kachel wie im Spiel: hellgraues Feld mit Bild, unten rechts orange Mengen-Plakette (leer = keine) */
 	UWidget* NeueKachel(class UTexture2D* Bild, float Kante, const FString& Plakette);
 	/** Testphase (Balance Test.WellenSprung): zur in der Zeitleiste gewaehlten Welle springen */
@@ -239,6 +252,14 @@ private:
 	TObjectPtr<UWidget> mStatistik;
 	UPROPERTY()
 	TObjectPtr<UVerticalBox> mStatistikInhalt;
+	UPROPERTY()
+	TObjectPtr<UWidget> mMelden;
+	UPROPERTY()
+	TObjectPtr<UVerticalBox> mMeldenInhalt;
+	UPROPERTY()
+	TObjectPtr<class UMultiLineEditableTextBox> mMeldeText;
+	/** 0 Fehler, 1 Vorschlag */
+	int32 mMeldeArt = 0;
 	UPROPERTY()
 	TObjectPtr<UTextBlock> mPionierKnopfText;
 	UPROPERTY()

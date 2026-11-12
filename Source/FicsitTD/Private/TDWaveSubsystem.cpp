@@ -62,6 +62,7 @@ static const TCHAR* const GTDPhasenNamen[] = {
 #include "TDDefenseWall.h"
 #include "TDNavFilter.h"
 #include "TDGegnerHirn.h"
+#include "TDPionier.h"
 #include "TDEinsatz.h"
 #include "FGWaterVolume.h"
 #include "TDTestWall.h"
@@ -2241,6 +2242,7 @@ void UTDWaveSubsystem::SpawneKernWelle(int32 Nummer)
 	// 0.9.1 (Simulation 09.11.): ab W31 waechst das Leben schneller, Phase 4-5 hatte im Modell zu viel Luft. Im Spiel nachmessen.
 	const float JeWelle = TDBalance::Wert(TEXT("Wellen.LPJeWelle"), 0.08f);
 	const float LPFaktor = S.LP * (1.f + JeWelle * FMath::Min(Nummer - 1, 30) + TDBalance::Wert(TEXT("Wellen.LPJeWelleAb31"), 0.1f) * FMath::Max(Nummer - 31, 0));
+	mWellenWachstum = LPFaktor / FMath::Max(S.LP, 0.01f);
 	if (mPlanWelle != Nummer)
 	{
 		PlaneWelle(Nummer);
@@ -2483,8 +2485,19 @@ void UTDWaveSubsystem::WelleAusgewertet(float Anteil, bool bVerloren)
 		MeldeMetrik(Anteil);
 		return;
 	}
-	Ansage(TDF(TEXT("Welle %d abgewehrt: %d Gegner in %.0f s, Kern bei %.0f %%.%s"), TEXT("Wave %d repelled: %d enemies in %.0f s, Core at %.0f %%.%s"), mWelle, mWellenGroesse, mWellenZeit, Anteil,
-		*BesteText));
+	// 0.9.6 P1 (Analyse-Spieler 12.11.): eigene Zeile fuer den Spieler, damit man seinen Anteil an der Welle sieht
+	FString SpielerText;
+	if (const UTDPionier* Pionier = UTDPionier::Get(this))
+	{
+		float TurmSchaden = 0.f;
+		for (TActorIterator<ATDTurretBase> It(GetWorld()); It; ++It)
+		{
+			TurmSchaden += It->GetBilanz().Schaden;
+		}
+		SpielerText = Pionier->WellenZeile(TurmSchaden);
+	}
+	Ansage(TDF(TEXT("Welle %d abgewehrt: %d Gegner in %.0f s, Kern bei %.0f %%.%s%s"), TEXT("Wave %d repelled: %d enemies in %.0f s, Core at %.0f %%.%s%s"), mWelle, mWellenGroesse, mWellenZeit, Anteil,
+		*BesteText, *SpielerText));
 	MeldeMetrik(Anteil);
 }
 
@@ -2615,17 +2628,34 @@ void UTDWaveSubsystem::MeldeMetrik(float Anteil)
 		TEXT("Schaden %.0f (Overkill %.0f %%, Nebenziele %.0f %%), Uptime %.0f %% (Mittel %d Tuerme), Munitionsmangel mit Ziel %.0f s, ohne Strom %.0f s (Turm-Sekunden), EP ungenutzt zu Beginn %d"),
 		mWelle, mMessQ, mWellenZeit, Verlust, Anteil, Naechste, 100.f * Auslastung, Schaden, OverkillAnteil, NebenAnteil, UptimeMittel, Tuerme, Hungrig, OhneStrom, mMessEP);
 
+	// 0.9.6 P0: Spielerschaden der Welle und sein Anteil am gesamten Wellenschaden
+	float SpielerSchaden = 0.f;
+	int32 SpielerAbschuesse = 0;
+	if (const UTDPionier* Pionier = UTDPionier::Get(this))
+	{
+		SpielerSchaden = Pionier->GetWellenBilanz().Schaden;
+		SpielerAbschuesse = Pionier->GetWellenBilanz().Abschuesse;
+	}
+	const float SpielerAnteil = 100.f * SpielerSchaden / FMath::Max(SpielerSchaden + Schaden, 1.f);
+	UE_LOG(LogFicsitTD, Log, TEXT("Pionier Welle %d: Spielerschaden %.0f (%.1f %% des Wellenschadens), %d Abschuesse"), mWelle, SpielerSchaden, SpielerAnteil, SpielerAbschuesse);
+
 	// CSV fuer die Auswertung ausserhalb des Spiels (Simulator, Tabellen)
 	const FString Datei = FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("FicsitTD"), TEXT("Metriken.csv"));
 	FString Zeile;
+	// 0.9.6: alte Datei ohne die Spielerspalten beiseitelegen, sonst passen Kopf und Zeilen nicht zusammen
+	FString Alt;
+	if (IFileManager::Get().FileExists(*Datei) && FFileHelper::LoadFileToString(Alt, *Datei) && !Alt.Left(600).Contains(TEXT("Spieler_Schaden")))
+	{
+		IFileManager::Get().Move(*FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("FicsitTD"), TEXT("Metriken_vor096.csv")), *Datei, true);
+	}
 	if (!IFileManager::Get().FileExists(*Datei))
 	{
-		Zeile = TEXT("Zeit;Stufe;Welle;Gegner;Elite;LP;EHP;K_DPS;Tuerme;Q;Dauer_s;Kernverlust_Proz;Kern_Proz;Naechste_m;Auslastung_Proz;Schaden;Overkill_Proz;Nebenziele_Proz;Uptime_Proz;Hungrig_s;OhneStrom_s;EP_ungenutzt;Bild_ms;Bild_p95_ms;Bild_max_ms;Ruckler_50ms;Hirn_ms;Turm_ms;Lebend_max\n");
+		Zeile = TEXT("Zeit;Stufe;Welle;Gegner;Elite;LP;EHP;K_DPS;Tuerme;Q;Dauer_s;Kernverlust_Proz;Kern_Proz;Naechste_m;Auslastung_Proz;Schaden;Overkill_Proz;Nebenziele_Proz;Uptime_Proz;Hungrig_s;OhneStrom_s;EP_ungenutzt;Bild_ms;Bild_p95_ms;Bild_max_ms;Ruckler_50ms;Hirn_ms;Turm_ms;Lebend_max;Spieler_Schaden;Spieler_Anteil_Proz\n");
 	}
-	Zeile += FString::Printf(TEXT("%s;%d;%d;%d;%d;%.0f;%.0f;%.1f;%d;%.3f;%.1f;%.2f;%.1f;%.1f;%.1f;%.0f;%.1f;%.1f;%.1f;%.1f;%.1f;%d;%.2f;%.2f;%.1f;%d;%.3f;%.3f;%d\n"),
+	Zeile += FString::Printf(TEXT("%s;%d;%d;%d;%d;%.0f;%.0f;%.1f;%d;%.3f;%.1f;%.2f;%.1f;%.1f;%.1f;%.0f;%.1f;%.1f;%.1f;%.1f;%.1f;%d;%.2f;%.2f;%.1f;%d;%.3f;%.3f;%d;%.0f;%.1f\n"),
 		*FDateTime::Now().ToString(TEXT("%Y-%m-%d %H:%M:%S")), mStufe, mWelle, mWellenGroesse, mElites, mMessLP, mMessEHP, mMessK, mMessTuerme, mMessQ,
 		mWellenZeit, Verlust, Anteil, Naechste, 100.f * Auslastung, Schaden, OverkillAnteil, NebenAnteil, UptimeMittel, Hungrig, OhneStrom, mMessEP,
-		Bild.Mittel, Bild.P95, Bild.Max, Bild.Ruckler, Bild.HirnMs, Bild.TurmMs, Bild.MaxLebend);
+		Bild.Mittel, Bild.P95, Bild.Max, Bild.Ruckler, Bild.HirnMs, Bild.TurmMs, Bild.MaxLebend, SpielerSchaden, SpielerAnteil);
 	FFileHelper::SaveStringToFile(Zeile, *Datei, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM, &IFileManager::Get(), FILEWRITE_Append);
 }
 

@@ -6,6 +6,7 @@
 #include "TDDefenseCore.h"
 #include "TDEinsatz.h"
 #include "TDWaveSubsystem.h"
+#include "TDTurretBase.h"
 #include "Creature/FGCreature.h"
 #include "Equipment/FGWeapon.h"
 #include "EngineUtils.h"
@@ -270,6 +271,83 @@ void UTDPionier::WellenStart()
 {
 	mZweiteChanceGenutzt = false;
 	mGewehrTreffer = 0;
+	mBilanz = FSpielerBilanz();
+}
+
+FString UTDPionier::WellenZeile(float TurmSchaden) const
+{
+	if (mBilanz.Treffer == 0)
+	{
+		return FString();
+	}
+	const float Anteil = 100.f * mBilanz.Schaden / FMath::Max(mBilanz.Schaden + TurmSchaden, 1.f);
+	FString Text = TDF(TEXT(" Du: %.0f Schaden (%.0f %%), %d Abschüsse"), TEXT(" You: %.0f damage (%.0f %%), %d kills"), mBilanz.Schaden, Anteil, mBilanz.Abschuesse);
+	if (mBilanz.Eliten + mBilanz.Bosse > 0)
+	{
+		Text += TDF(TEXT(", davon %d Elite/Boss"), TEXT(", %d of them elite/boss"), mBilanz.Eliten + mBilanz.Bosse);
+	}
+	if (mBilanz.XP > 0)
+	{
+		Text += FString::Printf(TEXT(", +%d XP"), mBilanz.XP);
+	}
+	return Text + TEXT(".");
+}
+
+float UTDPionier::HandFaktor(int32 W, const AActor* Verursacher, const AActor* Getroffen, FString& OutMunition, float& OutSkalierung, float& OutResistenz) const
+{
+	// Geschoss- und Waffenklassen bis zum Spieler: daran erkennt man die Munition (Spielklassen, im Log je Treffer gemeldet)
+	FString Klassen;
+	for (const AActor* A = Verursacher; A; A = A->GetOwner())
+	{
+		Klassen += A->GetClass()->GetName() + TEXT(" ");
+		if (A->IsA<APawn>())
+		{
+			break;
+		}
+	}
+	const TCHAR* Waffe = TEXT("Armierpistole");
+	const TCHAR* Schluessel = TEXT("Munition.Bolzen.Armierungsbolzen.Schaden");
+	ETDSchadensart Art = ETDSchadensart::Durchschlag;
+	float Spielwert = 15.f;
+	if (W == TDPionierWerte::Armierpistole)
+	{
+		if (Klassen.Contains(TEXT("Stun")))                                        { Schluessel = TEXT("Munition.Bolzen.Betaeubungsbolzen.Schaden"); Art = ETDSchadensart::Strom; }
+		else if (Klassen.Contains(TEXT("Spread")) || Klassen.Contains(TEXT("Shatter"))) { Schluessel = TEXT("Munition.Bolzen.Streubolzen.Schaden"); }
+		else if (Klassen.Contains(TEXT("Explosive")))                              { Schluessel = TEXT("Munition.Bolzen.Explosivbolzen.Schaden"); Art = ETDSchadensart::Explosion; }
+	}
+	else if (W == TDPionierWerte::Gewehr)
+	{
+		Waffe = TEXT("Gewehr");
+		Spielwert = 5.f;
+		Art = ETDSchadensart::Kugel;
+		Schluessel = TEXT("Munition.Patronen.Standard.Schaden");
+		if (Klassen.Contains(TEXT("Smart")) || Klassen.Contains(TEXT("Homing")))  { Schluessel = TEXT("Munition.Patronen.Zielsuch.Schaden"); }
+		else if (Klassen.Contains(TEXT("Chaos")) || Klassen.Contains(TEXT("Turbo"))) { Schluessel = TEXT("Munition.Patronen.Turbo.Schaden"); }
+	}
+	else
+	{
+		Waffe = TEXT("Nobelisk");
+		Spielwert = 50.f;
+		Art = ETDSchadensart::Explosion;
+		Schluessel = TEXT("Munition.Nobelisk.Nobelisk.Schaden");
+		if (Klassen.Contains(TEXT("Gas")))                                         { Schluessel = TEXT("Munition.Nobelisk.Gas.Schaden"); Art = ETDSchadensart::Gift; }
+		else if (Klassen.Contains(TEXT("Cluster")))                                { Schluessel = TEXT("Munition.Nobelisk.Streu.Schaden"); }
+		else if (Klassen.Contains(TEXT("Shockwave")) || Klassen.Contains(TEXT("Pulse"))) { Schluessel = TEXT("Munition.Nobelisk.Puls.Schaden"); }
+		else if (Klassen.Contains(TEXT("Nuke")))                                   { Schluessel = TEXT("Munition.Nobelisk.Nuke.Schaden"); }
+	}
+	OutMunition = FString(Schluessel).Replace(TEXT("Munition."), TEXT("")).Replace(TEXT(".Schaden"), TEXT(""));
+	const float Tabelle = TDBalance::Wert(Schluessel, 0.f);
+	// Spielwert je Waffe (Wiki, im Log je Treffer nachpruefen): Verhaeltnis statt Ersatz, damit Kopftreffer und Fallabfall erhalten bleiben
+	Spielwert = TDBalance::Wert(FString::Printf(TEXT("Pionier.Spielwert.%s"), Waffe), Spielwert);
+	const UTDWaveSubsystem* Waves = GetWorld() ? GetWorld()->GetSubsystem<UTDWaveSubsystem>() : nullptr;
+	const float Wachstum = Waves && Waves->LaeuftWelle() ? Waves->GetWellenWachstum() : 1.f;
+	OutSkalierung = 1.f + TDBalance::Wert(TEXT("Pionier.WellenAnteil"), 0.5f) * FMath::Max(0.f, Wachstum - 1.f);
+	OutResistenz = ATDTurretBase::Resistenz(Art, Cast<AFGCreature>(Getroffen));
+	if (Tabelle <= 0.f || Spielwert <= 0.f)
+	{
+		return OutSkalierung * OutResistenz;
+	}
+	return Tabelle / Spielwert * TDBalance::Wert(FString::Printf(TEXT("Pionier.HandFaktor.%s"), Waffe), 1.f) * OutSkalierung * OutResistenz;
 }
 
 void UTDPionier::Abschuss(const AFGCreature* Kreatur)
@@ -282,8 +360,13 @@ void UTDPionier::Abschuss(const AFGCreature* Kreatur)
 	mSpielerTreffer.Remove(Kreatur);
 	const bool bBoss = Kreatur->Tags.Contains(TEXT("FicsitTDBoss"));
 	const bool bElite = Kreatur->Tags.Contains(TEXT("FicsitTDElite"));
-	GibXP(bBoss ? TDBalance::Ganz(TEXT("Pionier.XPAbschussBoss"), 50) : bElite ? TDBalance::Ganz(TEXT("Pionier.XPAbschussElite"), 10)
-		: TDBalance::Ganz(TEXT("Pionier.XPAbschuss"), 3), TEXT("Abschuss"));
+	const int32 XP = bBoss ? TDBalance::Ganz(TEXT("Pionier.XPAbschussBoss"), 50) : bElite ? TDBalance::Ganz(TEXT("Pionier.XPAbschussElite"), 10)
+		: TDBalance::Ganz(TEXT("Pionier.XPAbschuss"), 3);
+	GibXP(XP, TEXT("Abschuss"));
+	++mBilanz.Abschuesse;
+	mBilanz.Eliten += bElite ? 1 : 0;
+	mBilanz.Bosse += bBoss ? 1 : 0;
+	mBilanz.XP += XP;
 }
 
 int32 UTDPionier::Waffe(const AActor* Verursacher)
@@ -325,9 +408,16 @@ float UTDPionier::SpielerTreffer(AActor* Getroffen, AActor* Verursacher, float M
 	const int32 W = Waffe(Verursacher);
 	if (W < 0)
 	{
+		// unbekannte Waffe (z. B. Xeno-Basher): nur zaehlen
+		mBilanz.Schaden += Menge;
+		++mBilanz.Treffer;
 		return 1.f;
 	}
 	const int32 Stufe = GetStufe(W);
+	// 0.9.6 P1: Munitionswert der Tuerme statt Spielwert, mit Wellenzuwachs und Resistenz
+	FString Munition;
+	float Skalierung = 1.f, Resistenz = 1.f;
+	const float Hand = HandFaktor(W, Verursacher, Getroffen, Munition, Skalierung, Resistenz);
 	float Faktor = 1.f;
 	if (W == TDPionierWerte::Armierpistole)
 	{
@@ -340,6 +430,20 @@ float UTDPionier::SpielerTreffer(AActor* Getroffen, AActor* Verursacher, float M
 	else
 	{
 		Faktor = 1.f + 0.25f * FMath::Min(Stufe, 4);
+	}
+	const float Talent = Faktor;
+	Faktor *= Hand;
+	mBilanz.Schaden += Menge * Faktor;
+	++mBilanz.Treffer;
+	// 0.9.6 P0: je Geschoss und Munition einmal die Rechnung ins Log (bestaetigt oder widerlegt die Wiki-Werte 15 / 5 / 50)
+	{
+		const FString Klasse = Verursacher ? Verursacher->GetClass()->GetName() : FString(TEXT("-"));
+		if (!mGemeldeteTreffer.Contains(Klasse + Munition))
+		{
+			mGemeldeteTreffer.Add(Klasse + Munition);
+			UE_LOG(LogFicsitTD, Log, TEXT("Pionier: Handtreffer %s (%s): Spielschaden %.1f -> %.1f, Faktor %.2f (Munition/Spielwert %.2f, Welle x%.2f, Resistenz %.2f, Talent %.2f)"),
+				*Klasse, *Munition, Menge, Menge * Faktor, Faktor, Hand / FMath::Max(Skalierung * Resistenz, 0.01f), Skalierung, Resistenz, Talent);
+		}
 	}
 	// Abschluss-Talente: Zusatzschaden an Nachbarn im naechsten Bild (nicht im laufenden Schadensaufruf), ohne Ausloeser -> keine Schleife
 	if (Stufe >= MaxStufe)
@@ -372,7 +476,8 @@ float UTDPionier::SpielerTreffer(AActor* Getroffen, AActor* Verursacher, float M
 		else if (W == TDPionierWerte::Gewehr ? (++mGewehrTreffer % 5 == 0) : true)
 		{
 			const float Radius = W == TDPionierWerte::Gewehr ? 400.f : 800.f;
-			Zusatz = W == TDPionierWerte::Gewehr ? 120.f : 0.5f * Menge * Faktor;
+			// 0.9.6 P1: Sprengmantel waechst mit der Welle (vorher fest 120, in Welle 30 ein Kratzer)
+			Zusatz = W == TDPionierWerte::Gewehr ? TDBalance::Wert(TEXT("Pionier.Sprengmantel"), 120.f) * Skalierung : 0.5f * Menge * Faktor;
 			for (AFGCreature* C : Waves ? Waves->GetLivingWaveCreatures() : TArray<AFGCreature*>())
 			{
 				if (C != Getroffen && FVector::Dist(C->GetActorLocation(), Ort) < Radius)
@@ -383,6 +488,7 @@ float UTDPionier::SpielerTreffer(AActor* Getroffen, AActor* Verursacher, float M
 		}
 		if (Opfer.Num() > 0 && Zusatz > 0.f)
 		{
+			mBilanz.Schaden += Zusatz * Opfer.Num();   // 0.9.6 P0: Zusatzschaden zaehlt mit (laeuft ohne Ausloeser)
 			GetWorld()->GetTimerManager().SetTimerForNextTick([Opfer, Zusatz]()
 			{
 				for (const TWeakObjectPtr<AFGCreature>& C : Opfer)
