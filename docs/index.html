@@ -88,6 +88,7 @@ footer { padding-block: 28px; color: var(--muted); font-size: .86rem; border-top
     <a href="#buildings"><span class="en">Buildings</span><span class="de">Bauten</span></a>
     <a href="#enemies"><span class="en">Enemies</span><span class="de">Gegner</span></a>
     <a href="#research"><span class="en">Research</span><span class="de">Forschung</span></a>
+    <a href="#issues"><span class="en">Known issues</span><span class="de">Bekannte Fehler</span></a>
     <a href="#faq">FAQ</a>
   </nav>
   <div class="lang" role="group" aria-label="Language"><button type="button" data-set="en" aria-pressed="true">EN</button><button type="button" data-set="de" aria-pressed="false">DE</button></div>
@@ -128,13 +129,13 @@ footer { padding-block: 28px; color: var(--muted); font-size: .86rem; border-top
         <li>No time pressure. You start the next wave yourself; the Core checks first that every turret has ammo and power.</li>
         <li><b>Quotas</b>: production and defense buildings are limited per type. Logistics is free: belts, splitters, pipes, power lines, foundations.</li>
         <li><b>FICSIT Coupons</b> from the Core buy more quota in the shop, plus gear and core repairs. Turret levels are bought in the turret window.</li>
-        <li>New technology only comes from the <b>MAM</b> (research points from waves). HUB milestones and blueprints are locked during an operation.</li>
+        <li>New technology only comes from the <b>MAM</b> (research points from waves). HUB milestones and blueprints are locked during an operation (unless you switch on <b>Free Build</b> in the Core Menu, which lifts quotas and locks for testing).</li>
       </ul>
       <ul class="de">
         <li>Ohne Zeitdruck. Die nächste Welle startest du selbst; vorher prüft der Kern, ob jeder Turm Munition und Strom hat.</li>
         <li><b>Kontingente</b>: Produktions- und Verteidigungsgebäude sind je Typ begrenzt. Logistik ist frei: Bänder, Splitter, Rohre, Stromleitungen, Fundamente.</li>
         <li><b>FICSIT-Coupons</b> vom Kern kaufen im Laden mehr Kontingent, Ausrüstung und Kernreparatur. Turmlevel kauft man im Turmfenster.</li>
-        <li>Neue Technik gibt es nur im <b>MAM</b> (Forschungspunkte aus den Wellen). Meilensteine am HUB und Blaupausen sind im Einsatz gesperrt.</li>
+        <li>Neue Technik gibt es nur im <b>MAM</b> (Forschungspunkte aus den Wellen). Meilensteine am HUB und Blaupausen sind im Einsatz gesperrt (außer mit <b>Freies Bauen</b> im Kern-Menü, das Kontingente und Sperren zum Ausprobieren aufhebt).</li>
       </ul>
     </div>
     <div>
@@ -154,8 +155,8 @@ footer { padding-block: 28px; color: var(--muted); font-size: .86rem; border-top
     </div>
   </div>
   <h3 style="margin-top:14px"><span class="en">Victory and defeat</span><span class="de">Sieg und Niederlage</span></h3>
-  <p class="en">An operation has <b>50 waves</b> in five phases, with a boss every tenth wave. Losing never deletes your factory. If the Core falls, the Core Menu offers <b>Retry wave</b> (loads the save from the start of that wave), <b>Restart</b> (wave 1 at the same site, factory stays) or <b>End operation</b> (no more quotas, the Core can be dismantled).</p>
-  <p class="de">Ein Einsatz hat <b>50 Wellen</b> in fünf Phasen, jede zehnte Welle mit Boss. Eine Niederlage löscht nie deine Fabrik. Fällt der Kern, bietet das Kern-Menü <b>Welle wiederholen</b> (lädt den Stand vom Start dieser Welle), <b>Neu starten</b> (Welle 1 am selben Ort, die Fabrik bleibt) oder <b>Einsatz beenden</b> (keine Kontingente mehr, der Kern lässt sich abreißen).</p>
+  <p class="en">The difficulty depends on your start biome (Exploration, Normal, Hard, Nightmare): it sets Core health, when elites appear and when new fronts open. An operation has <b>50 waves</b> in five phases, with a boss every tenth wave. Losing never deletes your factory. If the Core falls, the Core Menu offers <b>Retry wave</b> (loads the save from the start of that wave), <b>Restart</b> (wave 1 at the same site, factory stays) or <b>End operation</b> (no more quotas, the Core can be dismantled).</p>
+  <p class="de">Die Schwierigkeit hängt an deinem Startbiom (Erkundung, Normal, Hart, Albtraum): Sie bestimmt Kern-LP, ab wann Eliten kommen und wann neue Fronten öffnen. Ein Einsatz hat <b>50 Wellen</b> in fünf Phasen, jede zehnte Welle mit Boss. Eine Niederlage löscht nie deine Fabrik. Fällt der Kern, bietet das Kern-Menü <b>Welle wiederholen</b> (lädt den Stand vom Start dieser Welle), <b>Neu starten</b> (Welle 1 am selben Ort, die Fabrik bleibt) oder <b>Einsatz beenden</b> (keine Kontingente mehr, der Kern lässt sich abreißen).</p>
   <figure class="shot"><img src="img/niederlage.jpg" alt="Core Menu after a defeat with Retry, Restart and End buttons" loading="lazy">
     <figcaption><span class="en">After a defeat: retry the wave, restart or end the operation.</span><span class="de">Nach einer Niederlage: Welle wiederholen, neu starten oder Einsatz beenden.</span></figcaption></figure>
 </div></section>
@@ -175,20 +176,20 @@ footer { padding-block: 28px; color: var(--muted); font-size: .86rem; border-top
       <ul class="en"><li>Nobelisk (150, area damage, lobbed)</li><li>Branch: gas cloud (poison) <i>or</i> pulse (2 s stun)</li><li>Late: cluster nobelisk</li><li>Master: salvo of three</li></ul>
       <ul class="de"><li>Nobelisk (150, Flächenschaden, im Bogen)</li><li>Gabelung: Gaswolke (Gift) <i>oder</i> Puls (2 s betäubt)</li><li>Spät: Streu-Nobelisk</li><li>Meister: Salve aus drei</li></ul></div>
     <div class="card"><img src="img/TeslaCoil.png" alt=""><span class="tag">Electric</span><h3><span class="en">Tesla Coil</span><span class="de">Teslaspule</span></h3>
-      <ul class="en"><li>No ammo, needs power: 125 MW while charging</li><li>Chain lightning to 3 more enemies</li><li>Branch: bigger chain <i>or</i> overload (×2.5 on one target)</li><li>Battery bank, high voltage; master: voltage field</li></ul>
-      <ul class="de"><li>Keine Munition, braucht Strom: 125 MW beim Aufladen</li><li>Kettenblitz auf 3 weitere Gegner</li><li>Gabelung: längere Kette <i>oder</i> Überlast (×2,5 auf ein Ziel)</li><li>Akkubank, Hochspannung; Meister: Spannungsfeld</li></ul></div>
+      <ul class="en"><li>No ammo, needs power: 15 MW idle, 125 MW while charging</li><li>Chain lightning to 3 more enemies</li><li>Branch: bigger chain <i>or</i> overload (×2.5 on one target)</li><li>Battery bank, high voltage; master: voltage field</li></ul>
+      <ul class="de"><li>Keine Munition, braucht Strom: 15 MW Grundlast, 125 MW beim Aufladen</li><li>Kettenblitz auf 3 weitere Gegner</li><li>Gabelung: längere Kette <i>oder</i> Überlast (×2,5 auf ein Ziel)</li><li>Akkubank, Hochspannung; Meister: Spannungsfeld</li></ul></div>
     <div class="card"><img src="img/FlameTurret.png" alt=""><span class="tag">Fire</span><h3><span class="en">Flamethrower</span><span class="de">Flammenwerfer</span></h3>
-      <ul class="en"><li>Fuel by pipe: 80 damage/s in a cone, afterburn</li><li>Turbofuel 120 → rocket fuel 140 → ionized fuel 160 (electric)</li><li>Afterburn stacks up to three times</li><li>Master: fire carpet</li></ul>
-      <ul class="de"><li>Treibstoff per Rohr: 80 Schaden/s im Kegel, Nachbrennen</li><li>Turbotreibstoff 120 → Raketentreibstoff 140 → ionisierter Treibstoff 160 (Strom)</li><li>Nachbrennen stapelt bis dreifach</li><li>Meister: Feuerteppich</li></ul></div>
+      <ul class="en"><li>Fuel by pipe: 80 damage/s in a cone, afterburn</li><li>Turbofuel 120 → rocket fuel 140 → ionized fuel 160 (electric)</li><li>Afterburn stacks while the flame stays on target</li><li>Master: fire carpet</li></ul>
+      <ul class="de"><li>Treibstoff per Rohr: 80 Schaden/s im Kegel, Nachbrennen</li><li>Turbotreibstoff 120 → Raketentreibstoff 140 → ionisierter Treibstoff 160 (Strom)</li><li>Nachbrennen stapelt, solange die Flamme auf dem Ziel bleibt</li><li>Meister: Feuerteppich</li></ul></div>
     <div class="card"><img src="img/FlakTurret.png" alt=""><span class="tag">Air</span><h3><span class="en">Sky Tower and Singularity</span><span class="de">Himmelsturm und Singularität</span></h3>
-      <p class="en" style="font-size:.94rem">Late turrets: the Sky Tower fires flak at flying enemies (flyers are still in development). The Singularity Launcher holds and crushes groups in overtime waves.</p>
-      <p class="de" style="font-size:.94rem">Späte Türme: Der Himmelsturm schießt Flak auf fliegende Gegner (die Flieger sind noch in Arbeit). Der Singularitätswerfer hält Gruppen fest und zerdrückt sie in den Überstunden.</p></div>
+      <p class="en" style="font-size:.94rem">Late turrets: the Sky Tower fires flak at flying enemies (flyers are still in development). The Singularity Launcher holds and crushes groups; it unlocks after wave 50, so only in Endless mode.</p>
+      <p class="de" style="font-size:.94rem">Späte Türme: Der Himmelsturm schießt Flak auf fliegende Gegner (die Flieger sind noch in Arbeit). Der Singularitätswerfer hält Gruppen fest und zerdrückt sie; er wird erst nach Welle 50 frei, also nur im Endlos-Modus.</p></div>
   </div>
   <h3 style="margin-top:22px"><span class="en">Combos</span><span class="de">Kombos</span></h3>
   <div class="scroll"><table>
     <thead><tr><th><span class="en">Combo</span><span class="de">Kombo</span></th><th><span class="en">Effect</span><span class="de">Wirkung</span></th></tr></thead>
     <tbody class="en">
-      <tr><td>Lightning Rod</td><td>Tesla lightning prefers enemies with a stuck bolt.</td></tr>
+      <tr><td>Lightning Rod</td><td>Tesla lightning prefers enemies with a stuck bolt and jumps once more at full strength.</td></tr>
       <tr><td>Heat Crack</td><td>Burning enemies lose their armor against bullets and bolts.</td></tr>
       <tr><td>Deflagration</td><td>A flame ignites the gas cloud of a gas nobelisk.</td></tr>
       <tr><td>Oil Fire</td><td>Fire ignites a wet oil slick field: 5 s burning, walkers keep burning.</td></tr>
@@ -197,7 +198,7 @@ footer { padding-block: 28px; color: var(--muted); font-size: .86rem; border-top
       <tr><td>Conductor</td><td>An electric fence passes Tesla discharges to up to 3 enemies touching it.</td></tr>
     </tbody>
     <tbody class="de">
-      <tr><td>Blitzableiter</td><td>Der Tesla-Blitz springt bevorzugt auf Gegner mit steckendem Bolzen.</td></tr>
+      <tr><td>Blitzableiter</td><td>Der Tesla-Blitz springt bevorzugt auf Gegner mit steckendem Bolzen und springt einmal mehr mit voller Kraft.</td></tr>
       <tr><td>Hitzeriss</td><td>Brennende Gegner verlieren ihre Panzerung gegen Kugeln und Bolzen.</td></tr>
       <tr><td>Verpuffung</td><td>Eine Flamme entzündet die Gaswolke eines Gas-Nobelisken.</td></tr>
       <tr><td>Ölbrand</td><td>Feuer entzündet ein nasses Ölschlick-Feld: 5 s Brand, wer hindurchläuft, brennt weiter.</td></tr>
@@ -291,6 +292,38 @@ footer { padding-block: 28px; color: var(--muted); font-size: .86rem; border-top
       </ul>
     </div>
   </div>
+</div></section>
+
+<section id="issues"><div class="wrap">
+  <h2><span class="en">Known issues (0.9.6)</span><span class="de">Bekannte Fehler (0.9.6)</span></h2>
+  <ul class="en">
+    <li><b>Stuck enemies:</b> enemies can still get stuck on cliff pillars or terrain. The mod blocks that cliff for following enemies and relocates stuck ones after a while. Please report the spot with your log.</li>
+    <li><b>Sky Tower:</b> there are no flying enemies yet, so it never finds a target. Don't build it yet.</li>
+    <li><b>Singularity Launcher:</b> unlocks after wave 50, so only in Endless mode.</li>
+    <li><b>Tesla Coils and power:</b> each coil draws 125 MW while charging. Several coils can trip the fuse and silence every turret on that grid without a warning. Keep a power reserve or a separate grid.</li>
+    <li><b>Multiplayer:</b> not supported, and the mod does not warn when you host a session.</li>
+    <li><b>Retry wave</b> after a defeat is not yet tested in real play. If the wave-start save is missing, you get a message instead; use “Restart” or load <code>FicsitTD_Wxx_Start</code> yourself.</li>
+    <li><b>Many saves:</b> the mod saves before and after every wave and keeps them, up to 100 saves per operation. Delete old <code>FicsitTD_Wxx_*</code> saves by hand.</li>
+    <li><b>MAM texts</b> of Gate, Electric Fence and Radio Mast are outdated (power and radar details are missing). This guide is correct.</li>
+    <li><b>Electric Fence</b> may shock rarely, enemies tend to walk around a single fence. Connect it to walls or place it across the path.</li>
+    <li>Some chat messages still mention the chat command <code>/td kern weiter</code>; the <b>Start wave</b> button does the same.</li>
+    <li>With more than about 100 enemies the frame rate can drop.</li>
+    <li>Balance is work in progress; the Core's remaining health varies a lot between runs. The Pioneer talent tree is being reworked.</li>
+  </ul>
+  <ul class="de">
+    <li><b>Hängende Gegner:</b> Gegner können noch an Felspfeilern oder im Gelände hängen bleiben. Die Mod sperrt die Klippe für nachfolgende Gegner und versetzt hängende nach einer Weile. Bitte die Stelle mit Log melden.</li>
+    <li><b>Himmelsturm:</b> Es gibt noch keine fliegenden Gegner, er findet nie ein Ziel. Vorerst nicht bauen.</li>
+    <li><b>Singularitätswerfer:</b> wird erst nach Welle 50 frei, also nur im Endlos-Modus.</li>
+    <li><b>Teslaspulen und Strom:</b> Jede Spule zieht beim Laden 125 MW. Mehrere Spulen können die Sicherung auslösen und alle Türme im Netz ohne Warnung verstummen lassen. Stromreserve oder eigenes Netz einplanen.</li>
+    <li><b>Mehrspieler:</b> nicht unterstützt, die Mod warnt beim Hosten nicht.</li>
+    <li><b>Welle wiederholen</b> nach einer Niederlage ist im echten Spiel noch nicht getestet. Fehlt der Stand vom Wellenstart, kommt eine Meldung; dann „Neu starten“ oder <code>FicsitTD_Wxx_Start</code> selbst laden.</li>
+    <li><b>Viele Spielstände:</b> Die Mod speichert vor und nach jeder Welle und behält sie, bis zu 100 je Einsatz. Alte <code>FicsitTD_Wxx_*</code>-Stände von Hand löschen.</li>
+    <li><b>MAM-Texte</b> von Tor, Elektrozaun und Funkmast sind veraltet (Strom- und Radar-Angaben fehlen). Dieses Handbuch stimmt.</li>
+    <li><b>Elektrozaun</b> schlägt eventuell selten zu, Gegner laufen eher um einen einzelnen Zaun herum. Mit Mauern verbinden oder quer zum Weg stellen.</li>
+    <li>Einige Chatmeldungen nennen noch den Chatbefehl <code>/td kern weiter</code>; der Knopf <b>Welle starten</b> macht dasselbe.</li>
+    <li>Mit mehr als etwa 100 Gegnern kann die Bildrate einbrechen.</li>
+    <li>Die Balance ist in Arbeit, die Kern-LP am Ende schwanken stark von Lauf zu Lauf. Der Talentbaum des Pioniers wird überarbeitet.</li>
+  </ul>
 </div></section>
 
 <section id="faq"><div class="wrap">
