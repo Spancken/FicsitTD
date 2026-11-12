@@ -1,4 +1,5 @@
-﻿#include "TDTurretBase.h"
+#include "TDTurretBase.h"
+#include "TDPionier.h"
 #include "TDGegnerHirn.h"
 #include "TDForschung.h"
 #include "TDLureBeacon.h"
@@ -1232,6 +1233,7 @@ const TCHAR* ATDTurretBase::ZielModusName(int32 Modus)
 	case 2:  return bEn ? TEXT("Lowest HP") : TEXT("Wenigste LP");
 	case 3:  return bEn ? TEXT("Highest HP") : TEXT("Meiste LP");
 	case 4:  return bEn ? TEXT("Elite and Boss first") : TEXT("Elite und Boss zuerst");
+	case 5:  return bEn ? TEXT("Marked first") : TEXT("Markierte zuerst");
 	default: return bEn ? TEXT("Closest to turret") : TEXT("Nächster zum Turm");
 	}
 }
@@ -1293,7 +1295,9 @@ AFGCreature* ATDTurretBase::SucheZiel(const FVector& Achse) const
 		case 1: Wert = Kern ? FVector::DistSquared(Creature->GetActorLocation(), Kern->GetActorLocation()) : Dist; break;
 		case 2: Wert = LP * 1.0e8 + Dist; break;
 		case 3: Wert = -LP * 1.0e8 + Dist; break;
-		case 4: Wert = (Creature->Tags.Contains(TEXT("FicsitTDBoss")) ? 0.0 : Creature->Tags.Contains(TEXT("FicsitTDElite")) ? 1.0e12 : 2.0e12) + Dist; break;
+		// 0.9.7 P2: markierte Gegner kommen bei "Elite und Boss zuerst" direkt nach dem Boss, bei "Markierte zuerst" vor allen
+		case 4: Wert = (Creature->Tags.Contains(TEXT("FicsitTDBoss")) ? 0.0 : UTDPionier::IstMarkiert(Creature) ? 0.5e12 : Creature->Tags.Contains(TEXT("FicsitTDElite")) ? 1.0e12 : 2.0e12) + Dist; break;
+		case 5: Wert = (UTDPionier::IstMarkiert(Creature) ? 0.0 : 1.0e12) + Dist; break;
 		default: break;
 		}
 		if (!mZielFamilie.IsEmpty() && FamilieVon(Creature) != mZielFamilie)
@@ -1670,6 +1674,8 @@ void ATDTurretBase::TrefferArt(AFGCreature* Ziel, float Schaden, const FVector& 
 	{
 		Schaden *= Resistenz(Art, Ziel);
 	}
+	// 0.9.7 P2: vom Spieler markierte Gegner nehmen mehr Turmschaden (Pionier.Markierung.Bonus)
+	Schaden *= UTDPionier::MarkierungsFaktor(Ziel, Schaden);
 	TWeakObjectPtr<AFGCreature> WeakZiel = Ziel;
 	TWeakObjectPtr<ATDTurretBase> WeakSelf = this;
 	auto Wirkung = [WeakZiel, WeakSelf, Richtung, Schaden, Roh, Betaeubung]()

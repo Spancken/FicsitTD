@@ -2631,31 +2631,36 @@ void UTDWaveSubsystem::MeldeMetrik(float Anteil)
 	// 0.9.6 P0: Spielerschaden der Welle und sein Anteil am gesamten Wellenschaden
 	float SpielerSchaden = 0.f;
 	int32 SpielerAbschuesse = 0;
+	int32 SpielerAssists = 0;
+	float MarkBonus = 0.f;
 	if (const UTDPionier* Pionier = UTDPionier::Get(this))
 	{
 		SpielerSchaden = Pionier->GetWellenBilanz().Schaden;
 		SpielerAbschuesse = Pionier->GetWellenBilanz().Abschuesse;
+		SpielerAssists = Pionier->GetWellenBilanz().Assists;
+		MarkBonus = Pionier->GetWellenBilanz().MarkBonus;
 	}
 	const float SpielerAnteil = 100.f * SpielerSchaden / FMath::Max(SpielerSchaden + Schaden, 1.f);
-	UE_LOG(LogFicsitTD, Log, TEXT("Pionier Welle %d: Spielerschaden %.0f (%.1f %% des Wellenschadens), %d Abschuesse"), mWelle, SpielerSchaden, SpielerAnteil, SpielerAbschuesse);
+	UE_LOG(LogFicsitTD, Log, TEXT("Pionier Welle %d: Spielerschaden %.0f (%.1f %% des Wellenschadens), %d Abschuesse, %d Assists, Markierungsbonus der Tuerme %.0f"),
+		mWelle, SpielerSchaden, SpielerAnteil, SpielerAbschuesse, SpielerAssists, MarkBonus);
 
 	// CSV fuer die Auswertung ausserhalb des Spiels (Simulator, Tabellen)
 	const FString Datei = FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("FicsitTD"), TEXT("Metriken.csv"));
 	FString Zeile;
-	// 0.9.6: alte Datei ohne die Spielerspalten beiseitelegen, sonst passen Kopf und Zeilen nicht zusammen
+	// 0.9.6/0.9.7: alte Datei ohne die neuesten Spielerspalten beiseitelegen, sonst passen Kopf und Zeilen nicht zusammen
 	FString Alt;
-	if (IFileManager::Get().FileExists(*Datei) && FFileHelper::LoadFileToString(Alt, *Datei) && !Alt.Left(600).Contains(TEXT("Spieler_Schaden")))
+	if (IFileManager::Get().FileExists(*Datei) && FFileHelper::LoadFileToString(Alt, *Datei) && !Alt.Left(700).Contains(TEXT("Spieler_Assists")))
 	{
-		IFileManager::Get().Move(*FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("FicsitTD"), TEXT("Metriken_vor096.csv")), *Datei, true);
+		IFileManager::Get().Move(*FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("FicsitTD"), TEXT("Metriken_vor097.csv")), *Datei, true);
 	}
 	if (!IFileManager::Get().FileExists(*Datei))
 	{
-		Zeile = TEXT("Zeit;Stufe;Welle;Gegner;Elite;LP;EHP;K_DPS;Tuerme;Q;Dauer_s;Kernverlust_Proz;Kern_Proz;Naechste_m;Auslastung_Proz;Schaden;Overkill_Proz;Nebenziele_Proz;Uptime_Proz;Hungrig_s;OhneStrom_s;EP_ungenutzt;Bild_ms;Bild_p95_ms;Bild_max_ms;Ruckler_50ms;Hirn_ms;Turm_ms;Lebend_max;Spieler_Schaden;Spieler_Anteil_Proz\n");
+		Zeile = TEXT("Zeit;Stufe;Welle;Gegner;Elite;LP;EHP;K_DPS;Tuerme;Q;Dauer_s;Kernverlust_Proz;Kern_Proz;Naechste_m;Auslastung_Proz;Schaden;Overkill_Proz;Nebenziele_Proz;Uptime_Proz;Hungrig_s;OhneStrom_s;EP_ungenutzt;Bild_ms;Bild_p95_ms;Bild_max_ms;Ruckler_50ms;Hirn_ms;Turm_ms;Lebend_max;Spieler_Schaden;Spieler_Anteil_Proz;Spieler_Assists;Spieler_Markbonus\n");
 	}
-	Zeile += FString::Printf(TEXT("%s;%d;%d;%d;%d;%.0f;%.0f;%.1f;%d;%.3f;%.1f;%.2f;%.1f;%.1f;%.1f;%.0f;%.1f;%.1f;%.1f;%.1f;%.1f;%d;%.2f;%.2f;%.1f;%d;%.3f;%.3f;%d;%.0f;%.1f\n"),
+	Zeile += FString::Printf(TEXT("%s;%d;%d;%d;%d;%.0f;%.0f;%.1f;%d;%.3f;%.1f;%.2f;%.1f;%.1f;%.1f;%.0f;%.1f;%.1f;%.1f;%.1f;%.1f;%d;%.2f;%.2f;%.1f;%d;%.3f;%.3f;%d;%.0f;%.1f;%d;%.0f\n"),
 		*FDateTime::Now().ToString(TEXT("%Y-%m-%d %H:%M:%S")), mStufe, mWelle, mWellenGroesse, mElites, mMessLP, mMessEHP, mMessK, mMessTuerme, mMessQ,
 		mWellenZeit, Verlust, Anteil, Naechste, 100.f * Auslastung, Schaden, OverkillAnteil, NebenAnteil, UptimeMittel, Hungrig, OhneStrom, mMessEP,
-		Bild.Mittel, Bild.P95, Bild.Max, Bild.Ruckler, Bild.HirnMs, Bild.TurmMs, Bild.MaxLebend, SpielerSchaden, SpielerAnteil);
+		Bild.Mittel, Bild.P95, Bild.Max, Bild.Ruckler, Bild.HirnMs, Bild.TurmMs, Bild.MaxLebend, SpielerSchaden, SpielerAnteil, SpielerAssists, MarkBonus);
 	FFileHelper::SaveStringToFile(Zeile, *Datei, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM, &IFileManager::Get(), FILEWRITE_Append);
 }
 

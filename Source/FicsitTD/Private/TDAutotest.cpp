@@ -59,7 +59,7 @@ static ATDTurretBase* TDTestTurm(UWorld* World, const FString& Typ)
 {
 	for (TActorIterator<ATDTurretBase> It(World); It; ++It)
 	{
-		if (It->GetTurmName() == Typ)
+		if (Typ == TEXT("*") || It->GetTurmName() == Typ)   // 0.9.7: "*" = irgendein Turm
 		{
 			return *It;
 		}
@@ -781,6 +781,35 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		const UTDPionier* Pionier = UTDPionier::Get(World);
 		Ergebnis(TEXT("Spieler"), FString::Printf(TEXT("Treffer %.0f"), Menge), Pionier && Pionier->GetWellenBilanz().Treffer > 0,
 			Pionier ? FString::Printf(TEXT("Wellenbilanz %.0f Schaden, %d Treffer"), Pionier->GetWellenBilanz().Schaden, Pionier->GetWellenBilanz().Treffer) : TEXT("kein Pionier"));
+		return true;
+	}
+	if (S->HasField(TEXT("markiere")))
+	{
+		// 0.9.7 P2: lebende Wellengegner markieren wie ein Spielertreffer (0 = alle) - prueft Turm-Zielwahl, Bonus und Assists
+		const int32 Anzahl = static_cast<int32>(S->GetNumberField(TEXT("markiere")));
+		UTDPionier* Pionier = UTDPionier::Get(World);
+		const UTDWaveSubsystem* Waves = World->GetSubsystem<UTDWaveSubsystem>();
+		int32 Markiert = 0;
+		for (AFGCreature* C : Waves ? Waves->GetLivingWaveCreatures() : TArray<AFGCreature*>())
+		{
+			if (Pionier && (Anzahl <= 0 || Markiert < Anzahl))
+			{
+				Pionier->Markiere(C);
+				++Markiert;
+			}
+		}
+		Ergebnis(TEXT("Spieler"), FString::Printf(TEXT("markiere %d"), Anzahl), Markiert > 0, FString::Printf(TEXT("%d Gegner markiert"), Markiert));
+		return true;
+	}
+	if (S->TryGetStringField(TEXT("pionier"), Wort))
+	{
+		// 0.9.7 P2: Wert der laufenden Wellenbilanz > 0 (Markiert, MarkBonus, Assists, Treffer, Schaden)
+		const UTDPionier* Pionier = UTDPionier::Get(World);
+		const UTDPionier::FSpielerBilanz B = Pionier ? Pionier->GetWellenBilanz() : UTDPionier::FSpielerBilanz();
+		const float Wert = Wort == TEXT("Markiert") ? B.Markiert : Wort == TEXT("MarkBonus") ? B.MarkBonus : Wort == TEXT("Assists") ? B.Assists
+			: Wort == TEXT("Treffer") ? B.Treffer : B.Schaden;
+		Ergebnis(TEXT("Spieler"), FString::Printf(TEXT("Bilanz %s > 0"), *Wort), Wert > 0.f,
+			FString::Printf(TEXT("Markiert %d, Markierungsbonus %.0f, Assists %d, Treffer %d, Schaden %.0f"), B.Markiert, B.MarkBonus, B.Assists, B.Treffer, B.Schaden));
 		return true;
 	}
 	if (S->HasField(TEXT("kernfaellt")))

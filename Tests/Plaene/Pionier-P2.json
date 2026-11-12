@@ -1,0 +1,28 @@
+{
+  "Name": "Pionier-P2",
+  "_Hinweis": "0.9.7 P2 (Analyse-Spieler-und-Pionier 3.2): Spielertreffer markiert den Gegner (blaues Licht), Tuerme machen an ihm mehr Schaden (Bilanz MarkBonus), ein Turm-Abschuss eines markierten Gegners zaehlt als Assist. 'markiere' markiert alle lebenden Wellengegner wie ein Spielertreffer. Jaeger (x1,5 an Elite/Boss, sichere Beute) zeigt erst ein Handspiel bzw. eine Welle mit Elite (Log 'Jaeger-Beute'). Im Test haelt die Markierung 120 s, damit die Gegner sie bis in die Turmreichweite tragen. Das Foto zeigt die Zielwahl mit sechs Zeilen im Turmfenster.",
+  "Spielstand": "Autotest_Marius_W06",
+  "Quelle": "Marius_W06_Plateau.sav",
+  "ErweiterteEinstellungen": true,
+  "WarteNachLaden": 30,
+  "MaxMinuten": 12,
+  "Schritte": [
+    { "pruefe": "Version", "soll": "{VERSION}", "text": "richtige Mod-Version geladen" },
+    { "oeffne": "*" },
+    { "warte": 3 },
+    { "foto": "P2_Zielwahl" },
+    { "schliesse": true },
+    { "balance": { "Pionier.Markierung.Dauer": 120 } },
+    { "befehl": "td kern weiter" },
+    { "warte": 12 },
+    { "spielertreffer": 20 },
+    { "pionier": "Markiert" },
+    { "markiere": 0 },
+    { "warte": 4 },
+    { "foto": "P2_Markierung" },
+    { "wellenlauf": 6, "zeitraffer": 2, "max": 300 },
+    { "pionier": "MarkBonus" },
+    { "pionier": "Assists" },
+    { "pruefe": "KeineWarnungen", "text": "keine Warnungen oder Fehler des Mods im Log" }
+  ]
+}

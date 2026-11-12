@@ -66,12 +66,37 @@ public:
 		int32 Eliten = 0;
 		int32 Bosse = 0;
 		int32 XP = 0;
+		/** 0.9.7 P2: Wellengegner, die der Spieler markiert hat und die ein Turm erledigt hat */
+		int32 Assists = 0;
+		/** 0.9.7 P2: Zusatzschaden der Tuerme an markierten Gegnern */
+		float MarkBonus = 0.f;
+		/** 0.9.7 P2: Markierungen gesetzt (je Gegner einmal je Markierung) */
+		int32 Markiert = 0;
 	};
 	const FSpielerBilanz& GetWellenBilanz() const { return mBilanz; }
 	/** Zeile fuer die Wellenmeldung ("Du: 1240 Schaden (11 %), 9 Abschuesse ..."); leer, wenn der Spieler nichts getroffen hat */
 	FString WellenZeile(float TurmSchaden) const;
 
+	/** 0.9.7 P2 Zielmarkierung (Analyse 3.2): ein Spielertreffer markiert den Gegner Pionier.Markierung.Dauer s.
+	 *  Tuerme mit Zielwahl "Markierte zuerst" oder "Elite und Boss zuerst" nehmen ihn vorrangig, alle Tuerme machen an ihm mehr Schaden. */
+	static bool IstMarkiert(const AActor* Gegner);
+	/** Turmtreffer: Faktor auf den Turmschaden (1 = nicht markiert), zaehlt den Zusatzschaden fuer den Wellenbericht */
+	static float MarkierungsFaktor(const AActor* Gegner, float Schaden);
+	/** Hat der Spieler diesen Gegner in den letzten Sekunden getroffen? (Jaeger-Beute) */
+	static bool VomSpielerErlegt(const AActor* Gegner);
+	/** Selbsttest: Markierung ohne Spielertreffer setzen */
+	void Markiere(AActor* Gegner);
+
 private:
+	/** Markierung: Ablaufzeit (Weltzeit) und das Licht ueber dem Gegner */
+	struct FMarke
+	{
+		float Bis = 0.f;
+		TWeakObjectPtr<class UPointLightComponent> Licht;
+	};
+	TMap<TWeakObjectPtr<AActor>, FMarke> mMarken;
+	void RaeumeMarken(bool bAlle);
+	void EntferneMarke(const AActor* Gegner);
 	/** 0.9.6 P1: Handwaffen nutzen die Munitionswerte der Tuerme - Faktor = Tabellenwert x HandFaktor x Wellenzuwachs x Resistenz / Spielwert */
 	float HandFaktor(int32 W, const AActor* Verursacher, const AActor* Getroffen, FString& OutMunition, float& OutSkalierung, float& OutResistenz) const;
 	FSpielerBilanz mBilanz;

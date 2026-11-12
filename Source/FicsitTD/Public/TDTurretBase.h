@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <atomic>
 #include "CoreMinimal.h"
@@ -141,7 +141,7 @@ public:
 	bool FreieSichtZuPunkt(const FVector& Nach, FString& OutHindernis) const;
 
 	/** Zielwahl je Turm (Marius 03.11.2026): Reihenfolge der Ziele und bevorzugte Gegnerfamilie, im Maschinenfenster unten */
-	static constexpr int32 ZielModusAnzahl = 5;
+	static constexpr int32 ZielModusAnzahl = 6;
 	static const TCHAR* ZielModusName(int32 Modus);
 	/** Familien fuer die Vorzugswahl; "" = alle */
 	static const TArray<FString>& ZielFamilien();
@@ -356,7 +356,7 @@ private:
 	UPROPERTY(SaveGame)
 	int32 mKills = 0;
 
-	/** Zielwahl: 0 naechster zum Turm, 1 naechster zum Kern, 2 wenigste LP, 3 meiste LP, 4 Elite und Boss zuerst */
+	/** Zielwahl: 0 naechster zum Turm, 1 naechster zum Kern, 2 wenigste LP, 3 meiste LP, 4 Elite und Boss zuerst, 5 vom Spieler markierte zuerst (0.9.7) */
 	UPROPERTY(SaveGame)
 	int32 mZielModus = 0;
 	/** Bevorzugte Gegnerfamilie (FamilieVon), leer = alle gleich */

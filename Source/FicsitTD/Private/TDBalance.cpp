@@ -322,6 +322,9 @@ namespace TDBalanceIntern
 		{ TEXT("Pionier.XPWelle"), 40.f }, { TEXT("Pionier.XPJeWelle"), 6.f }, { TEXT("Pionier.XPKernVoll"), 20.f },
 		{ TEXT("Pionier.XPAbschuss"), 3.f }, { TEXT("Pionier.XPAbschussElite"), 10.f }, { TEXT("Pionier.XPAbschussBoss"), 50.f },
 		{ TEXT("Pionier.XPGrund"), 50.f }, { TEXT("Pionier.XPSchritt"), 50.f }, { TEXT("Pionier.MaxRang"), 30.f }, { TEXT("Pionier.NeuVerteilenPreis"), 20.f },
+		// 0.9.7 P2 (Analyse-Spieler-und-Pionier 3.2): Zielmarkierung (Dauer s, Turmschaden-Faktor, Licht), Jaeger (Spielerschaden an Elite/Boss, sichere Beute), Assist-XP
+		{ TEXT("Pionier.Markierung.An"), 1.f }, { TEXT("Pionier.Markierung.Dauer"), 6.f }, { TEXT("Pionier.Markierung.Bonus"), 1.15f }, { TEXT("Pionier.Markierung.Licht"), 1.f },
+		{ TEXT("Pionier.Jaeger.Faktor"), 1.5f }, { TEXT("Pionier.Jaeger.SichereBeute"), 1.f }, { TEXT("Pionier.XPAssist"), 1.f },
 		{ TEXT("Tuerme.Bolzenturm.GeschossGroesse"), 3.f }, { TEXT("Forschung.Kohlekraft.AbWelle"), 6.f }, { TEXT("Forschung.Tor.AbWelle"), 6.f }, { TEXT("Forschung.Lockfeuer.AbWelle"), 8.f }, { TEXT("Forschung.Oelschlick.AbWelle"), 15.f }, { TEXT("Forschung.UpgBolzen.AbWelle"), 3.f },
 		// 0.83 Bauten P2/P3
 		{ TEXT("Forschung.Elektrozaun.AbWelle"), 12.f }, { TEXT("Forschung.Funkmast.AbWelle"), 12.f }, { TEXT("Forschung.Schildgenerator.AbWelle"), 25.f }, { TEXT("Forschung.Himmelsturm.AbWelle"), 35.f }, { TEXT("Forschung.Stoerfeld.AbWelle"), 35.f }, { TEXT("Forschung.Singularitaet.AbWelle"), 51.f }, { TEXT("Forschung.Dimensionslager.AbWelle"), 51.f },

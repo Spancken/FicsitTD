@@ -1,4 +1,5 @@
-﻿#include "TDLaufProtokoll.h"
+#include "TDLaufProtokoll.h"
+#include "TDPionier.h"
 #include "FicsitTDModule.h"
 #include "TDBalance.h"
 #include "TDDefenseCore.h"
@@ -290,8 +291,18 @@ void UTDLaufProtokoll::WirfBeute(AFGCreature* Kreatur)
 	const bool bBoss = Kreatur->Tags.Contains(TEXT("FicsitTDBoss"));
 	const bool bElite = Kreatur->Tags.Contains(TEXT("FicsitTDElite"));
 	const TCHAR* Stufe = bBoss ? TEXT("Boss") : bElite ? TEXT("Elite") : TEXT("Normal");
-	auto Chance = [Stufe](const TCHAR* Art, float Normal, float Elite, float Boss)
+	// 0.9.7 P2 Jaeger: Elite oder Boss vom Spieler erlegt -> Kampfdaten und Einsatzpunkte sicher
+	const bool bJaeger = (bBoss || bElite) && UTDPionier::VomSpielerErlegt(Kreatur) && TDBalance::Wert(TEXT("Pionier.Jaeger.SichereBeute"), 1.f) > 0.5f;
+	if (bJaeger)
 	{
+		UE_LOG(LogFicsitTD, Log, TEXT("Pionier: Jaeger-Beute, %s %s vom Spieler erlegt"), Stufe, *Kreatur->GetName());
+	}
+	auto Chance = [Stufe, bJaeger](const TCHAR* Art, float Normal, float Elite, float Boss)
+	{
+		if (bJaeger && (FCString::Strcmp(Art, TEXT("Kampfdaten")) == 0 || FCString::Strcmp(Art, TEXT("EP")) == 0))
+		{
+			return 1.f;
+		}
 		const float Std = FCString::Strcmp(Stufe, TEXT("Boss")) == 0 ? Boss : FCString::Strcmp(Stufe, TEXT("Elite")) == 0 ? Elite : Normal;
 		return TDBalance::Wert(FString::Printf(TEXT("Loot.%s.%s"), Art, Stufe), Std);
 	};

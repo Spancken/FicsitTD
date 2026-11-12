@@ -16,6 +16,7 @@
 #include "FGHealthComponent.h"
 #include "GameFramework/DamageType.h"
 #include "Kismet/GameplayStatics.h"
+#include "Components/PointLightComponent.h"
 #include "TimerManager.h"
 
 namespace TDPionierWerte
@@ -272,6 +273,111 @@ void UTDPionier::WellenStart()
 	mZweiteChanceGenutzt = false;
 	mGewehrTreffer = 0;
 	mBilanz = FSpielerBilanz();
+	RaeumeMarken(true);
+}
+
+// ---------------- 0.9.7 P2: Zielmarkierung und Jaeger (Analyse-Spieler-und-Pionier 3.2) ----------------
+
+void UTDPionier::Markiere(AActor* Gegner)
+{
+	if (!Gegner || !GetWorld() || TDBalance::Wert(TEXT("Pionier.Markierung.An"), 1.f) < 0.5f)
+	{
+		return;
+	}
+	const float Jetzt = GetWorld()->GetTimeSeconds();
+	FMarke& M = mMarken.FindOrAdd(Gegner);
+	if (M.Bis < Jetzt)
+	{
+		++mBilanz.Markiert;
+		if (mBilanz.Markiert == 1)
+		{
+			UE_LOG(LogFicsitTD, Log, TEXT("Pionier: Zielmarkierung auf %s (%.0f s, Turmschaden x%.2f)"), *Gegner->GetName(),
+				TDBalance::Wert(TEXT("Pionier.Markierung.Dauer"), 6.f), TDBalance::Wert(TEXT("Pionier.Markierung.Bonus"), 1.15f));
+		}
+	}
+	M.Bis = Jetzt + TDBalance::Wert(TEXT("Pionier.Markierung.Dauer"), 6.f);
+	// Sichtbar: blaues Licht ueber dem Gegner (Spielschrift hat keine Symbole, ein Licht sieht man auch im Gedraenge); hoechstens 24 gleichzeitig
+	if (!M.Licht.IsValid() && TDBalance::Wert(TEXT("Pionier.Markierung.Licht"), 1.f) > 0.5f && Gegner->GetRootComponent())
+	{
+		int32 Lichter = 0;
+		for (const TPair<TWeakObjectPtr<AActor>, FMarke>& Je : mMarken)
+		{
+			Lichter += Je.Value.Licht.IsValid() ? 1 : 0;
+		}
+		if (Lichter < 24)
+		{
+			UPointLightComponent* Licht = NewObject<UPointLightComponent>(Gegner);
+			Licht->SetupAttachment(Gegner->GetRootComponent());
+			Licht->SetRelativeLocation(FVector(0.f, 0.f, 160.f));
+			Licht->SetLightColor(FLinearColor(0.45f, 0.8f, 1.f));
+			Licht->SetIntensity(8000.f);
+			Licht->SetAttenuationRadius(350.f);
+			Licht->SetCastShadows(false);
+			Licht->RegisterComponent();
+			M.Licht = Licht;
+		}
+	}
+}
+
+void UTDPionier::RaeumeMarken(bool bAlle)
+{
+	const float Jetzt = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.f;
+	for (auto It = mMarken.CreateIterator(); It; ++It)
+	{
+		if (bAlle || !It.Key().IsValid() || It.Value().Bis < Jetzt)
+		{
+			if (UPointLightComponent* Licht = It.Value().Licht.Get())
+			{
+				Licht->DestroyComponent();
+			}
+			It.RemoveCurrent();
+		}
+	}
+}
+
+bool UTDPionier::IstMarkiert(const AActor* Gegner)
+{
+	const UTDPionier* P = Gegner ? Get(Gegner) : nullptr;
+	if (!P || P->mMarken.Num() == 0)
+	{
+		return false;
+	}
+	const FMarke* M = P->mMarken.Find(TWeakObjectPtr<AActor>(const_cast<AActor*>(Gegner)));
+	return M && M->Bis >= Gegner->GetWorld()->GetTimeSeconds();
+}
+
+float UTDPionier::MarkierungsFaktor(const AActor* Gegner, float Schaden)
+{
+	if (!IstMarkiert(Gegner))
+	{
+		return 1.f;
+	}
+	const float Faktor = FMath::Max(TDBalance::Wert(TEXT("Pionier.Markierung.Bonus"), 1.15f), 1.f);
+	if (UTDPionier* P = Get(Gegner))
+	{
+		P->mBilanz.MarkBonus += Schaden * (Faktor - 1.f);
+	}
+	return Faktor;
+}
+
+void UTDPionier::EntferneMarke(const AActor* Gegner)
+{
+	const TWeakObjectPtr<AActor> Schluessel(const_cast<AActor*>(Gegner));
+	if (FMarke* M = mMarken.Find(Schluessel))
+	{
+		if (UPointLightComponent* Licht = M->Licht.Get())
+		{
+			Licht->DestroyComponent();
+		}
+		mMarken.Remove(Schluessel);
+	}
+}
+
+bool UTDPionier::VomSpielerErlegt(const AActor* Gegner)
+{
+	const UTDPionier* P = Gegner ? Get(Gegner) : nullptr;
+	const double* Zeit = P ? P->mSpielerTreffer.Find(Gegner) : nullptr;
+	return Zeit && FPlatformTime::Seconds() - *Zeit <= 5.0;
 }
 
 FString UTDPionier::WellenZeile(float TurmSchaden) const
@@ -285,6 +391,10 @@ FString UTDPionier::WellenZeile(float TurmSchaden) const
 	if (mBilanz.Eliten + mBilanz.Bosse > 0)
 	{
 		Text += TDF(TEXT(", davon %d Elite/Boss"), TEXT(", %d of them elite/boss"), mBilanz.Eliten + mBilanz.Bosse);
+	}
+	if (mBilanz.Assists > 0 || mBilanz.MarkBonus >= 1.f)
+	{
+		Text += TDF(TEXT(", %d Assists (Markierung +%.0f Turmschaden)"), TEXT(", %d assists (marking +%.0f turret damage)"), mBilanz.Assists, mBilanz.MarkBonus);
 	}
 	if (mBilanz.XP > 0)
 	{
@@ -355,9 +465,23 @@ void UTDPionier::Abschuss(const AFGCreature* Kreatur)
 	const double* Zeit = mSpielerTreffer.Find(Kreatur);
 	if (!Zeit || FPlatformTime::Seconds() - *Zeit > 5.0)
 	{
+		// 0.9.7 P2: ein Turm hat einen markierten Gegner erledigt -> Assist
+		if (IstMarkiert(Kreatur))
+		{
+			const int32 XP = TDBalance::Ganz(TEXT("Pionier.XPAssist"), 1);
+			++mBilanz.Assists;
+			mBilanz.XP += FMath::Max(XP, 0);
+			GibXP(XP, TEXT("Assist"));
+			if (mBilanz.Assists == 1)
+			{
+				UE_LOG(LogFicsitTD, Log, TEXT("Pionier: erster Assist der Welle (%s, markiert, Turm-Abschuss)"), *Kreatur->GetName());
+			}
+		}
+		EntferneMarke(Kreatur);
 		return;
 	}
 	mSpielerTreffer.Remove(Kreatur);
+	EntferneMarke(Kreatur);
 	const bool bBoss = Kreatur->Tags.Contains(TEXT("FicsitTDBoss"));
 	const bool bElite = Kreatur->Tags.Contains(TEXT("FicsitTDElite"));
 	const int32 XP = bBoss ? TDBalance::Ganz(TEXT("Pionier.XPAbschussBoss"), 50) : bElite ? TDBalance::Ganz(TEXT("Pionier.XPAbschussElite"), 10)
@@ -395,6 +519,11 @@ int32 UTDPionier::Waffe(const AActor* Verursacher)
 float UTDPionier::SpielerTreffer(AActor* Getroffen, AActor* Verursacher, float Menge)
 {
 	mSpielerTreffer.Add(Getroffen, FPlatformTime::Seconds());
+	// 0.9.7 P2: jeder Spielertreffer markiert das Ziel fuer die Tuerme
+	Markiere(Getroffen);
+	// 0.9.7 P2 Jaeger: Spielerschaden an Eliten und Bossen hoeher
+	const bool bJagd = Getroffen && (Getroffen->Tags.Contains(TEXT("FicsitTDElite")) || Getroffen->Tags.Contains(TEXT("FicsitTDBoss")));
+	const float Jaeger = bJagd ? FMath::Max(TDBalance::Wert(TEXT("Pionier.Jaeger.Faktor"), 1.5f), 0.f) : 1.f;
 	if (mSpielerTreffer.Num() > 300)
 	{
 		for (auto It = mSpielerTreffer.CreateIterator(); It; ++It)
@@ -409,9 +538,9 @@ float UTDPionier::SpielerTreffer(AActor* Getroffen, AActor* Verursacher, float M
 	if (W < 0)
 	{
 		// unbekannte Waffe (z. B. Xeno-Basher): nur zaehlen
-		mBilanz.Schaden += Menge;
+		mBilanz.Schaden += Menge * Jaeger;
 		++mBilanz.Treffer;
-		return 1.f;
+		return Jaeger;
 	}
 	const int32 Stufe = GetStufe(W);
 	// 0.9.6 P1: Munitionswert der Tuerme statt Spielwert, mit Wellenzuwachs und Resistenz
@@ -432,7 +561,7 @@ float UTDPionier::SpielerTreffer(AActor* Getroffen, AActor* Verursacher, float M
 		Faktor = 1.f + 0.25f * FMath::Min(Stufe, 4);
 	}
 	const float Talent = Faktor;
-	Faktor *= Hand;
+	Faktor *= Hand * Jaeger;
 	mBilanz.Schaden += Menge * Faktor;
 	++mBilanz.Treffer;
 	// 0.9.6 P0: je Geschoss und Munition einmal die Rechnung ins Log (bestaetigt oder widerlegt die Wiki-Werte 15 / 5 / 50)
@@ -441,8 +570,8 @@ float UTDPionier::SpielerTreffer(AActor* Getroffen, AActor* Verursacher, float M
 		if (!mGemeldeteTreffer.Contains(Klasse + Munition))
 		{
 			mGemeldeteTreffer.Add(Klasse + Munition);
-			UE_LOG(LogFicsitTD, Log, TEXT("Pionier: Handtreffer %s (%s): Spielschaden %.1f -> %.1f, Faktor %.2f (Munition/Spielwert %.2f, Welle x%.2f, Resistenz %.2f, Talent %.2f)"),
-				*Klasse, *Munition, Menge, Menge * Faktor, Faktor, Hand / FMath::Max(Skalierung * Resistenz, 0.01f), Skalierung, Resistenz, Talent);
+			UE_LOG(LogFicsitTD, Log, TEXT("Pionier: Handtreffer %s (%s): Spielschaden %.1f -> %.1f, Faktor %.2f (Munition/Spielwert %.2f, Welle x%.2f, Resistenz %.2f, Talent %.2f, Jaeger %.2f)"),
+				*Klasse, *Munition, Menge, Menge * Faktor, Faktor, Hand / FMath::Max(Skalierung * Resistenz, 0.01f), Skalierung, Resistenz, Talent, Jaeger);
 		}
 	}
 	// Abschluss-Talente: Zusatzschaden an Nachbarn im naechsten Bild (nicht im laufenden Schadensaufruf), ohne Ausloeser -> keine Schleife
@@ -528,6 +657,8 @@ float UTDPionier::Schadensfaktor(AActor* Getroffen, AController* Ausloeser, AAct
 
 void UTDPionier::Wirke()
 {
+	// 0.9.7 P2: abgelaufene Markierungen und ihre Lichter entfernen
+	RaeumeMarken(false);
 	const ATDDefenseCore* K = Kern();
 	const APlayerController* PC = GetWorld()->GetFirstPlayerController();
 	AFGCharacterPlayer* Spieler = PC ? Cast<AFGCharacterPlayer>(PC->GetPawn()) : nullptr;
