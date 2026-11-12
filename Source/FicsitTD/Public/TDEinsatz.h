@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "CoreMinimal.h"
 #include "FGConstructDisqualifier.h"
@@ -49,6 +49,15 @@ class FICSITTD_API UTDCDKontingent : public UFGConstructDisqualifier
 	GENERATED_BODY()
 public:
 	UTDCDKontingent();
+};
+
+/** 0.9.6 Bau abgelehnt: Blaupausen sind im Einsatz gesperrt (Marius 12.11.: in der ersten Version keine Blaupausen) */
+UCLASS()
+class FICSITTD_API UTDCDBlaupause : public UFGConstructDisqualifier
+{
+	GENERATED_BODY()
+public:
+	UTDCDBlaupause();
 };
 
 /** 0.84.4 Bau abgelehnt: AWESOME-Sink im Einsatz gesperrt (Coupons kommen nur vom Kern, Marius 08.11.) */
@@ -122,6 +131,8 @@ public:
 	bool HoleTurmErbe(const FString& Turm, int32& Kills, int32& Level);
 	/** Spieler-Posten (Inventar, Handplatz, Ausruestung): kein Kontingent, wirkt sofort */
 	static bool IstSpielerPosten(const FString& Key);
+	/** 0.9.6: Anzeigename eines Laden-/Kontingent-Schluessels in der Spielsprache (Schluessel selbst bleiben intern) */
+	static FString Anzeige(const FString& Key);
 	/** Forschungspunkte (Item FICSIT-Kampfdaten) im Inventar des lokalen Spielers */
 	int32 FPImInventar() const;
 	/** Offene FP (Inventar war voll) ins Inventar legen; Rueckgabe: wie viele es geschafft haben */
@@ -169,7 +180,18 @@ private:
 	/** Nach jedem Bau: Kontingent dieses Typs in den Chat */
 	UFUNCTION()
 	void GebaeudeGebaut(class AFGBuildable* Gebaeude);
+public:
+	/** Chat-Meldung des Einsatzes (0.9.6 oeffentlich: Meilenstein-Sperre im Modul) */
 	void Melde(const FString& Text) const;
+	/** 0.9.6 (Marius 12.11.): nach Sieg oder Niederlage - Ende des Durchgangs (0 offen, 1 Sieg, 2 Niederlage) und die drei Wege */
+	int32 LaufEnde() const;
+	/** Welle der Niederlage noch einmal: laedt den Spielstand vom Start dieser Welle (FicsitTD_Wxx_Start) */
+	FString WiederholeWelle(APlayerController* Spieler);
+	/** Neuer Durchgang am selben Ort ab Welle 1, Fabrik bleibt, Kern voll */
+	FString StarteNeu(APawn* Spieler);
+	/** Einsatz beenden: Kontingente und Sperren fallen weg, Kern voll und abreissbar */
+	FString BeendeNachEnde();
+private:
 	FString SpielerWirkung(const FTDSpielerPosten& P, int32 Menge);
 	void Verbinde();
 	/** Statuszeile unten rechts fuer den lokalen Spieler (UTDHud) */

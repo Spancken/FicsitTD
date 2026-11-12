@@ -103,6 +103,44 @@ ATDTurretBase::ATDTurretBase()
 	mRangeRing->SetCanEverAffectNavigation(false);
 }
 
+void ATDTurretBase::PostInitProperties()
+{
+	Super::PostInitProperties();
+	// 0.9.6 (Gesamtreview 12.11.): Der Basiskonstruktor setzt den Ring mit dem Basiswert 45 m, bevor die Unterklasse mRange setzt.
+	// Hier (auch am Klassen-Standardobjekt, dessen Ring das Hologramm kopiert) laeuft alles nach den Konstruktoren.
+	if (mRangeRing)
+	{
+		mRangeRing->SetRelativeScale3D(FVector(mRange / 100.f, mRange / 100.f, 1.f));
+	}
+}
+
+void ATDTurretBase::SperreTakt()
+{
+	// 0.9.6 (Gesamtreview 12.11., A1): Regler im Gebaeudefenster aus, Grenzen auf 100 %. Instanzwerte in BeginPlay, weil ein im
+	// Bauplan gespeicherter Wert (EditDefaultsOnly) einen Konstruktorwert ueberschreiben kann.
+	mCanChangePotential = false;
+	mMinPotential = 1.f;
+	mMaxPotential = 1.f;
+	if (!HasAuthority())
+	{
+		return;
+	}
+	const float Alt = GetCurrentPotential();
+	const float AltSoll = GetPendingPotential();
+	if (!FMath::IsNearlyEqual(Alt, 1.f) || !FMath::IsNearlyEqual(AltSoll, 1.f))
+	{
+		SetPendingPotential(1.f);
+		SetCurrentPotential(1.f);
+		UE_LOG(LogFicsitTD, Log, TEXT("Takt %s %s: Spielstand hatte %.0f %% (Soll %.0f %%), zurueck auf 100 %%"), *mTurmName, *GetName(), Alt * 100.f, AltSoll * 100.f);
+	}
+	static TSet<FString> Gemeldet;
+	if (!Gemeldet.Contains(mTurmName))
+	{
+		Gemeldet.Add(mTurmName);
+		UE_LOG(LogFicsitTD, Log, TEXT("Takt %s: fest auf 100 %% (Dauer-Bau, Regler gesperrt)"), *mTurmName);
+	}
+}
+
 void ATDTurretBase::SetzeModell(UStaticMeshComponent* Teil, const FString& Pfad)
 {
 	if (Teil && !Teil->GetStaticMesh() && !Pfad.IsEmpty())
@@ -277,6 +315,8 @@ FString ATDTurretBase::LevelDiffText(int32 Von, int32 Bis) const
 				: FString::Printf(TEXT("%s +%d %%"), *Name, FMath::RoundToInt(100.f * D)));
 		}
 	}
+	// 0.9.6 (Gesamtreview 12.11.): Wirkung ohne Level-Tabelle, z. B. Drohnenplatz "+1 Drohne"
+	LevelZusatzText(Von, Bis, Teile);
 	// Level 5 = Meisterstufe mit eigener Faehigkeit je Turm (0.64, Marius: nicht ueberall ein zweiter Lauf)
 	if (Von < TurmMaxLevel && Bis >= TurmMaxLevel)
 	{
@@ -307,6 +347,9 @@ static const TCHAR* TurmKnoten(const FString& Turm, bool& bHatLevel)
 	if (Turm == TEXT("Nobelisk-Werfer")) return TEXT("NobeliskWerfer");
 	if (Turm == TEXT("Himmelsturm")) return TEXT("Himmelsturm");       // 0.9.2
 	if (Turm == TEXT("Singularitaet")) return TEXT("Singularitaet");   // 0.9.2
+	// 0.9.6 (Gesamtreview 12.11., A2): Drohnenplatz Level 1-3 (2/3/4 Drohnen). Gebaut wird er nur nach Reparatur- oder Kampfdrohnen
+	// (Gabelung, zwei Knoten), deshalb wie ein Starterturm ohne eigenen Knoten; Level 3 braucht Turmfertigung II
+	if (Turm == TEXT("Drohnenplatz")) return TEXT("");
 	bHatLevel = false;
 	return nullptr;
 }
@@ -331,22 +374,27 @@ int32 ATDTurretBase::LevelMax() const
 	{
 		return 1;
 	}
+	int32 Max = 4;
 	if (!TDForschung::Hat(this, TEXT("Turmfertigung2")))
 	{
-		return 2;
+		Max = 2;
 	}
-	if (!TDForschung::Hat(this, TEXT("Turmfertigung3")))
+	else if (!TDForschung::Hat(this, TEXT("Turmfertigung3")))
 	{
-		return 3;
+		Max = 3;
 	}
 	// 0.73 Doktrin: die Hauptlinie bekommt Level 5 schon mit Turmfertigung III
-	return TDForschung::Hat(this, TEXT("Turmfertigung4")) || HatDoktrin() ? 5 : 4;
+	else if (TDForschung::Hat(this, TEXT("Turmfertigung4")) || HatDoktrin())
+	{
+		Max = 5;
+	}
+	return FMath::Min(Max, MaxLevel());   // 0.9.6: Drohnenplatz hoechstens 3
 }
 
 int32 ATDTurretBase::LevelPreis() const
 {
 	const int32 Naechstes = GetLevel() + 1;
-	if (Naechstes > TurmMaxLevel)
+	if (Naechstes > MaxLevel())
 	{
 		return 0;
 	}
@@ -363,7 +411,7 @@ FString ATDTurretBase::LevelSperre() const
 	{
 		return TDT(TEXT("Dieser Turm hat keine Level."), TEXT("This turret has no levels."));
 	}
-	if (Naechstes > TurmMaxLevel)
+	if (Naechstes > MaxLevel())
 	{
 		return TDT(TEXT("Höchstes Level erreicht."), TEXT("Maximum level reached."));
 	}
@@ -402,6 +450,7 @@ FString ATDTurretBase::KaufeLevel()
 		return Fehler;
 	}
 	mLevel = Neu;
+	mTaktBonusCache.store(TaktBonus());
 	if (mRangeRing)
 	{
 		ZeigeReichweite(mRangeRing->IsVisible());
@@ -413,7 +462,8 @@ FString ATDTurretBase::KaufeLevel()
 
 void ATDTurretBase::SetzeLevelTest(int32 Level)
 {
-	mLevel = FMath::Clamp(Level, 1, TurmMaxLevel);
+	mLevel = FMath::Clamp(Level, 1, MaxLevel());
+	mTaktBonusCache.store(TaktBonus());
 	if (mRangeRing)
 	{
 		ZeigeReichweite(mRangeRing->IsVisible());
@@ -428,13 +478,14 @@ float ATDTurretBase::GetTDMaxHealth() const
 
 float ATDTurretBase::GetProductionCycleTime() const
 {
-	return Super::GetProductionCycleTime() / TaktBonus();
+	// 0.9.6 (Gesamtreview 12.11., C): kann auf dem Fabrik-Thread laufen -> nur den vom Spielschritt gesetzten Wert lesen
+	return Super::GetProductionCycleTime() / FMath::Max(mTaktBonusCache.load(), 0.01f);
 }
 
 FText ATDTurretBase::GetLookAtDecription_Implementation(AFGCharacterPlayer* byCharacter, const FUseState& state) const
 {
 	const int32 Stufe = GetLevel();
-	const int32 MaxStufe = TurmMaxLevel;
+	const int32 MaxStufe = MaxLevel();
 	const FString Sperre = LevelSperre();
 	const FString Fortschritt = Stufe >= MaxStufe ? TDT(TEXT("Höchstes Level"), TEXT("Maximum level"))
 		: Sperre.IsEmpty() ? TDF(TEXT("Level %d für %d Coupons im Turmfenster"), TEXT("Level %d for %d Coupons in the turret window"), Stufe + 1, LevelPreis()) : Sperre;
@@ -454,7 +505,7 @@ float ATDTurretBase::Zykluszeit() const
 void ATDTurretBase::Kennwerte(TArray<FTDKennwert>& Out) const
 {
 	const int32 Stufe = GetLevel();
-	Out.Add({ TEXT("Level"), TDF(TEXT("%d von %d"), TEXT("%d of %d"), Stufe, TurmMaxLevel) });
+	Out.Add({ TEXT("Level"), TDF(TEXT("%d von %d"), TEXT("%d of %d"), Stufe, MaxLevel()) });
 	Out.Add({ TDT(TEXT("Lebenspunkte"), TEXT("Health")), FString::Printf(TEXT("%.0f / %.0f"), FMath::Max(mHealth, 0.f), GetTDMaxHealth()) });
 	Out.Add({ TDT(TEXT("Reichweite"), TEXT("Range")), FString::Printf(TEXT("%.0f m"), GetReichweite() / 100.f) });
 	Out.Add({ TDT(TEXT("Schadensart"), TEXT("Damage type")), TDSchadensartAnzeige(mSchadensart) });
@@ -567,6 +618,20 @@ void ATDTurretBase::BeginPlay()
 	}
 	// Der Kreis ist nur fuers Hologramm sichtbar; am fertigen Turm per /td reichweite
 	ZeigeReichweite(false);
+	// 0.9.6 (Gesamtreview 12.11., A5): Bauvorschau-Ring am Klassen-Standardobjekt auf die Balance-Reichweite (Level 1, ohne Funkmast)
+	// setzen, damit auch ein in Balance.json geaenderter Wert in der naechsten Vorschau stimmt (PostInitProperties kennt nur mRange)
+	if (ATDTurretBase* Standard = GetClass()->GetDefaultObject<ATDTurretBase>())
+	{
+		const float Vorschau = TDBalance::Wert(BalanceTurm() + TEXT("Reichweite"), mRange / 100.f);
+		if (Standard->mRangeRing && !FMath::IsNearlyEqual(Standard->mRangeRing->GetRelativeScale3D().X, Vorschau, 0.01f))
+		{
+			Standard->mRangeRing->SetRelativeScale3D(FVector(Vorschau, Vorschau, 1.f));
+			UE_LOG(LogFicsitTD, Log, TEXT("Bauvorschau %s: Reichweitenring %.1f m"), *mTurmName, Vorschau);
+		}
+	}
+	// 0.9.6: Kombo-Zaehler einer frueheren Spielwelt verwerfen
+	TDKombo::PruefeWelt(this);
+	mTaktBonusCache.store(TaktBonus());
 	if (!HasAuthority())
 	{
 		return;
@@ -607,13 +672,14 @@ void ATDTurretBase::BeginPlay()
 			if (Einsatz->HoleTurmErbe(mTurmName, Kills, Level))
 			{
 				mKills = FMath::Max(mKills, Kills);
-				mLevel = FMath::Clamp(Level, 1, TurmMaxLevel);
+				mLevel = FMath::Clamp(Level, 1, MaxLevel());
 				mHealth = GetTDMaxHealth();
 				UE_LOG(LogFicsitTD, Log, TEXT("%s: uebernimmt Erbe eines abgerissenen %s (%d Abschuesse, Level %d)"), *GetName(), *mTurmName, mKills, mLevel);
 			}
 		}
 	}
 
+	mTaktBonusCache.store(TaktBonus());   // 0.9.6: Level steht jetzt fest (alter Spielstand, Erbe)
 	// Koeder stehen im Sockel (Y = +-(40+70) = +-110 < 180): verdeckt, fuer Kreaturen nah genug an der Aussenwand
 	ATDDecoy::SpawnForBox(this, FVector(0.f, 0.f, mHalbmasse.Z), FVector(mHalbmasse.X, 40.f, mHalbmasse.Z), 1, mDecoys);
 	GetWorldTimerManager().SetTimer(mSpielTimer, this, &ATDTurretBase::Spielschritt, TurmSchrittIntervall, true);
@@ -1099,6 +1165,8 @@ void ATDTurretBase::AktualisiereLampe()
 void ATDTurretBase::Spielschritt()
 {
 	TDLeistung::FUhr Uhr(TDLeistung::TurmZyklen);
+	// 0.9.6 (Gesamtreview 12.11., C): Takt-Bonus hier auf dem Spiel-Thread lesen (folgt auch /td balance neu)
+	mTaktBonusCache.store(TaktBonus());
 	ZeigeStufenTeile();
 	// Forschung Munitionspuffer: Eingang fasst die doppelte Stapelgroesse (einmal je Munitionssorte setzen)
 	if (UFGInventoryComponent* Eingang = GetInputInventory())
@@ -1430,6 +1498,7 @@ namespace TDKombo
 
 	bool MarkiereBolzen(const UObject* Kontext, AFGCreature* Ziel)
 	{
+		PruefeWelt(Kontext);
 		if (Ziel && TDBalance::Wert(TEXT("Kombo.Aktiv"), 1.f) > 0.f)
 		{
 			const float T = Jetzt(Kontext);
@@ -1444,6 +1513,7 @@ namespace TDKombo
 
 	bool HatBolzen(const UObject* Kontext, const AFGCreature* Ziel)
 	{
+		PruefeWelt(Kontext);
 		const FZustand* Z = Ziel ? GZustand.Find(const_cast<AFGCreature*>(Ziel)) : nullptr;
 		return Z && Z->BolzenBis > Jetzt(Kontext);
 	}
@@ -1483,9 +1553,29 @@ namespace TDKombo
 
 	static TWeakObjectPtr<UWorld> GAngesagtWelt;
 	static TSet<FString> GAngesagt;
+	/** 0.9.6 (Gesamtreview 12.11., A14): Welt, zu der GZustand, GJeTurm und GGesamt gehoeren */
+	static TWeakObjectPtr<UWorld> GZaehlerWelt;
+
+	void PruefeWelt(const UObject* Kontext)
+	{
+		UWorld* Welt = Kontext ? Kontext->GetWorld() : nullptr;
+		if (!Welt || GZaehlerWelt.Get() == Welt)
+		{
+			return;
+		}
+		if (GGesamt.Num() > 0 || GJeTurm.Num() > 0 || GZustand.Num() > 0)
+		{
+			UE_LOG(LogFicsitTD, Log, TEXT("Kombo: neue Spielwelt, %d Zaehler und %d Gegner-Zustaende verworfen"), GGesamt.Num(), GZustand.Num());
+		}
+		GZaehlerWelt = Welt;
+		GZustand.Reset();
+		GJeTurm.Reset();
+		GGesamt.Reset();
+	}
 
 	void Melde(const TCHAR* Name, const ATDTurretBase* Turm, float Schaden)
 	{
+		PruefeWelt(Turm);
 		UWorld* Welt = Turm ? Turm->GetWorld() : nullptr;
 		if (Welt && GAngesagtWelt.Get() != Welt)
 		{
@@ -1658,8 +1748,14 @@ float ATDTurretBase::TakeDamage(float DamageAmount, const FDamageEvent& DamageEv
 	{
 		return 0.f;   // Giftwolken, Umgebung, eigene Waffen
 	}
-	ApplyTDDamage(DamageAmount, DamageCauser);
-	return DamageAmount;
+	// 0.9.6 (Gesamtreview 12.11., A3): direkte Treffer (Spucker-Geschoss am Gebaeude statt am Koeder) gehen zuerst auf die Kuppel.
+	// Nicht in ApplyTDDamage: Koeder und Gegnerhirn schlucken schon vorher, sonst zoege der Schild doppelt.
+	const float Durch = ATDShieldGenerator::Schlucke(GetWorld(), this, DamageAmount);
+	if (Durch > 0.f)
+	{
+		ApplyTDDamage(Durch, DamageCauser);
+	}
+	return Durch;
 }
 
 void ATDTurretBase::ApplyTDDamage(float Amount, const AActor* Causer)

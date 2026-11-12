@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "CoreMinimal.h"
 #include "Subsystems/WorldSubsystem.h"
@@ -78,6 +78,8 @@ private:
 	void PruefeTDStart();
 	FTimerHandle mStartTimer;
 	int32 mStehtSeit = 0;
+	/** 0.9.6: automatische Kernplatz-Versuche (scheitert die Bodensuche, kommt ein anderer Platz dran) */
+	int32 mStartVersuche = 0;
 	/** 0.69.1: Einsatz erst starten, wenn das Navigationsnetz um den neuen Kern steht (Test 0.69.0: Ansage "0 von 16") */
 	void WarteNetzFuerEinsatz();
 	TWeakObjectPtr<class ATDDefenseCore> mNeuerKern;

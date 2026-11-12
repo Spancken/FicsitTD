@@ -31,6 +31,8 @@ namespace TDKombo
 	FICSITTD_API FString Zeile(const ATDTurretBase* Turm);
 	/** Selbsttest: wie oft eine Kombination in dieser Sitzung ausgeloest hat */
 	FICSITTD_API int32 Anzahl(const TCHAR* Name);
+	/** 0.9.6 (Gesamtreview 12.11.): Zaehler und Gegner-Zustaende leben prozessweit; beim ersten Aufruf in einer neuen Spielwelt leeren */
+	FICSITTD_API void PruefeWelt(const UObject* Kontext);
 }
 
 enum class ETDSchadensart : uint8
@@ -76,6 +78,8 @@ class FICSITTD_API ATDTurretBase : public AFGBuildableManufacturer, public ITDDa
 public:
 	ATDTurretBase();
 
+	/** 0.9.6 (Gesamtreview 12.11.): Reichweitenring der Bauvorschau auf mRange der Unterklasse setzen (der Konstruktor kennt nur 45 m) */
+	virtual void PostInitProperties() override;
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	/** Abriss im Einsatz: Abschuesse und Upgrades an den naechsten neuen Turm dieses Typs weitergeben */
@@ -106,7 +110,9 @@ public:
 	int32 GetKills() const { return mKills; }
 	/** Turmlevel 1-5 (0.63, Marius 04.11.2026): nur per Upgrade im Turmfenster, sichtbar an den Anbauteilen _S<n> */
 	static constexpr int32 TurmMaxLevel = 5;
-	int32 GetLevel() const { return FMath::Clamp(mLevel, 1, TurmMaxLevel); }
+	/** 0.9.6 (Gesamtreview 12.11.): hoechstes Level dieses Typs (Drohnenplatz 3, sonst TurmMaxLevel) */
+	virtual int32 MaxLevel() const { return TurmMaxLevel; }
+	int32 GetLevel() const { return FMath::Clamp(mLevel, 1, MaxLevel()); }
 	/** Test (/td turmlevel): Level direkt setzen */
 	void SetzeLevelTest(int32 Level);
 	FString GetStromText() const;
@@ -152,8 +158,8 @@ public:
 	bool UpgradeFreigeschaltet() const;
 	/** Hoechstes Level, das die Forschung gerade erlaubt */
 	int32 LevelMax() const;
-	/** Preis des naechsten Levels in EP (0 = keins mehr) */
-	int32 LevelPreis() const;
+	/** Preis des naechsten Levels in EP (0 = keins mehr); 0.9.6: virtuell, der Drohnenplatz hat eigene Preise */
+	virtual int32 LevelPreis() const;
 	/** Warum das naechste Level (noch) nicht geht; leer = kaufbar, wenn das Konto reicht */
 	FString LevelSperre() const;
 	/** Was ein Level bringt, z. B. "Feuerrate +30 %"; LevelSumme = alles bis zum jetzigen Level */
@@ -229,6 +235,11 @@ public:
 protected:
 	/** Direkt nach dem Spielstart der Maschine, bevor das Standardrezept gesetzt wird (z. B. Rohranschluss einhaengen) */
 	virtual void NachMaschinenStart() {}
+	/** 0.9.6 (Gesamtreview 12.11.): Dauer-Bauten (Schild, Funkmast, Stoerfeld, Lockfeuer, Oelschlick) laufen fest mit 100 % Takt.
+	 *  Untertakten machte sie fast kostenlos (Wirkung haengt nur an IsProducing). Spielstaende mit anderem Takt werden zurueckgesetzt. */
+	void SperreTakt();
+	/** 0.9.6: Zusatztext fuer die Level-Vorschau (z. B. Drohnenplatz "+1 Drohne"), Level Von -> Bis */
+	virtual void LevelZusatzText(int32 Von, int32 Bis, TArray<FString>& Teile) const {}
 	/** Zusatzzeile fuer den Hinweistext */
 	virtual FString ZusatzInfo() const { return FString(); }
 	/** Munitionszeile im Werte-Panel (Fluessigkeiten in m3) */
@@ -374,6 +385,9 @@ private:
 	std::atomic<bool> mBereit{ false };
 	/** Abgeschlossene Zyklen (Fabrik-Thread) -> Feuern() auf dem Spiel-Thread */
 	std::atomic<int32> mOffeneZyklen{ 0 };
+	/** 0.9.6 (Gesamtreview 12.11., Abschnitt C): TaktBonus vom Spiel-Thread (Spielschritt), GetProductionCycleTime liest nur das.
+	 *  Vorher lief TDBalance::Wert (ohne Sperre) auf dem Fabrik-Thread, parallel zu /td balance neu. */
+	std::atomic<float> mTaktBonusCache{ 1.f };
 	FTimerHandle mSpielTimer;
 	FTimerHandle mZielTimer;
 	/** T2f: seit der letzten Drehung vergangene Zeit (Drehtakt) */

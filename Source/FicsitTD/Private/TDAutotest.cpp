@@ -747,6 +747,29 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		LadeSpielstand(World, Wort);
 		return false;   // weiter geht es nach dem Laden (Phase Laedt setzt den naechsten Schritt)
 	}
+	if (S->HasField(TEXT("kernfaellt")))
+	{
+		// 0.9.6: Niederlage nachstellen (Kern-Menue nach dem Ende pruefen)
+		bool bGefallen = false;
+		for (TActorIterator<ATDDefenseCore> It(World); It; ++It)
+		{
+			It->ApplyTDDamage(It->GetTDHealth() + 1.f, nullptr);
+			bGefallen = !It->IsTDIntact();
+		}
+		Ergebnis(TEXT("Kern"), TEXT("faellt"), bGefallen);
+		return true;
+	}
+	if (S->HasField(TEXT("endeknopf")))
+	{
+		// 0.9.6: "neustart" oder "beenden" wie die Knoepfe im Kern-Menue nach Sieg oder Niederlage
+		UTDEinsatzSubsystem* Einsatz = World->GetSubsystem<UTDEinsatzSubsystem>();
+		const FString Knopf = S->GetStringField(TEXT("endeknopf"));
+		const int32 Vorher = Einsatz ? Einsatz->LaufEnde() : -1;
+		APlayerController* PC = World->GetFirstPlayerController();
+		const FString Antwort = !Einsatz ? FString(TEXT("kein Einsatz")) : Knopf == TEXT("neustart") ? Einsatz->StarteNeu(PC ? PC->GetPawn() : nullptr) : Einsatz->BeendeNachEnde();
+		Ergebnis(TEXT("Ende"), FString::Printf(TEXT("%s (Ende vorher %d)"), *Knopf, Vorher), Vorher != 0, Antwort);
+		return true;
+	}
 	if (S->TryGetStringField(TEXT("erforsche"), Wort))
 	{
 		// 0.75: Forschung direkt geben wie das MAM (Spiel-Delegate laeuft, stille Turm-Rezepte kommen mit); MAM-Sperren gelten hier nicht

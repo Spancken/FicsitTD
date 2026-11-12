@@ -64,6 +64,12 @@ public:
 	/** Wellen nur auf Befehl (Einsatz: Planung ohne Zeitdruck) */
 	UPROPERTY(SaveGame)
 	bool mLaufManuell = false;
+	/** 0.9.6 (Gesamtreview 12.11.: nach Sieg oder Niederlage kein Ausweg): Ende des letzten Durchgangs - 0 offen, 1 Sieg, 2 Niederlage,
+	 *  dazu die Welle. Das Kern-Menue bietet dann Welle wiederholen, neu starten oder Einsatz beenden. */
+	UPROPERTY(SaveGame)
+	int32 mLaufEnde = 0;
+	UPROPERTY(SaveGame)
+	int32 mLaufEndWelle = 0;
 	/** Einsatz-Modus (TDEinsatz.h): aktiv, freies Bauen (Test), Startkit schon ausgegeben */
 	UPROPERTY(SaveGame)
 	bool mEinsatzAktiv = false;

@@ -4,6 +4,8 @@
 #include "FGSchematic.h"
 #include "FGSchematicManager.h"
 #include "Engine/World.h"
+#include "Engine/Texture2D.h"
+#include "Resources/FGItemDescriptor.h"
 #include "Unlocks/FGUnlockInfoOnly.h"
 #include "FicsitTDModule.h"
 #include "TDSprache.h"
@@ -201,6 +203,66 @@ namespace TDForschung
 		return UFGSchematic::GetSchematicDisplayName(TSubclassOf<UFGSchematic>(const_cast<UClass*>(Schematic))).ToString();
 	}
 
+	/** 0.9.6: besseres Symbol je Knoten (Beschreibungsklasse, deren grosses Icon genommen wird); leer = Symbol aus create_research.py */
+	static UTexture2D* BesseresSymbol(const FString& Key)
+	{
+		static const TMap<FString, FString> Desc = [] {
+			const FString F = TEXT("/Game/FactoryGame/Buildable/Factory/");
+			const FString T = TEXT("/FicsitTD/Buildings/");
+			auto Spiel = [&F](const TCHAR* N) { return FString::Printf(TEXT("%s%s/Desc_%s.Desc_%s_C"), *F, N, N, N); };
+			auto Turm = [&T](const TCHAR* Ordner, const TCHAR* N) { return FString::Printf(TEXT("%s%s/Desc_TD_%s.Desc_TD_%s_C"), *T, Ordner, N, N); };
+			TMap<FString, FString> M;
+			// Industrie: Maschinen und Baender
+			M.Add(TEXT("Kohlekraft"), Spiel(TEXT("GeneratorCoal")));
+			M.Add(TEXT("Assembler"), Spiel(TEXT("AssemblerMk1")));
+			M.Add(TEXT("Giesserei"), Spiel(TEXT("SmelterMk1")));
+			M.Add(TEXT("Raffinerie"), Spiel(TEXT("OilRefinery")));
+			M.Add(TEXT("Treibstoffkraft"), Spiel(TEXT("GeneratorFuel")));
+			M.Add(TEXT("Schwerindustrie"), Spiel(TEXT("ManufacturerMk1")));
+			M.Add(TEXT("Mischtechnik"), Spiel(TEXT("Blender")));
+			M.Add(TEXT("BandMk2"), Spiel(TEXT("ConveyorBeltMk2")));
+			M.Add(TEXT("BandMk3"), Spiel(TEXT("ConveyorBeltMk3")));
+			// neue Tuerme und Bauten: das Gebaeude selbst
+			M.Add(TEXT("Gewehrturm"), Turm(TEXT("GunTurret"), TEXT("GunTurret")));
+			M.Add(TEXT("NobeliskWerfer"), Turm(TEXT("NobeliskLauncher"), TEXT("NobeliskLauncher")));
+			M.Add(TEXT("Himmelsturm"), Turm(TEXT("FlakTurret"), TEXT("FlakTurret")));
+			M.Add(TEXT("Singularitaet"), Turm(TEXT("SingularityLauncher"), TEXT("SingularityLauncher")));
+			M.Add(TEXT("Teslaspule"), Turm(TEXT("TeslaCoil"), TEXT("TeslaCoil")));
+			M.Add(TEXT("Flammenwerfer"), Turm(TEXT("FlameTurret"), TEXT("FlameTurret")));
+			M.Add(TEXT("Oelschlick"), Turm(TEXT("SlickPlate"), TEXT("SlickPlate")));
+			M.Add(TEXT("Elektrozaun"), Turm(TEXT("ConductorWall"), TEXT("ConductorWall")));
+			M.Add(TEXT("Reparaturdrohnen"), Turm(TEXT("DronePort"), TEXT("DronePort")));
+			M.Add(TEXT("Kampfdrohnen"), Turm(TEXT("DronePort"), TEXT("DronePort")));
+			M.Add(TEXT("Tor"), Turm(TEXT("Gate"), TEXT("Gate")));
+			M.Add(TEXT("Lockfeuer"), Turm(TEXT("LureBeacon"), TEXT("LureBeacon")));
+			M.Add(TEXT("Funkmast"), Turm(TEXT("RadioMast"), TEXT("RadioMast")));
+			M.Add(TEXT("Schildgenerator"), Turm(TEXT("ShieldGenerator"), TEXT("ShieldGenerator")));
+			M.Add(TEXT("Stoerfeld"), Turm(TEXT("FieldProjector"), TEXT("FieldProjector")));
+			M.Add(TEXT("MauerMk2"), Turm(TEXT("DefenseWall"), TEXT("DefenseWall")));
+			M.Add(TEXT("Stachelmauer"), Turm(TEXT("DefenseWall"), TEXT("DefenseWall")));
+			// Kern-Faehigkeiten: der Kern
+			for (const TCHAR* K : { TEXT("KernPanzer"), TEXT("KernNotrep"), TEXT("KernSchild"), TEXT("KernGeschuetz") })
+			{
+				M.Add(K, Turm(TEXT("DefenseCore"), TEXT("DefenseCore")));
+			}
+			// Doktrinen: der Turm der Linie
+			M.Add(TEXT("DoktrinBolzen"), Turm(TEXT("BoltTurret"), TEXT("BoltTurret")));
+			M.Add(TEXT("DoktrinGewehr"), Turm(TEXT("GunTurret"), TEXT("GunTurret")));
+			M.Add(TEXT("DoktrinNobelisk"), Turm(TEXT("NobeliskLauncher"), TEXT("NobeliskLauncher")));
+			M.Add(TEXT("DoktrinTesla"), Turm(TEXT("TeslaCoil"), TEXT("TeslaCoil")));
+			M.Add(TEXT("DoktrinFlamme"), Turm(TEXT("FlameTurret"), TEXT("FlameTurret")));
+			// Tesla-Faehigkeiten: Sprung = Spule, Ueberlast = Energie-Splitter, Puffer = Batterie
+			M.Add(TEXT("Kettenblitz"), Turm(TEXT("TeslaCoil"), TEXT("TeslaCoil")));
+			M.Add(TEXT("Ueberlast"), TEXT("/Game/FactoryGame/Resource/Environment/Crystal/Desc_CrystalShard.Desc_CrystalShard_C"));
+			M.Add(TEXT("Akkubank"), TEXT("/Game/FactoryGame/Resource/Parts/Battery/Desc_Battery.Desc_Battery_C"));
+			M.Add(TEXT("Munitionspuffer"), Spiel(TEXT("StorageContainerMk1")));
+			return M;
+		}();
+		const FString* Pfad = Desc.Find(Key);
+		UClass* Klasse = Pfad ? LoadClass<UFGItemDescriptor>(nullptr, **Pfad) : nullptr;
+		return Klasse ? UFGItemDescriptor::GetBigIcon(TSubclassOf<UFGItemDescriptor>(Klasse)) : nullptr;
+	}
+
 	void AktualisiereMamKarten(const UObject* WorldContext)
 	{
 		static FTextProperty* NameProp = FindFProperty<FTextProperty>(UFGSchematic::StaticClass(), TEXT("mDisplayName"));
@@ -250,6 +312,43 @@ namespace TDForschung
 				break;
 			default:
 				break;
+			}
+			// 0.9.6 (Marius 12.11.: "bei alternativen Knoten nicht sichtbar, dass der andere nicht mehr erforscht werden kann"):
+			// der ausgeschlossene Knoten zeigt im Baum ein rotes X (Spielsymbol TXUI_MIcon_Stop_X) statt seines Bildes
+			{
+				static FStructProperty* IconProp = FindFProperty<FStructProperty>(UFGSchematic::StaticClass(), TEXT("mSchematicIcon"));
+				static TMap<FString, FSlateBrush> Original;
+				static UTexture2D* Kreuz = LoadObject<UTexture2D>(nullptr, TEXT("/Game/FactoryGame/Interface/UI/Assets/MonochromeIcons/TXUI_MIcon_Stop_X.TXUI_MIcon_Stop_X"));
+				if (IconProp && Kreuz)
+				{
+					FSlateBrush* Icon = IconProp->ContainerPtrToValuePtr<FSlateBrush>(CDO);
+					if (!Original.Contains(K.Key))
+					{
+						// 0.9.6 (Marius 12.11.: "komische Symbole fuer das, was sie sagen"): Knoten mit neuem Gebaeude zeigen das
+						// Gebaeude, Faehigkeiten ein passenderes Teil (vorher oft Draht, Kupferblech, Kabel)
+						FSlateBrush Besser = *Icon;
+						if (UTexture2D* Symbol = BesseresSymbol(K.Key))
+						{
+							Besser.SetResourceObject(Symbol);
+							*Icon = Besser;
+						}
+						Original.Add(K.Key, Besser);
+					}
+					if (Zustand(WorldContext, K) == ETDForschungZustand::Ausgeschlossen)
+					{
+						if (Icon->GetResourceObject() != Kreuz)
+						{
+							FSlateBrush Gesperrt = Original[K.Key];
+							Gesperrt.SetResourceObject(Kreuz);
+							Gesperrt.TintColor = FSlateColor(FLinearColor(0.83f, 0.10f, 0.06f));
+							*Icon = Gesperrt;
+						}
+					}
+					else if (Icon->GetResourceObject() == Kreuz)
+					{
+						*Icon = Original[K.Key];
+					}
+				}
 			}
 			FString& Alt = Zuletzt.FindOrAdd(K.Key);
 			if (Alt == Titel)

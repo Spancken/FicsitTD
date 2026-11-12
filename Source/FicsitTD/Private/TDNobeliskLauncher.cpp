@@ -297,14 +297,19 @@ void ATDNobeliskLauncher::Animieren(float DeltaSeconds, AFGCreature* Ziel)
 bool ATDNobeliskLauncher::SpielExplosion(const FVector& Ort) const
 {
 	// Optik und Klang immer vom normalen Nobelisk (Gas/Streu/Nuke des Spiels wuerden eigenen Schaden machen)
-	static TSubclassOf<AFGProjectile> Klasse = nullptr;
-	static bool bGeprueft = false;
-	if (!bGeprueft)
+	// 0.9.6 (Gesamtreview 12.11., A4): schwacher Zeiger statt rohem statischem Klassenzeiger. Der hielt die Klasse nicht am Leben;
+	// nach Weltwechsel und Speicherbereinigung haette SpawnActorDeferred ins Leere gezeigt. Ist sie weg, wird sie neu geladen.
+	static TWeakObjectPtr<UClass> GKlasse;
+	static bool bFehlt = false;
+	UClass* Klasse = GKlasse.Get();
+	if (!Klasse && !bFehlt)
 	{
-		bGeprueft = true;
 		UClass* Desc = LoadClass<UFGItemDescriptor>(nullptr, TEXT("/Game/FactoryGame/Resource/Parts/NobeliskExplosive/Desc_NobeliskExplosive.Desc_NobeliskExplosive_C"));
 		const UFGAmmoTypeProjectile* Typ = Cast<UFGAmmoTypeProjectile>(Desc ? Desc->GetDefaultObject() : nullptr);
-		Klasse = Typ ? Typ->GetProjectileClass() : nullptr;
+		const TSubclassOf<AFGProjectile> Geladen = Typ ? Typ->GetProjectileClass() : nullptr;
+		Klasse = Geladen.Get();
+		GKlasse = Klasse;
+		bFehlt = Klasse == nullptr;
 		UE_LOG(LogFicsitTD, Log, TEXT("Nobelisk: Spiel-Explosion %s"), Klasse ? *Klasse->GetName() : TEXT("NICHT gefunden (eigene Optik)"));
 	}
 	if (!Klasse)

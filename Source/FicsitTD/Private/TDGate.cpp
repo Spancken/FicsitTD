@@ -16,6 +16,7 @@
 #include "FGPowerInfoComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "TDTurretBase.h"
+#include "TDBautenErweitert.h"
 #include "TDWaveSubsystem.h"
 #include "WheeledVehicles/FGWheeledVehicle.h"
 #include "TDSprache.h"
@@ -217,8 +218,13 @@ float ATDGate::TakeDamage(float DamageAmount, const FDamageEvent& DamageEvent, A
 	{
 		return 0.f;
 	}
-	ApplyTDDamage(DamageAmount, DamageCauser);
-	return DamageAmount;
+	// 0.9.6 (Gesamtreview 12.11., A3): direkte Treffer gehen zuerst auf die Kuppel eines Schildgenerators
+	const float Durch = ATDShieldGenerator::Schlucke(GetWorld(), this, DamageAmount);
+	if (Durch > 0.f)
+	{
+		ApplyTDDamage(Durch, DamageCauser);
+	}
+	return Durch;
 }
 
 void ATDGate::ApplyTDDamage(float Amount, const AActor* Causer)

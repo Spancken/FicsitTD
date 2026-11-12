@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "CoreMinimal.h"
 #include "Subsystems/WorldSubsystem.h"
@@ -240,6 +240,8 @@ public:
 	bool LaeuftWelle() const { return mLauf == ETDLauf::Welle; }
 	/** Zuletzt gestartete Welle (0 = noch keine) */
 	int32 GetWelle() const { return mWelle; }
+	/** 0.9.6: Stufe des laufenden bzw. letzten Durchgangs (Neustart nach Sieg/Niederlage) */
+	int32 GetLaufStufe() const { return mStufe; }
 	/** T3: Vorschau der naechsten (im Aufbau) bzw. laufenden Welle; plant sie bei Bedarf */
 	FTDWellenVorschau GetVorschau(int32 Welle = -1);
 	/** T3: alle Wellen des Laufs fuer die Zeitleiste (Zustand, Boss, neue Front, neue Arten) */
@@ -358,7 +360,7 @@ private:
 	void PruefeVersorgung() const;
 	/** Lauf-Stand in den Kern schreiben (wird mit dem Spielstand gespeichert) */
 	void SpeichereLauf() const;
-	void WelleAusgewertet(float Anteil);
+	void WelleAusgewertet(float Anteil, bool bVerloren = false);
 	/** Messwerte (Recherche 3.3/3.8): zu Wellenbeginn Druckquote Q = Gegner-EHP / (K * Referenzzeit) mit K = Summe Nenn-DPS
 	 *  der Tuerme, am Ende Auslastung, Kernverlust, knappste Annaeherung ... als Logzeile und CSV (Saved\FicsitTD\Metriken.csv) */
 	void MesseWellenStart();

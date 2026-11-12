@@ -434,6 +434,24 @@ void UTDKernplatz::SucheBoden()
 		{
 			Figur->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 		}
+		// 0.9.6 (Gesamtreview 12.11.: danach blieb der Spieler unverwundbar und ohne Kern): Schutz aus und beim automatischen
+		// Start bis zu 3-mal einen anderen Platz versuchen (PruefeTDStart waehlt zufaellig neu)
+		Schuetze(false);
+		if (mBauen)
+		{
+			mBauen = false;
+			if (++mStartVersuche < 3)
+			{
+				Melde(TDF(TEXT("Versuche einen anderen Kernplatz (%d. Versuch) ..."), TEXT("Trying another core site (attempt %d) ..."), mStartVersuche + 1));
+				mStehtSeit = 0;
+				GetWorld()->GetTimerManager().SetTimer(mStartTimer, this, &UTDKernplatz::PruefeTDStart, 2.f, true, 2.f);
+			}
+			else
+			{
+				Melde(TDT(TEXT("Kein Kernplatz baubar. Mit /td platz bauen <grasfelder|felsenwueste|wald|duenen> kannst du es selbst versuchen."),
+					TEXT("No core site could be built. Try it yourself with /td platz bauen <grasfelder|felsenwueste|wald|duenen>.")));
+			}
+		}
 		return;
 	}
 	mBodenMitte = Grund;

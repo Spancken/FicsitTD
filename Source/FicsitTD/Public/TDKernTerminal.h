@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
@@ -101,6 +101,13 @@ private:
 	void FreiUmschalten();
 	UFUNCTION()
 	void EinsatzStarten();
+	/** 0.9.6 (Marius 12.11.): nach Sieg oder Niederlage - Welle wiederholen, neu starten, Einsatz beenden */
+	UFUNCTION()
+	void EndeWiederholen();
+	UFUNCTION()
+	void EndeNeustart();
+	UFUNCTION()
+	void EndeBeenden();
 	/** Wellen-Progression: Einsatzlaenge Kurz 20 / Standard 30 / Lang 50 / Endlos */
 	UFUNCTION()
 	void LaengeWechseln();
@@ -179,6 +186,14 @@ private:
 	TObjectPtr<UTextBlock> mFreiText;
 	UPROPERTY()
 	TObjectPtr<UButton> mStartKnopf;
+	UPROPERTY()
+	TObjectPtr<UButton> mWelleKnopf;
+	UPROPERTY()
+	TObjectPtr<UButton> mEndeWiederholen;
+	UPROPERTY()
+	TObjectPtr<UButton> mEndeNeustart;
+	UPROPERTY()
+	TObjectPtr<UButton> mEndeBeenden;
 	UPROPERTY()
 	TObjectPtr<UVerticalBox> mLaden;
 	UPROPERTY()

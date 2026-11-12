@@ -1,4 +1,4 @@
-﻿#include "FicsitTDModule.h"
+#include "FicsitTDModule.h"
 #include "TDPionier.h"
 #include "AI/FGCreatureController.h"
 #include "Patching/NativeHookManager.h"
@@ -30,6 +30,7 @@
 #include "Equipment/FGBuildGunBuild.h"
 #include "Command/ChatCommandLibrary.h"
 #include "TDLaufProtokoll.h"
+#include "FGSaveSession.h"
 
 DEFINE_LOG_CATEGORY(LogFicsitTD);
 
@@ -57,13 +58,25 @@ void FFicsitTDModule::MerkeWellenKreatur(AActor* Kreatur)
 	if (Kreatur)
 	{
 		Karte.Add(Kreatur, Kreatur);
+		// 0.9.6 (Gesamtreview 12.11.: Interface-Falle, Adjustment 0x668): der ShouldSave-Hook bekommt den Zeiger auf die
+		// IFGSaveInterface-Basis, nicht auf die Kreatur - deshalb auch diese Adresse merken
+		if (const AFGCreature* K = Cast<AFGCreature>(Kreatur))
+		{
+			Karte.Add(static_cast<const IFGSaveInterface*>(K), Kreatur);
+		}
 	}
 }
 
 bool FFicsitTDModule::IstGemerkteWellenKreatur(const void* Adresse)
 {
 	const TWeakObjectPtr<AActor>* Eintrag = Adresse ? GemerkteKreaturen().Find(Adresse) : nullptr;
-	return Eintrag && Eintrag->IsValid() && static_cast<const void*>(Eintrag->Get()) == Adresse;
+	if (!Eintrag || !Eintrag->IsValid())
+	{
+		return false;
+	}
+	const AActor* A = Eintrag->Get();
+	const AFGCreature* K = Cast<AFGCreature>(A);
+	return static_cast<const void*>(A) == Adresse || (K && static_cast<const void*>(static_cast<const IFGSaveInterface*>(K)) == Adresse);
 }
 
 /** Abzweigungen im MAM (Einsatz-Konzept 5, Marius: endgueltig je Durchlauf) und Voraussetzungen: aus Scripts/create_research.py */
@@ -168,6 +181,46 @@ static bool AndereSeiteGewaehlt(const AFGResearchManager* Forschung, UClass* Sch
 		}
 	}
 	return false;
+}
+
+/** 0.9.6: waehrend einer Welle im Einsatz nicht speichern (Beute-Wiederholung); abschaltbar mit Einsatz.SpeichernInWelle 1 */
+static bool SpeichernGesperrt(const UObject* Kontext, bool bMelden)
+{
+	UWorld* World = Kontext ? Kontext->GetWorld() : nullptr;
+	const UTDWaveSubsystem* Waves = World ? World->GetSubsystem<UTDWaveSubsystem>() : nullptr;
+	const UTDEinsatzSubsystem* Einsatz = World ? World->GetSubsystem<UTDEinsatzSubsystem>() : nullptr;
+	if (!Waves || !Einsatz || !Waves->LaeuftWelle() || !Einsatz->IstAktiv() || TDBalance::Wert(TEXT("Einsatz.SpeichernInWelle"), 0.f) > 0.f)
+	{
+		return false;
+	}
+	if (bMelden)
+	{
+		Einsatz->Melde(TDT(TEXT("Während einer Welle kann nicht gespeichert werden. Nach der Welle speichert der Einsatz selbst."),
+			TEXT("You cannot save during a wave. The operation saves on its own after the wave.")));
+	}
+	return true;
+}
+
+/** 0.9.6 (Gesamtreview 12.11., Marius: HUB sperren): im Einsatz keine Meilensteine - Technik kommt nur ueber das MAM.
+ *  Tutorial-Stufen des HUB bleiben offen (der Einsatz baut darauf auf). Abschaltbar mit Einsatz.HubGesperrt 0. */
+static bool MeilensteinGesperrt(const UObject* Kontext, TSubclassOf<UFGSchematic> Schematic, bool bMelden)
+{
+	if (!Kontext || !Schematic || UFGSchematic::GetType(Schematic) != ESchematicType::EST_Milestone || TDBalance::Wert(TEXT("Einsatz.HubGesperrt"), 1.f) <= 0.f)
+	{
+		return false;
+	}
+	UWorld* World = Kontext->GetWorld();
+	const UTDEinsatzSubsystem* Einsatz = World ? World->GetSubsystem<UTDEinsatzSubsystem>() : nullptr;
+	if (!Einsatz || !Einsatz->IstAktiv() || Einsatz->IstFrei())
+	{
+		return false;
+	}
+	if (bMelden)
+	{
+		Einsatz->Melde(TDT(TEXT("Im Einsatz sind Meilensteine am HUB gesperrt - neue Technik gibt es im MAM über die FICSIT-Abwehr-Bäume."),
+			TEXT("Milestones at the HUB are locked during an operation - new technology comes from the FICSIT Defense trees in the MAM.")));
+	}
+	return true;
 }
 
 /** Freigabe je Phase (Wellen-Progression 7): Knoten erst ab Welle N (Forschung.<Knoten>.AbWelle), gezaehlt wird die naechste Welle */
@@ -366,6 +419,12 @@ void FFicsitTDModule::StartupModule()
 		if (FFicsitTDModule::IstGemerkteWellenKreatur(Self))
 		{
 			Scope.Override(false);
+			// 0.9.6: Nachweis, dass der Hook greift (vorher nie, siehe MerkeWellenKreatur)
+			static int32 Verhindert = 0;
+			if (++Verhindert == 1 || Verhindert % 50 == 0)
+			{
+				UE_LOG(LogFicsitTD, Log, TEXT("Speichern: Wellengegner nicht in den Spielstand genommen (%d. Mal)"), Verhindert);
+			}
 		}
 	});
 	// ... und Schaden von Kreaturen (Bisse, Spucke, Explosionen) an Wellengegnern wird verworfen
@@ -539,6 +598,37 @@ void FFicsitTDModule::StartupModule()
 	SUBSCRIBE_METHOD(AFGResearchManager::CanResearchBeInitiated, [](auto& Scope, const AFGResearchManager* Self, TSubclassOf<UFGSchematic> Schematic)
 	{
 		if (AndereSeiteGewaehlt(Self, Schematic) || VoraussetzungFehlt(Self, Schematic) || WelleZuFrueh(Self, Schematic))
+		{
+			Scope.Override(false);
+		}
+	});
+	// 0.9.6 (Gesamtreview 12.11., Marius: Speichern in der Welle sperren): Laden in der Welle wiederholte sie, die Beute blieb -
+	// Boss-Beute liess sich so beliebig oft holen. Waehrend einer Welle kein Speichern und kein Autosave.
+	SUBSCRIBE_METHOD(UFGSaveSession::SaveGame, [](auto& Scope, UFGSaveSession* Self, const FString& Name, FOnSaveGameComplete Fertig, void* Daten)
+	{
+		if (SpeichernGesperrt(Self, true))
+		{
+			UE_LOG(LogFicsitTD, Log, TEXT("Speichern: %s waehrend der Welle abgelehnt"), *Name);
+			Scope.Cancel();
+		}
+	});
+	SUBSCRIBE_METHOD(UFGSaveSession::ShouldPerformAutoSave, [](auto& Scope, UFGSaveSession* Self)
+	{
+		if (SpeichernGesperrt(Self, false))
+		{
+			Scope.Override(false);
+		}
+	});
+	SUBSCRIBE_METHOD(AFGSchematicManager::CanSetAsActiveSchematic, [](auto& Scope, AFGSchematicManager* Self, TSubclassOf<UFGSchematic> Schematic)
+	{
+		if (MeilensteinGesperrt(Self, Schematic, false))
+		{
+			Scope.Override(false);
+		}
+	});
+	SUBSCRIBE_METHOD(AFGSchematicManager::SetActiveSchematic, [](auto& Scope, AFGSchematicManager* Self, TSubclassOf<UFGSchematic> Schematic)
+	{
+		if (MeilensteinGesperrt(Self, Schematic, true))
 		{
 			Scope.Override(false);
 		}

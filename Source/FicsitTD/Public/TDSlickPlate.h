@@ -32,7 +32,9 @@ protected:
 	virtual void NachMaschinenStart() override;
 	virtual void Feuern(AFGCreature* Ziel) override;
 	virtual void Animieren(float DeltaSeconds, AFGCreature* Ziel) override;
-	virtual bool BereitZumProduzieren(AFGCreature* Ziel) const override { return Ziel != nullptr; }
+	/** 0.9.6 (Gesamtreview 12.11., A6): Oel fliesst, sobald ein Gegner auf der 8 x 8 m Platte oder knapp davor ist
+	 *  (Rand Tuerme.Oelschlick.Ausloserand). Vorher: Ziel in 6,5 m ab dem Ventil am Plattenrand, mit Sichtpruefung. */
+	virtual bool BereitZumProduzieren(AFGCreature* Ziel) const override;
 	virtual FString ZusatzInfo() const override;
 	virtual FString MunitionsText() const override;
 	virtual bool ZusatzImPanel() const override { return true; }

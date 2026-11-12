@@ -1,4 +1,4 @@
-﻿#include "TDBautenErweitert.h"
+#include "TDBautenErweitert.h"
 #include "FGActorRepresentationManager.h"
 #include "FGActorRepresentation.h"
 #include "Resources/FGResourceNodeBase.h"
@@ -10,6 +10,7 @@
 #include "TDBalance.h"
 #include "TDGegnerHirn.h"
 #include "TDDefenseCore.h"
+#include "TDWaveSubsystem.h"
 #include "Creature/FGCreature.h"
 #include "Creature/Enemy/FGFlyingBabyCrab.h"
 #include "Components/StaticMeshComponent.h"
@@ -155,6 +156,7 @@ void ATDRadioMast::BeginPlay()
 	Super::BeginPlay();
 	SetzeModell(mAntenne, TDErw::Modell(TEXT("RadioMast"), TEXT("Antenna")));
 	SetzeModell(mKleineSchuessel, TDErw::Modell(TEXT("RadioMast"), TEXT("SmallDish")));
+	SperreTakt();   // 0.9.6 (Gesamtreview 12.11., A1)
 	sAlle.RemoveAll([](const TWeakObjectPtr<ATDRadioMast>& M) { return !M.IsValid(); });
 	sAlle.AddUnique(this);
 	GetWorldTimerManager().SetTimer(mRadarTimer, this, &ATDRadioMast::RadarTakt, 2.f, true, 2.f);
@@ -400,7 +402,19 @@ void ATDShieldGenerator::BeginPlay()
 	{
 		SetzeModell(Deckel[i], FString::Printf(TEXT("/FicsitTD/Buildings/ShieldGenerator/Mesh/SM_TD_ShieldGenerator_Cover%d.SM_TD_ShieldGenerator_Cover%d"), i, i));
 	}
-	mSchild = SchildMax();
+	// 0.9.6 (Gesamtreview 12.11., D): geladener Ladestand und Rest der Ladezeit; neu gebaut (-1) = voll
+	if (mSchild < 0.f)
+	{
+		mSchild = SchildMax();
+	}
+	else
+	{
+		mSchild = FMath::Min(mSchild, SchildMax());
+		mLadenBis = mSchild <= 0.f ? Jetzt() + FMath::Max(mLadenRest, 0.f) : 0.0;
+		UE_LOG(LogFicsitTD, Log, TEXT("Schildgenerator %s: geladen mit Schild %.0f / %.0f, Ladezeit noch %.0f s"), *GetName(), mSchild, SchildMax(),
+			mSchild <= 0.f ? FMath::Max(mLadenRest, 0.f) : 0.f);
+	}
+	SperreTakt();   // 0.9.6 (Gesamtreview 12.11., A1)
 	sAlle.RemoveAll([](const TWeakObjectPtr<ATDShieldGenerator>& S) { return !S.IsValid(); });
 	sAlle.AddUnique(this);
 }
@@ -409,6 +423,13 @@ void ATDShieldGenerator::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	sAlle.Remove(this);
 	Super::EndPlay(EndPlayReason);
+}
+
+void ATDShieldGenerator::PreSaveGame_Implementation(int32 saveVersion, int32 gameVersion)
+{
+	Super::PreSaveGame_Implementation(saveVersion, gameVersion);
+	// 0.9.6: Weltzeit beginnt nach dem Laden bei 0, deshalb die Restdauer speichern
+	mLadenRest = FMath::Max(0.f, float(mLadenBis - Jetzt()));
 }
 
 double ATDShieldGenerator::Jetzt() const
@@ -738,6 +759,7 @@ void ATDFieldProjector::BeginPlay()
 	SetzeModell(mRing0, TDErw::Modell(TEXT("FieldProjector"), TEXT("Ring0")));
 	SetzeModell(mRing1, TDErw::Modell(TEXT("FieldProjector"), TEXT("Ring1")));
 	SetzeModell(mRing2, TDErw::Modell(TEXT("FieldProjector"), TEXT("Ring2")));
+	SperreTakt();   // 0.9.6 (Gesamtreview 12.11., A1): ein Barren hielt untertaktet 6000 s statt 60 s
 }
 
 void ATDFieldProjector::Animieren(float DeltaSeconds, AFGCreature* Ziel)
@@ -934,6 +956,7 @@ void ATDDronePort::BeginPlay()
 {
 	Super::BeginPlay();
 	BaueDrohnen();
+	UE_LOG(LogFicsitTD, Log, TEXT("Drohnenplatz %s: Level %d von %d, Soll %d Drohnen"), *GetName(), GetLevel(), MaxLevel(), SollDrohnen());
 }
 
 bool ATDDronePort::IstKampf() const
@@ -942,9 +965,25 @@ bool ATDDronePort::IstKampf() const
 	return R && R->GetName().Contains(TEXT("Kampf"));
 }
 
-int32 ATDDronePort::SollDrohnen() const
+// 0.9.6 (Gesamtreview 12.11., A2, Marius 12.11.): Drohnenzahl je Level steht in DrohnenFuer (L1 2, L2 3, L3 4).
+// Vorher +1 bei Level 3 und 5, die der Drohnenplatz nie erreichte (keine Level-Upgrades).
+int32 ATDDronePort::LevelPreis() const
 {
-	return 2 + (GetLevel() >= 3 ? 1 : 0) + (GetLevel() >= 5 ? 1 : 0);
+	const int32 Naechstes = GetLevel() + 1;
+	if (Naechstes > MaxLevel())
+	{
+		return 0;
+	}
+	return FMath::Max(0, TDBalance::Ganz(FString::Printf(TEXT("Tuerme.Drohnenplatz.LevelPreis%d"), Naechstes), Naechstes == 2 ? 8 : 15));
+}
+
+void ATDDronePort::LevelZusatzText(int32 Von, int32 Bis, TArray<FString>& Teile) const
+{
+	const int32 Mehr = DrohnenFuer(FMath::Min(Bis, MaxLevel())) - DrohnenFuer(FMath::Min(Von, MaxLevel()));
+	if (Mehr > 0)
+	{
+		Teile.Add(Mehr == 1 ? TDT(TEXT("+1 Drohne"), TEXT("+1 drone")) : TDF(TEXT("+%d Drohnen"), TEXT("+%d drones"), Mehr));
+	}
 }
 
 void ATDDronePort::BaueDrohnen()

@@ -12,6 +12,8 @@ from unittest import mock
 MOD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DOK = r"D:\OneDrive\Claude\Claude Modding\Satisfactory\Spielregeln.md"
 ANFANG, ENDE = "<!-- ZAHLEN-ANFANG -->", "<!-- ZAHLEN-ENDE -->"
+# Gestrichen (0.9.3 bzw. frueher): Balance-Schluessel bleiben fuer alte Spielstaende, in den Tabellen nicht zeigen
+GESTRICHEN = {"Reparaturstation", "Dimensionslager", "Panzersperre"}
 
 
 def zahl(v):
@@ -40,7 +42,8 @@ def tabellen(B, ns):
     # Wellen
     z += ["", "### Wellen", "",
           f"- Budget = Stufe × ({w('Wellen.BudgetGrund')} + {w('Wellen.BudgetJeWelle')} × N + {w('Wellen.BudgetQuadrat')} × N²)",
-          f"- Gegner-LP × (1 + {w('Wellen.LPJeWelle')} × (N − 1)), Elite-LP × {w('Wellen.EliteLP')}",
+          f"- Gegner-LP × (1 + {w('Wellen.LPJeWelle')} × (N − 1)) bis Welle 30, danach + {w('Wellen.LPJeWelleAb31')} je Welle; Elite-LP × {w('Wellen.EliteLP')}",
+          f"- Bosswellen: Gegnerbudget × {w('Wellen.BossBudget')} plus Boss",
           f"- höchstens {w('Wellen.MaxGleichzeitig')} gleichzeitig, {w('Wellen.MaxGesamt')} je Welle (Nachschub alle {w('Wellen.NachschubTakt')} s je {w('Wellen.NachschubPaket')})",
           f"- Standardlänge eines Einsatzes: {w('Einsatz.WellenStandard', '50')} Wellen", ""]
     z += ["| Gegnerart | ab Welle |", "|---|---|"]
@@ -61,11 +64,11 @@ def tabellen(B, ns):
     # Laden
     z += ["", "### Laden (Kontingente)", "", "Preis = Grundpreis × (1 + Aufschlag × bisher gekauft); Paket = Gebäude je Kauf.", "",
           "| Eintrag | Grundpreis | Aufschlag | Paket | Start |", "|---|---|---|---|---|"]
-    for k in sorted({k.split(".")[2] for k in B if k.startswith("Einsatz.Laden.")}):
+    for k in sorted({k.split(".")[2] for k in B if k.startswith("Einsatz.Laden.")} - GESTRICHEN):
         z.append(f"| {k} | {w(f'Einsatz.Laden.{k}.Grundpreis')} | {w(f'Einsatz.Laden.{k}.Aufschlag')} | {w(f'Einsatz.Laden.{k}.Paket')} | {w(f'Einsatz.Start.{k}', '0')} |")
     # Tuerme
     z += ["", "### Türme", "", "| Turm | Reichweite (m) | LP |", "|---|---|---|"]
-    for t in ("Bolzenturm", "Gewehrturm", "Teslaspule", "Flammenwerfer", "Nobelisk-Werfer", "Reparaturstation"):
+    for t in [t for t in ("Bolzenturm", "Gewehrturm", "Teslaspule", "Flammenwerfer", "Nobelisk-Werfer", "Reparaturstation") if t not in GESTRICHEN]:
         z.append(f"| {t} | {w(f'Tuerme.{t}.Reichweite')} | {w(f'Tuerme.{t}.LP')} |")
     z += ["", f"Turmlevel kosten {w('Tuerme.Level.Preis2')} / {w('Tuerme.Level.Preis3')} / {w('Tuerme.Level.Preis4')} / {w('Tuerme.Level.Preis5')} Coupons (Level 2–5). "
           f"Doktrin: Schaden +{zahl(100 * B.get('Doktrin.Schaden', 0))} %, Level −{zahl(100 * B.get('Doktrin.LevelRabatt', 0))} %.", "",
@@ -108,7 +111,7 @@ def main():
     b = text.index(ENDE)
     neu = text[:a] + "\n*Automatisch erzeugt von `Tests\\erzeuge_spielregeln.py` aus `TDBalance.cpp` und `create_research.py`. Nicht von Hand ändern.*\n\n" + "\n".join(tabellen(B, ns)) + "\n\n" + text[b:]
     if neu != text:
-        open(DOK, "w", encoding="utf-8").write(neu)
+        open(DOK, "w", encoding="utf-8", newline="\n").write(neu)
         print("Spielregeln.md: Zahlen aktualisiert")
     else:
         print("Spielregeln.md: Zahlen unverändert")

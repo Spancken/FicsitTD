@@ -87,6 +87,32 @@ void ATDSlickPlate::BeginPlay()
 		}
 		GetWorldTimerManager().SetTimer(mFlammenTimer, this, &ATDSlickPlate::FlammenTick, 1.f / 30.f, true);
 	}
+	SperreTakt();   // 0.9.6 (Gesamtreview 12.11., A1)
+}
+
+bool ATDSlickPlate::BereitZumProduzieren(AFGCreature* Ziel) const
+{
+	// 0.9.6 (Gesamtreview 12.11., A6): Ausloesung ueber die Platte selbst (wie die Wirkung in AufPlatte), nicht ueber den Umkreis des Ventils
+	if (!IsTDIntact())
+	{
+		return false;
+	}
+	const float Rand = TDBalance::Wert(TEXT("Tuerme.Oelschlick.Ausloserand"), 2.f) * 100.f;
+	TArray<AFGCreature*> Feinde;
+	SammleFeinde(Feinde);
+	for (const AFGCreature* F : Feinde)
+	{
+		if (!F || !F->IsAliveAndWell())
+		{
+			continue;
+		}
+		const FVector Lokal = GetActorTransform().InverseTransformPosition(F->GetActorLocation());
+		if (FMath::Abs(Lokal.X) < SchlickHalb + Rand && FMath::Abs(Lokal.Y) < SchlickHalb + Rand && Lokal.Z > -150.f && Lokal.Z < 350.f)
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 void ATDSlickPlate::Factory_Tick(float dt)

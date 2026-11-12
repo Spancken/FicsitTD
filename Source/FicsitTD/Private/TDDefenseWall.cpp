@@ -4,6 +4,7 @@
 #include "TDEinsatz.h"
 #include "FicsitTDModule.h"
 #include "TDDecoy.h"
+#include "TDBautenErweitert.h"
 #include "FGFactoryColoringTypes.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
@@ -68,8 +69,13 @@ float ATDDefenseWall::TakeDamage(float DamageAmount, const FDamageEvent& DamageE
 	{
 		return 0.f;   // Giftwolken, Umgebung, eigene Waffen
 	}
-	ApplyTDDamage(DamageAmount, DamageCauser);
-	return DamageAmount;
+	// 0.9.6 (Gesamtreview 12.11., A3): direkte Treffer gehen zuerst auf die Kuppel eines Schildgenerators
+	const float Durch = ATDShieldGenerator::Schlucke(GetWorld(), this, DamageAmount);
+	if (Durch > 0.f)
+	{
+		ApplyTDDamage(Durch, DamageCauser);
+	}
+	return Durch;
 }
 
 void ATDDefenseWall::ApplyTDDamage(float Amount, const AActor* Causer)

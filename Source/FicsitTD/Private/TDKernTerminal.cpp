@@ -1,4 +1,4 @@
-﻿#include "TDKernTerminal.h"
+#include "TDKernTerminal.h"
 #include "TDWellenStatistik.h"
 #include "TDLaufProtokoll.h"
 #include "FicsitTDModule.h"
@@ -420,6 +420,17 @@ void UTDKernTerminal::BaueOberflaeche()
 	mWelleText = Knopftext;
 	WelleKnopf->OnClicked.AddDynamic(this, &UTDKernTerminal::WelleStarten);
 	Aktion(WelleKnopf);
+	mWelleKnopf = WelleKnopf;
+	// 0.9.6 (Marius 12.11.): nach Sieg oder Niederlage statt "Welle starten"
+	mEndeWiederholen = NeuerKnopf(TDT(TEXT("Welle wiederholen"), TEXT("Retry wave")), Knopftext, true);
+	mEndeWiederholen->OnClicked.AddDynamic(this, &UTDKernTerminal::EndeWiederholen);
+	Aktion(mEndeWiederholen);
+	mEndeNeustart = NeuerKnopf(TDT(TEXT("Neu starten (Welle 1)"), TEXT("Restart (wave 1)")), Knopftext, true);
+	mEndeNeustart->OnClicked.AddDynamic(this, &UTDKernTerminal::EndeNeustart);
+	Aktion(mEndeNeustart);
+	mEndeBeenden = NeuerKnopf(TDT(TEXT("Einsatz beenden"), TEXT("End operation")), Knopftext);
+	mEndeBeenden->OnClicked.AddDynamic(this, &UTDKernTerminal::EndeBeenden);
+	Aktion(mEndeBeenden);
 	UButton* WegeKnopf = NeuerKnopf(TDT(TEXT("Wegvorschau an"), TEXT("Path preview on")), Knopftext);
 	mWegeText = Knopftext;
 	WegeKnopf->OnClicked.AddDynamic(this, &UTDKernTerminal::WegeUmschalten);
@@ -661,6 +672,23 @@ void UTDKernTerminal::Aktualisiere()
 	mWegeText->SetText(K && K->ZeigtWege() ? TDTX(TEXT("Wegvorschau aus"), TEXT("Path preview off")) : TDTX(TEXT("Wegvorschau an"), TEXT("Path preview on")));
 	mFreiText->SetText(Einsatz->IstFrei() ? TDTX(TEXT("Freies Bauen: AN"), TEXT("Free Build: ON")) : TDTX(TEXT("Freies Bauen: aus"), TEXT("Free Build: off")));
 	mStartKnopf->SetVisibility(bEinsatz ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
+	{
+		const int32 Ende = Einsatz->LaufEnde();
+		if (mWelleKnopf)
+		{
+			mWelleKnopf->SetVisibility(Ende ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
+		}
+		if (mEndeWiederholen)
+		{
+			mEndeWiederholen->SetVisibility(Ende == 2 ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+			mEndeNeustart->SetVisibility(Ende ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+			mEndeBeenden->SetVisibility(Ende ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+		}
+		if (Ende)
+		{
+			mWelle->SetText(Ende == 1 ? TDTX(TEXT("SIEG"), TEXT("VICTORY")) : TDFX(TEXT("Niederlage in Welle %d"), TEXT("Defeat in wave %d"), K ? K->mLaufEndWelle : 0));
+		}
+	}
 	if (mLaengeKnopf)
 	{
 		const FString Namen[] = { TDT(TEXT("Kurz (20)"), TEXT("Short (20)")), TDT(TEXT("Mittel (30)"), TEXT("Medium (30)")), TDT(TEXT("Standard (50)"), TEXT("Standard (50)")),
@@ -1651,7 +1679,7 @@ void UTDKernTerminal::BaueListen()
 			NeueKarte(mLaden, Z.bVerfuegbar ? TDUI::Karte : TDUI::ZeileB, Reihe);
 			Mittig(Reihe, NeueKachel(Z.Symbol, 52.f, Z.bVerfuegbar ? FString::Printf(TEXT("+%d"), Z.Paket) : FString()), 0.f);
 			UVerticalBox* Texte = WidgetTree->ConstructWidget<UVerticalBox>();
-			Texte->AddChildToVerticalBox(NeuerText(Z.Key, 15, Z.bVerfuegbar ? TDUI::KarteText : TDUI::Grau, true));
+			Texte->AddChildToVerticalBox(NeuerText(UTDEinsatzSubsystem::Anzeige(Z.Key), 15, Z.bVerfuegbar ? TDUI::KarteText : TDUI::Grau, true));
 			if (Z.bVerfuegbar)
 			{
 				UHorizontalBox* Unter = WidgetTree->ConstructWidget<UHorizontalBox>();
@@ -1718,7 +1746,7 @@ void UTDKernTerminal::BaueListen()
 			NeueKarte(mKorbListe, TDUI::Karte, Reihe);
 			Mittig(Reihe, NeueKachel(Z.Symbol, 44.f, FString::Printf(TEXT("%d"), Anzahl * Z.Paket)), 0.f);
 			UVerticalBox* Texte = WidgetTree->ConstructWidget<UVerticalBox>();
-			Texte->AddChildToVerticalBox(NeuerText(FString::Printf(TEXT("%d x %s"), Anzahl, *Z.Key), 14, TDUI::KarteText, true));
+			Texte->AddChildToVerticalBox(NeuerText(FString::Printf(TEXT("%d x %s"), Anzahl, *UTDEinsatzSubsystem::Anzeige(Z.Key)), 14, TDUI::KarteText, true));
 			Texte->AddChildToVerticalBox(NeuerText(TDF(TEXT("+%d Kontingent, %s Coupons"), TEXT("+%d quota, %s Coupons"), Anzahl * Z.Paket, *FString::Join(Preise, TEXT(" + "))), 12, TDUI::KarteGrau));
 			if (UHorizontalBoxSlot* S = Reihe->AddChildToHorizontalBox(Texte))
 			{
@@ -1762,7 +1790,7 @@ void UTDKernTerminal::BaueListen()
 		UHorizontalBox* Reihe = nullptr;
 		NeueKarte(mKontingent, i % 2 ? TDUI::ZeileB : TDUI::ZeileA, Reihe);
 		Mittig(Reihe, NeueKachel(Z.Symbol, 40.f, FString()), 0.f);
-		if (UHorizontalBoxSlot* S = Reihe->AddChildToHorizontalBox(NeuerText(Z.Key, 14, TDUI::Hell)))
+		if (UHorizontalBoxSlot* S = Reihe->AddChildToHorizontalBox(NeuerText(UTDEinsatzSubsystem::Anzeige(Z.Key), 14, TDUI::Hell)))
 		{
 			S->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
 			S->SetVerticalAlignment(VAlign_Center);
@@ -1859,6 +1887,38 @@ void UTDKernTerminal::WelleStarten()
 	else
 	{
 		Melde(TDT(TEXT("Die Welle läuft bereits."), TEXT("The wave is already running.")));
+	}
+}
+
+void UTDKernTerminal::EndeWiederholen()
+{
+	if (UTDEinsatzSubsystem* Einsatz = GetWorld()->GetSubsystem<UTDEinsatzSubsystem>())
+	{
+		Melde(Einsatz->WiederholeWelle(GetOwningPlayer()));
+		Schliessen();
+	}
+}
+
+void UTDKernTerminal::EndeNeustart()
+{
+	if (UTDEinsatzSubsystem* Einsatz = GetWorld()->GetSubsystem<UTDEinsatzSubsystem>())
+	{
+		APlayerController* PC = GetOwningPlayer();
+		Melde(Einsatz->StarteNeu(PC ? PC->GetPawn() : nullptr));
+		mKorb.Reset();
+		BaueListen();
+		Aktualisiere();
+	}
+}
+
+void UTDKernTerminal::EndeBeenden()
+{
+	if (UTDEinsatzSubsystem* Einsatz = GetWorld()->GetSubsystem<UTDEinsatzSubsystem>())
+	{
+		Melde(Einsatz->BeendeNachEnde());
+		mKorb.Reset();
+		BaueListen();
+		Aktualisiere();
 	}
 }
 
@@ -2000,7 +2060,7 @@ void UTDTurmInfo::FuelleUpgrades()
 	const int32 Level = Turm->GetLevel();
 	const int32 Preis = Turm->LevelPreis();
 	const FString Sperre = Turm->LevelSperre();
-	const bool bMax = Level >= ATDTurretBase::TurmMaxLevel;
+	const bool bMax = Level >= Turm->MaxLevel();   // 0.9.6: Drohnenplatz hat nur 3 Level
 	mUpgradeReihe->SetVisibility(ESlateVisibility::Visible);
 	if (mUpgradeTexte.IsValidIndex(0) && mUpgradeKnoepfe.IsValidIndex(0))
 	{
@@ -2011,6 +2071,7 @@ void UTDTurmInfo::FuelleUpgrades()
 	{
 		if (UBorder* Kaestchen = mUpgradeStufen.IsValidIndex(k) ? mUpgradeStufen[k].Get() : nullptr)
 		{
+			Kaestchen->SetVisibility(k < Turm->MaxLevel() ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 			Kaestchen->SetBrush(k < Level ? FSlateRoundedBoxBrush(TDUI::KarteOrange, 2.f)
 				: FSlateRoundedBoxBrush(TDUI::C(255, 255, 255), 2.f, TDUI::C(185, 185, 185), 1.f));
 		}

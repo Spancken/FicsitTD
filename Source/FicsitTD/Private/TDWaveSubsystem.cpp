@@ -1,4 +1,4 @@
-﻿#include "TDWaveSubsystem.h"
+#include "TDWaveSubsystem.h"
 #include "Engine/StaticMeshActor.h"
 #include "NavModifierComponent.h"
 #include "NavAreas/NavArea_Null.h"
@@ -629,7 +629,7 @@ struct FTDPhasenInfo { const TCHAR* Name; const TCHAR* Text; const TCHAR* Vorwar
 static const FTDPhasenInfo KernPhasen[] = {
 	{ TEXT("Die Herde"), TEXT("Hogs rammen die Mauern - Bolzen und Mauern halten sie auf."), TEXT(""),
 		TEXT("/Game/FactoryGame/Character/Creature/Enemy/Hog/AlphaHog/Char_AlphaHog.Char_AlphaHog_C"), TEXT("Panzerkoloss"), 1, 10.f },
-	{ TEXT("Der Schwarm"), TEXT("Stinger kommen schnell und in Massen - Gewehrturm, Streubolzen und Tesla."), TEXT("Spaeher melden Stinger-Nester: ab Welle 11 kommt der Schwarm. Gewehrturm und Kohlekraft vorbereiten."),
+	{ TEXT("Der Schwarm"), TEXT("Stinger kommen schnell und in Massen - Gewehrturm, Streubolzen und Tesla."), TEXT("Spaeher melden Stinger-Nester: ab Welle 13 kommt der Schwarm. Gewehrturm und Kohlekraft vorbereiten."),
 		TEXT("/Game/FactoryGame/Character/Creature/Enemy/Stinger/Char_Stinger.Char_Stinger_C"), TEXT("Brutmutter"), 1, 25.f },
 	{ TEXT("Saeure"), TEXT("Spucker greifen aus der Ferne an - Flammenwerfer und Nobelisk."), TEXT("Spaeher melden Saeurespucker: ab Welle 21 greifen sie aus der Ferne an. Raffinerie und Oel vorbereiten."),
 		TEXT("/Game/FactoryGame/Character/Creature/Enemy/Spitter/SpitterForest/Char_SpitterForestAlpha.Char_SpitterForestAlpha_C"), TEXT("Saeurekoenigin"), 1, 15.f },
@@ -669,7 +669,7 @@ static FString PhasenVorwarnung(int32 Ph)
 {
 	switch (Ph)
 	{
-	case 1: return TDT(TEXT("Spaeher melden Stinger-Nester: ab Welle 11 kommt der Schwarm. Gewehrturm und Kohlekraft vorbereiten."), TEXT("Scouts report stinger nests: the swarm arrives from wave 11. Prepare Rifle Turrets and coal power."));
+	case 1: return TDT(TEXT("Spaeher melden Stinger-Nester: ab Welle 13 kommt der Schwarm. Gewehrturm und Kohlekraft vorbereiten."), TEXT("Scouts report stinger nests: the swarm arrives from wave 13. Prepare Rifle Turrets and coal power."));
 	case 2: return TDT(TEXT("Spaeher melden Saeurespucker: ab Welle 21 greifen sie aus der Ferne an. Raffinerie und Oel vorbereiten."), TEXT("Scouts report acid spitters: from wave 21 they attack from range. Prepare a Refinery and oil."));
 	case 3: return TDT(TEXT("Spaeher melden fremde Arten aus Wueste und Wasser: ab Welle 31 hilft Feuer allein nicht mehr."), TEXT("Scouts report foreign species from desert and water: from wave 31 fire alone no longer helps."));
 	case 4: return TDT(TEXT("Spaeher melden Strahlung: ab Welle 41 kommen Nuklear-Hogs und Johnny."), TEXT("Scouts report radiation: Nuclear Hogs and Johnny arrive from wave 41."));
@@ -1233,6 +1233,7 @@ bool UTDWaveSubsystem::StarteKernVerteidigung(ATDDefenseCore* Kern, int32 Wellen
 	}
 	const FTDStufe& S = GetStufe(mStufe);
 	mKern = Kern;
+	Kern->mLaufEnde = 0;   // 0.9.6: neuer Durchgang, Ende-Auswahl im Kern-Menue weg
 	Kern->SetzeMaxLP(S.KernLP);
 	Kern->Aufladen();
 	mWelle = 0;
@@ -1449,7 +1450,17 @@ void UTDWaveSubsystem::KernGefallen(ATDDefenseCore* Kern)
 {
 	if (mLauf != ETDLauf::Aus && Kern == mKern.Get())
 	{
-		StoppeLauf(TDF(TEXT("NIEDERLAGE: Der Abwehrkern ist in Welle %d von %d gefallen. Neuer Versuch: /td kern start"), TEXT("DEFEAT: The Defense Core fell in wave %d of %d. Try again: /td kern start"), mWelle, mWellenGesamt));
+		// 0.9.6 (Gesamtreview 12.11.): die verlorene Welle fehlte in Messung und Statistik - wie eine beendete Welle auswerten
+		if (mLauf == ETDLauf::Welle)
+		{
+			EntferneWellenLeiste();
+			WelleAusgewertet(0.f, true);
+		}
+		const int32 Welle = mWelle;
+		StoppeLauf(TDF(TEXT("NIEDERLAGE: Der Abwehrkern ist in Welle %d von %d gefallen. Im Kern-Menü (E am Kern): Welle wiederholen, neu starten oder Einsatz beenden."),
+			TEXT("DEFEAT: The Defense Core fell in wave %d of %d. In the Core menu (E at the Core): retry the wave, restart or end the operation."), mWelle, mWellenGesamt));
+		Kern->mLaufEnde = 2;
+		Kern->mLaufEndWelle = Welle;
 	}
 }
 
@@ -2434,7 +2445,7 @@ int32 UTDWaveSubsystem::RaeumeLoot(UWorld* World, const FVector& Mitte, float Ra
 	return Anzahl;
 }
 
-void UTDWaveSubsystem::WelleAusgewertet(float Anteil)
+void UTDWaveSubsystem::WelleAusgewertet(float Anteil, bool bVerloren)
 {
 	if (const ATDDefenseCore* K = mKern.Get())
 	{
@@ -2467,6 +2478,11 @@ void UTDWaveSubsystem::WelleAusgewertet(float Anteil)
 		Beste += FString::Printf(TEXT("%s%s %d"), i ? TEXT(", ") : TEXT(""), *Bilanz[i].Key, Bilanz[i].Value);
 	}
 	const FString BesteText = Beste.IsEmpty() ? FString() : TDF(TEXT(" Beste Tuerme: %s."), TEXT(" Best turrets: %s."), *Beste);
+	if (bVerloren)
+	{
+		MeldeMetrik(Anteil);
+		return;
+	}
 	Ansage(TDF(TEXT("Welle %d abgewehrt: %d Gegner in %.0f s, Kern bei %.0f %%.%s"), TEXT("Wave %d repelled: %d enemies in %.0f s, Core at %.0f %%.%s"), mWelle, mWellenGroesse, mWellenZeit, Anteil,
 		*BesteText));
 	MeldeMetrik(Anteil);
@@ -2679,6 +2695,11 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 		}
 		if (mCountdown <= 0.f)
 		{
+			// 0.9.6 (Gesamtreview 12.11.): im Einsatz (manuell) lief der Versorgungs-Check nie - er hing an der 60-s-Marke des Countdowns
+			if (mManuell)
+			{
+				PruefeVersorgung();
+			}
 			if (UTDLaufProtokoll* Lauf = UTDLaufProtokoll::Get(this))
 			{
 				SpeichereLauf();
@@ -2757,7 +2778,14 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 	{
 		mLauf = ETDLauf::Aus;
 		SpeichereLauf();
-		Ansage(TDF(TEXT("SIEG! Alle %d Wellen abgewehrt, Kern bei %.0f %%."), TEXT("VICTORY! All %d waves repelled, Core at %.0f %%."), mWellenGesamt, Anteil));
+		if (ATDDefenseCore* SiegKern = mKern.Get())
+		{
+			SiegKern->mLaufEnde = 1;
+			SiegKern->mLaufEndWelle = mWelle;
+		}
+		MarkiereFronten();
+		Ansage(TDF(TEXT("SIEG! Alle %d Wellen abgewehrt, Kern bei %.0f %%. Im Kern-Menü: neu starten oder Einsatz beenden."),
+			TEXT("VICTORY! All %d waves repelled, Core at %.0f %%. In the Core menu: restart or end the operation."), mWellenGesamt, Anteil));
 		return;
 	}
 	mLauf = ETDLauf::Aufbau;

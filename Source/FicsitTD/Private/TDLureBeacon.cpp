@@ -65,6 +65,20 @@ void ATDLureBeacon::BeginPlay()
 	}
 	sAlle.RemoveAll([](const TWeakObjectPtr<ATDLureBeacon>& L) { return !L.IsValid(); });
 	sAlle.AddUnique(this);
+	SperreTakt();   // 0.9.6 (Gesamtreview 12.11., A1): ein Lockruf hielt untertaktet 1500 s statt 15 s
+	// 0.9.6 (Gesamtreview 12.11., D): Pause aus dem Spielstand fortsetzen
+	if (mPauseRest > 0.f)
+	{
+		mPauseBis = Jetzt() + mPauseRest;
+		UE_LOG(LogFicsitTD, Log, TEXT("Lockfeuer %s: geladen, Pause noch %.0f s"), *GetName(), mPauseRest);
+	}
+}
+
+void ATDLureBeacon::PreSaveGame_Implementation(int32 saveVersion, int32 gameVersion)
+{
+	Super::PreSaveGame_Implementation(saveVersion, gameVersion);
+	// 0.9.6: Weltzeit beginnt nach dem Laden bei 0, deshalb die Restdauer speichern
+	mPauseRest = FMath::Max(0.f, float(mPauseBis - Jetzt()));
 }
 
 void ATDLureBeacon::EndPlay(const EEndPlayReason::Type EndPlayReason)

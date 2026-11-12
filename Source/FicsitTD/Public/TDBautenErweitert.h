@@ -99,6 +99,7 @@ public:
 	ATDShieldGenerator();
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	virtual void PreSaveGame_Implementation(int32 saveVersion, int32 gameVersion) override;
 	virtual bool HatMunition() const override { return true; }
 	/** Schaden an Ziel durch die Schilde in Reichweite fuehren; liefert, was durchkommt */
 	static float Schlucke(const UWorld* Welt, const AActor* Ziel, float Schaden);
@@ -124,7 +125,12 @@ private:
 	bool IstAktiv() const;
 	float SchildMax() const;
 	double Jetzt() const;
+	/** 0.9.6 (Gesamtreview 12.11., D): Ladestand gespeichert (-1 = neu gebaut, BeginPlay fuellt auf) */
+	UPROPERTY(SaveGame)
 	float mSchild = -1.f;
+	/** 0.9.6: Rest der Ladezeit nach einem Bruch in s, in PreSaveGame aus mLadenBis (Weltzeit beginnt nach dem Laden neu) */
+	UPROPERTY(SaveGame)
+	float mLadenRest = 0.f;
 	double mLadenBis = 0.0;
 	double mLetzterTreffer = 0.0;
 	float mGeschluckt = 0.f;
@@ -178,7 +184,11 @@ public:
 	{
 		return Name == TEXT("Einsaetze") ? float(mEinsaetze) : Name == TEXT("Geheilt") ? mGeheilt : Name == TEXT("Drohnen") ? float(mDrohnen.Num()) : -1.f;
 	}
+	/** 0.9.6 (Gesamtreview 12.11., A2, Marius 12.11.): Level 1-3 = 2/3/4 Drohnen, gekauft mit Coupons im Turmfenster */
+	virtual int32 MaxLevel() const override { return 3; }
+	virtual int32 LevelPreis() const override;
 protected:
+	virtual void LevelZusatzText(int32 Von, int32 Bis, TArray<FString>& Teile) const override;
 	virtual bool BereitZumProduzieren(AFGCreature* Ziel) const override;
 	virtual void Feuern(AFGCreature* Ziel) override;
 	virtual void Animieren(float DeltaSeconds, AFGCreature* Ziel) override;
@@ -197,7 +207,8 @@ private:
 		float Menge = 0.f;
 	};
 	bool IstKampf() const;
-	int32 SollDrohnen() const;
+	int32 SollDrohnen() const { return DrohnenFuer(GetLevel()); }
+	static int32 DrohnenFuer(int32 Level) { return FMath::Clamp(1 + Level, 2, 4); }
 	AActor* SucheBeschaedigt() const;
 	int32 FreieDrohne() const;
 	void BaueDrohnen();

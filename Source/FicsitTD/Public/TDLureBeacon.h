@@ -20,6 +20,7 @@ public:
 	ATDLureBeacon();
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	virtual void PreSaveGame_Implementation(int32 saveVersion, int32 gameVersion) override;
 
 	/** Lockt gerade (Zyklus laeuft)? */
 	bool IstAktiv() const;
@@ -49,6 +50,9 @@ private:
 	double Jetzt() const;
 
 	double mPauseBis = 0.0;
+	/** 0.9.6 (Gesamtreview 12.11., D): Rest der Pause in s, in PreSaveGame aus mPauseBis (Weltzeit beginnt nach dem Laden neu) */
+	UPROPERTY(SaveGame)
+	float mPauseRest = 0.f;
 	float mKlappenWinkel = 0.f;
 	float mHornZeit = 0.f;
 	float mLeuchteWinkel = 0.f;

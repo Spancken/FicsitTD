@@ -1,4 +1,5 @@
-﻿#include "TDEinsatz.h"
+#include "TDEinsatz.h"
+#include "Hologram/FGBlueprintHologram.h"
 #include "TDGate.h"
 #include "TDDimensionalDepot.h"
 #include "TDWellenStatistik.h"
@@ -45,6 +46,7 @@
 #include "TDKernTerminal.h"
 #include "GameFramework/PlayerController.h"
 #include "TimerManager.h"
+#include "FGSaveSystem.h"
 #include "FGChatManager.h"
 #include "FGRecipe.h"
 #include "FGRecipeManager.h"
@@ -177,6 +179,12 @@ static int32 SpielerMax(const FTDSpielerPosten& P)
 	return TDBalance::Ganz(FString::Printf(TEXT("Einsatz.Laden.%s.Max"), P.Key), P.Max);
 }
 
+static FString TDAnzeige(const FString& Key);
+FString UTDEinsatzSubsystem::Anzeige(const FString& Key)
+{
+	return TDAnzeige(Key);
+}
+
 bool UTDEinsatzSubsystem::IstSpielerPosten(const FString& Key)
 {
 	return SpielerFuer(Key) != nullptr;
@@ -234,7 +242,15 @@ static FString TDAnzeige(const FString& Key)
 {
 	if (!TDSprache::Englisch())
 	{
-		return Key;
+		// 0.9.6 (Gesamtreview 12.11.: Kern-Menue zeigte "Oelschlick", "Giesserei"): Schluessel ohne Umlaute bekommen ihren Spielnamen
+		static const TMap<FString, FString> De = {
+			{ TEXT("Giesserei"), TEXT("Gießerei") }, { TEXT("Oelschlick"), TEXT("Ölschlick-Feld") }, { TEXT("Stoerfeld"), TEXT("Störfeld") },
+			{ TEXT("Singularitaet"), TEXT("Singularitätswerfer") }, { TEXT("Oelpumpe"), TEXT("Ölpumpe") }, { TEXT("Abfueller"), TEXT("Abfüller") },
+			{ TEXT("Foerderanlage"), TEXT("Förderanlage") }, { TEXT("Fluessigkeitspuffer"), TEXT("Flüssigkeitspuffer") },
+			{ TEXT("Flammenturm"), TEXT("Flammenwerfer") }, { TEXT("Splitter"), TEXT("Förderbandsplitter") }, { TEXT("Wasserpumpe"), TEXT("Wasserextraktor") },
+		};
+		const FString* Name = De.Find(Key);
+		return Name ? *Name : Key;
 	}
 	static const TMap<FString, FString> En = {
 		{ TEXT("Abwehrkern"), TEXT("Defense Core") }, { TEXT("Miner"), TEXT("Miner") }, { TEXT("Schmelzofen"), TEXT("Smelter") },
@@ -265,7 +281,13 @@ static FString TDAnzeige(const FString& Key)
  *  deshalb setzt PruefeHologramm sie bei Bedarf neu (TDAktualisiereSperrTexte) */
 static FText TDTextKontingent() { return TDTX(TEXT("Kontingent erschöpft (/td einsatz status)"), TEXT("Quota used up (/td einsatz status)")); }
 static FText TDTextSinkGesperrt() { return TDTX(TEXT("Im Einsatz gesperrt: FICSIT-Coupons gibt es nur vom Abwehrkern"), TEXT("Locked during an operation: FICSIT Coupons only come from the Defense Core")); }
+static FText TDTextBlaupause() { return TDTX(TEXT("Im Einsatz gesperrt: Blaupausen sind nicht erlaubt"), TEXT("Locked during an operation: blueprints are not allowed")); }
 static FText TDTextWellenSperre() { return TDTX(TEXT("Während der Welle ist Bauen am Kern gesperrt"), TEXT("Building near the Core is locked during a wave")); }
+
+UTDCDBlaupause::UTDCDBlaupause()
+{
+	mDisqfualifyingText = TDTextBlaupause();
+}
 
 UTDCDKontingent::UTDCDKontingent()
 {
@@ -299,6 +321,7 @@ static void TDAktualisiereSperrTexte()
 	Feld->SetPropertyValue_InContainer(GetMutableDefault<UTDCDKontingent>(), TDTextKontingent());
 	Feld->SetPropertyValue_InContainer(GetMutableDefault<UTDCDSinkGesperrt>(), TDTextSinkGesperrt());
 	Feld->SetPropertyValue_InContainer(GetMutableDefault<UTDCDWellenSperre>(), TDTextWellenSperre());
+	Feld->SetPropertyValue_InContainer(GetMutableDefault<UTDCDBlaupause>(), TDTextBlaupause());
 }
 
 bool UTDEinsatzSubsystem::IstLogistik(const UClass* BauKlasse)
@@ -1477,6 +1500,12 @@ void UTDEinsatzSubsystem::PruefeHologramm(AFGHologram* Hologramm)
 		return;
 	}
 	TDAktualisiereSperrTexte();
+	// 0.9.6 (Gesamtreview 12.11.: Blaupausen gingen an Kontingent und Sink-Sperre vorbei; Marius: in der ersten Version keine)
+	if (Hologramm->IsA<AFGBlueprintHologram>())
+	{
+		Hologramm->AddConstructDisqualifier(UTDCDBlaupause::StaticClass());
+		return;
+	}
 	// Mehrere auf einmal (Mauern ziehen): alle muessen ins Kontingent passen (Test 0.19.1: "Mauer 6/5")
 	const FString Grund = SperrGrund(Hologramm->GetBuildClass(), Hologramm->GetActorLocation(), FMath::Max(1, Hologramm->GetBaseCostMultiplier()));
 	if (Grund == TEXT("Welle"))
@@ -1686,6 +1715,68 @@ void UTDEinsatzSubsystem::Beende()
 	}
 	AktualisiereToDo();
 	StelleRezepteWiederHer();
+}
+
+int32 UTDEinsatzSubsystem::LaufEnde() const
+{
+	const ATDDefenseCore* Kern = mKern.Get();
+	return mAktiv && Kern ? Kern->mLaufEnde : 0;
+}
+
+FString UTDEinsatzSubsystem::WiederholeWelle(APlayerController* Spieler)
+{
+	const ATDDefenseCore* Kern = mKern.Get();
+	if (!Kern || Kern->mLaufEnde != 2)
+	{
+		return TDT(TEXT("Wiederholen geht nur nach einer Niederlage."), TEXT("Retry is only possible after a defeat."));
+	}
+	const FString Name = FString::Printf(TEXT("FicsitTD_W%02d_Start"), Kern->mLaufEndWelle);
+	UFGSaveSystem* Speicher = UFGSaveSystem::Get(GetWorld());
+	FSaveHeader Kopf;
+	if (!Speicher || !Speicher->LoadSaveGameHeaderSync(Name, Kopf))
+	{
+		return TDF(TEXT("Kein Spielstand vom Start der Welle %d gefunden (%s)."), TEXT("No save from the start of wave %d found (%s)."), Kern->mLaufEndWelle, *Name);
+	}
+	UE_LOG(LogFicsitTD, Log, TEXT("Einsatz: Welle %d wiederholen, lade %s"), Kern->mLaufEndWelle, *Name);
+	FLoadSaveFileParameters Parameter;
+	Parameter.bEnableAdvancedGameSettings = Kopf.IsCreativeModeEnabled;
+	Speicher->LoadSaveFile(Kopf, Parameter, Spieler);
+	return TDF(TEXT("Lade den Stand vom Start der Welle %d ..."), TEXT("Loading the state from the start of wave %d ..."), Kern->mLaufEndWelle);
+}
+
+FString UTDEinsatzSubsystem::StarteNeu(APawn* Spieler)
+{
+	ATDDefenseCore* Kern = mKern.Get();
+	UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
+	if (!Kern || !Waves)
+	{
+		return TDT(TEXT("Kein Abwehrkern."), TEXT("No Defense Core."));
+	}
+	const int32 Stufe = Waves->GetLaufStufe();
+	const int32 Wellen = Waves->mWellenGesamt;
+	// Startkit nur einmal je Einsatz, auch ueber den Neustart hinweg (sonst Material durch Verlieren)
+	const bool bKit = Kern->mEinsatzStartkit;
+	Beende();
+	Kern->Aufladen();
+	Kern->mEinsatzStartkit = bKit;
+	TArray<FString> Meldungen;
+	Starte(Kern, Stufe, Wellen, Spieler, Meldungen);
+	UE_LOG(LogFicsitTD, Log, TEXT("Einsatz neu gestartet (Stufe %d, %d Wellen): %s"), Stufe, Wellen, *FString::Join(Meldungen, TEXT(" | ")));
+	return TDT(TEXT("Neuer Durchgang ab Welle 1. Fabrik und Türme bleiben stehen, Coupons und Käufe beginnen von vorn."),
+		TEXT("New run from wave 1. Factory and turrets stay, Coupons and purchases start over."));
+}
+
+FString UTDEinsatzSubsystem::BeendeNachEnde()
+{
+	ATDDefenseCore* Kern = mKern.Get();
+	Beende();
+	if (Kern)
+	{
+		Kern->Aufladen();
+		Kern->mLaufEnde = 0;
+	}
+	return TDT(TEXT("Einsatz beendet: keine Kontingente und Sperren mehr. Der Kern lässt sich jetzt abreißen."),
+		TEXT("Operation ended: no more quotas or locks. The Core can now be dismantled."));
 }
 
 void UTDEinsatzSubsystem::Lade(ATDDefenseCore* Kern)
