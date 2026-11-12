@@ -1,4 +1,5 @@
 ﻿#include "TDTurretBase.h"
+#include "TDGegnerHirn.h"
 #include "TDForschung.h"
 #include "TDLureBeacon.h"
 #include "TDBautenErweitert.h"
@@ -1615,10 +1616,8 @@ void ATDTurretBase::TrefferArt(AFGCreature* Ziel, float Schaden, const FVector& 
 			// 0.78.6 Ursache Zombie (Pruefstand 06.11. 07:35): der toedliche Treffer liess einen Rundungsrest (0,000049 von 360 LP) stehen,
 			// danach nahm der Gegner keinen Schaden mehr an (Anpassung des Spiels liess den Treffer unveraendert, die LP blieben trotzdem),
 			// das Tot-Signal kam nie. Ein Rest unter Treffer.Rundungsrest LP nach unserem Treffer ist der toedliche Treffer.
-			if (Leben && Nachher > 0.f && Nachher < TDBalance::Wert(TEXT("Treffer.Rundungsrest"), 0.01f) && Z->IsAliveAndWell())
-			{
-				const_cast<UFGHealthComponent*>(Leben)->Kill();
-			}
+			// 0.9.5: Schwelle 1 LP und dieselbe Regel fuer alle Schadensquellen (UTDGegnerHirn::RestToeten)
+			UTDGegnerHirn::RestToeten(Z);
 			if (Leben && Schaden >= 1.f && Nachher >= RestLP - 0.01f && Z->IsAliveAndWell())
 			{
 				static int32 Gemeldet = 0;

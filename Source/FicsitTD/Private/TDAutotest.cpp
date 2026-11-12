@@ -794,6 +794,14 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 				Ziel = *It;
 			}
 		}
+		else if (Wort == TEXT("Kern"))
+		{
+			// 0.9.6: Kern-Menue (Laden mit Kategorien) fotografieren
+			for (TActorIterator<ATDDefenseCore> It(World); It && !Ziel; ++It)
+			{
+				Ziel = *It;
+			}
+		}
 		else
 		{
 			Ziel = TDTestTurm(World, Wort);

@@ -1,0 +1,45 @@
+{
+  "Name": "Wege-Marius-W06",
+  "_Hinweis": "0.9.6: Kopie von Marius' Spielstand bei Start von Welle 6 (11.11., Grasfelder). Dort bog der Frontweg ueber ein Plateau ab, und fast alle Gegner hingen an einem Klippenpfeiler. Prueft die gezielte Klippensperre (Wellen 6-10) und fotografiert den Laden mit Kategorien.",
+  "Spielstand": "Autotest_Marius_W06",
+  "Quelle": "Marius_W06_Plateau.sav",
+  "ErweiterteEinstellungen": true,
+  "WarteNachLaden": 30,
+  "MaxMinuten": 30,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "oeffne": "Kern"
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Laden_Kategorien"
+    },
+    {
+      "schliesse": true
+    },
+    {
+      "wellenlauf": 10,
+      "zeitraffer": 2,
+      "max": 500
+    },
+    {
+      "pruefe": "KernLebt",
+      "text": "Kern hat Welle 10 ueberstanden"
+    },
+    {
+      "pruefe": "Sicherheitsnetze",
+      "text": "kein Sicherheitsnetz ausgeloest (Versetzen, Absturz, 0 LP)"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}

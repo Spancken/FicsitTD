@@ -223,6 +223,27 @@ TArray<FVector> UTDGegnerHirn::BerechneWeg(UWorld* World, const FVector& Ort, co
 	if (Wer && TDBalance::Wert(TEXT("Gegner.EigenesNetz"), 1.f) > 0.f)
 	{
 		Eigenes = Nav->GetNavDataForProps(Wer->GetNavAgentPropertiesRef(), Ort);
+		// 0.9.5 (Mono-Tesla bis W50: 15 Stinger-Kinder hingen an Nussbueschen): das Critter-Netz fuehrt Kleintiere unter Bueschen
+		// durch, unsere Gegner kommen da nicht durch. Nur groessere Netze als das Standardnetz nehmen (Alpha).
+		const ANavigationData* Std = Nav->GetDefaultNavDataInstance(FNavigationSystem::DontCreate);
+		if (Eigenes && Std && Eigenes->GetConfig().AgentRadius < Std->GetConfig().AgentRadius)
+		{
+			Eigenes = Std;
+		}
+		// 0.9.5 (Mono-Tesla bis W50: Klippen-Hogs und Elite-Stinger, groesser als jedes Netz, hingen an Klippenpfeilern): wer groesser
+		// ist als der Standard-Agent, bekam das Standardnetz (kein Netz passte). Dann das groesste vorhandene Netz nehmen.
+		if (Std && Eigenes == Std && Wer->GetNavAgentPropertiesRef().AgentRadius > Std->GetConfig().AgentRadius)
+		{
+			// 0.9.6 (Test Wege-Marius-W06: Klippen-Hog bekam FGGiraffeNavMesh, das laut Log nie registriert wurde - "registration
+			// queue full" - und deshalb keine Sperrflaechen kennt; er lief zweimal in denselben Beerenbusch): nur registrierte Netze
+			for (const ANavigationData* Netz : Nav->NavDataSet)
+			{
+				if (Netz && Netz->IsRegistered() && Netz->GetConfig().AgentRadius > Eigenes->GetConfig().AgentRadius)
+				{
+					Eigenes = Netz;
+				}
+			}
+		}
 		static TSet<FName> Gemeldet;
 		if (!Gemeldet.Contains(Wer->GetClass()->GetFName()))
 		{
@@ -747,6 +768,25 @@ void UTDGegnerHirn::NeuerWeg(const AFGCreature* Kreatur)
 	Merke(Kreatur, RestVorher);
 }
 
+bool UTDGegnerHirn::RestToeten(AActor* Ziel)
+{
+	// 0.9.5 (Balance084: 10 Gegner lebten mit 0,26-0,75 LP am Kern weiter, bis das Hirn sie nach 2 s toetete): die Schwelle lag
+	// nur fuer Turmtreffer vor (0,01 LP); Kerngeschuetz, Bauten, Pionier und Stachelmauer prueften gar nicht
+	AFGCreature* Kreatur = Cast<AFGCreature>(Ziel);
+	UFGHealthComponent* Leben = Kreatur ? Kreatur->GetHealthComponent() : nullptr;
+	if (!Leben || Leben->IsDead() || !Kreatur->IsAliveAndWell())
+	{
+		return false;
+	}
+	const float Rest = Leben->GetCurrentHealth();
+	if (Rest > 0.f && Rest < TDBalance::Wert(TEXT("Treffer.Rundungsrest"), 1.f))
+	{
+		Leben->Kill();
+		return true;
+	}
+	return false;
+}
+
 void UTDGegnerHirn::Merke(const AFGCreature* Kreatur, float NeuVor)
 {
 	FTDVerlaufPunkt P;
@@ -754,7 +794,18 @@ void UTDGegnerHirn::Merke(const AFGCreature* Kreatur, float NeuVor)
 	P.Rest = GetRestweg();
 	P.NeuVor = NeuVor;
 	P.Ort = Kreatur->GetActorLocation();
-	P.Abseits = mWeg.Num() >= 2 ? FVector::Dist2D(P.Ort, TDHirn::PunktAufWeg(mWeg, mFortschritt)) : -1.f;
+	if (mWeg.Num() >= 2)
+	{
+		const FVector Wegpunkt = TDHirn::PunktAufWeg(mWeg, mFortschritt);
+		const ACharacter* Figur = Cast<ACharacter>(Kreatur);
+		const float Fuss = P.Ort.Z - (Figur && Figur->GetCapsuleComponent() ? Figur->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() : 0.f);
+		P.Abseits = FVector::Dist2D(P.Ort, Wegpunkt);
+		P.Hoehe = Fuss - Wegpunkt.Z;
+	}
+	else
+	{
+		P.Abseits = -1.f;
+	}
 	if (mVerlauf.Num() >= 24)
 	{
 		mVerlauf.RemoveAt(0, 1, EAllowShrinking::No);
@@ -774,7 +825,8 @@ FString UTDGegnerHirn::Verlauf() const
 		}
 		else
 		{
-			Teile.Add(FString::Printf(TEXT("-%.0fs %.0f m (%.0f/%.0f) ab %.0f m"), Jetzt - P.Zeit, P.Rest / 100.f, P.Ort.X / 100.f, P.Ort.Y / 100.f, P.Abseits / 100.f));
+			Teile.Add(FString::Printf(TEXT("-%.0fs %.0f m (%.0f/%.0f/%.0f) ab %.0f m, dz %+.1f m"), Jetzt - P.Zeit, P.Rest / 100.f, P.Ort.X / 100.f, P.Ort.Y / 100.f,
+				P.Ort.Z / 100.f, P.Abseits / 100.f, P.Hoehe / 100.f));
 		}
 	}
 	return FString::Join(Teile, TEXT("; "));
@@ -921,6 +973,7 @@ void UTDGegnerHirn::Marschiere(AFGCreature* Kreatur, float DeltaTime)
 		FString Kapselprobe = TEXT("-");
 		const AFGCreature* KapselGegner = nullptr;   // Wellengegner, an dem die Kapsel haengt (Stau)
 		bool bKapselBewuchs = false;                 // Bewuchs (Foliage), an dem die Kapsel haengt
+		AActor* KapselKlippe = nullptr;              // Klippe (FGCliffActor), an der die Kapsel haengt
 		FVector BewuchsOrt = FVector::ZeroVector;
 		if (const UCapsuleComponent* Kapsel = Kreatur->GetCapsuleComponent())
 		{
@@ -959,6 +1012,10 @@ void UTDGegnerHirn::Marschiere(AFGCreature* Kreatur, float DeltaTime)
 					bKapselBewuchs = true;
 					BewuchsOrt = Grund->ImpactPoint;
 				}
+				else if (Grund->GetActor() && Grund->GetActor()->GetClass()->GetName().Contains(TEXT("Cliff")))
+				{
+					KapselKlippe = Grund->GetActor();
+				}
 			}
 			Kapselprobe = FString::Printf(TEXT("Halbhoehe %.0f, Radius %.0f, steckt %s, 1 m voraus %s"), Halb, R,
 				bStecken ? *(TEXT("JA in ") + Beschreibe(Stecken)) : TEXT("nein"),
@@ -995,6 +1052,15 @@ void UTDGegnerHirn::Marschiere(AFGCreature* Kreatur, float DeltaTime)
 				return;
 			}
 			UE_LOG(LogFicsitTD, Log, TEXT("Hirn: Bewuchs bei %s nicht raeumbar: %s"), *BewuchsOrt.ToCompactString(), *FString::Join(Uebrig.Array(), TEXT(", ")));
+		}
+		// 0.9.6 (Marius' Partie 11.11.: Weg ueber ein Plateau, unten haelt ein CliffPillar die Kapsel auf): diese Klippe aus dem
+		// Netz nehmen, damit die Folgenden gar nicht erst dorthin geplant werden. Er selbst wird trotzdem versetzt (er steckt jetzt fest).
+		if (KapselKlippe)
+		{
+			if (UTDWaveSubsystem* Wellen = GetWorld()->GetSubsystem<UTDWaveSubsystem>())
+			{
+				Wellen->SperreKlippe(KapselKlippe);
+			}
 		}
 		const FString Zustand = Diagnose() + TEXT(" | vorn: ") + Vorn + TEXT(" | Antrieb: ") + Antrieb + TEXT(" | Kapsel: ") + Kapselprobe;
 		// 0.78.1 (Pruefstand: versetzte Gegner fielen bis -100 km): nur auf echten Boden versetzen - von 5 m ueber dem Wegpunkt
@@ -1130,6 +1196,7 @@ void UTDGegnerHirn::Greife(AFGCreature* Kreatur, float DeltaTime)
 				{
 					UGameplayStatics::ApplyDamage(Kreatur, FMath::Max(TDBalance::Wert(TEXT("Forschung.Stachelmauer.Minimum"), 15.f),
 						mWerte.Schaden * TDBalance::Wert(TEXT("Forschung.Stachelmauer.Anteil"), 0.25f)), nullptr, nullptr, UDamageType::StaticClass());
+					RestToeten(Kreatur);
 				}
 			}
 		}

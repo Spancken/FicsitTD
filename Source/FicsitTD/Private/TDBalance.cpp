@@ -1,4 +1,4 @@
-﻿#include "TDBalance.h"
+#include "TDBalance.h"
 #include "FicsitTDModule.h"
 #include "Dom/JsonObject.h"
 #include "HAL/FileManager.h"
@@ -257,7 +257,7 @@ namespace TDBalanceIntern
 		{ TEXT("Einsatz.Laden.Armierpistole.Grundpreis"), 6.f }, { TEXT("Einsatz.Laden.Armierpistole.Aufschlag"), 0.f }, { TEXT("Einsatz.Laden.Armierpistole.Paket"), 1.f }, { TEXT("Einsatz.Laden.Armierpistole.Max"), 1.f },
 		{ TEXT("Einsatz.Laden.Klingenläufer.Grundpreis"), 8.f }, { TEXT("Einsatz.Laden.Klingenläufer.Aufschlag"), 0.f }, { TEXT("Einsatz.Laden.Klingenläufer.Paket"), 1.f }, { TEXT("Einsatz.Laden.Klingenläufer.Max"), 1.f },
 		{ TEXT("Einsatz.Laden.Gewehr.Grundpreis"), 10.f }, { TEXT("Einsatz.Laden.Gewehr.Aufschlag"), 0.f }, { TEXT("Einsatz.Laden.Gewehr.Paket"), 1.f }, { TEXT("Einsatz.Laden.Gewehr.Max"), 1.f },
-		{ TEXT("Einsatz.Laden.Nobelisken-Zünder.Grundpreis"), 12.f }, { TEXT("Einsatz.Laden.Nobelisken-Zünder.Aufschlag"), 0.f }, { TEXT("Einsatz.Laden.Nobelisken-Zünder.Paket"), 1.f }, { TEXT("Einsatz.Laden.Nobelisken-Zünder.Max"), 1.f },
+		{ TEXT("Einsatz.Laden.Nobelisken-Zünder.Grundpreis"), 12.f }, { TEXT("Einsatz.Laden.Nobelisken-Zünder.Aufschlag"), 0.f }, { TEXT("Einsatz.Laden.Nobelisken-Zünder.Paket"), 1.f }, { TEXT("Einsatz.Laden.Nobelisken-Zünder.Max"), 1.f }, { TEXT("Einsatz.Laden.Kernreparatur.Max"), 0.f },
 		{ TEXT("Einsatz.Laden.Treibstoffkraftwerk.Grundpreis"), 8.f }, { TEXT("Einsatz.Laden.Treibstoffkraftwerk.Aufschlag"), 0.4f }, { TEXT("Einsatz.Laden.Treibstoffkraftwerk.Paket"), 1.f },
 		// 0.9.1 Endgame-Konzept: spaete Maschinen (Schwerindustrie W25, Mischtechnik W35), Fluessigkeitspuffer mit der Raffinerie
 		{ TEXT("Einsatz.Laden.Fluessigkeitspuffer.Grundpreis"), 3.f }, { TEXT("Einsatz.Laden.Fluessigkeitspuffer.Aufschlag"), 0.3f }, { TEXT("Einsatz.Laden.Fluessigkeitspuffer.Paket"), 1.f },
@@ -285,9 +285,9 @@ namespace TDBalanceIntern
 		// Spielstand vor und nach jeder Welle (FicsitTD_W05_Start / _Ende), 0 = aus
 		{ TEXT("Lauf.Spielstaende"), 1.f },
 		// Abstand von der Kernmitte (m), ab dem ein Gegner zusaetzlich zur eigenen Reichweite den Kern angreift (Tiefbohrer 0.61: Sockel 4,1 m)
-		{ TEXT("Kern.AngriffsAbstand"), 10.f }, { TEXT("Gegner.AbsturzGrenze"), 150.f }, { TEXT("Wellen.SpawnHoehe"), 4.f }, { TEXT("Gegner.Abgrund"), 6.f }, { TEXT("Gegner.StauGeduld"), 40.f }, { TEXT("Gegner.Ausweichen"), 1.f }, { TEXT("Gegner.AusweichRadius"), 5.f }, { TEXT("Gegner.HindernisseInsNetz"), 1.f }, { TEXT("Gegner.HindernisRadius"), 400.f }, { TEXT("Gegner.StartSuche"), 2.f }, { TEXT("Gegner.EigenesNetz"), 1.f }, { TEXT("Gegner.KoerperDurchlaessig"), 1.f }, { TEXT("Wellen.VariationJeEinsatz"), 0.f }, { TEXT("Wellen.BossBudget"), 0.6f },
+		{ TEXT("Kern.AngriffsAbstand"), 10.f }, { TEXT("Gegner.AbsturzGrenze"), 150.f }, { TEXT("Wellen.SpawnHoehe"), 4.f }, { TEXT("Gegner.Abgrund"), 6.f }, { TEXT("Gegner.StauGeduld"), 40.f }, { TEXT("Gegner.Ausweichen"), 1.f }, { TEXT("Gegner.AusweichRadius"), 5.f }, { TEXT("Gegner.HindernisseInsNetz"), 1.f }, { TEXT("Gegner.HindernisRadius"), 400.f }, { TEXT("Gegner.StartSuche"), 2.f }, { TEXT("Gegner.EigenesNetz"), 1.f }, { TEXT("Gegner.KoerperDurchlaessig"), 1.f }, { TEXT("Gegner.KlippenSperren"), 1.f }, { TEXT("Gegner.KlippenSperrenMax"), 12.f }, { TEXT("Wellen.VariationJeEinsatz"), 0.f }, { TEXT("Wellen.BossBudget"), 0.6f },
 		{ TEXT("Kombo.Aktiv"), 1.f }, { TEXT("Kombo.Verpuffung.Faktor"), 1.5f }, { TEXT("Kombo.Blitzableiter.Dauer"), 5.f },
-		{ TEXT("Kombo.Blitzableiter.Reichweite"), 1.5f }, { TEXT("Kombo.Hitzeriss.Dauer"), 3.f }, { TEXT("Kombo.Engstelle.Radius"), 12.f }, { TEXT("Kombo.Engstelle.Ziele"), 1.f }, { TEXT("Kombo.Sammelpunkt.Faktor"), 1.25f }, { TEXT("Kombo.Leiter.Radius"), 4.f }, { TEXT("Kombo.Leiter.Anteil"), 0.3f }, { TEXT("Kombo.Leiter.MaxZiele"), 3.f }, { TEXT("Tuerme.Teslaspule.Hochspannung"), 1.3f }, { TEXT("Forschung.Hochspannung.AbWelle"), 25.f }, { TEXT("Forschung.Raketentreibstoff.AbWelle"), 35.f }, { TEXT("Forschung.Plasmaflamme.AbWelle"), 38.f }, { TEXT("Gegner.BewuchsRaeumen"), 4.f }, { TEXT("Wellen.WegRaeumen"), 3.f }, { TEXT("Treffer.Rundungsrest"), 0.01f },
+		{ TEXT("Kombo.Blitzableiter.Reichweite"), 1.5f }, { TEXT("Kombo.Hitzeriss.Dauer"), 3.f }, { TEXT("Kombo.Engstelle.Radius"), 12.f }, { TEXT("Kombo.Engstelle.Ziele"), 1.f }, { TEXT("Kombo.Sammelpunkt.Faktor"), 1.25f }, { TEXT("Kombo.Leiter.Radius"), 4.f }, { TEXT("Kombo.Leiter.Anteil"), 0.3f }, { TEXT("Kombo.Leiter.MaxZiele"), 3.f }, { TEXT("Tuerme.Teslaspule.Hochspannung"), 1.3f }, { TEXT("Forschung.Hochspannung.AbWelle"), 25.f }, { TEXT("Forschung.Raketentreibstoff.AbWelle"), 35.f }, { TEXT("Forschung.Plasmaflamme.AbWelle"), 38.f }, { TEXT("Gegner.BewuchsRaeumen"), 4.f }, { TEXT("Wellen.WegRaeumen"), 3.f }, { TEXT("Treffer.Rundungsrest"), 1.f },
 		// 0.79 Breite Front (Option, Standard aus - Marius 06.11.: technisch vorhanden, jetzige Spielversion unveraendert)
 		{ TEXT("Wellen.BreiteFront"), 0.f }, { TEXT("Wellen.BreiteVersatz"), 12.f }, { TEXT("Wellen.BreiteTempo"), 0.12f },
 		{ TEXT("Wellen.BreiteKern"), 40.f }, { TEXT("Wellen.BreiteAbstand"), 4.f }, { TEXT("Wellen.BreiteAbstandGewicht"), 0.6f }, { TEXT("Gegner.AngriffHoehe"), 12.f }, { TEXT("Kern.Gedraenge"), 20.f }, { TEXT("Kern.GedraengeSekunden"), 3.f },

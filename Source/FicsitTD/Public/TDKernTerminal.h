@@ -246,6 +246,8 @@ private:
 	/** Auswahl im Laden: Schluessel -> Anzahl Kaeufe */
 	TMap<FString, int32> mKorb;
 	TArray<FTDLadenZeile> mLadenZeilen;
+	/** 0.9.6: zugeklappte Laden-Abschnitte (Kategorie) */
+	TSet<int32> mLadenZu;
 	FTimerHandle mTimer;
 	/** Mauszeiger selbst eingeschaltet (das Spiel hat es nicht getan) -> beim Schliessen zuruecksetzen */
 	bool mZeigerSelbst = false;

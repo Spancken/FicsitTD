@@ -1,4 +1,5 @@
 ﻿#include "TDDefenseCore.h"
+#include "TDGegnerHirn.h"
 #include "FicsitTDModule.h"
 #include "TDDecoy.h"
 #include "TDEinsatz.h"
@@ -194,6 +195,7 @@ void ATDDefenseCore::Geschuetz()
 		}
 	}
 	UGameplayStatics::ApplyDamage(Ziel, TDBalance::Wert(TEXT("Forschung.KernGeschuetz.Schaden"), 60.f), nullptr, this, UDamageType::StaticClass());
+	UTDGegnerHirn::RestToeten(Ziel);
 }
 
 void ATDDefenseCore::EndPlay(const EEndPlayReason::Type EndPlayReason)

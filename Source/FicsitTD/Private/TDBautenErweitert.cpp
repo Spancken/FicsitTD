@@ -683,6 +683,7 @@ void ATDFlakTurret::Feuern(AFGCreature* Ziel)
 		for (AActor* O : Opfer)
 		{
 			UGameplayStatics::ApplyDamage(O, Schaden, nullptr, T, UDamageType::StaticClass());
+			UTDGegnerHirn::RestToeten(O);
 			++T->mTreffer;
 			T->mBilanz.Schaden += Schaden;
 			++T->mBilanz.Treffer;

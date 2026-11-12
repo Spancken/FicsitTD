@@ -928,6 +928,33 @@ FString UTDEinsatzSubsystem::SpielerWirkung(const FTDSpielerPosten& P, int32 Men
 	return Item.Num() ? TDT(TEXT("Erhalten: "), TEXT("Received: ")) + GibMaterial(Item) + TEXT(".") : TDT(TEXT("(Ausrüstung nicht gefunden)"), TEXT("(equipment not found)"));
 }
 
+FString FTDLadenZeile::KategorieName(int32 Index)
+{
+	switch (Index)
+	{
+	case 0:  return TDT(TEXT("Türme"), TEXT("Turrets"));
+	case 1:  return TDT(TEXT("Verteidigung"), TEXT("Defense"));
+	case 2:  return TDT(TEXT("Produktion"), TEXT("Production"));
+	case 3:  return TDT(TEXT("Strom"), TEXT("Power"));
+	case 4:  return TDT(TEXT("Logistik"), TEXT("Logistics"));
+	default: return TDT(TEXT("Pionier und Kern"), TEXT("Pioneer and Core"));
+	}
+}
+
+/** 0.9.6 (Marius 11.11.: "je mehr Gebaeude, umso unstrukturierter"): Abschnitt je Laden-Eintrag */
+static int32 LadenKategorie(const FString& Key)
+{
+	static const TCHAR* Tuerme[] = { TEXT("Bolzenturm"), TEXT("Gewehrturm"), TEXT("Teslaspule"), TEXT("Himmelsturm"), TEXT("Flammenturm"), TEXT("Nobelisk-Werfer"), TEXT("Singularitaet") };
+	static const TCHAR* Abwehr[] = { TEXT("Mauer"), TEXT("Panzersperre"), TEXT("Tor"), TEXT("Lockfeuer"), TEXT("Oelschlick"), TEXT("Elektrozaun"), TEXT("Funkmast"), TEXT("Schildgenerator"), TEXT("Stoerfeld"), TEXT("Drohnenplatz") };
+	static const TCHAR* Strom[] = { TEXT("Biomassegenerator"), TEXT("Kohlekraftwerk"), TEXT("Treibstoffkraftwerk") };
+	static const TCHAR* Logistik[] = { TEXT("Lager"), TEXT("Splitter"), TEXT("Verbinder"), TEXT("Fluessigkeitspuffer") };
+	for (const TCHAR* K : Tuerme)   { if (Key == K) return 0; }
+	for (const TCHAR* K : Abwehr)   { if (Key == K) return 1; }
+	for (const TCHAR* K : Strom)    { if (Key == K) return 3; }
+	for (const TCHAR* K : Logistik) { if (Key == K) return 4; }
+	return SpielerFuer(Key) ? 5 : 2;   // Spieler-Posten, sonst Produktion (Miner, Oefen, Maschinen, Pumpen)
+}
+
 TArray<FTDLadenZeile> UTDEinsatzSubsystem::LadenZeilen() const
 {
 	TArray<FTDLadenZeile> Zeilen;
@@ -949,6 +976,7 @@ TArray<FTDLadenZeile> UTDEinsatzSubsystem::LadenZeilen() const
 		Z.Gekauft = Gekauft ? *Gekauft : 0;
 		Z.Preis = Z.PreisNach(0);
 		Z.Symbol = Symbol(E.Key);
+		Z.Kategorie = LadenKategorie(E.Key);
 		if (const FTDSpielerPosten* SP = SpielerFuer(E.Key))
 		{
 			Z.Einheit = SP->Art == 1 ? TDT(TEXT("Inventarplätze"), TEXT("inventory slots")) : SP->Art == 2 ? TDT(TEXT("Handplatz"), TEXT("hand slot"))

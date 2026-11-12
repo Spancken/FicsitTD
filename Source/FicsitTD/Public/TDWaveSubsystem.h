@@ -341,7 +341,15 @@ public:
 	int32 GetLogistikVersion() const { return mLogistikVersion; }
 	TArray<TWeakObjectPtr<AActor>> mLogistik;
 	int32 mLogistikVersion = 0;
+	/** 0.9.6 (Marius' Partie 11.11.: ab Welle 6 hingen fast alle Gegner an einem Klippenpfeiler, den das Netz fuer begehbar hielt):
+	 *  genau diese Klippe als Sperrflaeche ins Netz nehmen. Nach dem Netzumbau pruefen, ob alle aktiven Frontwege noch voll sind -
+	 *  sonst die Sperre zuruecknehmen. Jede Klippe wird nur einmal versucht. */
+	bool SperreKlippe(AActor* Klippe);
 private:
+	void PruefeKlippenSperre(TWeakObjectPtr<AActor> Klippe, int32 Versuch);
+	TSet<TWeakObjectPtr<AActor>> mKlippenGeprueft;
+	int32 mKlippenGesperrt = 0;
+	int32 mKlippenZurueck = 0;
 	/** Beim Start war das Navigationsnetz noch nicht fertig (0 Richtungen geprueft): alle 15 s neu suchen, bis es klappt */
 	void PruefeFrontenNach();
 	FTimerHandle mFrontenNachTimer;

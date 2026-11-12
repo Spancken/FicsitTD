@@ -42,6 +42,7 @@ struct FTDVerlaufPunkt
 	float Zeit = 0.f;
 	float Rest = 0.f;
 	float Abseits = 0.f;
+	float Hoehe = 0.f;   // Fuss des Gegners minus Wegpunkt (cm), + = ueber dem Weg
 	float NeuVor = -1.f;
 	FVector Ort = FVector::ZeroVector;
 };
@@ -84,6 +85,9 @@ public:
 	 *  bVoll = false: der Weg endet vor dem Kern (versperrt, z. B. eingemauert) */
 	static TArray<FVector> BerechneWeg(UWorld* World, const FVector& Ort, const ATDDefenseCore* Kern, bool* bVoll = nullptr, const APawn* Wer = nullptr);
 	static UTDGegnerHirn* Von(const AActor* Kreatur);
+	/** 0.9.5: nach unserem Treffer - bleibt ein Rest unter Treffer.Rundungsrest (Standard 1 LP), ist es der toedliche Treffer
+	 *  (die Gesundheitskomponente des Spiels toetet erst bei 0). true, wenn getoetet. */
+	static bool RestToeten(AActor* Ziel);
 
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 

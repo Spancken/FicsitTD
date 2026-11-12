@@ -1,4 +1,5 @@
 #include "TDPionier.h"
+#include "TDGegnerHirn.h"
 #include "FicsitTDModule.h"
 #include "TDBalance.h"
 #include "TDSprache.h"
@@ -389,6 +390,7 @@ float UTDPionier::SpielerTreffer(AActor* Getroffen, AActor* Verursacher, float M
 					if (C.IsValid() && C->IsAliveAndWell())
 					{
 						UGameplayStatics::ApplyDamage(C.Get(), Zusatz, nullptr, nullptr, UDamageType::StaticClass());
+						UTDGegnerHirn::RestToeten(C.Get());
 					}
 				}
 			});

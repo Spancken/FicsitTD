@@ -15,6 +15,7 @@
 #include "Components/Border.h"
 #include "Components/BorderSlot.h"
 #include "Components/Button.h"
+#include "Components/ButtonSlot.h"
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Components/HorizontalBox.h"
@@ -1581,8 +1582,70 @@ void UTDKernTerminal::BaueListen()
 		mLadenZeilen = Einsatz->LadenZeilen();
 		const int32 Konto = Einsatz->Konto();
 		const int32 Summe = KorbSumme();
+		// 0.9.6 (Marius 11.11.): Abschnitte je Kategorie wie in der Rezeptauswahl (grauer Balken, rechts - zum Einklappen);
+		// noch nicht Erforschtes wird nicht gezeigt, nur unten gezaehlt
+		int32 Gesperrt = 0;
 		for (const FTDLadenZeile& Z : mLadenZeilen)
 		{
+			Gesperrt += Z.bVerfuegbar ? 0 : 1;
+		}
+		for (int32 Kat = 0; Kat < FTDLadenZeile::Kategorien; ++Kat)
+		{
+		int32 InKat = 0, KorbKat = 0;
+		for (const FTDLadenZeile& Z : mLadenZeilen)
+		{
+			if (Z.Kategorie == Kat && Z.bVerfuegbar)
+			{
+				++InKat;
+				KorbKat += mKorb.FindRef(Z.Key);
+			}
+		}
+		if (InKat == 0)
+		{
+			continue;
+		}
+		const bool bZu = mLadenZu.Contains(Kat);
+		{
+			UButton* Kopf = WidgetTree->ConstructWidget<UButton>();
+			FButtonStyle Stil;
+			Stil.SetNormal(FSlateRoundedBoxBrush(TDUI::C(90, 90, 90), 3.f));
+			Stil.SetHovered(FSlateRoundedBoxBrush(TDUI::C(110, 110, 110), 3.f));
+			Stil.SetPressed(FSlateRoundedBoxBrush(TDUI::C(75, 75, 75), 3.f));
+			Stil.SetNormalPadding(FMargin(10.f, 5.f));
+			Stil.SetPressedPadding(FMargin(10.f, 6.f, 10.f, 4.f));
+			Kopf->SetStyle(Stil);
+			UHorizontalBox* KopfReihe = WidgetTree->ConstructWidget<UHorizontalBox>();
+			if (UButtonSlot* KopfSlot = Cast<UButtonSlot>(Kopf->AddChild(KopfReihe)))
+			{
+				KopfSlot->SetHorizontalAlignment(HAlign_Fill);   // Titel links, - rechts (sonst mittig)
+			}
+			Fuellen(KopfReihe, NeuerText(FString::Printf(TEXT("%s (%d)"), *FTDLadenZeile::KategorieName(Kat), InKat), 15, TDUI::Hell, true));
+			if (KorbKat > 0)
+			{
+				Mittig(KopfReihe, NeuerText(TDF(TEXT("%d gewählt"), TEXT("%d selected"), KorbKat), 13, TDUI::Akzent, true), 8.f);
+			}
+			Mittig(KopfReihe, NeuerText(bZu ? TEXT("+") : TEXT("-"), 18, TDUI::Hell, true), 12.f);
+			UTDKaufKnopf* Ziel = NewObject<UTDKaufKnopf>(this);
+			Ziel->Key = FString::FromInt(Kat);
+			Ziel->Schritt = 0;   // 0 = Abschnitt auf/zu
+			Ziel->Menue = this;
+			Kopf->OnClicked.AddDynamic(Ziel, &UTDKaufKnopf::Geklickt);
+			mKaufKnoepfe.Add(Ziel);
+			if (UVerticalBoxSlot* S = mLaden->AddChildToVerticalBox(Kopf))
+			{
+				S->SetPadding(FMargin(0.f, Kat == 0 ? 0.f : 6.f, 0.f, 4.f));
+			}
+		}
+		if (bZu)
+		{
+			continue;
+		}
+		for (const FTDLadenZeile& Z : mLadenZeilen)
+		{
+			if (Z.Kategorie != Kat || !Z.bVerfuegbar)
+			{
+				continue;
+			}
 			const int32 ImKorb = mKorb.FindRef(Z.Key);
 			UHorizontalBox* Reihe = nullptr;
 			NeueKarte(mLaden, Z.bVerfuegbar ? TDUI::Karte : TDUI::ZeileB, Reihe);
@@ -1624,6 +1687,15 @@ void UTDKernTerminal::BaueListen()
 				ZahlGroesse->AddChild(Zahl);
 				Mittig(Reihe, ZahlGroesse, 6.f);
 				Mittig(Reihe, PlusMinus(Z.Key, +1, Summe + Z.PreisNach(ImKorb) <= Konto && (Z.Max <= 0 || Z.Gekauft + ImKorb < Z.Max)), 6.f);
+			}
+		}
+		}
+		if (Gesperrt > 0)
+		{
+			UTextBlock* Rest = NeuerText(TDF(TEXT("%d weitere im MAM erforschbar"), TEXT("%d more can be researched in the MAM"), Gesperrt), 13, TDUI::Grau);
+			if (UVerticalBoxSlot* S = mLaden->AddChildToVerticalBox(Rest))
+			{
+				S->SetPadding(FMargin(4.f, 6.f, 0.f, 0.f));
 			}
 		}
 
@@ -1716,6 +1788,21 @@ void UTDKernTerminal::Melde(const FString& Text)
 
 void UTDKernTerminal::AendereKorb(const FString& Key, int32 Schritt)
 {
+	// 0.9.6: Schritt 0 = Laden-Abschnitt (Key = Kategorie) auf- oder zuklappen, auch waehrend der Welle
+	if (Schritt == 0)
+	{
+		const int32 Kat = FCString::Atoi(*Key);
+		if (mLadenZu.Contains(Kat))
+		{
+			mLadenZu.Remove(Kat);
+		}
+		else
+		{
+			mLadenZu.Add(Kat);
+		}
+		BaueListen();
+		return;
+	}
 	const UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
 	if (Waves && Waves->LaeuftWelle())
 	{

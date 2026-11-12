@@ -1,4 +1,5 @@
 ﻿#include "TDWaveSubsystem.h"
+#include "Engine/StaticMeshActor.h"
 #include "NavModifierComponent.h"
 #include "NavAreas/NavArea_Null.h"
 #include "TDSprache.h"
@@ -2929,6 +2930,7 @@ void UTDWaveSubsystem::EntschaerfeLogistik(const FVector& Mitte)
 		static const TCHAR* Namen[] = { TEXT("ResourceDeposit"), TEXT("NodeMeshActor"), TEXT("CrabHatcher"), TEXT("NutBush"), TEXT("BerryBush") };
 		const float Radius = TDBalance::Wert(TEXT("Gegner.HindernisRadius"), 400.f) * 100.f;
 		int32 Objekte = 0, Gefunden = 0;
+		TMap<FString, FString> Uebersprungen;
 		for (TActorIterator<AActor> It(GetWorld()); It; ++It)
 		{
 			if (FVector::DistSquared2D(It->GetActorLocation(), Mitte) > FMath::Square(Radius) || (It->IsA<APawn>() && !It->GetClass()->GetName().Contains(TEXT("CrabHatcher"))))
@@ -2940,6 +2942,21 @@ void UTDWaveSubsystem::EntschaerfeLogistik(const FVector& Mitte)
 			for (const TCHAR* N : Namen)
 			{
 				bTreffer |= Klasse.Contains(N);
+			}
+			// 0.9.5 (Mono-Tesla bis W50: 8 Festgefahrene an Knochenboegen): StaticMeshActor mit BoneStructure-Modell ebenso sperren.
+			// Felspfeiler (CliffPillar) ausprobiert und verworfen: 86 Pfeiler mehr gesperrt, Wege durch Nussbusch-Felder, 77 statt 11 Netze.
+			if (!bTreffer && It->IsA<AStaticMeshActor>())
+			{
+				static const TCHAR* Modelle[] = { TEXT("BoneStructure") };
+				TArray<UStaticMeshComponent*> Netze;
+				It->GetComponents<UStaticMeshComponent>(Netze);
+				for (const UStaticMeshComponent* Netz : Netze)
+				{
+					for (const TCHAR* M : Modelle)
+					{
+						bTreffer |= Netz && Netz->GetStaticMesh() && Netz->GetStaticMesh()->GetName().Contains(M);
+					}
+				}
 			}
 			if (!bTreffer)
 			{
@@ -2966,7 +2983,24 @@ void UTDWaveSubsystem::EntschaerfeLogistik(const FVector& Mitte)
 					Teil->SetCanEverAffectNavigation(false);
 				}
 			}
-			if (!bBlockt || It->FindComponentByClass<UNavModifierComponent>())
+			if (!bBlockt)
+			{
+				// 0.9.5 Diagnose: welche Klassen werden mangels blockierender Kollision uebersprungen (und wie sind sie eingestellt)?
+				FString& Eintrag = Uebersprungen.FindOrAdd(Klasse);
+				if (Eintrag.IsEmpty())
+				{
+					for (const UPrimitiveComponent* Teil : Komp)
+					{
+						if (Teil)
+						{
+							Eintrag += FString::Printf(TEXT("%s(Kollision %d, Pawn %d, Profil %s) "), *Teil->GetName(), (int32)Teil->GetCollisionEnabled(),
+								(int32)Teil->GetCollisionResponseToChannel(ECC_Pawn), *Teil->GetCollisionProfileName().ToString());
+						}
+					}
+				}
+				continue;
+			}
+			if (It->FindComponentByClass<UNavModifierComponent>())
 			{
 				continue;
 			}
@@ -2975,8 +3009,104 @@ void UTDWaveSubsystem::EntschaerfeLogistik(const FVector& Mitte)
 			Mod->RegisterComponent();
 			++Objekte;
 		}
-		UE_LOG(LogFicsitTD, Log, TEXT("Hindernisse: %d Weltobjekte (Erz, Steinknoten, Nester, Buesche) in %.0f m als Sperrflaeche ins Navigationsnetz genommen (%d passende Objekte)"), Objekte, Radius / 100.f, Gefunden);
+		UE_LOG(LogFicsitTD, Log, TEXT("Hindernisse: %d Weltobjekte (Erz, Steinknoten, Nester, Buesche, Knochen) in %.0f m als Sperrflaeche ins Navigationsnetz genommen (%d passende Objekte)"), Objekte, Radius / 100.f, Gefunden);
+		for (const TPair<FString, FString>& U : Uebersprungen)
+		{
+			UE_LOG(LogFicsitTD, Log, TEXT("Hindernisse: %s uebersprungen (keine blockierende Kollision): %s"), *U.Key, *U.Value);
+		}
 	}
+}
+
+bool UTDWaveSubsystem::SperreKlippe(AActor* Klippe)
+{
+	ATDDefenseCore* Kern = mKern.Get();
+	if (!Klippe || !Kern || TDBalance::Wert(TEXT("Gegner.KlippenSperren"), 1.f) <= 0.f || mKlippenGeprueft.Contains(Klippe))
+	{
+		return false;
+	}
+	mKlippenGeprueft.Add(Klippe);
+	FString Modell = Klippe->GetClass()->GetName();
+	if (const UStaticMeshComponent* Netz = Klippe->FindComponentByClass<UStaticMeshComponent>(); Netz && Netz->GetStaticMesh())
+	{
+		Modell = Netz->GetStaticMesh()->GetName();
+	}
+	FVector Mitte, Halb;
+	Klippe->GetActorBounds(true, Mitte, Halb);
+	if (mKlippenGesperrt >= (int32)TDBalance::Wert(TEXT("Gegner.KlippenSperrenMax"), 12.f))
+	{
+		UE_LOG(LogFicsitTD, Log, TEXT("Klippensperre: %s bei %s nicht gesperrt - Hoechstzahl %d erreicht"), *Modell, *Mitte.ToCompactString(), mKlippenGesperrt);
+		return false;
+	}
+	// Kern und Kernplatz nie aussperren
+	if (FBox(Mitte - Halb, Mitte + Halb).ExpandBy(3000.f).IsInsideXY(Kern->GetActorLocation()))
+	{
+		UE_LOG(LogFicsitTD, Log, TEXT("Klippensperre: %s bei %s liegt zu nah am Kern - nicht gesperrt"), *Modell, *Mitte.ToCompactString());
+		return false;
+	}
+	UNavModifierComponent* Mod = NewObject<UNavModifierComponent>(Klippe, TEXT("TDKlippenNetz"));
+	Mod->SetAreaClass(UNavArea_Null::StaticClass());
+	Mod->RegisterComponent();
+	++mKlippenGesperrt;
+	UE_LOG(LogFicsitTD, Log, TEXT("Klippensperre: %s bei %s (%.0f x %.0f x %.0f m) als Sperrflaeche ins Netz genommen (%d.), pruefe die Frontwege nach dem Netzumbau"),
+		*Modell, *Mitte.ToCompactString(), Halb.X / 50.f, Halb.Y / 50.f, Halb.Z / 50.f, mKlippenGesperrt);
+	FTimerHandle Takt;
+	GetWorld()->GetTimerManager().SetTimer(Takt, FTimerDelegate::CreateUObject(this, &UTDWaveSubsystem::PruefeKlippenSperre, TWeakObjectPtr<AActor>(Klippe), 0), 3.f, false);
+	return true;
+}
+
+void UTDWaveSubsystem::PruefeKlippenSperre(TWeakObjectPtr<AActor> Klippe, int32 Versuch)
+{
+	AActor* K = Klippe.Get();
+	ATDDefenseCore* Kern = mKern.Get();
+	UWorld* World = GetWorld();
+	UNavigationSystemV1* Nav = World ? FNavigationSystem::GetCurrent<UNavigationSystemV1>(World) : nullptr;
+	if (!K || !Kern || !Nav)
+	{
+		return;
+	}
+	if (Nav->IsNavigationBuildInProgress() && Versuch < 10)
+	{
+		FTimerHandle Takt;
+		World->GetTimerManager().SetTimer(Takt, FTimerDelegate::CreateUObject(this, &UTDWaveSubsystem::PruefeKlippenSperre, Klippe, Versuch + 1), 2.f, false);
+		return;
+	}
+	bool bVoll = true;
+	TArray<FString> Teile;
+	FNavLocation MitteNav;
+	if (!Nav->ProjectPointToNavigation(Kern->GetActorLocation(), MitteNav, FVector(1200.f, 1200.f, 1000.f)))
+	{
+		bVoll = false;
+		Teile.Add(TEXT("Kern nicht auf dem Netz"));
+	}
+	else
+	{
+		const int32 Anzahl = FMath::Min(mFronten.Num(), AktiveFrontenFuer(FMath::Max(1, mWelle)) + 1);
+		for (int32 i = 0; i < Anzahl; ++i)
+		{
+			UNavigationPath* Pfad = UNavigationSystemV1::FindPathToLocationSynchronously(World, mFronten[i].Ort, MitteNav.Location, nullptr, UTDNavFilter::StaticClass());
+			const bool bOk = Pfad && Pfad->IsValid() && Pfad->PathPoints.Num() >= 2 && PfadAmZiel(Pfad, MitteNav.Location);
+			bVoll &= bOk;
+			Teile.Add(bOk ? FString::Printf(TEXT("%s %.0f m"), *Himmelsrichtung(mFronten[i].Winkel), Pfad->GetPathLength() / 100.f)
+				: FString::Printf(TEXT("%s OHNE vollen Weg"), *Himmelsrichtung(mFronten[i].Winkel)));
+		}
+	}
+	if (bVoll)
+	{
+		UE_LOG(LogFicsitTD, Log, TEXT("Klippensperre bestaetigt (nach %d Warterunden): Frontwege weiter voll - %s"), Versuch, *FString::Join(Teile, TEXT(", ")));
+		return;
+	}
+	TArray<UNavModifierComponent*> Mods;
+	K->GetComponents<UNavModifierComponent>(Mods);
+	for (UNavModifierComponent* M : Mods)
+	{
+		if (M && M->GetFName() == TEXT("TDKlippenNetz"))
+		{
+			M->DestroyComponent();
+		}
+	}
+	--mKlippenGesperrt;
+	++mKlippenZurueck;
+	UE_LOG(LogFicsitTD, Log, TEXT("Klippensperre zurueckgenommen (%d.): ohne die Klippe fehlt ein Frontweg - %s"), mKlippenZurueck, *FString::Join(Teile, TEXT(", ")));
 }
 
 void UTDWaveSubsystem::MarkiereFronten()

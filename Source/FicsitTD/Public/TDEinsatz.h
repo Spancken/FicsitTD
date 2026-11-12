@@ -25,6 +25,10 @@ struct FTDLadenZeile
 	FString Einheit;
 	/** Hoechstzahl an Kaeufen, 0 = unbegrenzt */
 	int32 Max = 0;
+	/** 0.9.6 (Marius 11.11.): Abschnitt im Laden - 0 Tuerme, 1 Verteidigung, 2 Produktion, 3 Strom, 4 Logistik, 5 Pionier und Kern */
+	int32 Kategorie = 0;
+	static constexpr int32 Kategorien = 6;
+	static FString KategorieName(int32 Index);
 	/** Preis des Kaufs Nummer (bisher gekauft + Extra), fuer die Vorschau im Warenkorb */
 	int32 PreisNach(int32 Extra) const { return FMath::RoundToInt(Grundpreis * (1.f + Aufschlag * (Gekauft + Extra))); }
 };
