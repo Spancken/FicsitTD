@@ -117,6 +117,10 @@ if ($bilder) {
 [IO.File]::WriteAllLines($bericht, $zeilen, (New-Object Text.UTF8Encoding $false))
 # Pruefstand (M1): Kennzahlen je Welle seit dem Start gegen die Zielbaender
 & python (Join-Path $hier "werte_pruefstand.py") $start.ToString("yyyy-MM-dd HH:mm:ss") $bericht ($planNamen -join ",")
+# 14.11.2026: Laeuft der Rechner unter Last (Bildrate unter 15/s), ist der Lauf ungueltig statt bestanden/durchgefallen (Exit 2)
+& python (Join-Path $hier "pruefe_bildrate.py") $start.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss") $bericht
+$ungueltig = ($LASTEXITCODE -eq 2)
 Write-Host "== Bericht: $bericht"
 Write-Host $zeilen[4]
+if ($ungueltig) { Write-Host "== LAUF UNGUELTIG (Rechner ausgelastet) - Ergebnis nicht werten, wiederholen"; exit 2 }
 if (-not $bestanden) { exit 1 }

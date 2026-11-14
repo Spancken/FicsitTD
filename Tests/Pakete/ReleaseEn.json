@@ -1,0 +1,5 @@
+{
+  "Name": "ReleaseEn",
+  "_Hinweis": "Pruefstufe G2 auf Englisch: Teste-Mod.ps1 -Paket ReleaseEn -Sprache en. Textlastige Plaene mit Fotos (Kern-Menue, MAM, Turmfenster, Pionier). Fotos auf deutsche Reste und abgeschnittene Texte pruefen. Stand 0.9.8 (14.11.2026).",
+  "Plaene": ["Neustart", "MAMBild", "Review-0961", "Pionier-P3", "Melden"]
+}

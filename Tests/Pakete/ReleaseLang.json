@@ -1,0 +1,5 @@
+{
+  "Name": "ReleaseLang",
+  "_Hinweis": "Pruefstufe G3 (Langlauf), nur bei Minor-Versionen und Balance-Aenderungen: zwei Strategien bis W30 (Paar und Mono) und Mono-Tesla bis W50. Kennzahlen gegen Tests/zielbaender.json, Sicherheitsnetze und Bildrate. Stand 0.9.8 (14.11.2026).",
+  "Plaene": ["Strat-Gewehr-Tesla", "Strat-MonoBolzen", "Strat-MonoTesla-Vor-W50"]
+}
