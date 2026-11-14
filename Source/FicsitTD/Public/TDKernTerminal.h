@@ -400,6 +400,13 @@ private:
 	TArray<TObjectPtr<UButton>> mSpezKnoepfe;
 	UPROPERTY()
 	TArray<TObjectPtr<UTextBlock>> mSpezTexte;
+	/** 0.9.8 P4: Knopf Uebersteuern unter der Zielwahl (UTDUpgradeKnopf Art 20), sichtbar mit Techniker 3 oder Kommandant 5 */
+	UPROPERTY()
+	TObjectPtr<UButton> mUeberKnopf;
+	UPROPERTY()
+	TObjectPtr<UTextBlock> mUeberText;
+	UPROPERTY()
+	TObjectPtr<UTDUpgradeKnopf> mUeberObjekt;
 	FString mUpgradeMeldung;
 	float mUpgradeMeldungZeit = 0.f;
 	float mTakt = 0.f;
@@ -424,6 +431,9 @@ private:
 	TObjectPtr<UTextBlock> mName;
 	UPROPERTY()
 	TObjectPtr<UTextBlock> mWerte;
+	/** 0.9.8 P3 Jaeger 4: Resistenzen des Bosses und Anteil des Spielers */
+	UPROPERTY()
+	TObjectPtr<UTextBlock> mJagd;
 	UPROPERTY()
 	TObjectPtr<class UProgressBar> mBalken;
 	float mTakt = 0.f;

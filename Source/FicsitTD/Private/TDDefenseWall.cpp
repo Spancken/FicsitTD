@@ -1,4 +1,5 @@
-﻿#include "TDDefenseWall.h"
+#include "TDDefenseWall.h"
+#include "TDPionier.h"
 #include "TDForschung.h"
 #include "TDBalance.h"
 #include "TDEinsatz.h"
@@ -85,6 +86,12 @@ void ATDDefenseWall::ApplyTDDamage(float Amount, const AActor* Causer)
 		return;
 	}
 	mHealth = FMath::Max(0.f, mHealth - Amount);
+	// 0.9.8 P4 Techniker 5 Bollwerk: einmal je Welle haelt ein Bau mit halben LP, statt zu fallen
+	if (mHealth <= 0.f && UTDPionier::Bollwerk(this))
+	{
+		mHealth = 0.5f * GetTDMaxHealth();
+		return;
+	}
 	UE_LOG(LogFicsitTD, Verbose, TEXT("Verteidigungsmauer %s: -%.1f von %s, Rest %.0f/%.0f"), *GetName(), Amount,
 		Causer ? *Causer->GetClass()->GetName() : TEXT("unbekannt"), mHealth, mMaxHealth);
 	if (mHealth <= 0.f)

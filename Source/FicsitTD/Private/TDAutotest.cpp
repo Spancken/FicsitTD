@@ -783,6 +783,56 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 			Pionier ? FString::Printf(TEXT("Wellenbilanz %.0f Schaden, %d Treffer"), Pionier->GetWellenBilanz().Schaden, Pionier->GetWellenBilanz().Treffer) : TEXT("kein Pionier"));
 		return true;
 	}
+	const TSharedPtr<FJsonObject>* TalentWerte = nullptr;
+	if (S->TryGetObjectField(TEXT("talente"), TalentWerte))
+	{
+		// 0.9.8 P3: Talentstufen direkt setzen (z. B. { "Kommandant": 4, "Techniker": 5 }), ohne Punkte
+		UTDPionier* Pionier = UTDPionier::Get(World);
+		TArray<FString> Gesetzt;
+		for (const TPair<FString, TSharedPtr<FJsonValue>>& V : (*TalentWerte)->Values)
+		{
+			if (Pionier)
+			{
+				Pionier->SetzeStufe(V.Key, static_cast<int32>(V.Value->AsNumber()));
+				Gesetzt.Add(FString::Printf(TEXT("%s %d"), *V.Key, static_cast<int32>(V.Value->AsNumber())));
+			}
+		}
+		Ergebnis(TEXT("Spieler"), TEXT("Talente"), Pionier && Gesetzt.Num() > 0, FString::Join(Gesetzt, TEXT(", ")));
+		return true;
+	}
+	if (S->TryGetStringField(TEXT("gib"), Wort))
+	{
+		// 0.9.8: Gegenstand ins Spielerinventar (Klassenpfad, "anzahl"), z. B. Eisenplatten fuer die Feldreparatur
+		UClass* Klasse = LoadClass<UFGItemDescriptor>(nullptr, *Wort);
+		APlayerController* PC = World->GetFirstPlayerController();
+		AFGCharacterPlayer* Spieler = PC ? Cast<AFGCharacterPlayer>(PC->GetPawn()) : nullptr;
+		const int32 Anzahl = S->HasField(TEXT("anzahl")) ? static_cast<int32>(S->GetNumberField(TEXT("anzahl"))) : 1;
+		const int32 Rein = Klasse && Spieler && Spieler->GetInventory() ? Spieler->GetInventory()->AddStack(FInventoryStack(Anzahl, Klasse), true) : 0;
+		Ergebnis(TEXT("Spieler"), FString::Printf(TEXT("gib %d"), Anzahl), Rein > 0, FString::Printf(TEXT("%d x %s"), Rein, *FPaths::GetBaseFilename(Wort)));
+		return true;
+	}
+	if (S->TryGetStringField(TEXT("uebersteuere"), Wort))
+	{
+		// 0.9.8 P4: Uebersteuern wie der Knopf im Turmfenster ("*" = irgendein Turm)
+		ATDTurretBase* Turm = TDTestTurm(World, Wort);
+		UTDPionier* Pionier = UTDPionier::Get(World);
+		const FString Antwort = Pionier && Turm ? Pionier->Uebersteuere(Turm) : FString(TEXT("kein Turm"));
+		Ergebnis(TEXT("Spieler"), TEXT("Uebersteuern"), Turm && Turm->UebersteuernRest() > 0.f, Antwort);
+		return true;
+	}
+	if (S->HasField(TEXT("schadebau")))
+	{
+		// 0.9.8 P4: Turm beschaedigen (Anteil der Max-LP), fuer Feldreparatur und Bollwerk
+		const float Anteil = S->GetNumberField(TEXT("schadebau"));
+		ATDTurretBase* Turm = TDTestTurm(World, TEXT("*"));
+		if (Turm)
+		{
+			Turm->ApplyTDDamage(Anteil * Turm->GetTDMaxHealth(), nullptr);
+		}
+		Ergebnis(TEXT("Bau"), FString::Printf(TEXT("Schaden %.0f %%"), Anteil * 100.f), Turm && Turm->IsTDIntact(),
+			Turm ? FString::Printf(TEXT("%s %.0f / %.0f LP"), *Turm->GetName(), Turm->GetTDHealth(), Turm->GetTDMaxHealth()) : TEXT("kein Turm"));
+		return true;
+	}
 	if (S->HasField(TEXT("markiere")))
 	{
 		// 0.9.7 P2: lebende Wellengegner markieren wie ein Spielertreffer (0 = alle) - prueft Turm-Zielwahl, Bonus und Assists
@@ -806,10 +856,13 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		// 0.9.7 P2: Wert der laufenden Wellenbilanz > 0 (Markiert, MarkBonus, Assists, Treffer, Schaden)
 		const UTDPionier* Pionier = UTDPionier::Get(World);
 		const UTDPionier::FSpielerBilanz B = Pionier ? Pionier->GetWellenBilanz() : UTDPionier::FSpielerBilanz();
-		const float Wert = Wort == TEXT("Markiert") ? B.Markiert : Wort == TEXT("MarkBonus") ? B.MarkBonus : Wort == TEXT("Assists") ? B.Assists
-			: Wort == TEXT("Treffer") ? B.Treffer : B.Schaden;
+		const TMap<FString, float> Werte = { { TEXT("Markiert"), float(B.Markiert) }, { TEXT("MarkBonus"), B.MarkBonus }, { TEXT("Assists"), float(B.Assists) },
+			{ TEXT("Treffer"), float(B.Treffer) }, { TEXT("Repariert"), B.Repariert }, { TEXT("Uebersteuert"), float(B.Uebersteuert) }, { TEXT("Gerettet"), float(B.Gerettet) },
+			{ TEXT("Nachschub"), float(B.Nachschub) }, { TEXT("JagdSchaden"), B.JagdSchaden }, { TEXT("Sammelbefehle"), float(B.Sammelbefehle) } };
+		const float* Gefunden = Werte.Find(Wort);
+		const float Wert = Gefunden ? *Gefunden : B.Schaden;
 		Ergebnis(TEXT("Spieler"), FString::Printf(TEXT("Bilanz %s > 0"), *Wort), Wert > 0.f,
-			FString::Printf(TEXT("Markiert %d, Markierungsbonus %.0f, Assists %d, Treffer %d, Schaden %.0f"), B.Markiert, B.MarkBonus, B.Assists, B.Treffer, B.Schaden));
+			FString::Printf(TEXT("%s = %.0f (Markiert %d, Markierungsbonus %.0f, Assists %d, Treffer %d, Schaden %.0f, repariert %.0f, gerettet %d)"), *Wort, Wert, B.Markiert, B.MarkBonus, B.Assists, B.Treffer, B.Schaden, B.Repariert, B.Gerettet));
 		return true;
 	}
 	if (S->HasField(TEXT("kernfaellt")))

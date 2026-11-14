@@ -1,6 +1,6 @@
 {
   "Name": "Pionier-P2",
-  "_Hinweis": "0.9.7 P2 (Analyse-Spieler-und-Pionier 3.2): Spielertreffer markiert den Gegner (blaues Licht), Tuerme machen an ihm mehr Schaden (Bilanz MarkBonus), ein Turm-Abschuss eines markierten Gegners zaehlt als Assist. 'markiere' markiert alle lebenden Wellengegner wie ein Spielertreffer. Jaeger (x1,5 an Elite/Boss, sichere Beute) zeigt erst ein Handspiel bzw. eine Welle mit Elite (Log 'Jaeger-Beute'). Im Test haelt die Markierung 120 s, damit die Gegner sie bis in die Turmreichweite tragen. Das Foto zeigt die Zielwahl mit sechs Zeilen im Turmfenster.",
+  "_Hinweis": "0.9.7 P2 (Analyse-Spieler-und-Pionier 3.2): Spielertreffer markiert den Gegner (blaues Licht), Tuerme machen an ihm mehr Schaden (Bilanz MarkBonus), ein Turm-Abschuss eines markierten Gegners zaehlt als Assist. 'markiere' markiert alle lebenden Wellengegner wie ein Spielertreffer. Jaeger (x1,5 an Elite/Boss, sichere Beute) zeigt erst ein Handspiel bzw. eine Welle mit Elite (Log 'Jaeger-Beute'). Im Test haelt die Markierung 120 s, damit die Gegner sie bis in die Turmreichweite tragen. Seit 0.9.8 gibt es Markierung und Bonus nur mit Talent Kommandant 1/2, der Plan setzt es. Das Foto zeigt die Zielwahl mit sechs Zeilen im Turmfenster.",
   "Spielstand": "Autotest_Marius_W06",
   "Quelle": "Marius_W06_Plateau.sav",
   "ErweiterteEinstellungen": true,
@@ -8,6 +8,7 @@
   "MaxMinuten": 12,
   "Schritte": [
     { "pruefe": "Version", "soll": "{VERSION}", "text": "richtige Mod-Version geladen" },
+    { "talente": { "Kommandant": 2 } },
     { "oeffne": "*" },
     { "warte": 3 },
     { "foto": "P2_Zielwahl" },

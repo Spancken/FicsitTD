@@ -128,6 +128,11 @@ public:
 	FString GetTurmName() const { return mTurmName; }
 	/** 0.85: Turmname in der Spielsprache (GetTurmName ist ein Schluessel) */
 	FString GetTurmAnzeige() const;
+	/** 0.9.8 P4 Uebersteuern: Dauer s mehr Takt, danach Pause s gesperrt; false = noch in der Pause */
+	bool StarteUebersteuern(float Dauer, float Pause);
+	/** Restzeit des Uebersteuerns (0 = aus) und bis zur naechsten Bereitschaft */
+	float UebersteuernRest() const;
+	float UebersteuernPause() const;
 	/** Koeder des Gebaeudes (0.81: Lockfeuer zieht Gegner auf sie) */
 	const TArray<TObjectPtr<class ATDDecoy>>& GetKoederListe() const { return mDecoys; }
 	/** 0.78.1 Pruefstand-Diagnose: worauf zielt der Turm gerade */
@@ -388,6 +393,9 @@ private:
 	/** 0.9.6 (Gesamtreview 12.11., Abschnitt C): TaktBonus vom Spiel-Thread (Spielschritt), GetProductionCycleTime liest nur das.
 	 *  Vorher lief TDBalance::Wert (ohne Sperre) auf dem Fabrik-Thread, parallel zu /td balance neu. */
 	std::atomic<float> mTaktBonusCache{ 1.f };
+	/** 0.9.8 P4 Uebersteuern (Weltzeit; nicht gespeichert, gilt nur fuer die laufende Sitzung) */
+	float mUebersteuernBis = -1.f;
+	float mUebersteuernPauseBis = -1.f;
 	FTimerHandle mSpielTimer;
 	FTimerHandle mZielTimer;
 	/** T2f: seit der letzten Drehung vergangene Zeit (Drehtakt) */

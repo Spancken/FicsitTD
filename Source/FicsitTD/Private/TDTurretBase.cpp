@@ -209,7 +209,33 @@ bool ATDTurretBase::HatDoktrin() const
 
 float ATDTurretBase::TaktBonus() const
 {
-	return 1.f + LevelWert(TEXT("Takt"));
+	// 0.9.8 P4 Uebersteuern (Techniker 3 / Kommandant 5): fuer kurze Zeit mehr Takt
+	const float Ueber = UebersteuernRest() > 0.f ? TDBalance::Wert(TEXT("Pionier.Uebersteuern.Takt"), 1.5f) : 1.f;
+	return (1.f + LevelWert(TEXT("Takt"))) * Ueber;
+}
+
+bool ATDTurretBase::StarteUebersteuern(float Dauer, float Pause)
+{
+	const float Jetzt = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.f;
+	if (Jetzt < mUebersteuernPauseBis)
+	{
+		return false;
+	}
+	mUebersteuernBis = Jetzt + Dauer;
+	mUebersteuernPauseBis = mUebersteuernBis + Pause;
+	mTaktBonusCache.store(TaktBonus());
+	UE_LOG(LogFicsitTD, Log, TEXT("%s %s uebersteuert: %.0f s, Takt x%.2f"), *mTurmName, *GetName(), Dauer, TaktBonus());
+	return true;
+}
+
+float ATDTurretBase::UebersteuernRest() const
+{
+	return GetWorld() ? FMath::Max(0.f, mUebersteuernBis - GetWorld()->GetTimeSeconds()) : 0.f;
+}
+
+float ATDTurretBase::UebersteuernPause() const
+{
+	return GetWorld() ? FMath::Max(0.f, mUebersteuernPauseBis - GetWorld()->GetTimeSeconds()) : 0.f;
 }
 
 float ATDTurretBase::GetReichweite() const
@@ -1279,6 +1305,15 @@ AFGCreature* ATDTurretBase::SucheZiel(const FVector& Achse) const
 	SammleFeinde(Feinde);
 	const UTDEinsatzSubsystem* Einsatz = GetWorld()->GetSubsystem<UTDEinsatzSubsystem>();
 	const AActor* Kern = Einsatz ? Einsatz->GetKern() : nullptr;
+	// 0.9.8 Kommandant 4 Sammelbefehl: Tuerme nahe beim Spieler schiessen 5 s auf sein Ziel, wenn es in Reichweite und Sicht ist
+	if (AFGCreature* Befehl = UTDPionier::Sammelziel(this))
+	{
+		const float D = FVector::Dist(Befehl->GetActorLocation(), Achse);
+		if (D * D < MaxDist && ZielErlaubt(Befehl, D) && FreieSicht(Achse, Befehl))
+		{
+			return Befehl;
+		}
+	}
 	TArray<TPair<double, AFGCreature*>> Kandidaten;
 	for (AFGCreature* Creature : Feinde)
 	{
@@ -1771,6 +1806,12 @@ void ATDTurretBase::ApplyTDDamage(float Amount, const AActor* Causer)
 		return;
 	}
 	mHealth = FMath::Max(0.f, mHealth - Amount);
+	// 0.9.8 P4 Techniker 5 Bollwerk: einmal je Welle haelt ein Bau mit halben LP, statt zu fallen
+	if (mHealth <= 0.f && UTDPionier::Bollwerk(this))
+	{
+		mHealth = 0.5f * GetTDMaxHealth();
+		return;
+	}
 	if (mHealth <= 0.f)
 	{
 		UE_LOG(LogFicsitTD, Log, TEXT("%s %s zerstoert (Level %d, %d Abschuesse)"), *mTurmName, *GetName(), GetLevel(), mKills);

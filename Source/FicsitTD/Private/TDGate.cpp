@@ -1,4 +1,5 @@
-﻿#include "TDGate.h"
+#include "TDGate.h"
+#include "TDPionier.h"
 #include "FicsitTDModule.h"
 #include "TDBalance.h"
 #include "TDDecoy.h"
@@ -234,6 +235,12 @@ void ATDGate::ApplyTDDamage(float Amount, const AActor* Causer)
 		return;
 	}
 	mHealth = FMath::Max(0.f, mHealth - Amount);
+	// 0.9.8 P4 Techniker 5 Bollwerk: einmal je Welle haelt ein Bau mit halben LP, statt zu fallen
+	if (mHealth <= 0.f && UTDPionier::Bollwerk(this))
+	{
+		mHealth = 0.5f * GetTDMaxHealth();
+		return;
+	}
 	if (mHealth <= 0.f)
 	{
 		UE_LOG(LogFicsitTD, Log, TEXT("Tor %s zerstoert"), *GetName());

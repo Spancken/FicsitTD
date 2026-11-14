@@ -468,6 +468,8 @@ private:
 public:
 	/** T4 Boss-Lebensbalken: Name, LP aller Bosse der Welle, lebend/gesamt; false ohne Boss */
 	bool GetBossStatus(FString& Name, float& LP, float& MaxLP, int32& Lebend, int32& Gesamt) const;
+	/** 0.9.8 P3 Jaeger 4: erster lebender Boss der Welle (Resistenzen im Boss-Balken) */
+	AFGCreature* GetErsterBoss() const;
 private:
 	/** Stresstest: Stufen (Gegnerzahlen), aktuelle Stufe, Phase 0 aus / 1 messen / 2 Pause */
 	TArray<int32> mStressStufen;

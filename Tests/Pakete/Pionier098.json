@@ -1,0 +1,5 @@
+{
+  "Name": "Pionier098",
+  "_Hinweis": "0.9.8 Spieler P3/P4: neuer Plan Pionier-P3 und Pionier-P2 (setzt jetzt Kommandant 2) in einem Start",
+  "Plaene": ["Pionier-P3", "Pionier-P2"]
+}

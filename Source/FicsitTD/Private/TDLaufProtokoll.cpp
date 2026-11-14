@@ -292,7 +292,7 @@ void UTDLaufProtokoll::WirfBeute(AFGCreature* Kreatur)
 	const bool bElite = Kreatur->Tags.Contains(TEXT("FicsitTDElite"));
 	const TCHAR* Stufe = bBoss ? TEXT("Boss") : bElite ? TEXT("Elite") : TEXT("Normal");
 	// 0.9.7 P2 Jaeger: Elite oder Boss vom Spieler erlegt -> Kampfdaten und Einsatzpunkte sicher
-	const bool bJaeger = (bBoss || bElite) && UTDPionier::VomSpielerErlegt(Kreatur) && TDBalance::Wert(TEXT("Pionier.Jaeger.SichereBeute"), 1.f) > 0.5f;
+	const bool bJaeger = (bBoss || bElite) && TDBalance::Wert(TEXT("Pionier.Jaeger.SichereBeute"), 1.f) > 0.5f && UTDPionier::JagdBeute(Kreatur);   // 0.9.8: Talent Jaeger 2
 	if (bJaeger)
 	{
 		UE_LOG(LogFicsitTD, Log, TEXT("Pionier: Jaeger-Beute, %s %s vom Spieler erlegt"), Stufe, *Kreatur->GetName());

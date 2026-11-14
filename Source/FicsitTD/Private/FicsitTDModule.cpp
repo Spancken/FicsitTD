@@ -451,7 +451,7 @@ void FFicsitTDModule::StartupModule()
 			MeldeKreaturSchaden();
 			Scope.Cancel();
 		}
-		else if (const float F = UTDPionier::Schadensfaktor(Getroffen, Ausloeser, Verursacher, Menge, IstWellenKreatur(Getroffen), VonKreatur(Ausloeser, Verursacher)); F != 1.f)
+		else if (const float F = UTDPionier::Schadensfaktor(Getroffen, Ausloeser, Verursacher, Menge, IstWellenKreatur(Getroffen), VonKreatur(Ausloeser, Verursacher), Knochen); F != 1.f)
 		{
 			Scope(Self, Getroffen, Menge * F, Ausloeser, Ort, Teil, Knochen, Richtung, Art, Verursacher);
 		}

@@ -211,6 +211,20 @@ namespace TDUI
 		return S;
 	}
 
+	/** 0.9.8 (Selbsttest 14.11.): Knoepfe auf weissen Karten (Turmfenster). TXUI_DarkButton ist bis auf die obere Fase
+	 *  durchsichtig - auf dunklem Grund unsichtbar, auf Weiss blieb nur ein Strich. Deshalb volle dunkle Platte. */
+	static FButtonStyle KartenKnopfStil()
+	{
+		FButtonStyle S;
+		S.SetNormal(FSlateRoundedBoxBrush(C(72, 72, 72), 3.f));
+		S.SetHovered(FSlateRoundedBoxBrush(C(100, 100, 100), 3.f));
+		S.SetPressed(FSlateRoundedBoxBrush(C(45, 45, 45), 3.f));
+		S.SetDisabled(FSlateRoundedBoxBrush(C(200, 200, 200, 160), 3.f));
+		S.SetNormalPadding(FMargin(6.f, 4.f));
+		S.SetPressedPadding(FMargin(6.f, 5.f, 6.f, 3.f));
+		return S;
+	}
+
 	static UTextBlock* Text(UWidgetTree* Baum, const FString& Inhalt, int32 Groesse, const FLinearColor& Farbe, bool bFett = false)
 	{
 		UTextBlock* T = Baum->ConstructWidget<UTextBlock>();
@@ -1317,10 +1331,12 @@ void UTDKernTerminal::BauePionier()
 	Abschnitt(BalkenHoehe, 4.f);
 	Abschnitt(NeuerText(bMax ? TDF(TEXT("%d XP, Höchstrang erreicht"), TEXT("%d XP, max rank reached"), XP)
 		: TDF(TEXT("%d / %d XP bis Rang %d"), TEXT("%d / %d XP to rank %d"), XP, Bis, Rang + 1), 13, TDUI::Grau), 4.f);
-	UTextBlock* Info = NeuerText(TDT(TEXT("XP gibt es für jede abgewehrte Welle (mehr bei vollem Kern, doppelt nach dem Boss) und für eigene Abschüsse: normal 3, Elite 10, Boss 50. "
-		"Jeder Rang bringt einen Talentpunkt. Rang und Talente gelten für diesen Einsatz. Die Waffen-Zweige brauchen die Waffe aus dem Laden."),
-		TEXT("You earn XP for every wave you repel (more with a full Core, double after the boss) and for your own kills: normal 3, Elite 10, Boss 50. "
-		"Each rank gives one Talent Point. Rank and talents apply to this operation. The weapon branches need the weapon from the shop.")), 13, TDUI::Grau);
+	// 0.9.8 P3: XP vor allem fuer eigene Leistung, hoechstens 15 Punkte, Rangboni ohne Punkte
+	UTextBlock* Info = NeuerText(TDF(TEXT("XP gibt es für deinen Anteil am Wellenschaden, für Abschüsse (normal 3, Elite 10, Boss 50), Assists und reparierte LP, dazu etwas für jede abgewehrte Welle. "
+		"Jeder Rang bringt einen Talentpunkt, höchstens %d: Wähle zwei Rollen ganz oder drei zur Hälfte. Alle 3 Ränge: +10 LP und +3 %% Lauftempo (jetzt +%d LP). Rang und Talente gelten für diesen Einsatz."),
+		TEXT("You earn XP for your share of the wave damage, for kills (normal 3, Elite 10, Boss 50), assists and repaired HP, plus a little for every repelled wave. "
+		"Each rank gives one Talent Point, at most %d: pick two roles in full or three halfway. Every 3 ranks: +10 HP and +3 %% walk speed (now +%d HP). Rank and talents apply to this operation."),
+		UTDPionier::MaxRang() - 1, 10 * P->RangBoni()), 13, TDUI::Grau);
 	Info->SetAutoWrapText(true);
 	Abschnitt(Info, 14.f);
 
@@ -1330,14 +1346,16 @@ void UTDKernTerminal::BauePionier()
 	{
 		const FTDTalentZweig& Z = Zweige[i];
 		const int32 Stufe = P->GetStufe(i);
-		const FString Fehlt = P->FehltFuer(i);
+		const FString Fehlt;   // 0.9.8: kein Zweig braucht mehr einen Laden-Posten
 		UBorder* Feld = NeuesFeld(TDUI::ZeileB, FMargin(10.f, 8.f));
 		UVerticalBox* Spalte = WidgetTree->ConstructWidget<UVerticalBox>();
 		Feld->AddChild(Spalte);
 		Spalte->AddChildToVerticalBox(NeuerText(FString::Printf(TEXT("%s  %d/%d"), Z.Name, Stufe, UTDPionier::MaxStufe), 16, TDUI::Hell, true));
-		UTextBlock* Bedingung = NeuerText(!Z.Braucht ? TDT(TEXT("für jeden Pionier"), TEXT("for every pioneer"))
-			: Fehlt.IsEmpty() ? TDF(TEXT("%s vorhanden"), TEXT("%s available"), Z.Braucht) : TDF(TEXT("braucht: %s aus dem Laden"), TEXT("requires: %s from the shop"), Z.Braucht),
-			12, !Fehlt.IsEmpty() ? TDUI::Fehler : TDUI::Gut);
+		Spalte->AddChildToVerticalBox(NeuerText(Z.Rolle, 12, TDUI::Akzent));
+		// 0.9.8 P3 (Analyse 3.4): Ist-Werte der letzten Welle je Zweig
+		const FString Ist = P->IstWerte(i);
+		UTextBlock* Bedingung = NeuerText(Ist.IsEmpty() ? TDT(TEXT("Letzte Welle: noch keine Wirkung"), TEXT("Last wave: no effect yet"))
+			: TDF(TEXT("Letzte Welle: %s"), TEXT("Last wave: %s"), *Ist), 12, Ist.IsEmpty() ? TDUI::Grau : TDUI::Gut);
 		Bedingung->SetAutoWrapText(true);
 		if (UVerticalBoxSlot* S = Spalte->AddChildToVerticalBox(Bedingung))
 		{
@@ -2207,6 +2225,15 @@ void UTDUpgradeKnopf::Geklickt()
 
 void UTDTurmInfo::KaufeUpgrade(int32 Art)
 {
+	if (ATDTurretBase* Turm = mTurm.Get(); Turm && Art == 20)
+	{
+		// 0.9.8 P4: Knopf Uebersteuern
+		UTDPionier* Pionier = UTDPionier::Get(Turm);
+		mUpgradeMeldung = Pionier ? Pionier->Uebersteuere(Turm) : FString();
+		mUpgradeMeldungZeit = 6.f;
+		Fuelle();
+		return;
+	}
 	if (ATDTurretBase* Turm = mTurm.Get())
 	{
 		mUpgradeMeldung = Turm->KaufeLevel();
@@ -2375,6 +2402,19 @@ void UTDTurmInfo::FuelleZielwahl()
 		mFamilienTexte[i]->SetColorAndOpacity(bAn ? TDUI::KarteOrange : TDUI::KarteText);
 		Punkt(mFamilienPunkte.IsValidIndex(i) ? mFamilienPunkte[i].Get() : nullptr, bAn);
 	}
+	// 0.9.8 P4: Uebersteuern - sichtbar mit Talent, Text zeigt Laufzeit oder Pause
+	if (mUeberKnopf && mUeberText)
+	{
+		const UTDPionier* Pionier = UTDPionier::Get(Turm);
+		const bool bKann = Pionier && Pionier->KannUebersteuern() && Turm->HatUpgrades();
+		mUeberKnopf->SetVisibility(bKann ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+		const float Rest = Turm->UebersteuernRest();
+		const float Pause = Turm->UebersteuernPause();
+		mUeberText->SetText(FText::FromString(Rest > 0.f ? TDF(TEXT("Übersteuert: noch %.0f s"), TEXT("Overdrive: %.0f s left"), Rest)
+			: Pause > 0.f ? TDF(TEXT("Übersteuern: Pause %.0f s"), TEXT("Overdrive: cooldown %.0f s"), Pause)
+			: TDT(TEXT("Übersteuern (10 s +50 % Takt)"), TEXT("Overdrive (10 s +50 % clock)"))));
+		mUeberKnopf->SetIsEnabled(bKann && Rest <= 0.f && Pause <= 0.f);
+	}
 }
 
 TSharedRef<SWidget> UTDTurmInfo::RebuildWidget()
@@ -2445,13 +2485,9 @@ TSharedRef<SWidget> UTDTurmInfo::RebuildWidget()
 				S->SetPadding(FMargin(6.f, 0.f));
 			}
 			UButton* Knopf = WidgetTree->ConstructWidget<UButton>();
-			FButtonStyle Stil;
-			Stil.SetNormal(TDUI::Bild(TEXT("TXUI_DarkButton_Normal"), 0.25f, TDUI::C(72, 72, 72)));
-			Stil.SetHovered(TDUI::Bild(TEXT("TXUI_DarkButton_Selected"), 0.25f, TDUI::C(100, 100, 100)));
-			Stil.SetPressed(TDUI::Bild(TEXT("TXUI_DarkButton_Pressed"), 0.25f, TDUI::Akzent));
-			Stil.SetDisabled(FSlateRoundedBoxBrush(TDUI::C(200, 200, 200, 160), 3.f));
+			FButtonStyle Stil = TDUI::KartenKnopfStil();
 			Stil.SetNormalPadding(FMargin(4.f, 3.f));
-			Stil.SetPressedPadding(FMargin(4.f, 3.f));
+			Stil.SetPressedPadding(FMargin(4.f, 4.f, 4.f, 2.f));
 			Knopf->SetStyle(Stil);
 			UTextBlock* Text = TDUI::Text(WidgetTree, TEXT(""), 11, TDUI::Akzent, true);
 			Text->SetJustification(ETextJustify::Center);
@@ -2533,6 +2569,23 @@ TSharedRef<SWidget> UTDTurmInfo::RebuildWidget()
 		for (const FString& Familie : ATDTurretBase::ZielFamilien())
 		{
 			Liste->AddChildToVerticalBox(ZielZeile(WidgetTree, this, this, -1, Familie, true, mFamilienTexte, mZielKnoepfe, mFamilienPunkte));
+		}
+		// 0.9.8 P4: Uebersteuern (Techniker 3 / Kommandant 5) unter der bevorzugten Familie
+		{
+			mUeberKnopf = WidgetTree->ConstructWidget<UButton>();
+			mUeberKnopf->SetStyle(TDUI::KartenKnopfStil());
+			mUeberText = TDUI::Text(WidgetTree, TDT(TEXT("Übersteuern"), TEXT("Overdrive")), 12, TDUI::Akzent, true);
+			mUeberText->SetJustification(ETextJustify::Center);
+			mUeberKnopf->AddChild(mUeberText);
+			mUeberObjekt = NewObject<UTDUpgradeKnopf>(this);
+			mUeberObjekt->Art = 20;
+			mUeberObjekt->Info = this;
+			mUeberKnopf->OnClicked.AddDynamic(mUeberObjekt, &UTDUpgradeKnopf::Geklickt);
+			mUeberKnopf->SetVisibility(ESlateVisibility::Collapsed);
+			if (UVerticalBoxSlot* S = Liste->AddChildToVerticalBox(mUeberKnopf))
+			{
+				S->SetPadding(FMargin(0.f, 8.f, 0.f, 0.f));
+			}
 		}
 		// Klicks neben dem Panel gehen an das Maschinenfenster darunter
 		Flaeche->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
@@ -2811,7 +2864,7 @@ TSharedRef<SWidget> UTDBossBalken::RebuildWidget()
 			S->SetAnchors(FAnchors(0.5f, 0.f));
 			S->SetAlignment(FVector2D(0.5f, 0.f));
 			S->SetPosition(FVector2D(0.f, 70.f));
-			S->SetSize(FVector2D(640.f, 74.f));
+			S->SetSize(FVector2D(640.f, 96.f));   // 0.9.8: Platz fuer die Jaeger-Zeile
 		}
 		UVerticalBox* Spalte = WidgetTree->ConstructWidget<UVerticalBox>();
 		Rahmen->AddChild(Spalte);
@@ -2837,6 +2890,13 @@ TSharedRef<SWidget> UTDBossBalken::RebuildWidget()
 		if (UVerticalBoxSlot* S = Spalte->AddChildToVerticalBox(Hoehe))
 		{
 			S->SetPadding(FMargin(0.f, 6.f, 0.f, 0.f));
+		}
+		// 0.9.8 P3 Jaeger 4: Resistenzen und Spieleranteil (nur mit dem Talent sichtbar)
+		mJagd = TDUI::Text(WidgetTree, TEXT(""), 13, TDUI::Hell);
+		mJagd->SetVisibility(ESlateVisibility::Collapsed);
+		if (UVerticalBoxSlot* S = Spalte->AddChildToVerticalBox(mJagd))
+		{
+			S->SetPadding(FMargin(0.f, 4.f, 0.f, 0.f));
 		}
 		SetVisibility(ESlateVisibility::HitTestInvisible);
 	}
@@ -2865,6 +2925,32 @@ void UTDBossBalken::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 	mWerte->SetText(TDFX(TEXT("%s / %s LP   ·   %d / %d"), TEXT("%s / %s HP   ·   %d / %d"), *FText::AsNumber(FMath::RoundToInt(LP)).ToString(),
 		*FText::AsNumber(FMath::RoundToInt(MaxLP)).ToString(), Lebend, Gesamt));
 	mBalken->SetPercent(MaxLP > 0.f ? LP / MaxLP : 0.f);
+	// 0.9.8 P3 Jaeger 4: Resistenzen des Bosses (nur Abweichungen) und dein Anteil am Bossschaden
+	const UTDPionier* Pionier = UTDPionier::Get(this);
+	const AFGCreature* Boss = Waves->GetErsterBoss();
+	if (mJagd && Pionier && Boss && Pionier->GetStufe(UTDPionier::Jaeger) >= 4)
+	{
+		static const ETDSchadensart Arten[] = { ETDSchadensart::Durchschlag, ETDSchadensart::Kugel, ETDSchadensart::Feuer, ETDSchadensart::Strom, ETDSchadensart::Explosion, ETDSchadensart::Gift };
+		static const TCHAR* NamenEn[] = { TEXT("Piercing"), TEXT("Bullet"), TEXT("Fire"), TEXT("Electric"), TEXT("Explosive"), TEXT("Poison") };
+		TArray<FString> Teile;
+		for (int32 i = 0; i < UE_ARRAY_COUNT(Arten); ++i)
+		{
+			const float R = ATDTurretBase::Resistenz(Arten[i], Boss);
+			if (!FMath::IsNearlyEqual(R, 1.f, 0.01f))
+			{
+				Teile.Add(FString::Printf(TEXT("%s ×%s"), TDSprache::Englisch() ? NamenEn[i] : ATDTurretBase::SchadensartName(Arten[i]), *FText::AsNumber(R).ToString()));
+			}
+		}
+		const float Verloren = FMath::Max(MaxLP - LP, 1.f);
+		const float Anteil = 100.f * FMath::Min(Pionier->GetWellenBilanz().JagdSchaden / Verloren, 1.f);
+		mJagd->SetText(FText::FromString(TDF(TEXT("Resistenzen: %s   ·   Dein Anteil: %.0f %%"), TEXT("Resistances: %s   ·   Your share: %.0f %%"),
+			Teile.Num() ? *FString::Join(Teile, TEXT(", ")) : *TDT(TEXT("keine"), TEXT("none")), Anteil)));
+		mJagd->SetVisibility(ESlateVisibility::HitTestInvisible);
+	}
+	else if (mJagd)
+	{
+		mJagd->SetVisibility(ESlateVisibility::Collapsed);
+	}
 }
 
 // ---------------------------------------------------------------------------------------------------------------

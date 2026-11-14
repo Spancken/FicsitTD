@@ -1622,6 +1622,18 @@ bool UTDWaveSubsystem::GetBossStatus(FString& Name, float& LP, float& MaxLP, int
 	return Gesamt > 0;
 }
 
+AFGCreature* UTDWaveSubsystem::GetErsterBoss() const
+{
+	for (const TWeakObjectPtr<AFGCreature>& B : mBosse)
+	{
+		if (AFGCreature* K = B.Get(); K && K->IsAliveAndWell())
+		{
+			return K;
+		}
+	}
+	return nullptr;
+}
+
 FTDWellenStatus UTDWaveSubsystem::GetWellenStatus() const
 {
 	FTDWellenStatus S;
@@ -2487,7 +2499,7 @@ void UTDWaveSubsystem::WelleAusgewertet(float Anteil, bool bVerloren)
 	}
 	// 0.9.6 P1 (Analyse-Spieler 12.11.): eigene Zeile fuer den Spieler, damit man seinen Anteil an der Welle sieht
 	FString SpielerText;
-	if (const UTDPionier* Pionier = UTDPionier::Get(this))
+	if (UTDPionier* Pionier = UTDPionier::Get(this))
 	{
 		float TurmSchaden = 0.f;
 		for (TActorIterator<ATDTurretBase> It(GetWorld()); It; ++It)

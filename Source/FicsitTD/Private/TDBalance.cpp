@@ -319,12 +319,21 @@ namespace TDBalanceIntern
 		{ TEXT("Effekte.Oelbrand.Flammen"), 36.f }, { TEXT("Effekte.Oelbrand.Lebensdauer"), 0.9f }, { TEXT("Effekte.Oelbrand.Staerke"), 7.f },   // 0.9.3 Flammen beim Oelbrand
 		{ TEXT("Effekte.Flamme.Wolken"), 28.f }, { TEXT("Effekte.Flamme.Lebensdauer"), 0.6f }, { TEXT("Effekte.Flamme.Staerke"), 8.f },
 		// 0.58 Pionier-Rang: XP je Welle (Grund + je Welle, Kern voll, Boss x2), je eigenem Abschuss; Rang-Schwelle Grund + Schritt x Rang
-		{ TEXT("Pionier.XPWelle"), 40.f }, { TEXT("Pionier.XPJeWelle"), 6.f }, { TEXT("Pionier.XPKernVoll"), 20.f },
+		{ TEXT("Pionier.XPWelle"), 20.f }, { TEXT("Pionier.XPJeWelle"), 3.f }, { TEXT("Pionier.XPKernVoll"), 10.f },
 		{ TEXT("Pionier.XPAbschuss"), 3.f }, { TEXT("Pionier.XPAbschussElite"), 10.f }, { TEXT("Pionier.XPAbschussBoss"), 50.f },
-		{ TEXT("Pionier.XPGrund"), 50.f }, { TEXT("Pionier.XPSchritt"), 50.f }, { TEXT("Pionier.MaxRang"), 30.f }, { TEXT("Pionier.NeuVerteilenPreis"), 20.f },
+		{ TEXT("Pionier.XPGrund"), 5.f }, { TEXT("Pionier.XPSchritt"), 20.f }, { TEXT("Pionier.MaxRang"), 16.f }, { TEXT("Pionier.NeuVerteilenPreis"), 20.f },
 		// 0.9.7 P2 (Analyse-Spieler-und-Pionier 3.2): Zielmarkierung (Dauer s, Turmschaden-Faktor, Licht), Jaeger (Spielerschaden an Elite/Boss, sichere Beute), Assist-XP
 		{ TEXT("Pionier.Markierung.An"), 1.f }, { TEXT("Pionier.Markierung.Dauer"), 6.f }, { TEXT("Pionier.Markierung.Bonus"), 1.15f }, { TEXT("Pionier.Markierung.Licht"), 1.f },
 		{ TEXT("Pionier.Jaeger.Faktor"), 1.5f }, { TEXT("Pionier.Jaeger.SichereBeute"), 1.f }, { TEXT("Pionier.XPAssist"), 1.f },
+		// 0.9.8 P3/P4 (Analyse 3.3, Marius 12.11.): Talentbaum Schuetze/Kommandant/Techniker/Jaeger, Rangboni, XP fuer Leistung (je Prozent Schadensanteil, je reparierte LP)
+		{ TEXT("Pionier.RangBonusAlle"), 3.f }, { TEXT("Pionier.RangBonus.LP"), 10.f }, { TEXT("Pionier.RangBonus.Tempo"), 0.03f },
+		{ TEXT("Pionier.XPJeProzent"), 2.f }, { TEXT("Pionier.XPJeReparatur"), 200.f },
+		{ TEXT("Pionier.Kopftreffer"), 1.5f }, { TEXT("Pionier.Schnellladen"), 0.5f }, { TEXT("Pionier.Munition.Anteil"), 0.25f }, { TEXT("Pionier.Sprengmantel.Radius"), 4.f },
+		{ TEXT("Pionier.Markierung.Sprung"), 10.f }, { TEXT("Pionier.Sammelbefehl.Radius"), 30.f }, { TEXT("Pionier.Sammelbefehl.Dauer"), 5.f },
+		{ TEXT("Pionier.Uebersteuern.Radius"), 20.f }, { TEXT("Pionier.Uebersteuern.Dauer"), 10.f }, { TEXT("Pionier.Uebersteuern.Pause"), 60.f }, { TEXT("Pionier.Uebersteuern.Takt"), 1.5f },
+		{ TEXT("Pionier.Reparatur.Rate"), 0.05f }, { TEXT("Pionier.Reparatur.Radius"), 8.f }, { TEXT("Pionier.Reparatur.LPJePlatte"), 300.f },
+		{ TEXT("Pionier.Nachschub.Radius"), 20.f }, { TEXT("Pionier.Nachschub.Menge"), 10.f },
+		{ TEXT("Pionier.Jaeger.Schwachstelle"), 1.25f }, { TEXT("Pionier.Jaeger.SchwachDauer"), 5.f }, { TEXT("Pionier.Jaeger.Hinrichtung"), 0.15f },
 		{ TEXT("Tuerme.Bolzenturm.GeschossGroesse"), 3.f }, { TEXT("Forschung.Kohlekraft.AbWelle"), 6.f }, { TEXT("Forschung.Tor.AbWelle"), 6.f }, { TEXT("Forschung.Lockfeuer.AbWelle"), 8.f }, { TEXT("Forschung.Oelschlick.AbWelle"), 15.f }, { TEXT("Forschung.UpgBolzen.AbWelle"), 3.f },
 		// 0.83 Bauten P2/P3
 		{ TEXT("Forschung.Elektrozaun.AbWelle"), 12.f }, { TEXT("Forschung.Funkmast.AbWelle"), 12.f }, { TEXT("Forschung.Schildgenerator.AbWelle"), 25.f }, { TEXT("Forschung.Himmelsturm.AbWelle"), 35.f }, { TEXT("Forschung.Stoerfeld.AbWelle"), 35.f }, { TEXT("Forschung.Singularitaet.AbWelle"), 51.f }, { TEXT("Forschung.Dimensionslager.AbWelle"), 51.f },
