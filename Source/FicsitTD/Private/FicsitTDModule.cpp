@@ -157,6 +157,33 @@ static void MeldeForschungGesperrt(const AFGResearchManager* Forschung, UClass* 
 	}
 }
 
+/** 0.10.0 (Marius 14.11.): Im Einsatz sind Festplatten die Waehrung der FicsitTD-Forschung. Die Festplatten-Forschung des Spiels
+ *  (Alternativrezepte) ist dann gesperrt: alles ausserhalb von /FicsitTD/, das Festplatten kostet. Im Normalspiel bleibt sie frei. */
+static bool FremdeFestplattenForschung(const AFGResearchManager* Forschung, UClass* Schematic)
+{
+	if (!Forschung || !Schematic || Schematic->GetPathName().StartsWith(TEXT("/FicsitTD/")))
+	{
+		return false;
+	}
+	const UTDEinsatzSubsystem* Einsatz = Forschung->GetWorld() ? Forschung->GetWorld()->GetSubsystem<UTDEinsatzSubsystem>() : nullptr;
+	UClass* Festplatte = UTDEinsatzSubsystem::FPKlasse();
+	if (!Einsatz || !Einsatz->IstAktiv() || !Festplatte)
+	{
+		return false;
+	}
+	for (const FItemAmount& Kosten : UFGSchematic::GetCost(Schematic))
+	{
+		if (Kosten.ItemClass == Festplatte)
+		{
+			MeldeForschungGesperrt(Forschung, Schematic, TDF(TEXT("%s ist im Einsatz gesperrt: Festplatten sind hier für die FICSIT-Abwehr reserviert."),
+				TEXT("%s is locked during an operation: Hard Drives are reserved for FICSIT Defense research here."),
+				*TDForschung::Basisname(Schematic)));
+			return true;
+		}
+	}
+	return false;
+}
+
 /** Ist die andere Seite der Abzweigung schon erforscht oder in Arbeit? */
 static bool AndereSeiteGewaehlt(const AFGResearchManager* Forschung, UClass* Schematic)
 {
@@ -597,7 +624,8 @@ void FFicsitTDModule::StartupModule()
 	// Rueckerstattung bekam ueber die Interface-Verschiebung einen ungueltigen Zeiger (Absturz 0.28.3 in der Abriss-Vorschau).
 	SUBSCRIBE_METHOD(AFGResearchManager::CanResearchBeInitiated, [](auto& Scope, const AFGResearchManager* Self, TSubclassOf<UFGSchematic> Schematic)
 	{
-		if (AndereSeiteGewaehlt(Self, Schematic) || VoraussetzungFehlt(Self, Schematic) || WelleZuFrueh(Self, Schematic))
+		if (AndereSeiteGewaehlt(Self, Schematic) || VoraussetzungFehlt(Self, Schematic) || WelleZuFrueh(Self, Schematic)
+			|| FremdeFestplattenForschung(Self, Schematic))
 		{
 			Scope.Override(false);
 		}

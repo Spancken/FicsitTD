@@ -237,7 +237,12 @@ protected:
 public:
 	/** Hat der Turm Munition fuer den naechsten Zyklus? (Teslaspule: immer) */
 	virtual bool HatMunition() const { return GetAmmo() > 0; }
+	/** 0.10.0 (Marius 14.11.: Rolle sichtbar machen): Pionier-Faehigkeit am Turm zeigen.
+	 *  Art 0 = Feldreparatur (gruener Strahl von Von), 1 = Bollwerk (helles Aufblitzen). Uebersteuern und Sammelbefehl zeigt der Turm selbst. */
+	void ZeigeFaehigkeit(int32 Art, const FVector& Von);
 protected:
+	/** 0.10.0: Takt fuer Uebersteuern-Puls und Sammelbefehl-Strahl */
+	float mFaehigkeitPuls = 0.f;
 	/** Direkt nach dem Spielstart der Maschine, bevor das Standardrezept gesetzt wird (z. B. Rohranschluss einhaengen) */
 	virtual void NachMaschinenStart() {}
 	/** 0.9.6 (Gesamtreview 12.11.): Dauer-Bauten (Schild, Funkmast, Stoerfeld, Lockfeuer, Oelschlick) laufen fest mit 100 % Takt.

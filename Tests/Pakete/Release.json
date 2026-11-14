@@ -1,5 +1,19 @@
 {
   "Name": "Release",
-  "_Hinweis": "Pruefstufe G2 (Regression) vor jeder Veroeffentlichung, Deutsch. Je Bereich ein Plan: Grundtest (Welle, Tuerme), Neustart (neues Spiel, Speichern/Laden), MAM, Baender, Spezialisierung, Bausperren, Bauten, Review-Funde, Wege/Fronten, Pionier P2/P3, Fehler melden. Neue Funktionen bekommen hier ihren Plan. Ablauf: Satisfactory/Notizen/Release-Prozess.md. Stand 0.9.8 (14.11.2026).",
-  "Plaene": ["Grundtest", "Neustart", "MAMBild", "Baender", "Spezialisierung", "Sperren091", "BautenP2", "Review-0961", "Wege-Marius-W06", "Pionier-P3", "Pionier-P2", "Melden"]
+  "_Hinweis": "Pruefstufe G2 (Regression) vor jeder Veroeffentlichung, Deutsch. Je Bereich ein Plan: Grundtest (Welle, Tuerme), Neustart (neues Spiel, Speichern/Laden), MAM, Baender, Spezialisierung, Bausperren, Bauten, Review-Funde, Wege/Fronten, Pionier P2/P3, Fehler melden. Neue Funktionen bekommen hier ihren Plan. Ablauf: Satisfactory/Notizen/Release-Prozess.md. Stand 0.10.0 (14.11.2026, mit Plan Waehrung).",
+  "Plaene": [
+    "Grundtest",
+    "Waehrung",
+    "Neustart",
+    "MAMBild",
+    "Baender",
+    "Spezialisierung",
+    "Sperren091",
+    "BautenP2",
+    "Review-0961",
+    "Wege-Marius-W06",
+    "Pionier-P3",
+    "Pionier-P2",
+    "Melden"
+  ]
 }

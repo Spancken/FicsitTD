@@ -401,7 +401,7 @@ void UTDKernTerminal::BaueOberflaeche()
 	UHorizontalBox* Zahlen = WidgetTree->ConstructWidget<UHorizontalBox>();
 	StatusSpalte->AddChildToVerticalBox(Zahlen);
 	const FString Beschriftungen[3] = { TDT(TEXT("Welle:"), TEXT("Wave:")), TDT(TEXT("Kernzustand:"), TEXT("Core health:")),
-		TDT(TEXT("Konto: Coupons für Kontingente, FP für den MAM:"), TEXT("Balance: Coupons for quotas, RP for the MAM:")) };
+		TDT(TEXT("Konto (Coupons · Festplatten):"), TEXT("Balance (Coupons · Hard Drives):")) };
 	TObjectPtr<UTextBlock>* Felder[3] = { &mWelle, &mKernLP, &mKonto };
 	for (int32 i = 0; i < 3; ++i)
 	{
@@ -618,7 +618,11 @@ void UTDKernTerminal::NativeConstruct()
 	{
 		if (const int32 Nach = Einsatz->GibOffeneFP())
 		{
-			Melde(TDF(TEXT("%d Forschungspunkte ins Inventar nachgereicht."), TEXT("%d Research Points added to your inventory."), Nach));
+			Melde(TDF(TEXT("%d Festplatten ins Inventar nachgereicht."), TEXT("%d Hard Drives added to your inventory."), Nach));
+		}
+		if (const int32 Coupons = Einsatz->GibOffeneCoupons())
+		{
+			Melde(TDF(TEXT("%d FICSIT-Coupons vom Kern ins Inventar geholt."), TEXT("%d FICSIT Coupons moved from the Core to your inventory."), Coupons));
 		}
 		if (const int32 Teile = Einsatz->GibOffenesMaterial())
 		{
@@ -698,7 +702,7 @@ void UTDKernTerminal::Aktualisiere()
 	}
 	mWelle->SetText(FText::FromString(WelleText));
 	mKernLP->SetText(FText::FromString(K ? FString::Printf(TEXT("%.0f %%"), 100.f * K->GetTDHealth() / FMath::Max(K->GetTDMaxHealth(), 1.f)) : TEXT("-")));
-	mKonto->SetText(FText::FromString(bEinsatz ? TDF(TEXT("%d Coupons  ·  %d FP"), TEXT("%d Coupons  ·  %d RP"), Einsatz->Konto(), Einsatz->FPImInventar()) : FString(TEXT("-"))));
+	mKonto->SetText(FText::FromString(bEinsatz ? TDF(TEXT("%d Coupons  ·  %d Festplatten"), TEXT("%d Coupons  ·  %d Hard Drives"), Einsatz->Konto(), Einsatz->FPImInventar()) : FString(TEXT("-"))));
 	mWelleText->SetText(Waves->LaeuftWelle() ? TDTX(TEXT("Welle läuft ..."), TEXT("Wave running ...")) : TDTX(TEXT("Welle starten"), TEXT("Start wave")));
 	mWegeText->SetText(K && K->ZeigtWege() ? TDTX(TEXT("Wegvorschau aus"), TEXT("Path preview off")) : TDTX(TEXT("Wegvorschau an"), TEXT("Path preview on")));
 	mFreiText->SetText(Einsatz->IstFrei() ? TDTX(TEXT("Freies Bauen: AN"), TEXT("Free Build: ON")) : TDTX(TEXT("Freies Bauen: aus"), TEXT("Free Build: off")));
@@ -1193,8 +1197,8 @@ void UTDKernTerminal::BaueForschung()
 	{
 		++Anzahl[static_cast<int32>(TDForschung::Zustand(this, Kn))];
 	}
-	Abschnitt(NeuerText(TDF(TEXT("Forschung im MAM, Bäume FICSIT-Abwehr. Im Inventar: %d FP. Nächste Welle: %d."),
-		TEXT("Research in the MAM, FICSIT Defense trees. In inventory: %d RP. Next wave: %d."),
+	Abschnitt(NeuerText(TDF(TEXT("Forschung im MAM, Bäume FICSIT-Abwehr. Im Inventar: %d Festplatten. Nächste Welle: %d."),
+		TEXT("Research in the MAM, FICSIT Defense trees. In inventory: %d Hard Drives. Next wave: %d."),
 		Einsatz ? Einsatz->FPImInventar() : 0, Naechste), 16, TDUI::Hell, true), 4.f);
 	Abschnitt(NeuerText(TDF(TEXT("%d erforscht  ·  %d jetzt erforschbar  ·  %d warten auf eine spätere Welle  ·  %d brauchen erst einen anderen Knoten"),
 		TEXT("%d researched  ·  %d available now  ·  %d waiting for a later wave  ·  %d need another node first"),
@@ -1223,12 +1227,12 @@ void UTDKernTerminal::BaueForschung()
 			Grund = TDUI::ChipGut;
 			break;
 		case ETDForschungZustand::Moeglich:
-			Lage = TDF(TEXT("JETZT ERFORSCHBAR  ·  %d FP"), TEXT("AVAILABLE NOW  ·  %d RP"), Kn.FP);
+			Lage = TDF(TEXT("JETZT ERFORSCHBAR  ·  %d Festplatten"), TEXT("AVAILABLE NOW  ·  %d Hard Drives"), Kn.FP);
 			LageFarbe = TDUI::Akzent;
 			Grund = TDUI::ChipStark;
 			break;
 		case ETDForschungZustand::ZuFrueh:
-			Lage = TDF(TEXT("AB WELLE %d  ·  %d FP"), TEXT("FROM WAVE %d  ·  %d RP"), TDForschung::AbWelle(Kn), Kn.FP);
+			Lage = TDF(TEXT("AB WELLE %d  ·  %d Festplatten"), TEXT("FROM WAVE %d  ·  %d Hard Drives"), TDForschung::AbWelle(Kn), Kn.FP);
 			break;
 		case ETDForschungZustand::Ausgeschlossen:
 			Lage = TDT(TEXT("AUSGESCHLOSSEN: andere Seite der Abzweigung gewählt"), TEXT("EXCLUDED: other side of the branch chosen"));
@@ -1276,6 +1280,67 @@ void UTDKernTerminal::BaueForschung()
 			Zeile(TDT(TEXT("Gut gegen: "), TEXT("Good against: ")) + Kn.Gegen, 12, TDUI::Grau, false, 1.f);
 		}
 		Raster->AddChildToWrapBox(Breite);
+	}
+}
+
+namespace TDTalentBild
+{
+	// 0.10.0 (Marius 14.11.: Talentbaum mit passenden Symbolen): Spiel-Icons zur Laufzeit (Pfad der Textur),
+	// "Kreatur:" = Icon eines Kreatur-Deskriptors (beachtet die Arachnophobie-Einstellung)
+	#define TD_ICO(Pfad) TEXT("/Game/FactoryGame/") TEXT(Pfad)
+	static const TCHAR* const Rolle[4] = {
+		TD_ICO("Equipment/Rifle/UI/IconDesc_Rifle_256.IconDesc_Rifle_256"),
+		TD_ICO("Resource/Equipment/Beacon/UI/IconDesc_Beacon_256.IconDesc_Beacon_256"),
+		TD_ICO("Equipment/BuildGun/UI/IconDesc_TrinketWrench_256.IconDesc_TrinketWrench_256"),
+		TEXT("Kreatur:/Game/FactoryGame/Character/Creature/CreatureDescriptors/Desc_HogAlpha.Desc_HogAlpha_C"),
+	};
+	static const TCHAR* const Stufe[4][5] = {
+		{ TD_ICO("Resource/Parts/CartridgeStandard/UI/Rifle_Magazine_256.Rifle_Magazine_256"),
+		  TD_ICO("Equipment/RebarGun/UI/IconDesc_Rebar_256.IconDesc_Rebar_256"),
+		  TD_ICO("Resource/Parts/SpikedRebar/UI/IconDesc_SpikedRebar_256.IconDesc_SpikedRebar_256"),
+		  TD_ICO("Interface/UI/Assets/MonochromeIcons/TXUI_MIcon_Recycle.TXUI_MIcon_Recycle"),
+		  TD_ICO("Equipment/RebarGun/UI/IconDesc_ExpRebar_256.IconDesc_ExpRebar_256") },
+		{ TD_ICO("Resource/Equipment/Beacon/UI/IconDesc_Beacon_256.IconDesc_Beacon_256"),
+		  TD_ICO("Interface/UI/Assets/MonochromeIcons/TXUI_MIcon_Aggro.TXUI_MIcon_Aggro"),
+		  TD_ICO("Interface/UI/Assets/MonochromeIcons/TXUI_MIcon_Next.TXUI_MIcon_Next"),
+		  TD_ICO("Interface/UI/Assets/MonochromeIcons/TXUI_MIcon_Portal.TXUI_MIcon_Portal"),
+		  TD_ICO("Resource/Environment/Crystal/UI/PowerShard_256.PowerShard_256") },
+		{ TD_ICO("Resource/Parts/IronPlate/UI/IconDesc_IronPlates_256.IconDesc_IronPlates_256"),
+		  TD_ICO("Equipment/BuildGun/UI/IconDesc_TrinketWrench_256.IconDesc_TrinketWrench_256"),
+		  TD_ICO("Resource/Environment/Crystal/UI/PowerShard_256.PowerShard_256"),
+		  TD_ICO("Interface/UI/Assets/MonochromeIcons/TXUI_MIcon_Crate.TXUI_MIcon_Crate"),
+		  TD_ICO("Resource/Parts/IronPlateReinforced/UI/IconDesc_ReinforcedIronPlates_256.IconDesc_ReinforcedIronPlates_256") },
+		{ TEXT("Kreatur:/Game/FactoryGame/Character/Creature/CreatureDescriptors/Desc_HogAlpha.Desc_HogAlpha_C"),
+		  TD_ICO("Resource/Environment/CrashSites/UI/HardDrive_256.HardDrive_256"),
+		  TD_ICO("Resource/Equipment/ShockShank/UI/IconDesc_XenoZapper_256.IconDesc_XenoZapper_256"),
+		  TD_ICO("Interface/UI/Assets/MonochromeIcons/TXUI_MIcon_Speedometer.TXUI_MIcon_Speedometer"),
+		  TD_ICO("Resource/Equipment/StunSpear/UI/IconDesc_XenoBasher_256.IconDesc_XenoBasher_256") },
+	};
+	#undef TD_ICO
+
+	static UTexture2D* Lade(const TCHAR* Pfad)
+	{
+		static TMap<FString, TWeakObjectPtr<UTexture2D>> Cache;
+		const FString Schluessel(Pfad ? Pfad : TEXT(""));
+		if (UTexture2D* T = Cache.FindRef(Schluessel).Get())
+		{
+			return T;
+		}
+		UTexture2D* T = nullptr;
+		if (Schluessel.StartsWith(TEXT("Kreatur:")))
+		{
+			if (UClass* Desc = LoadClass<UFGItemDescriptor>(nullptr, *Schluessel.Mid(8)))
+			{
+				T = UFGItemDescriptor::GetBigIcon(Desc);
+			}
+		}
+		else if (!Schluessel.IsEmpty())
+		{
+			T = LoadObject<UTexture2D>(nullptr, *Schluessel);
+		}
+		Cache.Add(Schluessel, T);
+		UE_LOG(LogFicsitTD, Log, TEXT("Talentbaum: Symbol %s %s"), *Schluessel, T ? TEXT("geladen") : TEXT("FEHLT"));
+		return T;
 	}
 }
 
@@ -1350,8 +1415,38 @@ void UTDKernTerminal::BauePionier()
 		UBorder* Feld = NeuesFeld(TDUI::ZeileB, FMargin(10.f, 8.f));
 		UVerticalBox* Spalte = WidgetTree->ConstructWidget<UVerticalBox>();
 		Feld->AddChild(Spalte);
-		Spalte->AddChildToVerticalBox(NeuerText(FString::Printf(TEXT("%s  %d/%d"), Z.Name, Stufe, UTDPionier::MaxStufe), 16, TDUI::Hell, true));
-		Spalte->AddChildToVerticalBox(NeuerText(Z.Rolle, 12, TDUI::Akzent));
+		// 0.10.0: Kopf mit Rollen-Symbol, Name und Stufen-Plakette
+		UHorizontalBox* RollenKopf = WidgetTree->ConstructWidget<UHorizontalBox>();
+		UBorder* RollenBild = NeuesFeld(TDUI::BildGrund, FMargin(4.f));
+		RollenBild->AddChild(NeuesSymbol(TDTalentBild::Lade(TDTalentBild::Rolle[FMath::Clamp(i, 0, 3)]), 40.f));
+		if (UHorizontalBoxSlot* S = RollenKopf->AddChildToHorizontalBox(RollenBild))
+		{
+			S->SetPadding(FMargin(0.f, 0.f, 10.f, 0.f));
+			S->SetVerticalAlignment(VAlign_Center);
+		}
+		UVerticalBox* RollenText = WidgetTree->ConstructWidget<UVerticalBox>();
+		UHorizontalBox* NameZeile = WidgetTree->ConstructWidget<UHorizontalBox>();
+		if (UHorizontalBoxSlot* S = NameZeile->AddChildToHorizontalBox(NeuerText(Z.Name, 17, TDUI::Hell, true)))
+		{
+			S->SetPadding(FMargin(0.f, 0.f, 8.f, 0.f));
+			S->SetVerticalAlignment(VAlign_Center);
+		}
+		UBorder* StufenMarke = NeuesFeld(Stufe > 0 ? TDUI::Akzent : TDUI::ChipNeutral, FMargin(7.f, 1.f));
+		StufenMarke->AddChild(NeuerText(FString::Printf(TEXT("%d/%d"), Stufe, UTDPionier::MaxStufe), 12, Stufe > 0 ? TDUI::DunkelText : TDUI::Grau, true));
+		if (UHorizontalBoxSlot* S = NameZeile->AddChildToHorizontalBox(StufenMarke))
+		{
+			S->SetVerticalAlignment(VAlign_Center);
+		}
+		RollenText->AddChildToVerticalBox(NameZeile);
+		RollenText->AddChildToVerticalBox(NeuerText(Z.Rolle, 12, TDUI::Akzent));
+		if (UHorizontalBoxSlot* S = RollenKopf->AddChildToHorizontalBox(RollenText))
+		{
+			S->SetVerticalAlignment(VAlign_Center);
+		}
+		if (UVerticalBoxSlot* S = Spalte->AddChildToVerticalBox(RollenKopf))
+		{
+			S->SetPadding(FMargin(0.f, 0.f, 0.f, 4.f));
+		}
 		// 0.9.8 P3 (Analyse 3.4): Ist-Werte der letzten Welle je Zweig
 		const FString Ist = P->IstWerte(i);
 		UTextBlock* Bedingung = NeuerText(Ist.IsEmpty() ? TDT(TEXT("Letzte Welle: noch keine Wirkung"), TEXT("Last wave: no effect yet"))
@@ -1363,16 +1458,40 @@ void UTDKernTerminal::BauePionier()
 		}
 		for (int32 s = 0; s < UTDPionier::MaxStufe; ++s)
 		{
-			const FString Text = TDF(TEXT("Stufe %d: %s"), TEXT("Tier %d: %s"), s + 1, Z.Stufen[s]);
-			UWidget* Eintrag = nullptr;
-			if (s == Stufe && Frei > 0 && Fehlt.IsEmpty())
+			// 0.10.0: Kachel je Stufe - Symbol links, Stufe in Versalien, Faehigkeit; gelernt orange, lernbar mit orangem Rahmen, gesperrt gedaempft
+			const bool bGelernt = s < Stufe;
+			const bool bLernbar = s == Stufe && Frei > 0 && Fehlt.IsEmpty();
+			UHorizontalBox* Reihe = WidgetTree->ConstructWidget<UHorizontalBox>();
+			UBorder* SymbolGrund = NeuesFeld(TDUI::BildGrund, FMargin(3.f));
+			SymbolGrund->AddChild(NeuesSymbol(TDTalentBild::Lade(TDTalentBild::Stufe[FMath::Clamp(i, 0, 3)][s]), 30.f));
+			if (UHorizontalBoxSlot* S = Reihe->AddChildToHorizontalBox(SymbolGrund))
 			{
-				UTextBlock* KnopfText = nullptr;
-				UButton* Knopf = NeuerKnopf(TDT(TEXT("Lernen · "), TEXT("Learn · ")) + Text, KnopfText, true);
-				if (KnopfText)
-				{
-					KnopfText->SetAutoWrapText(true);
-				}
+				S->SetPadding(FMargin(0.f, 0.f, 8.f, 0.f));
+				S->SetVerticalAlignment(VAlign_Top);
+			}
+			UVerticalBox* KachelText = WidgetTree->ConstructWidget<UVerticalBox>();
+			KachelText->AddChildToVerticalBox(NeuerText(bGelernt ? TDF(TEXT("STUFE %d · GELERNT"), TEXT("TIER %d · LEARNED"), s + 1)
+				: bLernbar ? TDF(TEXT("STUFE %d · JETZT LERNEN"), TEXT("TIER %d · LEARN NOW"), s + 1)
+				: TDF(TEXT("STUFE %d"), TEXT("TIER %d"), s + 1), 11, bGelernt || bLernbar ? TDUI::Akzent : TDUI::Grau, true));
+			UTextBlock* T = NeuerText(Z.Stufen[s], 12, bGelernt || bLernbar ? TDUI::Hell : TDUI::Grau, false);
+			T->SetAutoWrapText(true);
+			KachelText->AddChildToVerticalBox(T);
+			if (UHorizontalBoxSlot* S = Reihe->AddChildToHorizontalBox(KachelText))
+			{
+				S->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
+			}
+			UWidget* Eintrag = nullptr;
+			if (bLernbar)
+			{
+				UButton* Knopf = WidgetTree->ConstructWidget<UButton>();
+				FButtonStyle Stil;
+				Stil.SetNormal(FSlateRoundedBoxBrush(TDUI::ChipStark, 3.f, TDUI::Akzent, 2.f));
+				Stil.SetHovered(FSlateRoundedBoxBrush(TDUI::C(84, 58, 34), 3.f, TDUI::Akzent, 2.f));
+				Stil.SetPressed(FSlateRoundedBoxBrush(TDUI::C(110, 72, 38), 3.f, TDUI::Akzent, 2.f));
+				Stil.SetNormalPadding(FMargin(6.f, 5.f));
+				Stil.SetPressedPadding(FMargin(6.f, 6.f, 6.f, 4.f));
+				Knopf->SetStyle(Stil);
+				Knopf->AddChild(Reihe);
 				UTDTalentKnopf* Objekt = NewObject<UTDTalentKnopf>(this);
 				Objekt->Zweig = i;
 				Objekt->Menue = this;
@@ -1382,10 +1501,12 @@ void UTDKernTerminal::BauePionier()
 			}
 			else
 			{
-				UBorder* Zelle = NeuesFeld(s < Stufe ? TDUI::ChipGut : TDUI::ChipNeutral, FMargin(8.f, 5.f));
-				UTextBlock* T = NeuerText(Text, 12, s < Stufe ? TDUI::Gut : TDUI::Grau, s < Stufe);
-				T->SetAutoWrapText(true);
-				Zelle->AddChild(T);
+				UBorder* Zelle = NeuesFeld(bGelernt ? TDUI::ChipStark : TDUI::ChipNeutral, FMargin(8.f, 7.f));
+				Zelle->AddChild(Reihe);
+				if (!bGelernt)
+				{
+					Zelle->SetRenderOpacity(0.55f);
+				}
 				Eintrag = Zelle;
 			}
 			if (UVerticalBoxSlot* S = Spalte->AddChildToVerticalBox(Eintrag))
@@ -2784,7 +2905,26 @@ TSharedRef<SWidget> UTDHud::RebuildWidget()
 		Rahmen->SetBrush(FSlateRoundedBoxBrush(TDUI::C(24, 24, 24, 215), 3.f));
 		Rahmen->SetPadding(FMargin(14.f, 7.f));
 		mText = TDUI::Text(WidgetTree, TEXT(""), 13, TDUI::Akzent, true);
-		Rahmen->AddChild(mText);
+		// 0.10.0: Rollenabzeichen links (Symbol der staerksten Rolle), ausgeblendet ohne Talent
+		UHorizontalBox* Zeile = WidgetTree->ConstructWidget<UHorizontalBox>();
+		mRolle = WidgetTree->ConstructWidget<UImage>();
+		mRolle->SetDesiredSizeOverride(FVector2D(28.f, 28.f));
+		mRolle->SetVisibility(ESlateVisibility::Collapsed);
+		UBorder* RolleGrund = WidgetTree->ConstructWidget<UBorder>();
+		RolleGrund->SetBrush(FSlateRoundedBoxBrush(TDUI::BildGrund, 3.f));
+		RolleGrund->SetPadding(FMargin(2.f));
+		RolleGrund->AddChild(mRolle);
+		RolleGrund->SetVisibility(ESlateVisibility::Collapsed);
+		if (UHorizontalBoxSlot* S = Zeile->AddChildToHorizontalBox(RolleGrund))
+		{
+			S->SetPadding(FMargin(0.f, 0.f, 8.f, 0.f));
+			S->SetVerticalAlignment(VAlign_Center);
+		}
+		if (UHorizontalBoxSlot* S = Zeile->AddChildToHorizontalBox(mText))
+		{
+			S->SetVerticalAlignment(VAlign_Center);
+		}
+		Rahmen->AddChild(Zeile);
 		if (UCanvasPanelSlot* S = Flaeche->AddChildToCanvas(Rahmen))
 		{
 			// oben links: unten rechts liegen die Tastenhinweise des Spiels (Test 0.24.2)
@@ -2840,8 +2980,47 @@ void UTDHud::Aktualisiere()
 		: TDT(TEXT("Kein Lauf"), TEXT("No run"));
 	const UTDPionier* Pionier = UTDPionier::Get(this);
 	const int32 Frei = Pionier ? Pionier->FreiePunkte() : 0;
-	const FString Punkte = Frei <= 0 ? FString() : Frei == 1 ? TDT(TEXT(" (1 Talentpunkt)"), TEXT(" (1 Talent Point)")) : TDF(TEXT(" (%d Talentpunkte)"), TEXT(" (%d Talent Points)"), Frei);
-	mText->SetText(TDFX(TEXT("%s  |  Kern %.0f %%  |  %d Coupons  |  %d FP  |  Rang %d%s"), TEXT("%s  |  Core %.0f %%  |  %d Coupons  |  %d RP  |  Rank %d%s"), *Welle,
+	FString Punkte = Frei <= 0 ? FString() : Frei == 1 ? TDT(TEXT(" (1 Talentpunkt)"), TEXT(" (1 Talent Point)")) : TDF(TEXT(" (%d Talentpunkte)"), TEXT(" (%d Talent Points)"), Frei);
+	// 0.10.0 (Marius 14.11.: Rolle sichtbar machen): staerkste Rolle(n) als Name, die staerkste als Symbol
+	int32 Beste = -1;
+	TArray<FString> Rollen;
+	if (Pionier)
+	{
+		const TArray<FTDTalentZweig>& Zweige = UTDPionier::Zweige();
+		int32 Hoechste = 0;
+		for (int32 z = 0; z < Zweige.Num(); ++z)
+		{
+			Hoechste = FMath::Max(Hoechste, Pionier->GetStufe(z));
+		}
+		for (int32 z = 0; z < Zweige.Num() && Hoechste > 0; ++z)
+		{
+			if (Pionier->GetStufe(z) == Hoechste)
+			{
+				Rollen.Add(Zweige[z].Name);
+				Beste = Beste < 0 ? z : Beste;
+			}
+		}
+	}
+	if (Rollen.Num() > 0)
+	{
+		Punkte = TEXT(" · ") + FString::Join(Rollen, TEXT("/")) + Punkte;
+	}
+	if (mRolle && mRolleZweig != Beste)
+	{
+		mRolleZweig = Beste;
+		UTexture2D* Bild = Beste >= 0 ? TDTalentBild::Lade(TDTalentBild::Rolle[FMath::Clamp(Beste, 0, 3)]) : nullptr;
+		if (Bild)
+		{
+			mRolle->SetBrushFromTexture(Bild, false);
+			mRolle->SetDesiredSizeOverride(FVector2D(28.f, 28.f));
+		}
+		mRolle->SetVisibility(Bild ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed);
+		if (UWidget* Grund = mRolle->GetParent())
+		{
+			Grund->SetVisibility(Bild ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed);
+		}
+	}
+	mText->SetText(TDFX(TEXT("%s  |  Kern %.0f %%  |  %d Coupons  |  %d Festplatten  |  Rang %d%s"), TEXT("%s  |  Core %.0f %%  |  %d Coupons  |  %d Hard Drives  |  Rank %d%s"), *Welle,
 		K ? 100.f * K->GetTDHealth() / FMath::Max(K->GetTDMaxHealth(), 1.f) : 0.f, Einsatz->Konto(), Einsatz->FPImInventar(),
 		Pionier ? Pionier->GetRang() : 1, *Punkte));
 }
@@ -3347,8 +3526,8 @@ void UTDKernTerminal::BaueStatistik()
 		UBorder* Karte = NeuesFeld(TDUI::KarteDunkel, FMargin(12.f, 10.f));
 		UVerticalBox* Inhalt = WidgetTree->ConstructWidget<UVerticalBox>();
 		Karte->AddChild(Inhalt);
-		UTextBlock* Kopfzeile = NeuerText(TDF(TEXT("Welle %d · %.0f s · %d Gegner · Kern %.0f %% auf %.0f %% · +%d Coupons, +%d FP"),
-			TEXT("Wave %d · %.0f s · %d enemies · Core %.0f %% to %.0f %% · +%d Coupons, +%d RP"),
+		UTextBlock* Kopfzeile = NeuerText(TDF(TEXT("Welle %d · %.0f s · %d Gegner · Kern %.0f %% auf %.0f %% · +%d Coupons, +%d Festplatten"),
+			TEXT("Wave %d · %.0f s · %d enemies · Core %.0f %% to %.0f %% · +%d Coupons, +%d Hard Drives"),
 			W.Welle, W.Dauer, W.Gegner, W.KernStart, W.KernEnde, W.EP, W.FP), 16, TDUI::Akzent, true);
 		Kopfzeile->SetAutoWrapText(true);
 		Inhalt->AddChildToVerticalBox(Kopfzeile);

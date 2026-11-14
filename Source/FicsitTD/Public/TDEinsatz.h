@@ -121,11 +121,18 @@ public:
 	void WelleBeendet(int32 Welle, float KernAnteil);
 	TArray<FTDLadenZeile> LadenZeilen() const;
 	TArray<FTDKontingentZeile> KontingentZeilen();
+	/** 0.10.0: FICSIT-Coupons sind echte Items (Desc_ResourceSinkCoupon). Konto = Coupons im Inventar + am Kern wartende */
 	int32 Konto() const;
 	/** EP ausserhalb der Wellenabrechnung gutschreiben (Beute) */
 	void GibEP(int32 Punkte, const TCHAR* Grund);
 	/** EP fuer etwas anderes als den Laden ausgeben (Turm-Upgrades): nur im Einsatz, ohne bAuchInWelle nur in der Bauphase. Leer = bezahlt, sonst Grund */
 	FString ZahleEP(int32 Preis, const FString& Posten, bool bAuchInWelle = false);
+	/** Coupon-Item des Spiels (auch die Waehrung des AWESOME-Shops) */
+	static UClass* CouponKlasse();
+	/** Am Kern wartende Coupons (Kern->mEinsatzPunkte) ins Inventar legen; Rueckgabe: wie viele es geschafft haben */
+	int32 GibOffeneCoupons();
+	/** 0.10.0: Spielstaende vor 0.10 - FICSIT-Kampfdaten im Inventar werden zu Festplatten. Rueckgabe: getauschte Anzahl */
+	int32 TauscheAlteKampfdaten();
 	/** Abgerissener Turm: Abschuesse und Upgrades gehen an den naechsten neu gebauten Turm desselben Typs (Marius 03.11.2026) */
 	void MerkeTurmErbe(const FString& Turm, int32 Kills, int32 Level);
 	bool HoleTurmErbe(const FString& Turm, int32& Kills, int32& Level);
@@ -133,7 +140,7 @@ public:
 	static bool IstSpielerPosten(const FString& Key);
 	/** 0.9.6: Anzeigename eines Laden-/Kontingent-Schluessels in der Spielsprache (Schluessel selbst bleiben intern) */
 	static FString Anzeige(const FString& Key);
-	/** Forschungspunkte (Item FICSIT-Kampfdaten) im Inventar des lokalen Spielers */
+	/** Forschungspunkte (0.10.0: Festplatte des Spiels, Desc_HardDrive) im Inventar des lokalen Spielers */
 	int32 FPImInventar() const;
 	/** Offene FP (Inventar war voll) ins Inventar legen; Rueckgabe: wie viele es geschafft haben */
 	int32 GibOffeneFP();
@@ -194,6 +201,10 @@ public:
 private:
 	FString SpielerWirkung(const FTDSpielerPosten& P, int32 Menge);
 	void Verbinde();
+	/** 0.10.0: nach dem Laden auf das Spielerinventar warten, dann Kampfdaten -> Festplatten und wartende Coupons ins Inventar */
+	void UmstellungNachLaden();
+	FTimerHandle mUmstellTimer;
+	int32 mUmstellVersuche = 0;
 	/** Statuszeile unten rechts fuer den lokalen Spieler (UTDHud) */
 	void ZeigeHud();
 	void VersteckeHud();

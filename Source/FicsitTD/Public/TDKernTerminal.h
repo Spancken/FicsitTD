@@ -487,5 +487,9 @@ private:
 	void Aktualisiere();
 	UPROPERTY()
 	TObjectPtr<UTextBlock> mText;
+	/** 0.10.0: Rollenabzeichen (Symbol der staerksten Pionier-Rolle) links neben der Statuszeile */
+	UPROPERTY()
+	TObjectPtr<class UImage> mRolle;
+	int32 mRolleZweig = -2;
 	FTimerHandle mTimer;
 };

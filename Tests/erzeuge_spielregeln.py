@@ -55,12 +55,12 @@ def tabellen(B, ns):
     # Belohnung
     z += ["", "### Belohnung je Welle", "",
           f"- **Coupons** = {w('Einsatz.EP.Grund')} + {w('Einsatz.EP.JeWelle')} × N, +{w('Einsatz.EP.KernVoll')} bei vollem Kern bzw. +{w('Einsatz.EP.KernAb75')} ab 75 %; Bosswelle × {w('Einsatz.EP.BossFaktor')} + {w('Einsatz.EP.BossBonus')}",
-          f"- **FP** = {w('Einsatz.FP.JeWelle')}, +{w('Einsatz.FP.KernAb75')} bei Kern ab 75 %, +{w('Einsatz.FP.Boss')} im Boss",
+          f"- **Festplatten** (Forschung, seit 0.10.0 die Festplatte des Spiels) = {w('Einsatz.FP.JeWelle')}, +{w('Einsatz.FP.KernAb75')} bei Kern ab 75 %, +{w('Einsatz.FP.Boss')} im Boss",
           f"- Biomasse {w('Einsatz.Biomasse.JeWelle')}; Kern-Grundreparatur {zahl(100 * B.get('Kern.Grundreparatur', 0))} % je Welle",
           ""]
     z += ["| Beute | Normal | Elite | Boss |", "|---|---|---|---|"]
     for art in ("Kampfdaten", "EP", "Munition", "Splitter"):
-        z.append(f"| {'Coupons' if art == 'EP' else art} (Chance) | " + " | ".join(w(f"Loot.{art}.{s}") for s in ("Normal", "Elite", "Boss")) + " |")
+        z.append(f"| {'Coupons' if art == 'EP' else 'Festplatten' if art == 'Kampfdaten' else art} (Chance) | " + " | ".join(w(f"Loot.{art}.{s}") for s in ("Normal", "Elite", "Boss")) + " |")
     # Laden
     z += ["", "### Laden (Kontingente)", "", "Preis = Grundpreis × (1 + Aufschlag × bisher gekauft); Paket = Gebäude je Kauf.", "",
           "| Eintrag | Grundpreis | Aufschlag | Paket | Start |", "|---|---|---|---|---|"]
@@ -86,7 +86,7 @@ def tabellen(B, ns):
         z.append(f"| {f} | " + " | ".join(w(f"Resistenzen.{f}.{a}", "1") for a in arten) + " |")
     # Forschung
     z += ["", "### Forschung (MAM)", "", "Preis aus der Phase der effektiven Freigabe-Welle (Eltern und Voraussetzungen eingerechnet).", "",
-          "| Baum | Knoten | Name | ab Welle | FP | Gabelung mit |", "|---|---|---|---|---|---|"]
+          "| Baum | Knoten | Name | ab Welle | Festplatten | Gabelung mit |", "|---|---|---|---|---|---|"]
     gesamt = 0
     for b_key, _, _, _, knoten in ns["BAEUME"]:
         for kk in knoten:

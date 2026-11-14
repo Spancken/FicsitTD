@@ -606,6 +606,7 @@ void UTDEinsatzSubsystem::WelleBeendet(int32 Welle, float KernAnteil)
 		Punkte = FMath::RoundToInt(Punkte * TDBalance::Wert(TEXT("Einsatz.EP.BossFaktor"), 2.f)) + TDBalance::Ganz(TEXT("Einsatz.EP.BossBonus"), 20);
 	}
 	Kern->mEinsatzPunkte += Punkte;
+	GibOffeneCoupons();
 	if (mZerstoert.Num() > 0)
 	{
 		TArray<FString> Teile;
@@ -617,9 +618,10 @@ void UTDEinsatzSubsystem::WelleBeendet(int32 Welle, float KernAnteil)
 			TEXT("Destroyed this wave: %s. The building materials are in your inventory (or waiting at the Core) - the quota is free again."), *FString::Join(Teile, TEXT(", "))));
 		mZerstoert.Reset();
 	}
-	Melde(TDF(TEXT("+%d FICSIT-Coupons%s (Konto %d Coupons). Ausgeben im Kern-Menue (E am Kern)."),
-		TEXT("+%d FICSIT Coupons%s (balance %d Coupons). Spend them in the Core Menu (E at the Core)."), Punkte,
-		Welle % 10 == 0 ? *TDT(TEXT(" inkl. Boss-Bonus"), TEXT(" incl. boss bonus")) : TEXT(""), Kern->mEinsatzPunkte));
+	Melde(TDF(TEXT("+%d FICSIT-Coupons%s (Konto %d Coupons%s). Ausgeben im Kern-Menue (E am Kern)."),
+		TEXT("+%d FICSIT Coupons%s (balance %d Coupons%s). Spend them in the Core Menu (E at the Core)."), Punkte,
+		Welle % 10 == 0 ? *TDT(TEXT(" inkl. Boss-Bonus"), TEXT(" incl. boss bonus")) : TEXT(""), Konto(),
+		Kern->mEinsatzPunkte > 0 ? *TDF(TEXT(", %d warten am Kern, Inventar voll"), TEXT(", %d waiting at the Core, inventory full"), Kern->mEinsatzPunkte) : TEXT("")));
 
 	// Biomasse je Welle fuer den Anfangsstrom (bis Kohle laeuft); 0 = aus
 	if (const int32 Bio = TDBalance::Ganz(TEXT("Einsatz.Biomasse.JeWelle"), 100))
@@ -640,8 +642,8 @@ void UTDEinsatzSubsystem::WelleBeendet(int32 Welle, float KernAnteil)
 		+ (Welle % 10 == 0 ? TDBalance::Ganz(TEXT("Einsatz.FP.Boss"), 3) : 0);
 	Kern->mFPOffen += FMath::Max(0, FP);
 	const int32 Gegeben = GibOffeneFP();
-	Melde(TDF(TEXT("+%d Forschungspunkte (FICSIT-Kampfdaten), jetzt %d im Inventar%s. Einsetzen im MAM."),
-		TEXT("+%d Research Points (FICSIT Combat Data), now %d in your inventory%s. Use them in the MAM."), FP, FPImInventar(),
+	Melde(TDF(TEXT("+%d Festplatten, jetzt %d im Inventar%s. Im MAM für die Forschung einsetzen."),
+		TEXT("+%d Hard Drives, now %d in your inventory%s. Use them for research in the MAM."), FP, FPImInventar(),
 		Kern->mFPOffen > 0 ? *TDF(TEXT(" - %d warten, Inventar voll"), TEXT(" - %d waiting, inventory full"), Kern->mFPOffen) : TEXT("")));
 	UE_LOG(LogFicsitTD, Log, TEXT("Einsatz: Welle %d -> %d FP (%d ins Inventar, %d offen)"), Welle, FP, Gegeben, Kern->mFPOffen);
 	// 0.65 (Lauf 04.11.: Kern fiel ohne Gegenmittel von 82 % auf 10 %): Grundreparatur nach jeder Welle
@@ -768,21 +770,39 @@ void UTDEinsatzSubsystem::GebaeudeZerstoert(const UClass* BauKlasse)
 	UE_LOG(LogFicsitTD, Log, TEXT("Einsatz: %s zerstoert, Material zurueck: %s"), *Key, *Text);
 }
 
+/** Inventar des lokalen Spielers (Einzelspieler) */
+static UFGInventoryComponent* SpielerInventar(const UWorld* World)
+{
+	const APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
+	const AFGCharacterPlayer* Pioneer = PC ? Cast<AFGCharacterPlayer>(PC->GetPawn()) : nullptr;
+	return Pioneer ? Pioneer->GetInventory() : nullptr;
+}
+
 UClass* UTDEinsatzSubsystem::FPKlasse()
 {
+	// 0.10.0 (Marius 14.11.): Forschung mit der Festplatte des Spiels statt eigener FICSIT-Kampfdaten (passt zum MAM)
 	static TWeakObjectPtr<UClass> Klasse;
 	if (!Klasse.IsValid())
 	{
-		Klasse = LoadClass<UFGItemDescriptor>(nullptr, TEXT("/FicsitTD/Items/Desc_TD_Kampfdaten.Desc_TD_Kampfdaten_C"));
+		Klasse = LoadClass<UFGItemDescriptor>(nullptr, TEXT("/Game/FactoryGame/Resource/Environment/CrashSites/Desc_HardDrive.Desc_HardDrive_C"));
+	}
+	return Klasse.Get();
+}
+
+UClass* UTDEinsatzSubsystem::CouponKlasse()
+{
+	// 0.10.0 (Marius 14.11.): Coupons als Item des Spiels, damit der AWESOME-Shop mit ihnen bezahlt
+	static TWeakObjectPtr<UClass> Klasse;
+	if (!Klasse.IsValid())
+	{
+		Klasse = LoadClass<UFGItemDescriptor>(nullptr, TEXT("/Game/FactoryGame/Resource/Parts/ResourceSinkCoupon/Desc_ResourceSinkCoupon.Desc_ResourceSinkCoupon_C"));
 	}
 	return Klasse.Get();
 }
 
 int32 UTDEinsatzSubsystem::FPImInventar() const
 {
-	const APlayerController* PC = GetWorld()->GetFirstPlayerController();
-	const AFGCharacterPlayer* Pioneer = PC ? Cast<AFGCharacterPlayer>(PC->GetPawn()) : nullptr;
-	const UFGInventoryComponent* Inventar = Pioneer ? Pioneer->GetInventory() : nullptr;
+	const UFGInventoryComponent* Inventar = SpielerInventar(GetWorld());
 	UClass* FP = FPKlasse();
 	return Inventar && FP ? Inventar->GetNumItems(FP) : 0;
 }
@@ -790,9 +810,7 @@ int32 UTDEinsatzSubsystem::FPImInventar() const
 int32 UTDEinsatzSubsystem::GibOffeneFP()
 {
 	ATDDefenseCore* Kern = mKern.Get();
-	const APlayerController* PC = GetWorld()->GetFirstPlayerController();
-	const AFGCharacterPlayer* Pioneer = PC ? Cast<AFGCharacterPlayer>(PC->GetPawn()) : nullptr;
-	UFGInventoryComponent* Inventar = Pioneer ? Pioneer->GetInventory() : nullptr;
+	UFGInventoryComponent* Inventar = SpielerInventar(GetWorld());
 	UClass* FP = FPKlasse();
 	if (!Kern || !Inventar || !FP || Kern->mFPOffen <= 0)
 	{
@@ -801,6 +819,55 @@ int32 UTDEinsatzSubsystem::GibOffeneFP()
 	const int32 Gegeben = Inventar->AddStack(FInventoryStack(Kern->mFPOffen, FP), true);
 	Kern->mFPOffen -= Gegeben;
 	return Gegeben;
+}
+
+int32 UTDEinsatzSubsystem::GibOffeneCoupons()
+{
+	ATDDefenseCore* Kern = mKern.Get();
+	UFGInventoryComponent* Inventar = SpielerInventar(GetWorld());
+	UClass* Coupon = CouponKlasse();
+	if (!Kern || !Inventar || !Coupon || Kern->mEinsatzPunkte <= 0)
+	{
+		return 0;
+	}
+	const int32 Gegeben = Inventar->AddStack(FInventoryStack(Kern->mEinsatzPunkte, Coupon), true);
+	Kern->mEinsatzPunkte -= Gegeben;
+	if (Gegeben > 0)
+	{
+		UE_LOG(LogFicsitTD, Log, TEXT("Coupons: %d ins Inventar, %d warten am Kern, Konto %d"), Gegeben, Kern->mEinsatzPunkte, Konto());
+	}
+	return Gegeben;
+}
+
+int32 UTDEinsatzSubsystem::TauscheAlteKampfdaten()
+{
+	ATDDefenseCore* Kern = mKern.Get();
+	UFGInventoryComponent* Inventar = SpielerInventar(GetWorld());
+	UClass* Alt = LoadClass<UFGItemDescriptor>(nullptr, TEXT("/FicsitTD/Items/Desc_TD_Kampfdaten.Desc_TD_Kampfdaten_C"));
+	const int32 Anzahl = Inventar && Alt ? Inventar->GetNumItems(Alt) : 0;
+	if (!Kern || Anzahl <= 0)
+	{
+		return 0;
+	}
+	Inventar->Remove(Alt, Anzahl);
+	Kern->mFPOffen += Anzahl;
+	GibOffeneFP();
+	UE_LOG(LogFicsitTD, Log, TEXT("Umstellung 0.10: %d FICSIT-Kampfdaten gegen Festplatten getauscht (%d im Inventar, %d warten)"), Anzahl, FPImInventar(), Kern->mFPOffen);
+	Melde(TDF(TEXT("Umstellung: %d FICSIT-Kampfdaten sind jetzt Festplatten."), TEXT("Conversion: %d FICSIT Combat Data are now Hard Drives."), Anzahl));
+	return Anzahl;
+}
+
+/** Coupons abbuchen: zuerst aus dem Inventar, Rest von den am Kern wartenden. Vorher Konto() pruefen */
+static void NimmCoupons(const UWorld* World, ATDDefenseCore* Kern, int32 Preis)
+{
+	UFGInventoryComponent* Inventar = SpielerInventar(World);
+	UClass* Coupon = UTDEinsatzSubsystem::CouponKlasse();
+	const int32 AusInventar = Inventar && Coupon ? FMath::Min(Preis, Inventar->GetNumItems(Coupon)) : 0;
+	if (AusInventar > 0)
+	{
+		Inventar->Remove(Coupon, AusInventar);
+	}
+	Kern->mEinsatzPunkte = FMath::Max(0, Kern->mEinsatzPunkte - (Preis - AusInventar));
 }
 
 static bool RezeptVerfuegbar(UWorld* World, const TCHAR* Pfad)
@@ -818,13 +885,16 @@ void UTDEinsatzSubsystem::GibEP(int32 Punkte, const TCHAR* Grund)
 		return;
 	}
 	Kern->mEinsatzPunkte += Punkte;
-	UE_LOG(LogFicsitTD, Log, TEXT("Einsatz: +%d EP (%s), Konto %d EP"), Punkte, Grund, Kern->mEinsatzPunkte);
+	GibOffeneCoupons();
+	UE_LOG(LogFicsitTD, Log, TEXT("Einsatz: +%d EP (%s), Konto %d EP"), Punkte, Grund, Konto());
 }
 
 int32 UTDEinsatzSubsystem::Konto() const
 {
 	const ATDDefenseCore* Kern = mKern.Get();
-	return Kern ? Kern->mEinsatzPunkte : 0;
+	const UFGInventoryComponent* Inventar = SpielerInventar(GetWorld());
+	UClass* Coupon = CouponKlasse();
+	return (Kern ? Kern->mEinsatzPunkte : 0) + (Inventar && Coupon ? Inventar->GetNumItems(Coupon) : 0);
 }
 
 FString UTDEinsatzSubsystem::ZahleEP(int32 Preis, const FString& Posten, bool bAuchInWelle)
@@ -839,16 +909,16 @@ FString UTDEinsatzSubsystem::ZahleEP(int32 Preis, const FString& Posten, bool bA
 	{
 		return TDT(TEXT("Nur in der Bauphase."), TEXT("Only in the build phase."));
 	}
-	if (Kern->mEinsatzPunkte < Preis)
+	if (Konto() < Preis)
 	{
-		return TDF(TEXT("Zu wenig FICSIT-Coupons: %d Coupons nötig, Konto %d Coupons."), TEXT("Not enough FICSIT Coupons: %d Coupons needed, balance %d Coupons."), Preis, Kern->mEinsatzPunkte);
+		return TDF(TEXT("Zu wenig FICSIT-Coupons: %d Coupons nötig, Konto %d Coupons."), TEXT("Not enough FICSIT Coupons: %d Coupons needed, balance %d Coupons."), Preis, Konto());
 	}
-	Kern->mEinsatzPunkte -= Preis;
+	NimmCoupons(GetWorld(), Kern, Preis);
 	if (UTDLaufProtokoll* Lauf = UTDLaufProtokoll::Get(this))
 	{
 		Lauf->Kauf(Posten, Preis);
 	}
-	UE_LOG(LogFicsitTD, Log, TEXT("Einsatz: %s fuer %d EP, Konto %d EP"), *Posten, Preis, Kern->mEinsatzPunkte);
+	UE_LOG(LogFicsitTD, Log, TEXT("Einsatz: %s fuer %d EP, Konto %d EP"), *Posten, Preis, Konto());
 	return FString();
 }
 
@@ -1110,7 +1180,7 @@ TArray<FString> UTDEinsatzSubsystem::LadenText() const
 		Zeilen.Add(TDT(TEXT("Kein Einsatz aktiv."), TEXT("No operation active.")));
 		return Zeilen;
 	}
-	Zeilen.Add(TDF(TEXT("Laden - Konto: %d Coupons"), TEXT("Shop - balance: %d Coupons"), Kern->mEinsatzPunkte));
+	Zeilen.Add(TDF(TEXT("Laden - Konto: %d Coupons"), TEXT("Shop - balance: %d Coupons"), Konto()));
 	TArray<FString> Kaufbar, Gesperrt;
 	for (const FTDLadenEintrag& E : LadenListe)
 	{
@@ -1187,11 +1257,11 @@ FString UTDEinsatzSubsystem::Kaufe(const FString& Name, int32 Anzahl)
 			break;
 		}
 		const int32 Preis = LadenPreis(*E, Bisher);
-		if (Kern->mEinsatzPunkte < Preis)
+		if (Konto() < Preis)
 		{
 			break;
 		}
-		Kern->mEinsatzPunkte -= Preis;
+		NimmCoupons(GetWorld(), Kern, Preis);
 		Kosten += Preis;
 		if (UTDLaufProtokoll* Lauf = UTDLaufProtokoll::Get(this))
 		{
@@ -1202,13 +1272,13 @@ FString UTDEinsatzSubsystem::Kaufe(const FString& Name, int32 Anzahl)
 	}
 	if (Gekauft == 0)
 	{
-		return TDF(TEXT("Zu wenig FICSIT-Coupons (Konto %d Coupons)."), TEXT("Not enough FICSIT Coupons (balance %d Coupons)."), Kern->mEinsatzPunkte);
+		return TDF(TEXT("Zu wenig FICSIT-Coupons (Konto %d Coupons)."), TEXT("Not enough FICSIT Coupons (balance %d Coupons)."), Konto());
 	}
 	mBelegtZeit = -1.f;
 	if (SP)
 	{
 		return TDF(TEXT("Gekauft: %s für %d Coupons. %s Konto %d Coupons."), TEXT("Bought: %s for %d Coupons. %s Balance %d Coupons."),
-			*TDAnzeige(E->Key), Kosten, *SpielerWirkung(*SP, Gekauft * LadenPaket(*E)), Kern->mEinsatzPunkte);
+			*TDAnzeige(E->Key), Kosten, *SpielerWirkung(*SP, Gekauft * LadenPaket(*E)), Konto());
 	}
 	// Mit dem Kontingent kommt das Baumaterial (Marius 02.11.: sonst fehlte es z. B. fuer Mauern und Miner)
 	TMap<UClass*, int32> Material;
@@ -1216,7 +1286,7 @@ FString UTDEinsatzSubsystem::Kaufe(const FString& Name, int32 Anzahl)
 	const FString MaterialText = Material.Num() ? GibMaterial(Material) : FString();
 	return TDF(TEXT("Gekauft: %s +%d fuer %d Coupons. Jetzt %d/%d, Konto %d Coupons.%s"), TEXT("Bought: %s +%d for %d Coupons. Now %d/%d, balance %d Coupons.%s"),
 		*TDAnzeige(E->Key), Gekauft * LadenPaket(*E), Kosten,
-		Belegt(E->Key), Grenze(E->Key), Kern->mEinsatzPunkte, MaterialText.IsEmpty() ? TEXT("") : *(TDT(TEXT(" Material: "), TEXT(" Materials: ")) + MaterialText));
+		Belegt(E->Key), Grenze(E->Key), Konto(), MaterialText.IsEmpty() ? TEXT("") : *(TDT(TEXT(" Material: "), TEXT(" Materials: ")) + MaterialText));
 }
 
 FString UTDEinsatzSubsystem::KaufeKorb(const TMap<FString, int32>& Korb)
@@ -1262,9 +1332,9 @@ FString UTDEinsatzSubsystem::KaufeKorb(const TMap<FString, int32>& Korb)
 	{
 		return TDT(TEXT("Der Warenkorb ist leer."), TEXT("The cart is empty."));
 	}
-	if (Summe > Kern->mEinsatzPunkte)
+	if (Summe > Konto())
 	{
-		return TDF(TEXT("Zu wenig FICSIT-Coupons: %d Coupons nötig, Konto %d Coupons."), TEXT("Not enough FICSIT Coupons: %d Coupons needed, balance %d Coupons."), Summe, Kern->mEinsatzPunkte);
+		return TDF(TEXT("Zu wenig FICSIT-Coupons: %d Coupons nötig, Konto %d Coupons."), TEXT("Not enough FICSIT Coupons: %d Coupons needed, balance %d Coupons."), Summe, Konto());
 	}
 	auto Offen = [Kern]() { int32 N = 0; for (const auto& P : Kern->mMaterialOffen) { N += P.Value; } return N; };
 	const int32 OffenVorher = Offen();
@@ -1278,7 +1348,7 @@ FString UTDEinsatzSubsystem::KaufeKorb(const TMap<FString, int32>& Korb)
 	mBelegtZeit = -1.f;
 	// Test 0.53: bei vollem Inventar wartete das Baumaterial am Kern, ohne dass das Kern-Menue es sagte
 	const int32 Wartet = Offen() - OffenVorher;
-	return TDF(TEXT("Gekauft: %s für %d Coupons. Konto %d Coupons.%s"), TEXT("Bought: %s for %d Coupons. Balance %d Coupons.%s"), *FString::Join(Teile, TEXT(", ")), Summe, Kern->mEinsatzPunkte,
+	return TDF(TEXT("Gekauft: %s für %d Coupons. Konto %d Coupons.%s"), TEXT("Bought: %s for %d Coupons. Balance %d Coupons.%s"), *FString::Join(Teile, TEXT(", ")), Summe, Konto(),
 		Wartet > 0 ? *TDF(TEXT(" Inventar voll: %d Teile Baumaterial warten am Kern, E am Kern holt sie."), TEXT(" Inventory full: %d building materials are waiting at the Core, press E at the Core to collect them."), Wartet) : TEXT(""));
 }
 
@@ -1416,7 +1486,7 @@ void UTDEinsatzSubsystem::AktualisiereToDo()
 		TArray<FString> Block;
 		Block.Add(Anfang);
 		Block.Add(Welle);
-		Block.Add(TDF(TEXT("Kern %.0f %%  |  Konto %d Coupons"), TEXT("Core %.0f %%  |  Balance %d Coupons"), 100.f * Kern->GetTDHealth() / FMath::Max(Kern->GetTDMaxHealth(), 1.f), Kern->mEinsatzPunkte));
+		Block.Add(TDF(TEXT("Kern %.0f %%  |  Konto %d Coupons"), TEXT("Core %.0f %%  |  Balance %d Coupons"), 100.f * Kern->GetTDHealth() / FMath::Max(Kern->GetTDMaxHealth(), 1.f), Konto()));
 		Block.Add(mFrei ? TDT(TEXT("Freies Bauen: keine Kontingente"), TEXT("Free Build: no quotas"))
 			: OffenText.Num() ? TDT(TEXT("Noch baubar: "), TEXT("Still buildable: ")) + FString::Join(OffenText, TEXT(", "))
 			: TDT(TEXT("Kontingent ausgeschöpft - mehr im Laden"), TEXT("Quota used up - more in the Shop")));
@@ -1794,7 +1864,7 @@ void UTDEinsatzSubsystem::Lade(ATDDefenseCore* Kern)
 		ZeigeHud();
 	}
 	UE_LOG(LogFicsitTD, Log, TEXT("Einsatz geladen: aktiv %d, freies Bauen %d, Konto %d EP, gekauft %d Posten"), mAktiv, mFrei,
-		Kern ? Kern->mEinsatzPunkte : 0, Kern ? Kern->mKontingentGekauft.Num() : 0);
+		Konto(), Kern ? Kern->mKontingentGekauft.Num() : 0);
 	if (mAktiv)
 	{
 		// G3: Kontingente nach dem Laden (Zaehlung braucht die geladenen Gebaeude, deshalb kurz spaeter)
@@ -1808,7 +1878,29 @@ void UTDEinsatzSubsystem::Lade(ATDDefenseCore* Kern)
 			}
 			UE_LOG(LogFicsitTD, Log, TEXT("Einsatz nach dem Laden: %s"), *FString::Join(Teile, TEXT(", ")));
 		}), 5.f, false);
+		// 0.10.0: Umstellung alter Staende, sobald das Spielerinventar da ist (Test 14.11.: der Spieler kam erst ~20 s nach dem Laden)
+		mUmstellVersuche = 0;
+		GetWorld()->GetTimerManager().SetTimer(mUmstellTimer, FTimerDelegate::CreateUObject(this, &UTDEinsatzSubsystem::UmstellungNachLaden), 2.f, true, 2.f);
 	}
+}
+
+void UTDEinsatzSubsystem::UmstellungNachLaden()
+{
+	if (!SpielerInventar(GetWorld()) && ++mUmstellVersuche < 90)
+	{
+		return;   // noch kein Spieler: bis zu 3 min weiter warten
+	}
+	GetWorld()->GetTimerManager().ClearTimer(mUmstellTimer);
+	if (!SpielerInventar(GetWorld()))
+	{
+		UE_LOG(LogFicsitTD, Warning, TEXT("Umstellung 0.10: nach 3 min kein Spielerinventar - Kampfdaten und wartende Coupons bleiben bis zum naechsten Nachreichen"));
+		return;
+	}
+	const int32 Kampfdaten = TauscheAlteKampfdaten();
+	const int32 Festplatten = GibOffeneFP();
+	const int32 Coupons = GibOffeneCoupons();
+	UE_LOG(LogFicsitTD, Log, TEXT("Umstellung 0.10 nach dem Laden (nach %d s): %d Kampfdaten getauscht, %d Festplatten und %d Coupons ins Inventar, Konto %d"),
+		2 * (mUmstellVersuche + 1), Kampfdaten, Festplatten, Coupons, Konto());
 }
 
 void UTDEinsatzSubsystem::SetzeFrei(bool bFrei)
@@ -1849,7 +1941,7 @@ TArray<FString> UTDEinsatzSubsystem::StatusText()
 				Teile.Add(FString::Printf(TEXT("%s %d/%d"), *TDAnzeige(Kauf.Key), Belegt(Kauf.Key), Grenze(Kauf.Key)));
 			}
 		}
-		Zeilen.Add(TDF(TEXT("Konto: %d Coupons"), TEXT("Balance: %d Coupons"), Kern->mEinsatzPunkte));
+		Zeilen.Add(TDF(TEXT("Konto: %d Coupons"), TEXT("Balance: %d Coupons"), Konto()));
 	}
 	Zeilen.Add(TDT(TEXT("Kontingent: "), TEXT("Quota: ")) + FString::Join(Teile, TEXT(", ")));
 	return Zeilen;

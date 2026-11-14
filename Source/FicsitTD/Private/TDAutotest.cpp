@@ -44,6 +44,7 @@
 #include "Framework/Application/SlateApplication.h"
 #include "Widgets/SWindow.h"
 #include "FGSchematic.h"
+#include "FGResearchManager.h"
 #include "FGSchematicManager.h"
 #include "FGRecipe.h"
 #include "FGRecipeManager.h"
@@ -811,6 +812,18 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		Ergebnis(TEXT("Spieler"), FString::Printf(TEXT("gib %d"), Anzahl), Rein > 0, FString::Printf(TEXT("%d x %s"), Rein, *FPaths::GetBaseFilename(Wort)));
 		return true;
 	}
+	if (S->HasField(TEXT("zahle")))
+	{
+		// 0.10.0: Coupons ausgeben wie Turmlevel oder Talente (ZahleEP) - prueft, dass Coupon-Items abgebucht werden
+		UTDEinsatzSubsystem* Einsatz = World->GetSubsystem<UTDEinsatzSubsystem>();
+		const int32 Preis = static_cast<int32>(S->GetNumberField(TEXT("zahle")));
+		const int32 Vorher = Einsatz ? Einsatz->Konto() : 0;
+		const FString Fehler = Einsatz ? Einsatz->ZahleEP(Preis, TEXT("Autotest"), true) : FString(TEXT("kein Einsatz"));
+		const int32 Nachher = Einsatz ? Einsatz->Konto() : 0;
+		Ergebnis(TEXT("Coupons"), FString::Printf(TEXT("zahle %d"), Preis), Fehler.IsEmpty() && Vorher - Nachher == Preis,
+			FString::Printf(TEXT("Konto %d -> %d%s"), Vorher, Nachher, Fehler.IsEmpty() ? TEXT("") : *(TEXT(", ") + Fehler)));
+		return true;
+	}
 	if (S->TryGetStringField(TEXT("uebersteuere"), Wort))
 	{
 		// 0.9.8 P4: Uebersteuern wie der Knopf im Turmfenster ("*" = irgendein Turm)
@@ -1129,6 +1142,59 @@ bool UTDAutotest::Pruefe(UWorld* World, const TSharedPtr<FJsonObject>& S, FStrin
 		const FString Soll = S->HasField(TEXT("soll")) ? S->GetStringField(TEXT("soll")) : FString();
 		OutIst = FString::Printf(TEXT("%s %s: %s"), *Klasse->GetName(), bFern ? TEXT("fern") : TEXT("am Kern"), Ist.IsEmpty() ? TEXT("erlaubt") : *Ist);
 		return Ist == Soll;
+	}
+	if (Name == TEXT("Inventar"))
+	{
+		// 0.10.0: Anzahl eines Items im Spielerinventar gegen "min"/"max" (Klassenpfad in "item")
+		UClass* Klasse = LoadClass<UFGItemDescriptor>(nullptr, *S->GetStringField(TEXT("item")));
+		const APlayerController* PC = World->GetFirstPlayerController();
+		const AFGCharacterPlayer* Spieler = PC ? Cast<AFGCharacterPlayer>(PC->GetPawn()) : nullptr;
+		const int32 Anzahl = Klasse && Spieler && Spieler->GetInventory() ? Spieler->GetInventory()->GetNumItems(Klasse) : -1;
+		OutIst = Klasse ? FString::Printf(TEXT("%d x %s"), Anzahl, *Klasse->GetName()) : FString(TEXT("Item nicht gefunden"));
+		return Klasse && Anzahl >= (S->HasField(TEXT("min")) ? int32(S->GetNumberField(TEXT("min"))) : 0)
+			&& Anzahl <= (S->HasField(TEXT("max")) ? int32(S->GetNumberField(TEXT("max"))) : MAX_int32);
+	}
+	if (Name == TEXT("Konto"))
+	{
+		// 0.10.0: Coupon-Konto = Items im Inventar + am Kern wartende; "min" und optional "nurItems" (alles im Inventar)
+		const UTDEinsatzSubsystem* Einsatz = World->GetSubsystem<UTDEinsatzSubsystem>();
+		const ATDDefenseCore* Kern = Einsatz ? Einsatz->GetKern() : nullptr;
+		const int32 Konto = Einsatz ? Einsatz->Konto() : -1;
+		const int32 Wartend = Kern ? Kern->mEinsatzPunkte : -1;
+		OutIst = FString::Printf(TEXT("Konto %d, davon %d am Kern wartend"), Konto, Wartend);
+		const bool bNurItems = S->HasField(TEXT("nurItems")) && S->GetBoolField(TEXT("nurItems"));
+		return Konto >= (S->HasField(TEXT("min")) ? int32(S->GetNumberField(TEXT("min"))) : 0) && (!bNurItems || Wartend == 0);
+	}
+	if (Name == TEXT("MAMKosten"))
+	{
+		// 0.10.0: Kosten eines FicsitTD-Knotens bestehen aus Festplatten (keine FICSIT-Kampfdaten mehr)
+		const FTDForschungKnoten* K = TDForschung::Finde(S->GetStringField(TEXT("knoten")));
+		UClass* Klasse = K ? LoadClass<UFGSchematic>(nullptr, *K->Pfad) : nullptr;
+		if (!Klasse)
+		{
+			OutIst = TEXT("Knoten unbekannt");
+			return false;
+		}
+		TArray<FString> Teile;
+		bool bFestplatte = false, bAlt = false;
+		for (const FItemAmount& Kosten : UFGSchematic::GetCost(Klasse))
+		{
+			Teile.Add(FString::Printf(TEXT("%d x %s"), Kosten.Amount, Kosten.ItemClass ? *Kosten.ItemClass->GetName() : TEXT("?")));
+			bFestplatte |= Kosten.ItemClass == UTDEinsatzSubsystem::FPKlasse();
+			bAlt |= Kosten.ItemClass && Kosten.ItemClass->GetName().Contains(TEXT("Kampfdaten"));
+		}
+		OutIst = FString::Join(Teile, TEXT(", "));
+		return bFestplatte && !bAlt;
+	}
+	if (Name == TEXT("ForschungStartbar"))
+	{
+		// 0.10.0: darf das MAM diese Forschung beginnen? (Hook CanResearchBeInitiated mit allen FicsitTD-Sperren)
+		UClass* Klasse = LoadClass<UFGSchematic>(nullptr, *S->GetStringField(TEXT("schematic")));
+		const AFGResearchManager* Forschung = AFGResearchManager::Get(World);
+		const bool bSoll = !S->HasField(TEXT("erwartet")) || S->GetBoolField(TEXT("erwartet"));
+		const bool bIst = Klasse && Forschung && Forschung->CanResearchBeInitiated(Klasse);
+		OutIst = !Klasse ? FString(TEXT("Schematic nicht gefunden")) : FString::Printf(TEXT("%s %s"), *Klasse->GetName(), bIst ? TEXT("startbar") : TEXT("gesperrt"));
+		return Klasse && bIst == bSoll;
 	}
 	if (Name == TEXT("ForschungZustand"))
 	{

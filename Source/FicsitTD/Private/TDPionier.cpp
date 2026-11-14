@@ -56,7 +56,7 @@ static const TArray<FTDTalentZweig>& TDZweigeDe()
 			  TEXT("Bollwerk: einmal je Welle fällt ein Bau nicht, sondern hält mit halben LP") } },
 		{ TEXT("Jaeger"), TEXT("Jäger"), TEXT("Elite und Boss"),
 			{ TEXT("Dein Schaden an Elite und Boss ×1,5"),
-			  TEXT("Elite oder Boss selbst erlegt: Kampfdaten und Coupons fallen sicher"),
+			  TEXT("Elite oder Boss selbst erlegt: Festplatten und Coupons fallen sicher"),
 			  TEXT("Schwachstelle: ein Boss, den du triffst, nimmt 5 s +25 % von allen Türmen"),
 			  TEXT("Boss-Balken zeigt Resistenzen und deinen Anteil"),
 			  TEXT("Hinrichtung: Elite unter 15 % LP stirbt beim nächsten Treffer von dir") } },
@@ -86,7 +86,7 @@ static const TArray<FTDTalentZweig>& TDZweigeEn()
 			  TEXT("Bulwark: once per wave a building does not fall but holds at half HP") } },
 		{ TEXT("Jaeger"), TEXT("Hunter"), TEXT("Elites and bosses"),
 			{ TEXT("Your damage to elites and bosses ×1.5"),
-			  TEXT("Elite or boss killed by you: combat data and Coupons always drop"),
+			  TEXT("Elite or boss killed by you: Hard Drives and Coupons always drop"),
 			  TEXT("Weak spot: a boss you hit takes +25 % from all turrets for 5 s"),
 			  TEXT("Boss bar shows resistances and your share"),
 			  TEXT("Execution: an elite below 15 % HP dies at your next hit") } },
@@ -563,6 +563,10 @@ bool UTDPionier::Bollwerk(const AActor* Bau)
 	P->mBollwerkGenutzt = true;
 	++P->mBilanz.Gerettet;
 	const ATDTurretBase* Turm = Cast<ATDTurretBase>(Bau);
+	if (Turm)
+	{
+		const_cast<ATDTurretBase*>(Turm)->ZeigeFaehigkeit(1, Turm->GetActorLocation());   // 0.10.0: Bollwerk sichtbar
+	}
 	const FString Name = Turm ? Turm->GetTurmAnzeige() : TDT(TEXT("Ein Bau"), TEXT("A building"));
 	P->Melde(TDF(TEXT("Bollwerk: %s hält mit halben LP (wieder bereit in der nächsten Welle)."), TEXT("Bulwark: %s holds at half HP (ready again next wave)."), *Name));
 	UE_LOG(LogFicsitTD, Log, TEXT("Pionier: Bollwerk rettet %s"), *Bau->GetName());
@@ -653,6 +657,11 @@ void UTDPionier::Feldreparatur(AFGCharacterPlayer* Spieler, float Sekunden)
 		const float Vorher = D->GetTDHealth();
 		D->HealTD(Menge);
 		mBilanz.Repariert += FMath::Max(0.f, D->GetTDHealth() - Vorher);
+		// 0.10.0: Reparatur sichtbar (gruener Strahl), an Tuermen
+		if (ATDTurretBase* Turm = Cast<ATDTurretBase>(Bau))
+		{
+			Turm->ZeigeFaehigkeit(0, Ort);
+		}
 	};
 	for (TActorIterator<ATDTurretBase> It(GetWorld()); It; ++It) { Repariere(*It); }
 	for (TActorIterator<ATDDefenseWall> It(GetWorld()); It; ++It) { Repariere(*It); }

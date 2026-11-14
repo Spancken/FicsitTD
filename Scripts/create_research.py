@@ -42,7 +42,8 @@ EISEN2 = [f"{R}/Constructor/Recipe_IronPlate", f"{R}/Constructor/Recipe_Screw", 
 # Abzweigung: Knoten mit demselben Elternteil in einer Zeile; dass nur einer erforscht werden darf, regelt der Mod (Einsatz-Konzept 11a)
 # Schritt B (Spielablauf-EarlyGame.md, 02.11.2026): Kosten nur in Forschungspunkten (FP = FICSIT-Kampfdaten), Zeile y = Stufe
 # (Stufe 1: 2 FP, Stufe 2: 3 FP). Jeder Knoten bringt ein Gebaeude, eine Munition oder eine Faehigkeit - keine Prozentboni.
-FP = "/FicsitTD/Items/Desc_TD_Kampfdaten"
+# 0.10.0 (Marius 14.11.): Festplatte des Spiels statt FICSIT-Kampfdaten (Bestand umgestellt mit umstellen_festplatte_mam.py)
+FP = "/Game/FactoryGame/Resource/Environment/CrashSites/Desc_HardDrive"
 ZEIT = 3.0   # Marius 02.11.: keine Forschung laenger als 3 s
 DURCH = "/FicsitTD/Items/Desc_TD_Durchschlagbolzen"
 TDR = "/FicsitTD/Recipes"

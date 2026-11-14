@@ -32,7 +32,8 @@ namespace TDBeute
 {
 	/** Beute-Tabelle (Marius 03.11.2026: Kreaturen lassen Beute fallen); Chancen je Gegnerart in Balance Loot.<Art>.<Stufe> */
 	struct FEintrag { const TCHAR* Art; const TCHAR* Item; int32 Menge; };
-	static const FEintrag Kampfdaten = { TEXT("Kampfdaten"), TEXT("/FicsitTD/Items/Desc_TD_Kampfdaten.Desc_TD_Kampfdaten_C"), 1 };
+	// 0.10.0: Beute-Art "Kampfdaten" (Balance-Schluessel bleiben) liefert die Festplatte des Spiels
+	static const FEintrag Kampfdaten = { TEXT("Kampfdaten"), TEXT("/Game/FactoryGame/Resource/Environment/CrashSites/Desc_HardDrive.Desc_HardDrive_C"), 1 };
 }
 
 UTDLaufProtokoll* UTDLaufProtokoll::Get(const UObject* WorldContext)
@@ -100,7 +101,7 @@ int32 UTDLaufProtokoll::FPImInventar() const
 {
 	const APlayerController* PC = GetWorld()->GetFirstPlayerController();
 	const AFGCharacterPlayer* Pioneer = PC ? Cast<AFGCharacterPlayer>(PC->GetPawn()) : nullptr;
-	UClass* FP = LoadClass<UFGItemDescriptor>(nullptr, TDBeute::Kampfdaten.Item);
+	UClass* FP = UTDEinsatzSubsystem::FPKlasse();
 	return Pioneer && Pioneer->GetInventory() && FP ? Pioneer->GetInventory()->GetNumItems(FP) : 0;
 }
 
@@ -159,7 +160,7 @@ void UTDLaufProtokoll::WellenEnde(int32 Welle, int32 EPVerdient, int32 FPVerdien
 	UWorld* World = GetWorld();
 	UTDEinsatzSubsystem* Einsatz = World->GetSubsystem<UTDEinsatzSubsystem>();
 	ATDDefenseCore* Kern = Einsatz ? Einsatz->GetKern() : nullptr;
-	const int32 Konto = Kern ? Kern->mEinsatzPunkte : 0;
+	const int32 Konto = Einsatz ? Einsatz->Konto() : 0;
 	const int32 FPJetzt = FPImInventar() + (Kern ? Kern->mFPOffen : 0);
 	// Ausgaben seit dem letzten Wellenende: Konto vorher + verdient - Konto jetzt
 	const int32 EPAus = mKontoNachLetzter >= 0 ? mKontoNachLetzter + EPVerdient - Konto : -1;

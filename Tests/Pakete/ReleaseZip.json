@@ -1,0 +1,5 @@
+{
+  "Name": "ReleaseZip",
+  "_Hinweis": "Pruefstufe G5: mit der installierten Release-Zip (Teste-ReleaseZip.ps1). Grundtest (Welle), Neustart (neues Spiel), Waehrung (Umstellung alter Staende, Festplatten, Coupons). Im Bericht muss die Version der Zip stehen.",
+  "Plaene": ["Grundtest", "Neustart", "Waehrung"]
+}

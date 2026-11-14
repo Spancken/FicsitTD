@@ -31,6 +31,7 @@
     { "wellenlauf": 6, "zeitraffer": 2, "max": 300 },
     { "pionier": "MarkBonus" },
     { "pionier": "Assists" },
+    { "warte": 12 },
     { "oeffne": "Kern" },
     { "warte": 2 },
     { "kernansicht": 3 },

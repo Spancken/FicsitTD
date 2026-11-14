@@ -1,0 +1,5 @@
+{
+  "Name": "Waehrung010",
+  "_Hinweis": "0.10.0 Schritte 1+2 (Festplatten, Coupons als Items): neuer Plan Waehrung und die Plaene, die Coupons ausgeben oder einnehmen - Grundtest (Welle), Neustart (neuer Einsatz), Review-0961 (Laden), Sperren091 (Kauf erweitert Kontingent), Pionier-P3 (Talente, Uebersteuern).",
+  "Plaene": ["Waehrung", "Grundtest", "Neustart", "Review-0961", "Sperren091", "Pionier-P3"]
+}

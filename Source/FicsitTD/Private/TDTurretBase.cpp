@@ -1115,7 +1115,42 @@ void ATDTurretBase::Zielen()
 	if (!UTDWaveSubsystem::bStressEffekteAus)
 	{
 		Animieren(TurmZielIntervall, Ziel);
+		// 0.10.0 (Marius 14.11.: Rolle sichtbar): Uebersteuern pulsiert orange am Turmkopf, Sammelbefehl zeigt einen Strahl zum Ziel
+		mFaehigkeitPuls -= TurmZielIntervall;
+		if (mFaehigkeitPuls <= 0.f)
+		{
+			mFaehigkeitPuls = 0.5f;
+			if (UebersteuernRest() > 0.f)
+			{
+				ZeigeLeuchten(GetMuzzleLocation(), FLinearColor(1.f, 0.55f, 0.15f), 2.2f, 0.45f, 0.f, true, 30.f);
+			}
+			const AFGCreature* Befehl = UTDPionier::Sammelziel(this);
+			if (Befehl && Befehl == Ziel)
+			{
+				ZeigeSpur(GetMuzzleLocation(), Befehl->GetActorLocation() + FVector(0.f, 0.f, 80.f), FLinearColor(1.f, 0.6f, 0.2f), 0.25f, 0.7f);
+				ZeigeLeuchten(Befehl->GetActorLocation() + FVector(0.f, 0.f, 220.f), FLinearColor(1.f, 0.6f, 0.2f), 1.2f, 0.3f);
+			}
+		}
 		TickeEffekte(TurmZielIntervall);
+	}
+}
+
+void ATDTurretBase::ZeigeFaehigkeit(int32 Art, const FVector& Von)
+{
+	if (UTDWaveSubsystem::bStressEffekteAus)
+	{
+		return;
+	}
+	if (Art == 0)
+	{
+		// Feldreparatur: gruener Strahl vom Spieler zum Turm, Leuchten am Sockel
+		ZeigeSpur(Von + FVector(0.f, 0.f, 120.f), GetActorLocation() + FVector(0.f, 0.f, 200.f), FLinearColor(0.35f, 1.f, 0.45f), 0.35f, 0.6f);
+		ZeigeLeuchten(GetActorLocation() + FVector(0.f, 0.f, 200.f), FLinearColor(0.35f, 1.f, 0.45f), 1.6f, 0.35f);
+	}
+	else
+	{
+		// Bollwerk: kurzes helles Aufblitzen um den Turm
+		ZeigeLeuchten(GetActorLocation() + FVector(0.f, 0.f, 250.f), FLinearColor(0.75f, 0.9f, 1.f), 5.f, 0.6f, 0.f, true, 40.f);
 	}
 }
 

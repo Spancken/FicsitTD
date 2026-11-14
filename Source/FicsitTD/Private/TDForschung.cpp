@@ -181,7 +181,7 @@ namespace TDForschung
 			return TDF(TEXT("Gesperrt: ab Welle %d"), TEXT("Locked: from wave %d"), Ab);
 		}
 		default:
-			OutText = TDF(TEXT("Alle Voraussetzungen erfüllt. Kosten: %d FP (FICSIT-Kampfdaten)."), TEXT("All prerequisites met. Cost: %d RP (FICSIT Combat Data)."), K.FP);
+			OutText = TDF(TEXT("Alle Voraussetzungen erfüllt. Kosten: %d Festplatten."), TEXT("All prerequisites met. Cost: %d Hard Drives."), K.FP);
 			return TDT(TEXT("Jetzt erforschbar"), TEXT("Researchable now"));
 		}
 	}

@@ -81,12 +81,14 @@ public:
 	 *  0 = keine Variation (Standard, Balance Wellen.VariationJeEinsatz = 0) */
 	UPROPERTY(SaveGame)
 	int32 mLaufSaat = 0;
-	/** Einsatzpunkte (Konto) und gekaufte Kontingente je Schluessel (Anzahl Kaeufe) */
+	/** Gekaufte Kontingente je Schluessel (Anzahl Kaeufe). mEinsatzPunkte: bis 0.9.8 das ganze Konto; seit 0.10.0 nur die
+	 *  FICSIT-Coupons, die noch am Kern warten (Inventar voll) - der Rest liegt als Item im Inventar. Alte Staende: das alte
+	 *  Konto wartet am Kern und wandert beim naechsten Nachreichen als Coupons ins Inventar. */
 	UPROPERTY(SaveGame)
 	int32 mEinsatzPunkte = 0;
 	UPROPERTY(SaveGame)
 	TMap<FString, int32> mKontingentGekauft;
-	/** Forschungspunkte (FICSIT-Kampfdaten), die nicht ins volle Inventar passten - werden spaeter nachgereicht */
+	/** Forschungspunkte (seit 0.10.0 Festplatten), die nicht ins volle Inventar passten - werden spaeter nachgereicht */
 	UPROPERTY(SaveGame)
 	int32 mFPOffen = 0;
 	/** 0.66: Statistik je abgeschlossener Welle (Kern-Menue, Reiter Statistik) */

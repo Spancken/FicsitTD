@@ -1,0 +1,5 @@
+{
+  "Name": "Frontpruefung",
+  "_Hinweis": "0.10.0 (14.11.): Frontpruefung bei Netz-Umbau. Baender (W11 nach Band-Tausch) schlug im Release-Lauf mit 0 Punkten fehl. Dreimal hintereinander, damit ein Zufallstreffer nicht als Beleg zaehlt; im Log 'Fronten bleiben' bzw. die Warnung mit Netz-Zustand.",
+  "Plaene": ["Baender", "Baender", "Baender"]
+}

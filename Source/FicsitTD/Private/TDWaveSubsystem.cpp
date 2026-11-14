@@ -2275,8 +2275,20 @@ void UTDWaveSubsystem::SpawneKernWelle(int32 Nummer)
 		const TArray<FVector> Probe = UTDGegnerHirn::BerechneWeg(GetWorld(), mFronten[i].Ort, mKern.Get(), &bVoll);
 		if (!bVoll)
 		{
-			UE_LOG(LogFicsitTD, Warning, TEXT("Frontpruefung Welle %d: Front %d (%s) hat nur noch einen Teilweg (%d Punkte, Ende %s) - Fronten neu bestimmen"),
-				Nummer, i + 1, *FrontText(mFronten, i, true), Probe.Num(), Probe.Num() ? *Probe.Last().ToCompactString() : TEXT("-"));
+			// 0.10.0 (Release-Test 14.11., Baender W11 und Pionier098 bei 6 Bildern/s): EntschaerfeLogistik oben nimmt im selben
+			// Frame bis zu 165 Teile aus dem Netz. Waehrend des Umbaus findet die Wegsuche gar keinen Weg (0 Punkte), und die
+			// Neuwahl fand dann 0 von 16 gueltigen Richtungen. Kein Weg + Netz im Umbau = Zwischenzustand: Fronten behalten.
+			UNavigationSystemV1* Nav = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
+			const bool bNetzImBau = Nav && Nav->IsNavigationBuildInProgress();
+			const int32 Auftraege = Nav ? Nav->GetNumRemainingBuildTasks() : -1;
+			if (Probe.Num() == 0 && bNetzImBau)
+			{
+				UE_LOG(LogFicsitTD, Log, TEXT("Frontpruefung Welle %d: Front %d ohne Weg, Netz wird gerade umgebaut (%d Auftraege) - Fronten bleiben"),
+					Nummer, i + 1, Auftraege);
+				continue;
+			}
+			UE_LOG(LogFicsitTD, Warning, TEXT("Frontpruefung Welle %d: Front %d (%s) hat nur noch einen Teilweg (%d Punkte, Ende %s, Netz im Umbau %d, %d Auftraege) - Fronten neu bestimmen"),
+				Nummer, i + 1, *FrontText(mFronten, i, true), Probe.Num(), Probe.Num() ? *Probe.Last().ToCompactString() : TEXT("-"), bNetzImBau ? 1 : 0, Auftraege);
 			mFronten.Reset();
 			SucheFronten(Mitte);
 			MarkiereFronten();
@@ -2592,7 +2604,8 @@ void UTDWaveSubsystem::MesseWellenStart()
 	const float Referenz = TDBalance::Wert(TEXT("Metrik.Referenzzeit"), 60.f);
 	mMessQ = mMessK > 0.f ? mMessEHP / (mMessK * Referenz) : 0.f;
 	mMessKernStart = Kern->GetTDHealth();
-	mMessEP = Kern->mEinsatzPunkte;
+	const UTDEinsatzSubsystem* EinsatzMess = GetWorld()->GetSubsystem<UTDEinsatzSubsystem>();
+	mMessEP = EinsatzMess ? EinsatzMess->Konto() : Kern->mEinsatzPunkte;   // 0.10.0: Coupons als Items
 	mMessNaechste = BIG_NUMBER;
 	mMessGueltig = true;
 	StarteBildMessung();

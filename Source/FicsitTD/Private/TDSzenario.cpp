@@ -136,7 +136,7 @@ TArray<FString> TDSzenario::Anwenden(UObject* WorldContext, int32 Nr, APawn* Spi
 	}
 	// 2b) Test T2 (Marius): FP blieben uebrig, obwohl die Forschung geschenkt war -> Kosten der freigegebenen Knoten abziehen
 	{
-		UClass* FPKlasse = LoadClass<UFGItemDescriptor>(nullptr, TEXT("/FicsitTD/Items/Desc_TD_Kampfdaten.Desc_TD_Kampfdaten_C"));
+		UClass* FPKlasse = UTDEinsatzSubsystem::FPKlasse();
 		AFGCharacterPlayer* Figur = Cast<AFGCharacterPlayer>(Spieler);
 		UFGInventoryComponent* Inventar = Figur ? Figur->GetInventory() : nullptr;
 		int32 Rest = FPKosten;

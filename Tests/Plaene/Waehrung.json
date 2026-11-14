@@ -1,0 +1,31 @@
+{
+  "Name": "Waehrung",
+  "_Hinweis": "0.10.0 Schritte 1+2 (Konzept-Einstieg-Shop-Festplatten, Marius 14.11.): Forschung mit der Festplatte des Spiels statt FICSIT-Kampfdaten, FICSIT-Coupons als Items statt Kontostand. Der Spielstand stammt aus 0.9.x und prueft damit auch die Umstellung: Kampfdaten im Inventar werden Festplatten, das alte Konto wird zu Coupon-Items. Danach: MAM-Knoten kostet Festplatten, Festplatten-Forschung des Spiels im Einsatz gesperrt, Ausgeben bucht Coupon-Items ab, nach der Welle kommen Coupons und Festplatten als Items.",
+  "Spielstand": "Autotest_Marius_W06",
+  "Quelle": "Marius_W06_Plateau.sav",
+  "ErweiterteEinstellungen": true,
+  "WarteNachLaden": 30,
+  "MaxMinuten": 12,
+  "Schritte": [
+    { "pruefe": "Version", "soll": "{VERSION}", "text": "richtige Mod-Version geladen" },
+    { "pruefe": "Inventar", "item": "/FicsitTD/Items/Desc_TD_Kampfdaten.Desc_TD_Kampfdaten_C", "max": 0, "text": "keine FICSIT-Kampfdaten mehr im Inventar" },
+    { "pruefe": "Inventar", "item": "/Game/FactoryGame/Resource/Environment/CrashSites/Desc_HardDrive.Desc_HardDrive_C", "min": 1, "text": "Festplatten im Inventar (umgetauscht)" },
+    { "pruefe": "Konto", "min": 1, "nurItems": true, "text": "altes Konto liegt als Coupon-Items im Inventar" },
+    { "pruefe": "Inventar", "item": "/Game/FactoryGame/Resource/Parts/ResourceSinkCoupon/Desc_ResourceSinkCoupon.Desc_ResourceSinkCoupon_C", "min": 1, "text": "Coupon-Items im Inventar" },
+    { "pruefe": "MAMKosten", "knoten": "Turmfertigung2", "text": "MAM-Knoten kostet Festplatten" },
+    { "pruefe": "MAMKosten", "knoten": "Kupfer", "text": "MAM-Knoten kostet Festplatten" },
+    { "pruefe": "ForschungStartbar", "schematic": "/Game/FactoryGame/Schematics/Research/HardDrive_RS/Research_HardDrive_0.Research_HardDrive_0_C", "erwartet": false, "text": "Festplatten-Forschung des Spiels im Einsatz gesperrt" },
+    { "zahle": 5 },
+    { "pruefe": "Konto", "min": 0, "nurItems": true, "text": "nach dem Bezahlen nichts am Kern wartend" },
+    { "oeffne": "Kern" },
+    { "warte": 2 },
+    { "foto": "W_KernMenue" },
+    { "schliesse": true },
+    { "befehl": "td kern weiter" },
+    { "wellenlauf": 6, "zeitraffer": 2, "max": 300 },
+    { "pruefe": "Konto", "min": 1, "nurItems": true, "text": "Wellenlohn als Coupon-Items im Inventar" },
+    { "pruefe": "Inventar", "item": "/Game/FactoryGame/Resource/Environment/CrashSites/Desc_HardDrive.Desc_HardDrive_C", "min": 2, "text": "Festplatten nach der Welle" },
+    { "foto": "W_HUD" },
+    { "pruefe": "KeineWarnungen", "text": "keine Warnungen oder Fehler des Mods im Log" }
+  ]
+}
