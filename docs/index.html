@@ -58,6 +58,12 @@ nav.toc a:hover { color: #fff }
 .shot figcaption { padding: 8px 12px; font-size: .88rem; color: var(--muted) }
 .gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px }
 .gallery .shot { margin-top: 14px }
+.ver { font: 700 .8rem/1 var(--f-display); letter-spacing: .06em; text-transform: uppercase; color: #1a1208; background: #fa9549; padding: 4px 8px; text-decoration: none; white-space: nowrap }
+.ver:hover { filter: brightness(1.1) }
+.versions details { border: 1px solid var(--line); background: var(--panel); margin-top: 10px; padding: 10px 14px }
+.versions summary { cursor: pointer; font: 700 1.05rem/1.3 var(--f-display); letter-spacing: .03em }
+.versions summary small { font: 400 .85rem/1 sans-serif; color: var(--muted); margin-left: 8px; letter-spacing: 0 }
+.versions details ul { margin-top: 8px }
 section { padding-block: 34px; border-top: 1px solid var(--line) }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px }
 .card { background: var(--panel); border: 1px solid var(--line); padding: 14px; min-width: 0 }
@@ -83,6 +89,7 @@ footer { padding-block: 28px; color: var(--muted); font-size: .86rem; border-top
 <body>
 <header class="top"><div class="wrap">
   <a class="brand" href="#top"><img src="img/modicon.png" alt=""><span>FICSIT <b>TD</b></span></a>
+  <a class="ver" href="#versions" title="Version history">v0.10.2 · Alpha</a>
   <nav class="toc">
     <a href="#start"><span class="en">Start</span><span class="de">Start</span></a>
     <a href="#operation"><span class="en">Operation</span><span class="de">Einsatz</span></a>
@@ -90,6 +97,7 @@ footer { padding-block: 28px; color: var(--muted); font-size: .86rem; border-top
     <a href="#buildings"><span class="en">Buildings</span><span class="de">Bauten</span></a>
     <a href="#enemies"><span class="en">Enemies</span><span class="de">Gegner</span></a>
     <a href="#research"><span class="en">Research</span><span class="de">Forschung</span></a>
+    <a href="#versions"><span class="en">Versions</span><span class="de">Versionen</span></a>
     <a href="#issues"><span class="en">Known issues</span><span class="de">Bekannte Fehler</span></a>
     <a href="#faq">FAQ</a>
   </nav>
@@ -326,6 +334,29 @@ footer { padding-block: 28px; color: var(--muted); font-size: .86rem; border-top
       </ul>
     </div>
   </div>
+</div></section>
+
+<section id="versions" class="versions"><div class="wrap">
+  <h2><span class="en">Versions &amp; changes</span><span class="de">Versionen &amp; Änderungen</span></h2>
+  <p class="en">Current version: <b>0.10.2 (alpha)</b>, released on 15.11.2026. SMM shows your installed version in the mod list. All uploads: <a href="https://ficsit.app/mod/FicsitTD">ficsit.app → View Versions</a>.</p>
+  <p class="de">Aktuelle Version: <b>0.10.2 (Alpha)</b>, veröffentlicht am 15.11.2026. Die installierte Version zeigt SMM in der Mod-Liste. Alle Uploads: <a href="https://ficsit.app/mod/FicsitTD">ficsit.app → View Versions</a>.</p>
+  <details open><summary>0.10.2 <span class="en">– Small fixes</span><span class="de">– Kleine Korrekturen</span><small>15.11.2026</small></summary>
+    <ul class="en"><li>Fixed: the Core and Tank Trap look-at text shows the real maximum health (including research) and is now translated</li><li>Fixed: chat messages point to the <b>Start wave</b> button at the Core instead of a chat command</li><li>Fixed: the shop text no longer lists the removed Tank Trap</li><li>Performance: diagnostic tick measurements only run in developer mode</li></ul>
+    <ul class="de"><li>Behoben: Der Blicktext von Kern und Panzersperre zeigt die echten maximalen LP (mit Forschung) und ist übersetzt</li><li>Behoben: Chatmeldungen verweisen auf den Knopf <b>Welle starten</b> am Kern statt auf einen Chatbefehl</li><li>Behoben: Die Laden-Ausgabe nennt die gestrichene Panzersperre nicht mehr</li><li>Leistung: Diagnose-Messungen der Ticks laufen nur noch im Entwicklermodus</li></ul>
+  </details>
+  <details><summary>0.10.1 <span class="en">– Game mode menu and crash fix</span><span class="de">– Spielmodus-Menü und Absturz-Fix</span><small>15.11.2026</small></summary>
+    <ul class="en"><li>New: session settings category <b>FICSIT Tower Defense</b> with a <b>Game Mode</b> dropdown (Off / Operation) and a help text for each mode. More modes will follow</li><li>Fixed: crash when a save was loaded twice within a few seconds</li><li>Fixed: right after loading, the wave start could discard valid enemy fronts because the navigation was not ready yet</li><li>Fixed: the ADA greeting follows the mod language setting</li><li>Old saves keep working; the previous checkbox is still recognized</li></ul>
+    <ul class="de"><li>Neu: Kategorie <b>FICSIT Tower Defense</b> in den Sitzungseinstellungen mit der Auswahl <b>Spielmodus</b> (Aus / Einsatz) und einem Hilfetext je Modus. Weitere Modi folgen</li><li>Behoben: Absturz, wenn ein Spielstand zweimal innerhalb weniger Sekunden geladen wurde</li><li>Behoben: Direkt nach dem Laden konnte der Wellenstart gültige Fronten verwerfen, weil die Navigation noch nicht bereit war</li><li>Behoben: Die ADA-Begrüßung folgt der Sprache der Mod</li><li>Alte Spielstände laufen weiter; die frühere Ankreuzbox wird weiter erkannt</li></ul>
+  </details>
+  <details><summary>0.10.0 <span class="en">– The Pioneer: four roles, 20 abilities, Hard Drives and Coupon items</span><span class="de">– Der Pionier: vier Rollen, 20 Fähigkeiten, Festplatten und Coupon-Items</span><small>14.11.2026</small></summary>
+    <ul class="en"><li>New: Pioneer talent tree with four roles (Marksman, Commander, Engineer, Hunter), five abilities each, up to 15 points per operation</li><li>New: target marking (+15 % turret damage), assists, rally order, overdrive button in the turret window, field repair, ammo resupply, bulwark, weak spots, execution</li><li>New: talent tree with game icons, role badge in the HUD, visible repair beam, rally beam and overdrive glow</li><li>Pioneer XP rewards your own performance; wave XP halved; rank bonus every 3 ranks (+10 HP, +3 % speed)</li><li>Changed: MAM research is paid with the game&#39;s Hard Drives; the game&#39;s own Hard Drive research is locked during an operation</li><li>Changed: FICSIT Coupons are the game&#39;s Coupon item in your inventory (they wait at the Core if your inventory is full)</li><li>Old saves: Combat Data become Hard Drives, your Coupon balance becomes Coupon items</li></ul>
+    <ul class="de"><li>Neu: Pionier-Talentbaum mit vier Rollen (Schütze, Kommandant, Techniker, Jäger), je fünf Fähigkeiten, bis zu 15 Punkte je Einsatz</li><li>Neu: Zielmarkierung (+15 % Turmschaden), Assists, Sammelbefehl, Knopf Übersteuern im Turmfenster, Feldreparatur, Nachschub, Bollwerk, Schwachstelle, Hinrichtung</li><li>Neu: Talentbaum mit Spiel-Icons, Rollenabzeichen im HUD, sichtbarer Reparaturstrahl, Sammelstrahl und Übersteuern-Leuchten</li><li>Pionier-XP belohnen deine eigene Leistung; Wellen-XP halbiert; Rangbonus alle 3 Ränge (+10 LP, +3 % Tempo)</li><li>Geändert: MAM-Forschung kostet die Festplatten des Spiels; die Festplatten-Forschung des Spiels ist im Einsatz gesperrt</li><li>Geändert: FICSIT-Coupons sind das Coupon-Item des Spiels im Inventar (bei vollem Inventar warten sie am Kern)</li><li>Alte Spielstände: Kampfdaten werden zu Festplatten, das Coupon-Konto wird zu Coupon-Items</li></ul>
+  </details>
+  <details><summary>0.9.6 <span class="en">– Review fixes, operation end, shop and pathing</span><span class="de">– Review-Korrekturen, Einsatzende, Laden und Wege</span><small>12.11.2026</small></summary>
+    <ul class="en"><li>After victory or defeat: retry the wave, restart from wave 1 or end the operation in the Core Menu</li><li>Saving locked during a wave; wave enemies are no longer written to saves</li><li>HUB milestones and blueprints locked during an operation</li><li>Shop sorted by category, locked items hidden; the MAM marks the excluded branch with a red X</li><li>Enemies stuck on cliff pillars: the blocking cliff is removed from navigation for following enemies</li><li>Drone Pad levels 1–3, shield blocks direct hits, true range preview; hand weapons use turret ammo values</li></ul>
+    <ul class="de"><li>Nach Sieg oder Niederlage: Welle wiederholen, neu starten oder Einsatz beenden im Kern-Menü</li><li>Speichern in der Welle gesperrt; Wellengegner werden nicht mehr gespeichert</li><li>HUB-Meilensteine und Blaupausen im Einsatz gesperrt</li><li>Laden nach Kategorien, Gesperrtes ausgeblendet; das MAM markiert den ausgeschlossenen Zweig mit rotem X</li><li>Gegner an Felspfeilern: Der blockierende Fels wird für folgende Gegner aus der Navigation genommen</li><li>Drohnenplatz Level 1–3, Schild blockt direkte Treffer, echte Reichweite in der Vorschau; Handwaffen nutzen die Turm-Munitionswerte</li></ul>
+  </details>
+  <p class="en"><small>Older versions (0.9.x and earlier) were internal test builds.</small></p><p class="de"><small>Ältere Versionen (0.9.x und früher) waren interne Testbauten.</small></p>
 </div></section>
 
 <section id="issues"><div class="wrap">
