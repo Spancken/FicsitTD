@@ -4,13 +4,33 @@
 #include "Module/GameInstanceModule.h"
 #include "TDGameInstanceModule.generated.h"
 
-/** 0.69.1 (Konzept-Kernplaetze S4): Spieleinstellung "FICSIT Tower Defense" fuer neue Spielstaende (SML Session Setting) */
+class USMLSessionSetting;
+
+/** Spieleinstellungen beim neuen Spiel (SML Session Settings).
+ *  0.69.1: Ankreuzbox "FICSIT Tower Defense" (FicsitTD.TowerDefense, Bool).
+ *  0.10.1 (Marius 15.11.): eigene Kategorie "FICSIT Tower Defense" mit Auswahl "Spielmodus" (FicsitTD.ModusInt, Ganzzahl),
+ *  Erlaeuterung je Modus in Deutsch oder Englisch. Weitere Modi = weiterer Wert in ETDModus, im Asset und in den Texten. */
 UCLASS()
 class FICSITTD_API UTDGameInstanceModule : public UGameInstanceModule
 {
 	GENERATED_BODY()
 public:
 	UTDGameInstanceModule();
-	/** Schluessel der Einstellung */
+	virtual void DispatchLifecycleEvent(ELifecyclePhase Phase) override;
+	/** Schluessel der alten Ankreuzbox (nur noch gelesen, damit aeltere Neustarts weiter erkannt werden) */
 	static const TCHAR* TowerDefenseId;
+	/** Schluessel der Modus-Auswahl */
+	static const TCHAR* ModusId;
+private:
+	/** Anzeigetexte der Auswahl in der Spielsprache (das Asset kennt nur einen Text) */
+	void SetzeTexte();
+	UPROPERTY()
+	TObjectPtr<USMLSessionSetting> mModus;
 };
+
+/** Spielmodi der Auswahl "Spielmodus" (Wert der Sitzungseinstellung FicsitTD.ModusInt) */
+namespace ETDModus
+{
+	constexpr int32 Aus = 0;
+	constexpr int32 Einsatz = 1;
+}

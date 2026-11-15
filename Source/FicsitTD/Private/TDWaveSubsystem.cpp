@@ -2277,14 +2277,17 @@ void UTDWaveSubsystem::SpawneKernWelle(int32 Nummer)
 		{
 			// 0.10.0 (Release-Test 14.11., Baender W11 und Pionier098 bei 6 Bildern/s): EntschaerfeLogistik oben nimmt im selben
 			// Frame bis zu 165 Teile aus dem Netz. Waehrend des Umbaus findet die Wegsuche gar keinen Weg (0 Punkte), und die
-			// Neuwahl fand dann 0 von 16 gueltigen Richtungen. Kein Weg + Netz im Umbau = Zwischenzustand: Fronten behalten.
+			// Neuwahl fand dann 0 von 16 gueltigen Richtungen.
+			// 0.10.1 (Plan Netzumbau 15.11.): 1 s nach dem Laden meldet das Netz noch keinen Umbau (0 Auftraege), die Kacheln um
+			// den Kern fehlen aber noch. Merkmal ist "0 Punkte": die Wegsuche findet keinen Anfang - ein echt gesperrter Weg liefert
+			// einen Teilweg mit Punkten. Kein Weg = Netz nicht bereit: Fronten behalten, die naechste Welle prueft erneut.
 			UNavigationSystemV1* Nav = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
 			const bool bNetzImBau = Nav && Nav->IsNavigationBuildInProgress();
 			const int32 Auftraege = Nav ? Nav->GetNumRemainingBuildTasks() : -1;
-			if (Probe.Num() == 0 && bNetzImBau)
+			if (Probe.Num() == 0)
 			{
-				UE_LOG(LogFicsitTD, Log, TEXT("Frontpruefung Welle %d: Front %d ohne Weg, Netz wird gerade umgebaut (%d Auftraege) - Fronten bleiben"),
-					Nummer, i + 1, Auftraege);
+				UE_LOG(LogFicsitTD, Log, TEXT("Frontpruefung Welle %d: Front %d ohne Weg, Netz nicht bereit (Umbau %d, %d Auftraege) - Fronten bleiben"),
+					Nummer, i + 1, bNetzImBau ? 1 : 0, Auftraege);
 				continue;
 			}
 			UE_LOG(LogFicsitTD, Warning, TEXT("Frontpruefung Welle %d: Front %d (%s) hat nur noch einen Teilweg (%d Punkte, Ende %s, Netz im Umbau %d, %d Auftraege) - Fronten neu bestimmen"),

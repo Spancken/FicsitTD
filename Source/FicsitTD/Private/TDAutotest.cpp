@@ -45,6 +45,7 @@
 #include "Widgets/SWindow.h"
 #include "FGSchematic.h"
 #include "FGResearchManager.h"
+#include "Camera/PlayerCameraManager.h"
 #include "FGSchematicManager.h"
 #include "FGRecipe.h"
 #include "FGRecipeManager.h"
@@ -86,12 +87,17 @@ class FTDAutotestLog : public FOutputDevice
 public:
 	virtual void Serialize(const TCHAR* V, ELogVerbosity::Type Verbosity, const FName& Category) override
 	{
-		if (Verbosity > ELogVerbosity::Warning || !Category.ToString().Contains(TEXT("FicsitTD")))
+		if (!Category.ToString().Contains(TEXT("FicsitTD")) || Verbosity > ELogVerbosity::Log)
 		{
 			return;
 		}
 		FScopeLock Sperre(&mSperre);
-		if (mZeilen.Num() < 200)
+		// 0.10.1: alle Zeilen des Plans fuer die Pruefung LogEnthaelt (hoechstens 5000)
+		if (mAlle.Num() < 5000)
+		{
+			mAlle.Add(FString(V));
+		}
+		if (Verbosity <= ELogVerbosity::Warning && mZeilen.Num() < 200)
 		{
 			mZeilen.Add(FString(V));
 		}
@@ -101,15 +107,31 @@ public:
 	{
 		FScopeLock Sperre(&mSperre);
 		mZeilen.Reset();
+		mAlle.Reset();
 	}
 	TArray<FString> Zeilen()
 	{
 		FScopeLock Sperre(&mSperre);
 		return mZeilen;
 	}
+	/** Anzahl der Plan-Zeilen mit diesem Text, dazu die erste als Beleg */
+	int32 Zaehle(const FString& Text, FString& OutErste)
+	{
+		FScopeLock Sperre(&mSperre);
+		int32 N = 0;
+		for (const FString& Z : mAlle)
+		{
+			if (Z.Contains(Text))
+			{
+				OutErste = N++ == 0 ? Z : OutErste;
+			}
+		}
+		return N;
+	}
 private:
 	FCriticalSection mSperre;
 	TArray<FString> mZeilen;
+	TArray<FString> mAlle;
 };
 
 AFGPlayerController* UTDAutotestSender::GetPlayer() const
@@ -341,7 +363,7 @@ void UTDAutotest::StarteNeuesSpiel(UWorld* World)
 	// 0.77 Neustart-Rauchtest: neues Spiel mit dem Sitzungsschalter "FICSIT Tower Defense" (Wert wie im Log einer echten Sitzung)
 	const TSharedPtr<FJsonObject> Neu = mPlan->GetObjectField(TEXT("NeuesSpiel"));
 	// Optionsnamen wie im Log einer echten Sitzung ("?sessionName=...", AFGGameMode::SessionNameOption ist nicht linkbar)
-	FString Optionen = TEXT("?sessionName=Autotest_Neu?SessionSettings=FicsitTD.TowerDefense=AgAAAAQAAAABAAAA?skiponboarding");
+	FString Optionen = TEXT("?sessionName=Autotest_Neu?SessionSettings=FicsitTD.ModusInt=DgAAAAQAAAABAAAA?skiponboarding");
 	if (Neu->HasField(TEXT("Startort")))
 	{
 		Optionen += FString::Printf(TEXT("?%s=%s"), AFGGameMode::StartLocationOption, *Neu->GetStringField(TEXT("Startort")));
@@ -810,6 +832,20 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		const int32 Anzahl = S->HasField(TEXT("anzahl")) ? static_cast<int32>(S->GetNumberField(TEXT("anzahl"))) : 1;
 		const int32 Rein = Klasse && Spieler && Spieler->GetInventory() ? Spieler->GetInventory()->AddStack(FInventoryStack(Anzahl, Klasse), true) : 0;
 		Ergebnis(TEXT("Spieler"), FString::Printf(TEXT("gib %d"), Anzahl), Rein > 0, FString::Printf(TEXT("%d x %s"), Rein, *FPaths::GetBaseFilename(Wort)));
+		return true;
+	}
+	if (S->TryGetStringField(TEXT("schaue"), Wort))
+	{
+		// 0.10.1: Blick auf einen Turm ("*" = irgendeiner), damit Fotos die Faehigkeits-Effekte zeigen
+		ATDTurretBase* Turm = TDTestTurm(World, Wort);
+		APlayerController* PC = World->GetFirstPlayerController();
+		const FVector Auge = PC && PC->PlayerCameraManager ? PC->PlayerCameraManager->GetCameraLocation() : FVector::ZeroVector;
+		if (Turm && PC)
+		{
+			PC->SetControlRotation((Turm->GetActorLocation() + FVector(0.f, 0.f, 300.f) - Auge).Rotation());
+		}
+		Ergebnis(TEXT("Kamera"), FString::Printf(TEXT("schaue %s"), *Wort), Turm && PC,
+			Turm ? FString::Printf(TEXT("%s in %.0f m"), *Turm->GetName(), FVector::Dist(Auge, Turm->GetActorLocation()) / 100.f) : FString(TEXT("kein Turm")));
 		return true;
 	}
 	if (S->HasField(TEXT("zahle")))
@@ -1283,6 +1319,16 @@ bool UTDAutotest::Pruefe(UWorld* World, const TSharedPtr<FJsonObject>& S, FStrin
 		int32 Summe = 0;
 		OutIst = TDNetz::Text(&Summe);
 		return Summe == 0;
+	}
+	if (Name == TEXT("LogEnthaelt"))
+	{
+		// 0.10.1: kommt der Text im Log dieses Plans vor? "suche", "min" (Standard 1), optional "max"
+		FString Erste;
+		const int32 N = mLog ? mLog->Zaehle(S->GetStringField(TEXT("suche")), Erste) : 0;
+		const int32 Min = S->HasField(TEXT("min")) ? int32(S->GetNumberField(TEXT("min"))) : 1;
+		const int32 Max = S->HasField(TEXT("max")) ? int32(S->GetNumberField(TEXT("max"))) : MAX_int32;
+		OutIst = FString::Printf(TEXT("%d Zeilen%s"), N, Erste.IsEmpty() ? TEXT("") : *(TEXT(": ") + Erste.Left(160)));
+		return N >= Min && N <= Max;
 	}
 	if (Name == TEXT("KeineWarnungen"))
 	{

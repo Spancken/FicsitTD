@@ -1663,7 +1663,8 @@ bool UTDKernplatz::SpieleBegruessung(const UObject* WorldContext, APawn* Spieler
 {
 	UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
 	// 0.69.5: Sprachausgabe je Sprache (Spielsprache Deutsch -> _de, sonst _en); das Spiel spielt Nachrichten nur mit Ton ab
-	const bool bDeutsch = FInternationalization::Get().GetCurrentLanguage()->GetTwoLetterISOLanguageName() == TEXT("de");
+	// 0.10.1: dieselbe Sprachwahl wie alle Mod-Texte (beachtet den Testschalter -TDSprache=en; vorher pruefte ReleaseEn nur den deutschen Ton)
+	const bool bDeutsch = !TDSprache::Englisch();
 	UFGMessage* Nachricht = LoadObject<UFGMessage>(nullptr, bDeutsch ? TEXT("/FicsitTD/Narrative/MSG_TD_Begruessung_de.MSG_TD_Begruessung_de")
 		: TEXT("/FicsitTD/Narrative/MSG_TD_Begruessung_en.MSG_TD_Begruessung_en"));
 	const APlayerController* PC = Spieler ? Cast<APlayerController>(Spieler->GetController()) : (World ? World->GetFirstPlayerController() : nullptr);
@@ -1731,7 +1732,9 @@ bool UTDKernplatz::TowerDefenseAn(const UObject* WorldContext)
 {
 	UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
 	const USessionSettingsManager* Einstellungen = World ? World->GetSubsystem<USessionSettingsManager>() : nullptr;
-	return Einstellungen && Einstellungen->GetBoolOptionValue(UTDGameInstanceModule::TowerDefenseId);
+	// 0.10.1: Auswahl "Spielmodus" (FicsitTD.ModusInt); die alte Ankreuzbox zaehlt weiter, falls ein Stand sie noch traegt
+	return Einstellungen && (Einstellungen->GetIntOptionValue(UTDGameInstanceModule::ModusId) == ETDModus::Einsatz
+		|| Einstellungen->GetBoolOptionValue(UTDGameInstanceModule::TowerDefenseId));
 }
 
 void UTDKernplatz::OnWorldBeginPlay(UWorld& InWorld)

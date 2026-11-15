@@ -48,14 +48,16 @@ void UTDLaufProtokoll::OnWorldBeginPlay(UWorld& InWorld)
 	bBalancing = false;
 	// Modus kommt mit dem Kern aus dem Spielstand; kurz warten, bis er geladen ist
 	FTimerHandle Einmal;
-	InWorld.GetTimerManager().SetTimer(Einmal, [this]()
+	// 0.10.1 (Absturz 15.11. im Plan Netzumbau): der Timer-Manager gehoert der GameInstance und ueberlebt das Laden eines
+	// Spielstands. Mit rohem [this] feuerte der Timer nach einem zweiten Laden innerhalb von 3 s auf das zerstoerte Subsystem.
+	InWorld.GetTimerManager().SetTimer(Einmal, FTimerDelegate::CreateWeakLambda(this, [this]()
 	{
 		bBalancing = IstBalancing();
 		if (bBalancing)
 		{
 			UE_LOG(LogFicsitTD, Log, TEXT("Lauf: Balancing-Lauf aktiv (aus dem Spielstand)"));
 		}
-	}, 3.f, false);
+	}), 3.f, false);
 }
 
 bool UTDLaufProtokoll::IstBalancing() const

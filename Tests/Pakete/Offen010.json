@@ -1,0 +1,5 @@
+{
+  "Name": "Offen010",
+  "_Hinweis": "0.10.1 (15.11.): offene Belege von 0.10.0 - Offen010 (Upgrade-Knopf, Effekte, HUD), Netzumbau (Schutz der Frontpruefung), Neustart (ADA-Begruessung mit Ton). Danach Neustart zusaetzlich mit -Sprache en.",
+  "Plaene": ["Neustart", "Offen010", "Netzumbau"]
+}

@@ -19,6 +19,11 @@
       "text": "Abwehrkern steht auf dem Kernplatz"
     },
     {
+      "pruefe": "LogEnthaelt",
+      "suche": "ADA-Begruessung: Ton SW_TD_Begruessung_",
+      "text": "ADA-Begruessung mit Ton gestartet (Datei je Sprache im Ist)"
+    },
+    {
       "befehl": "td kern status"
     },
     {

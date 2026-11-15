@@ -1,0 +1,62 @@
+{
+  "Name": "Netzumbau",
+  "_Hinweis": "0.10.1 (15.11.): Schutz der Frontpruefung belegen. Im Release-Lauf 14.11. (Baender) fand die Pruefung direkt nach dem Laden keinen Weg (0 Punkte), weil das Netz noch umgebaut wurde, und verwarf die Fronten. Hier: dreimal laden und sofort die Welle starten. Bestanden, wenn keine Fronten verworfen werden (keine Warnung 'Teilweg'); 'Fronten bleiben' im Log muss vorkommen (der Plan erzwingt den Fall); 15.11.: Fall tritt 1 s und 6 s nach dem Laden auf.",
+  "Spielstand": "Autotest_FicsitTD_T2",
+  "ErweiterteEinstellungen": true,
+  "WarteNachLaden": 3,
+  "MaxMinuten": 15,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "speichere": "Autotest_Netzumbau"
+    },
+    {
+      "befehl": "td kern weiter"
+    },
+    {
+      "warteBis": "WelleLaeuft",
+      "max": 30
+    },
+    {
+      "lade": "Autotest_Netzumbau"
+    },
+    {
+      "befehl": "td kern weiter"
+    },
+    {
+      "warteBis": "WelleLaeuft",
+      "max": 30
+    },
+    {
+      "lade": "Autotest_Netzumbau"
+    },
+    {
+      "befehl": "td kern weiter"
+    },
+    {
+      "warteBis": "WelleLaeuft",
+      "max": 30
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Fronten bleiben",
+      "min": 1,
+      "text": "Schutz hat gegriffen (Netz nicht bereit, Fronten bleiben)"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "nur noch einen Teilweg",
+      "min": 0,
+      "max": 0,
+      "text": "keine Fronten verworfen"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}

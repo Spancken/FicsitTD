@@ -1,0 +1,89 @@
+{
+  "Name": "Offen010",
+  "_Hinweis": "0.10.1 (15.11.): offene Belege von 0.10.0 - aktiver Upgrade-Knopf (genug Coupons als Item), Uebersteuern-Puls und Reparaturstrahl im Bild, Rollenabzeichen im HUD. Vor den Effekt-Fotos richtet 'schaue' die Kamera auf einen Turm.",
+  "Spielstand": "Autotest_Marius_W06",
+  "Quelle": "Marius_W06_Plateau.sav",
+  "ErweiterteEinstellungen": true,
+  "WarteNachLaden": 30,
+  "MaxMinuten": 10,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "talente": {
+        "Kommandant": 5,
+        "Techniker": 5
+      }
+    },
+    {
+      "gib": "/Game/FactoryGame/Resource/Parts/ResourceSinkCoupon/Desc_ResourceSinkCoupon.Desc_ResourceSinkCoupon_C",
+      "anzahl": 100
+    },
+    {
+      "gib": "/Game/FactoryGame/Resource/Parts/IronPlate/Desc_IronPlate.Desc_IronPlate_C",
+      "anzahl": 200
+    },
+    {
+      "balance": {
+        "Pionier.Reparatur.Radius": 500
+      }
+    },
+    {
+      "pruefe": "Konto",
+      "min": 100,
+      "text": "genug Coupons fuer ein Turm-Upgrade"
+    },
+    {
+      "oeffne": "*"
+    },
+    {
+      "warte": 3
+    },
+    {
+      "foto": "O_Upgrade_aktiv"
+    },
+    {
+      "schliesse": true
+    },
+    {
+      "warte": 2
+    },
+    {
+      "schaue": "*"
+    },
+    {
+      "warte": 1
+    },
+    {
+      "uebersteuere": "*"
+    },
+    {
+      "warte": 1
+    },
+    {
+      "foto": "O_Uebersteuern"
+    },
+    {
+      "schadebau": 0.5
+    },
+    {
+      "warte": 1.5
+    },
+    {
+      "foto": "O_Reparatur"
+    },
+    {
+      "pionier": "Repariert"
+    },
+    {
+      "foto": "O_HUD_Rolle"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}
