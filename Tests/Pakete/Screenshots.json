@@ -1,0 +1,5 @@
+{
+  "Name": "Screenshots",
+  "_Hinweis": "0.10.2 (15.11.): Bilder fuer Handbuch und ficsit.app, kein Pruefpaket. Aufruf: Teste-Mod.ps1 -Paket Screenshots -Sprache en -Kultur en",
+  "Plaene": ["Screenshots-EN"]
+}

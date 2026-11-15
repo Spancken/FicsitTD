@@ -18,7 +18,8 @@ param(
     [string] $Testspielstaende = "D:\OneDrive\Claude\Claude Modding\Satisfactory\Testspielstaende",
     [string] $Berichte = "D:\OneDrive\Claude\Claude Modding\Satisfactory\Testberichte",
     [string] $Steam = "C:\Program Files (x86)\Steam\steam.exe",
-    [string] $Sprache = ""   # 0.85: "en" oder "de" erzwingt die Sprache der Mod-Texte (-TDSprache=...)
+    [string] $Sprache = "",  # 0.85: "en" oder "de" erzwingt die Sprache der Mod-Texte (-TDSprache=...)
+    [string] $Kultur = ""    # 0.10.2: "en" stellt auch die Spieloberflaeche um (-culture=en), fuer Screenshots
 )
 $ErrorActionPreference = "Stop"
 $hier = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -57,7 +58,10 @@ $start = Get-Date
 $max = ($plaene | Measure-Object -Property MaxMinuten -Sum).Sum + 5
 if (-not $laeuft) {
     Write-Host "== Starte Satisfactory ueber Steam (${name}: $($planNamen -join ', '))"
-    if ($Sprache) { & $Steam -applaunch 526870 "-TDSprache=$Sprache" } else { & $Steam -applaunch 526870 }
+    $startArgs = @()
+    if ($Sprache) { $startArgs += "-TDSprache=$Sprache" }
+    if ($Kultur) { $startArgs += "-culture=$Kultur" }
+    & $Steam -applaunch 526870 @startArgs
     while (-not $laeuft -and ((Get-Date) - $start).TotalMinutes -lt 3) { Start-Sleep 5; $laeuft = Get-Process $spielProzess -ErrorAction SilentlyContinue | Select-Object -First 1 }
     if (-not $laeuft) { Remove-Item (Join-Path $td "Autotest.json") -ErrorAction SilentlyContinue; throw "Spiel ist nach 3 min nicht gestartet." }
 } else {

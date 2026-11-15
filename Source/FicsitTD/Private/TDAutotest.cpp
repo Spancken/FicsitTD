@@ -22,6 +22,8 @@
 #include "FGHealthComponent.h"
 #include "FGSaveManagerInterface.h"
 #include "EngineUtils.h"
+#include "Camera/CameraActor.h"
+#include "Camera/CameraComponent.h"
 #include "Engine/GameInstance.h"
 #include "Engine/World.h"
 #include "HAL/FileManager.h"
@@ -51,6 +53,10 @@
 #include "FGRecipeManager.h"
 #include "FGHUD.h"
 #include "FGInventoryComponent.h"
+#include "FGInventoryComponentEquipment.h"
+#include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Equipment/FGEquipment.h"
 #include "FGCharacterPlayer.h"
 #include "Buildables/FGBuildableMAM.h"
 #include "UI/FGGameUI.h"
@@ -467,6 +473,82 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		Ergebnis(TEXT("Ueberblick"), TEXT("Figur über dem Kern"), Kern && Figur);
 		return true;
 	}
+	if (S->TryGetStringField(TEXT("stelle"), Wort))
+	{
+		// 0.10.2 (Screenshots): Figur neben einen Turm ("*" = irgendeiner) auf den Boden stellen, Blick zum Turm.
+		// "abstand" in m (Standard 9), "winkel" in Grad um den Turm (Standard 0)
+		// "gegner": waehrend der Welle den Turm, der den Wellengegnern am naechsten steht; die Figur steht hinter ihm und blickt zu den Gegnern
+		ATDTurretBase* Turm = nullptr;
+		bool bGegner = false;
+		FVector GegnerMitte = FVector::ZeroVector;
+		if (Wort == TEXT("gegner"))
+		{
+			int32 Anzahl = 0;
+			for (TActorIterator<AFGCreature> It(World); It; ++It)
+			{
+				if (It->Tags.Contains(TEXT("FicsitTD")) && !It->IsPendingKillPending())
+				{
+					GegnerMitte += It->GetActorLocation();
+					++Anzahl;
+				}
+			}
+			if (Anzahl > 0)
+			{
+				GegnerMitte /= Anzahl;
+				bGegner = true;
+				float Beste = TNumericLimits<float>::Max();
+				for (TActorIterator<ATDTurretBase> It(World); It; ++It)
+				{
+					const float D = FVector::DistSquared(It->GetActorLocation(), GegnerMitte);
+					if (D < Beste)
+					{
+						Beste = D;
+						Turm = *It;
+					}
+				}
+			}
+		}
+		else
+		{
+			Turm = TDTestTurm(World, Wort);
+		}
+		APlayerController* PC = World->GetFirstPlayerController();
+		ACharacter* Figur = PC ? Cast<ACharacter>(PC->GetPawn()) : nullptr;
+		bool bBoden = false;
+		if (Turm && Figur)
+		{
+			const float Abstand = (S->HasField(TEXT("abstand")) ? static_cast<float>(S->GetNumberField(TEXT("abstand"))) : 9.f) * 100.f;
+			float Winkel = S->HasField(TEXT("winkel")) ? static_cast<float>(S->GetNumberField(TEXT("winkel"))) : 0.f;
+			const FVector Mitte = Turm->GetActorLocation();
+			if (bGegner)
+			{
+				// hinter den Turm (von den Gegnern aus gesehen), seitlich versetzt um "winkel"
+				Winkel += (Mitte - GegnerMitte).GetSafeNormal2D().Rotation().Yaw;
+			}
+			FVector Ort = Mitte + FRotator(0.f, Winkel, 0.f).RotateVector(FVector(Abstand, 0.f, 0.f));
+			FHitResult Treffer;
+			FCollisionQueryParams Abfrage(TEXT("TDStelle"), false, Figur);
+			if (World->LineTraceSingleByChannel(Treffer, Ort + FVector(0.f, 0.f, 3000.f), Ort - FVector(0.f, 0.f, 5000.f), ECC_Visibility, Abfrage))
+			{
+				Ort = Treffer.ImpactPoint + FVector(0.f, 0.f, Figur->GetSimpleCollisionHalfHeight() + 5.f);
+				bBoden = true;
+			}
+			if (Figur->GetCharacterMovement())
+			{
+				Figur->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+			}
+			Figur->SetActorLocation(Ort, false, nullptr, ETeleportType::TeleportPhysics);
+			const FVector Ziel = bGegner ? GegnerMitte + FVector(0.f, 0.f, 100.f) : Mitte + FVector(0.f, 0.f, 250.f);
+			const FRotator Blick = (Ziel - Ort).Rotation();
+			PC->SetControlRotation(Blick);
+			Figur->SetActorRotation(FRotator(0.f, Blick.Yaw, 0.f));
+		}
+		Ergebnis(TEXT("Spieler"), FString::Printf(TEXT("stelle %s"), *Wort), Turm && Figur && bBoden,
+			!Turm ? FString(bGegner || Wort != TEXT("gegner") ? TEXT("kein Turm") : TEXT("keine Wellengegner")) : bBoden
+			? FString::Printf(TEXT("neben %s%s"), *Turm->GetName(), bGegner ? *FString::Printf(TEXT(", Gegner in %.0f m"), FVector::Dist(Turm->GetActorLocation(), GegnerMitte) / 100.f) : TEXT(""))
+			: FString(TEXT("kein Boden gefunden")));
+		return true;
+	}
 	const TSharedPtr<FJsonObject>* BalanceWerte = nullptr;
 	if (S->TryGetObjectField(TEXT("balance"), BalanceWerte))
 	{
@@ -848,6 +930,108 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 			Turm ? FString::Printf(TEXT("%s in %.0f m"), *Turm->GetName(), FVector::Dist(Auge, Turm->GetActorLocation()) / 100.f) : FString(TEXT("kein Turm")));
 		return true;
 	}
+	if (S->TryGetStringField(TEXT("kamera"), Wort))
+	{
+		// 0.10.2 (Screenshots fuer Handbuch/Mod-Seite): Kamera des Spiels in dritter Person ("dritte") oder zurueck ("erste").
+		// "drehen" (Grad) kreist die Kamera um die Figur, die Figur behaelt ihre Richtung - 180 = Pionier schaut in die Kamera.
+		// (Test 15.11.: die Figur zu drehen half nicht, die Kamera der dritten Person folgt der Steuerrichtung.)
+		APlayerController* PC = World->GetFirstPlayerController();
+		AFGCharacterPlayer* Spieler = PC ? Cast<AFGCharacterPlayer>(PC->GetPawn()) : nullptr;
+		static TWeakObjectPtr<ACameraActor> FrontKamera;
+		if (Spieler && Wort == TEXT("front"))
+		{
+			// 0.10.2 (Test 15.11.): in dritter Person dreht das Spiel die Figur immer mit dem Ruecken zur Kamera. Fuer ein Bild von
+			// vorn eine eigene Kamera vor die Figur stellen. "abstand" m (Standard 3.5), "hoehe" m ueber der Huefte (0.4), "seite" Grad (20)
+			Spieler->SetCameraMode(ECameraMode::ECM_ThirdPerson);
+			const float Abstand = (S->HasField(TEXT("abstand")) ? static_cast<float>(S->GetNumberField(TEXT("abstand"))) : 3.5f) * 100.f;
+			const float Hoehe = (S->HasField(TEXT("hoehe")) ? static_cast<float>(S->GetNumberField(TEXT("hoehe"))) : 0.4f) * 100.f;
+			const float Seite = S->HasField(TEXT("seite")) ? static_cast<float>(S->GetNumberField(TEXT("seite"))) : 20.f;
+			// "drehen": Figur vorher um so viele Grad drehen (180 = Turm hinter der Figur, also im Bildhintergrund)
+			const FRotator Figur(0.f, Spieler->GetActorRotation().Yaw + (S->HasField(TEXT("drehen")) ? static_cast<float>(S->GetNumberField(TEXT("drehen"))) : 0.f), 0.f);
+			Spieler->SetActorRotation(Figur);
+			PC->SetControlRotation(Figur);   // sonst dreht die dritte Person die Figur zur alten Blickrichtung zurueck
+			const FVector Brust = Spieler->GetActorLocation() + FVector(0.f, 0.f, 40.f);
+			const FVector Ort = Brust + FRotator(0.f, Figur.Yaw + Seite, 0.f).RotateVector(FVector(Abstand, 0.f, 0.f)) + FVector(0.f, 0.f, Hoehe);
+			const FRotator Blick = (Brust - Ort).Rotation();
+			if (!FrontKamera.IsValid())
+			{
+				FActorSpawnParameters Param;
+				Param.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+				FrontKamera = World->SpawnActor<ACameraActor>(ACameraActor::StaticClass(), Ort, Blick, Param);
+			}
+			if (FrontKamera.IsValid())
+			{
+				FrontKamera->SetActorLocationAndRotation(Ort, Blick);
+				if (UCameraComponent* Linse = FrontKamera->GetCameraComponent())
+				{
+					Linse->SetConstraintAspectRatio(false);
+					Linse->SetFieldOfView(S->HasField(TEXT("fov")) ? static_cast<float>(S->GetNumberField(TEXT("fov"))) : 60.f);
+				}
+				PC->SetViewTarget(FrontKamera.Get());
+			}
+			Ergebnis(TEXT("Kamera"), TEXT("kamera front"), FrontKamera.IsValid(), FrontKamera.IsValid() ? TEXT("eigene Kamera vor der Figur") : TEXT("Kamera nicht erzeugt"));
+			return true;
+		}
+		if (Spieler)
+		{
+			if (PC->GetViewTarget() != Spieler)
+			{
+				PC->SetViewTarget(Spieler);
+			}
+			Spieler->SetCameraMode(Wort == TEXT("dritte") ? ECameraMode::ECM_ThirdPerson : ECameraMode::ECM_FirstPerson);
+			if (S->HasField(TEXT("drehen")))
+			{
+				const FRotator Figur(0.f, Spieler->GetActorRotation().Yaw, 0.f);
+				FRotator Blick = PC->GetControlRotation();
+				Blick.Yaw = Figur.Yaw + static_cast<float>(S->GetNumberField(TEXT("drehen")));
+				PC->SetControlRotation(Blick);
+				Spieler->SetActorRotation(Figur);
+			}
+			if (S->HasField(TEXT("neigung")))
+			{
+				FRotator Blick = PC->GetControlRotation();
+				Blick.Pitch = static_cast<float>(S->GetNumberField(TEXT("neigung")));
+				PC->SetControlRotation(Blick);
+			}
+		}
+		Ergebnis(TEXT("Kamera"), FString::Printf(TEXT("kamera %s"), *Wort), Spieler != nullptr,
+			Spieler ? FString::Printf(TEXT("Modus %d"), static_cast<int32>(Spieler->GetCameraMode())) : FString(TEXT("kein Spieler")));
+		return true;
+	}
+	if (S->TryGetStringField(TEXT("ausruesten"), Wort))
+	{
+		// 0.10.2: Gegenstand (Klassenpfad) in den Handplatz legen und aktiv schalten, z. B. Gewehr fuer das Schuetzen-Foto
+		UClass* Klasse = LoadClass<UFGItemDescriptor>(nullptr, *Wort);
+		APlayerController* PC = World->GetFirstPlayerController();
+		AFGCharacterPlayer* Spieler = PC ? Cast<AFGCharacterPlayer>(PC->GetPawn()) : nullptr;
+		UFGInventoryComponentEquipment* Hand = Spieler ? Spieler->GetEquipmentSlot(EEquipmentSlot::ES_ARMS) : nullptr;
+		bool bOk = false;
+		bool bErsetzt = false;
+		if (Klasse && Hand && Hand->GetSizeLinear() > 0)
+		{
+			// freier Platz, sonst der aktive Platz (Test 15.11.: im Spielstand waren alle Handplaetze belegt; nur Testkopie)
+			int32 Platz = INDEX_NONE;
+			for (int32 i = 0; i < Hand->GetSizeLinear() && Platz == INDEX_NONE; ++i)
+			{
+				if (Hand->IsIndexEmpty(i))
+				{
+					Platz = i;
+				}
+			}
+			if (Platz == INDEX_NONE)
+			{
+				Platz = FMath::Clamp(Hand->GetActiveIndex(), 0, Hand->GetSizeLinear() - 1);
+				Hand->RemoveAllFromIndex(Platz);
+				bErsetzt = true;
+			}
+			bOk = Hand->AddStackToIndex(Platz, FInventoryStack(1, Klasse), true) > 0;
+			Hand->SetActiveIndex(Platz);
+		}
+		Ergebnis(TEXT("Spieler"), FString::Printf(TEXT("ausruesten %s"), *FPaths::GetBaseFilename(Wort)), bOk,
+			!Klasse ? FString(TEXT("Klasse fehlt")) : !Hand ? FString(TEXT("kein Handplatz")) : !bOk ? FString(TEXT("nicht eingelegt"))
+			: bErsetzt ? FString(TEXT("in der Hand (aktiven Platz ersetzt)")) : FString(TEXT("in der Hand")));
+		return true;
+	}
 	if (S->HasField(TEXT("zahle")))
 	{
 		// 0.10.0: Coupons ausgeben wie Turmlevel oder Talente (ZahleEP) - prueft, dass Coupon-Items abgebucht werden
@@ -1063,7 +1247,9 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		{
 			const FString Pfad = FPaths::Combine(Ordner(), TEXT("Autotest"), TEXT("Bilder"), Wort + TEXT(".png"));
 			IFileManager::Get().MakeDirectory(*FPaths::GetPath(Pfad), true);
-			FScreenshotRequest::RequestScreenshot(Pfad, true, false);   // mit Oberflaeche (Test 0.75: ohne fehlten die Fenster)
+			// mit Oberflaeche (Test 0.75: ohne fehlten die Fenster); 0.10.2: "ohneHUD": true fuer Screenshots fuers Handbuch
+			const bool bOhneHUD = S->HasField(TEXT("ohneHUD")) && S->GetBoolField(TEXT("ohneHUD"));
+			FScreenshotRequest::RequestScreenshot(Pfad, !bOhneHUD, false);
 			Ergebnis(TEXT("Foto"), Wort, true, Pfad);
 		}
 		return mSchrittUhr >= 2.f;

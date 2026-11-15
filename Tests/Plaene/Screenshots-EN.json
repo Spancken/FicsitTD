@@ -1,0 +1,536 @@
+{
+  "Name": "Screenshots-EN",
+  "_Hinweis": "0.10.2 (15.11., Marius): englische Screenshots fuer Handbuch und ficsit.app. Spiel auf Englisch stellen (Optionen), Start mit -Sprache en. Pionier je Rolle von hinten, mit HUD und von vorn (eigene Kamera), Menues, MAM-Baeume, Kampf an der Front. Kein Pruefplan.",
+  "Spielstand": "Autotest_Marius_W06",
+  "Quelle": "Marius_W06_Plateau.sav",
+  "ErweiterteEinstellungen": true,
+  "WarteNachLaden": 30,
+  "MaxMinuten": 15,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "gib": "/Game/FactoryGame/Resource/Parts/ResourceSinkCoupon/Desc_ResourceSinkCoupon.Desc_ResourceSinkCoupon_C",
+      "anzahl": 150
+    },
+    {
+      "gib": "/Game/FactoryGame/Resource/Parts/IronPlate/Desc_IronPlate.Desc_IronPlate_C",
+      "anzahl": 300
+    },
+    {
+      "balance": {
+        "Pionier.Reparatur.Radius": 500
+      }
+    },
+    {
+      "stelle": "*",
+      "abstand": 10,
+      "winkel": 200
+    },
+    {
+      "kamera": "dritte"
+    },
+    {
+      "warte": 3
+    },
+    {
+      "foto": "EN_Pioneer_Base_Back",
+      "ohneHUD": true
+    },
+    {
+      "kamera": "front",
+      "drehen": 180,
+      "abstand": 4,
+      "seite": 15
+    },
+    {
+      "warte": 1.5
+    },
+    {
+      "foto": "EN_Pioneer_Base_Front",
+      "ohneHUD": true
+    },
+    {
+      "kamera": "front",
+      "abstand": 2.2,
+      "hoehe": 0.3,
+      "seite": 25,
+      "fov": 50
+    },
+    {
+      "warte": 1
+    },
+    {
+      "foto": "EN_Pioneer_Portrait",
+      "ohneHUD": true
+    },
+    {
+      "talente": {
+        "Schuetze": 5,
+        "Kommandant": 0,
+        "Techniker": 0,
+        "Jaeger": 0
+      }
+    },
+    {
+      "ausruesten": "/Game/FactoryGame/Resource/Equipment/Rifle/BP_EquipmentDescriptorRifle.BP_EquipmentDescriptorRifle_C"
+    },
+    {
+      "stelle": "*",
+      "abstand": 9,
+      "winkel": 120
+    },
+    {
+      "kamera": "dritte"
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "EN_Role_Marksman",
+      "ohneHUD": true
+    },
+    {
+      "foto": "EN_Role_Marksman_HUD"
+    },
+    {
+      "kamera": "front",
+      "drehen": 180,
+      "abstand": 4,
+      "seite": 20
+    },
+    {
+      "warte": 1.5
+    },
+    {
+      "foto": "EN_Role_Marksman_Front",
+      "ohneHUD": true
+    },
+    {
+      "kamera": "dritte"
+    },
+    {
+      "warte": 1
+    },
+    {
+      "talente": {
+        "Schuetze": 0,
+        "Kommandant": 5,
+        "Techniker": 0,
+        "Jaeger": 0
+      }
+    },
+    {
+      "ausruesten": "/Game/FactoryGame/Resource/Equipment/NobeliskDetonator/BP_EquipmentDescriptorNobeliskDetonator.BP_EquipmentDescriptorNobeliskDetonator_C"
+    },
+    {
+      "stelle": "*",
+      "abstand": 8,
+      "winkel": 60
+    },
+    {
+      "kamera": "dritte"
+    },
+    {
+      "warte": 2
+    },
+    {
+      "uebersteuere": "*"
+    },
+    {
+      "warte": 1
+    },
+    {
+      "foto": "EN_Role_Commander",
+      "ohneHUD": true
+    },
+    {
+      "foto": "EN_Role_Commander_HUD"
+    },
+    {
+      "kamera": "front",
+      "drehen": 180,
+      "abstand": 4,
+      "seite": 20
+    },
+    {
+      "warte": 1.5
+    },
+    {
+      "foto": "EN_Role_Commander_Front",
+      "ohneHUD": true
+    },
+    {
+      "kamera": "dritte"
+    },
+    {
+      "warte": 1
+    },
+    {
+      "talente": {
+        "Schuetze": 0,
+        "Kommandant": 0,
+        "Techniker": 5,
+        "Jaeger": 0
+      }
+    },
+    {
+      "ausruesten": "/Game/FactoryGame/Resource/Equipment/NailGun/Desc_RebarGunProjectile.Desc_RebarGunProjectile_C"
+    },
+    {
+      "stelle": "*",
+      "abstand": 8,
+      "winkel": 300
+    },
+    {
+      "kamera": "dritte"
+    },
+    {
+      "warte": 2
+    },
+    {
+      "schadebau": 0.5
+    },
+    {
+      "warte": 0.8
+    },
+    {
+      "foto": "EN_Role_Engineer_a",
+      "ohneHUD": true
+    },
+    {
+      "warte": 0.6
+    },
+    {
+      "foto": "EN_Role_Engineer_b",
+      "ohneHUD": true
+    },
+    {
+      "warte": 0.6
+    },
+    {
+      "foto": "EN_Role_Engineer",
+      "ohneHUD": true
+    },
+    {
+      "foto": "EN_Role_Engineer_HUD"
+    },
+    {
+      "kamera": "front",
+      "drehen": 180,
+      "abstand": 4,
+      "seite": 20
+    },
+    {
+      "warte": 1.5
+    },
+    {
+      "schadebau": 0.5
+    },
+    {
+      "warte": 0.8
+    },
+    {
+      "foto": "EN_Role_Engineer_Front",
+      "ohneHUD": true
+    },
+    {
+      "kamera": "dritte"
+    },
+    {
+      "warte": 1
+    },
+    {
+      "talente": {
+        "Schuetze": 0,
+        "Kommandant": 0,
+        "Techniker": 0,
+        "Jaeger": 5
+      }
+    },
+    {
+      "ausruesten": "/Game/FactoryGame/Resource/Equipment/Rifle/BP_EquipmentDescriptorRifle.BP_EquipmentDescriptorRifle_C"
+    },
+    {
+      "stelle": "*",
+      "abstand": 12,
+      "winkel": 20
+    },
+    {
+      "kamera": "dritte"
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "EN_Role_Hunter",
+      "ohneHUD": true
+    },
+    {
+      "foto": "EN_Role_Hunter_HUD"
+    },
+    {
+      "kamera": "front",
+      "drehen": 180,
+      "abstand": 4,
+      "seite": 20
+    },
+    {
+      "warte": 1.5
+    },
+    {
+      "foto": "EN_Role_Hunter_Front",
+      "ohneHUD": true
+    },
+    {
+      "kamera": "dritte"
+    },
+    {
+      "warte": 1
+    },
+    {
+      "talente": {
+        "Schuetze": 3,
+        "Kommandant": 5,
+        "Techniker": 5,
+        "Jaeger": 2
+      }
+    },
+    {
+      "kamera": "erste"
+    },
+    {
+      "warte": 1
+    },
+    {
+      "oeffne": "Kern"
+    },
+    {
+      "warte": 2
+    },
+    {
+      "kernansicht": 0
+    },
+    {
+      "warte": 1.5
+    },
+    {
+      "foto": "EN_Menu_Core_0"
+    },
+    {
+      "kernansicht": 1
+    },
+    {
+      "warte": 1.5
+    },
+    {
+      "foto": "EN_Menu_Core_1"
+    },
+    {
+      "kernansicht": 3
+    },
+    {
+      "warte": 1.5
+    },
+    {
+      "foto": "EN_Menu_Core_3"
+    },
+    {
+      "schliesse": true
+    },
+    {
+      "warte": 1
+    },
+    {
+      "oeffne": "*"
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "EN_Menu_Turret"
+    },
+    {
+      "schliesse": true
+    },
+    {
+      "warte": 1
+    },
+    {
+      "oeffne": "MAM"
+    },
+    {
+      "warte": 4
+    },
+    {
+      "klick": [
+        0.31,
+        0.246
+      ],
+      "_text": "Ballistics"
+    },
+    {
+      "warte": 2.5
+    },
+    {
+      "foto": "EN_Menu_MAM_Ballistics"
+    },
+    {
+      "klick": [
+        0.31,
+        0.32
+      ],
+      "_text": "Fortress"
+    },
+    {
+      "warte": 2.5
+    },
+    {
+      "foto": "EN_Menu_MAM_Fortress"
+    },
+    {
+      "schliesse": true
+    },
+    {
+      "warte": 1
+    },
+    {
+      "befehl": "td kern weiter"
+    },
+    {
+      "warteBis": "WelleLaeuft",
+      "max": 30
+    },
+    {
+      "ausruesten": "/Game/FactoryGame/Resource/Equipment/Rifle/BP_EquipmentDescriptorRifle.BP_EquipmentDescriptorRifle_C"
+    },
+    {
+      "warte": 12
+    },
+    {
+      "stelle": "gegner",
+      "abstand": 6,
+      "winkel": 25
+    },
+    {
+      "kamera": "dritte"
+    },
+    {
+      "warte": 0.8
+    },
+    {
+      "foto": "EN_Fight_1",
+      "ohneHUD": true
+    },
+    {
+      "warte": 6
+    },
+    {
+      "stelle": "gegner",
+      "abstand": 6,
+      "winkel": 25
+    },
+    {
+      "kamera": "dritte"
+    },
+    {
+      "warte": 0.8
+    },
+    {
+      "foto": "EN_Fight_2",
+      "ohneHUD": true
+    },
+    {
+      "warte": 6
+    },
+    {
+      "stelle": "gegner",
+      "abstand": 6,
+      "winkel": 25
+    },
+    {
+      "kamera": "dritte"
+    },
+    {
+      "warte": 0.8
+    },
+    {
+      "foto": "EN_Fight_3",
+      "ohneHUD": true
+    },
+    {
+      "kamera": "front",
+      "drehen": 180,
+      "abstand": 4,
+      "seite": 25
+    },
+    {
+      "warte": 0.8
+    },
+    {
+      "foto": "EN_Fight_3_Front",
+      "ohneHUD": true
+    },
+    {
+      "kamera": "dritte"
+    },
+    {
+      "foto": "EN_Fight_3_HUD"
+    },
+    {
+      "warte": 6
+    },
+    {
+      "stelle": "gegner",
+      "abstand": 6,
+      "winkel": 25
+    },
+    {
+      "kamera": "dritte"
+    },
+    {
+      "warte": 0.8
+    },
+    {
+      "foto": "EN_Fight_4",
+      "ohneHUD": true
+    },
+    {
+      "kamera": "front",
+      "drehen": 180,
+      "abstand": 4,
+      "seite": 25
+    },
+    {
+      "warte": 0.8
+    },
+    {
+      "foto": "EN_Fight_4_Front",
+      "ohneHUD": true
+    },
+    {
+      "kamera": "dritte"
+    },
+    {
+      "warte": 6
+    },
+    {
+      "stelle": "gegner",
+      "abstand": 6,
+      "winkel": 25
+    },
+    {
+      "kamera": "dritte"
+    },
+    {
+      "warte": 0.8
+    },
+    {
+      "foto": "EN_Fight_5",
+      "ohneHUD": true
+    }
+  ]
+}
