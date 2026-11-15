@@ -2,6 +2,7 @@
 #include "TDPionier.h"
 #include "TDForschung.h"
 #include "TDBalance.h"
+#include "TDSprache.h"
 #include "TDEinsatz.h"
 #include "FicsitTDModule.h"
 #include "TDDecoy.h"
@@ -42,7 +43,7 @@ void ATDBarrier::GetClearanceData_Implementation(TArray<FFGClearanceData>& out_d
 
 FText ATDBarrier::GetLookAtDecription_Implementation(AFGCharacterPlayer* byCharacter, const FUseState& state) const
 {
-	return FText::FromString(FString::Printf(TEXT("Panzersperre\nLebenspunkte %.0f / %.0f"), mHealth, mMaxHealth));
+	return FText::FromString(TDF(TEXT("Panzersperre\nLebenspunkte %.0f / %.0f"), TEXT("Tank Trap\nHealth %.0f / %.0f"), mHealth, GetTDMaxHealth()));
 }
 
 float ATDBarrier::TakeDamage(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser)

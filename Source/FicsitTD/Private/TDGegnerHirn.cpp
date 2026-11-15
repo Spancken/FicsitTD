@@ -1186,6 +1186,11 @@ void UTDGegnerHirn::Greife(AFGCreature* Kreatur, float DeltaTime)
 				{
 					Ziel->ApplyTDDamage(Durch, Kreatur);
 				}
+				// Review 09.11.: faellt dabei der Kern, beendet StoppeLauf den Lauf und zerstoert alle Gegner - auch diesen
+				if (!IsValid(Kreatur))
+				{
+					return;
+				}
 				// 0.83 Elektrozaun: wer ihn angreift, bekommt einen Schlag (Ziel kann jetzt zerstoert sein, deshalb IsValid)
 				if (IsValid(ZielActor))
 				{

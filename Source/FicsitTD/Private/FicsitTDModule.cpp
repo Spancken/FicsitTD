@@ -2,6 +2,8 @@
 #include "TDPionier.h"
 #include "AI/FGCreatureController.h"
 #include "Patching/NativeHookManager.h"
+#include "Misc/CommandLine.h"
+#include "Misc/Paths.h"
 #include "TDDecoy.h"
 #include "Creature/FGCreature.h"
 #include "Creature/FGCreatureMovementComponent.h"
@@ -498,6 +500,13 @@ void FFicsitTDModule::StartupModule()
 	});
 	// T2j (Gegnertakt-Recherche 14): Ruckel-Zeit steckt in TG_PrePhysics - inklusive Tick-Zeit unserer Wellengegner je Teil messen
 	static auto IstWellengegner = [](const AActor* A) { return A && A->Tags.Contains(TEXT("FicsitTD")); };
+	// 0.10.2 (Gesamtreview Wirtschaft A6): die reinen Mess-Hooks (Tick-Zeiten fuer die Ruckel-Analyse) haengen sich in jeden
+	// Bewegungs-, Skelett-, Kreatur- und sogar jeden Actor-Tick des Spiels - auch ohne Einsatz. Nur noch im Entwicklermodus.
+	const bool bMessHooks = FParse::Param(FCommandLine::Get(), TEXT("TDEntwickler"))
+		|| FPaths::FileExists(FPaths::ProjectSavedDir() / TEXT("FicsitTD") / TEXT("Entwickler.txt"));
+	UE_LOG(LogFicsitTD, Log, TEXT("Mess-Hooks (Tick-Zeiten): %s"), bMessHooks ? TEXT("an (Entwicklermodus)") : TEXT("aus"));
+	if (bMessHooks)
+	{
 	SUBSCRIBE_METHOD_VIRTUAL(UCharacterMovementComponent::TickComponent, GetMutableDefault<UFGCreatureMovementComponent>(),
 		[](auto& Scope, UCharacterMovementComponent* Self, float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* TickFunction)
 	{
@@ -541,6 +550,7 @@ void FFicsitTDModule::StartupModule()
 		Scope(Self, DeltaSeconds);
 		TDLeistung::KreaturZyklen += FPlatformTime::Cycles64() - Start;
 	});
+	}   // bMessHooks (Teil 1)
 	SUBSCRIBE_METHOD_VIRTUAL(UFGCreatureMovementComponent::ResolvePenetrationImpl, GetMutableDefault<UFGCreatureMovementComponent>(),
 		[](auto& Scope, UFGCreatureMovementComponent* Self, const FVector& Adjustment, const FHitResult& Hit, const FQuat& NewRotation)
 	{
@@ -558,6 +568,8 @@ void FFicsitTDModule::StartupModule()
 		}
 	});
 	// T2k (Gegnertakt-Recherche 15): jeder Actor- und Komponenten-Tick, inklusive Zeit je Klasse des Ziels
+	if (bMessHooks)
+	{
 	static FActorTickFunction BeispielActorTick;
 	static FActorComponentTickFunction BeispielKomponentenTick;
 	SUBSCRIBE_METHOD_VIRTUAL(FActorTickFunction::ExecuteTick, &BeispielActorTick,
@@ -584,6 +596,7 @@ void FFicsitTDModule::StartupModule()
 		Scope(Self, DeltaTime, TickType, CurrentThread, Ereignis);
 		TDLeistung::TickJeKlasse.FindOrAdd(Klasse) += FPlatformTime::Cycles64() - Start;
 	});
+	}   // bMessHooks (Teil 2)
 	// Weg C (Test 0.17.0): das Kreatur-System schaltet Kreaturen ohne Zuschauer ab, sie froren in der Luft ein.
 	// Fuer unsere Wellengegner (Tag FicsitTD) wird nur das Abschalten verhindert, sonst bleibt alles beim Spiel.
 	SUBSCRIBE_METHOD(AFGCreature::SetEnabled, [](auto& Scope, AFGCreature* Self, EEnabled Enabled)

@@ -1247,14 +1247,14 @@ bool UTDWaveSubsystem::StarteKernVerteidigung(ATDDefenseCore* Kern, int32 Wellen
 	const FString WellenText = mWellenGesamt > 0 ? TDF(TEXT("%d Wellen"), TEXT("%d waves"), mWellenGesamt) : TDT(TEXT("endlos"), TEXT("endless"));
 	if (mManuell)
 	{
-		Ansage(TDF(TEXT("Einsatz gestartet (%s): %s, Kern %.0f LP. Bauen ohne Zeitdruck - Welle starten mit /td kern weiter."),
-			TEXT("Operation started (%s): %s, Core %.0f HP. Build without time pressure - start the wave with /td kern weiter."),
+		Ansage(TDF(TEXT("Einsatz gestartet (%s): %s, Kern %.0f LP. Bauen ohne Zeitdruck - die Welle startest du am Kern (E) mit \"Welle starten\"."),
+			TEXT("Operation started (%s): %s, Core %.0f HP. Build without time pressure - start the wave at the Core (E) with \"Start wave\"."),
 			*StufenText, *WellenText, S.KernLP));
 	}
 	else
 	{
-		Ansage(TDF(TEXT("Kern-Verteidigung gestartet (%s): %s, Kern %.0f LP. Erste Welle in %.0f min, danach alle %.0f min Aufbau. Munitions-Produktion aufbauen und Tuerme versorgen! (/td kern weiter = sofort)"),
-			TEXT("Core defense started (%s): %s, Core %.0f HP. First wave in %.0f min, then %.0f min build time each. Set up ammo production and supply your turrets! (/td kern weiter = now)"),
+		Ansage(TDF(TEXT("Kern-Verteidigung gestartet (%s): %s, Kern %.0f LP. Erste Welle in %.0f min, danach alle %.0f min Aufbau. Munitions-Produktion aufbauen und Tuerme versorgen! (Sofort: am Kern \"Welle starten\")"),
+			TEXT("Core defense started (%s): %s, Core %.0f HP. First wave in %.0f min, then %.0f min build time each. Set up ammo production and supply your turrets! (Now: \"Start wave\" at the Core)"),
 			*StufenText, *WellenText, S.KernLP, mCountdown / 60.f, mZwischenCountdown / 60.f));
 	}
 	for (const FString& Zeile : GetFrontenText(Kern))
@@ -2858,8 +2858,8 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 	{
 		Lauf->SpeichereSpielstand(FString::Printf(TEXT("FicsitTD_W%02d_Ende"), mWelle));
 	}
-	Ansage(mManuell ? TDT(TEXT("Bauen, so lange du willst - naechste Welle mit /td kern weiter."), TEXT("Build as long as you like - next wave with /td kern weiter."))
-		: TDF(TEXT("Naechste Welle in %.0f min (/td kern weiter = sofort)."), TEXT("Next wave in %.0f min (/td kern weiter = now)."), mCountdown / 60.f));
+	Ansage(mManuell ? TDT(TEXT("Bauen, so lange du willst - naechste Welle am Kern (E) mit \"Welle starten\"."), TEXT("Build as long as you like - next wave at the Core (E) with \"Start wave\"."))
+		: TDF(TEXT("Naechste Welle in %.0f min (sofort: am Kern \"Welle starten\")."), TEXT("Next wave in %.0f min (now: \"Start wave\" at the Core)."), mCountdown / 60.f));
 	const int32 Jetzt = AktiveFrontenFuer(mWelle);
 	const int32 Danach = AktiveFrontenFuer(mWelle + 1);
 	for (int32 i = Jetzt; i < Danach; ++i)

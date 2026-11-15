@@ -5,6 +5,7 @@
 #include "TDEinsatz.h"
 #include "TDBalance.h"
 #include "TDForschung.h"
+#include "TDSprache.h"
 #include "Creature/FGCreature.h"
 #include "Equipment/FGAmmoTypeProjectile.h"
 #include "FGProjectile.h"
@@ -224,7 +225,7 @@ FText ATDDefenseCore::GetLookAtDecription_Implementation(AFGCharacterPlayer* byC
 	{
 		Lauf = Waves->GetLaufText();
 	}
-	return FText::FromString(FString::Printf(TEXT("Abwehrkern\nKern %.0f / %.0f LP\n%s"), mHealth, mMaxHealth, *Lauf));
+	return FText::FromString(TDF(TEXT("Abwehrkern\nKern %.0f / %.0f LP\n%s"), TEXT("Defense Core\nCore %.0f / %.0f HP\n%s"), mHealth, GetTDMaxHealth(), *Lauf));
 }
 
 void ATDDefenseCore::Aufladen()
@@ -327,7 +328,8 @@ void ATDDefenseCore::Animieren()
 {
 	mZeit += KernAnimIntervall;
 	mTrefferBlitz = FMath::Max(0.f, mTrefferBlitz - KernAnimIntervall);
-	const float Anteil = mMaxHealth > 0.f ? FMath::Max(mHealth, 0.f) / mMaxHealth : 0.f;
+	const float MaxLP = GetTDMaxHealth();   // mit KernPanzer, sonst steht der Ring ueber 100 %
+	const float Anteil = MaxLP > 0.f ? FMath::Clamp(mHealth / MaxLP, 0.f, 1.f) : 0.f;
 	// Tiefbohrer: in der Welle faehrt der Bohrer ins Loch und dreht schnell, in der Bauphase steht er oben und dreht langsam
 	const UTDWaveSubsystem* Waves = GetWorld() ? GetWorld()->GetSubsystem<UTDWaveSubsystem>() : nullptr;
 	const bool bBohrt = Waves && Waves->LaeuftWelle() && Anteil > 0.f;

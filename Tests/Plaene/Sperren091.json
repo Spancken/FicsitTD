@@ -70,6 +70,19 @@
       "befehl": "td laden"
     },
     {
+      "pruefe": "LogEnthaelt",
+      "suche": "Erst im MAM erforschen",
+      "min": 1,
+      "text": "Laden-Ausgabe steht im Log (Voraussetzung fuer die naechste Pruefung)"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": ", Panzersperre",
+      "min": 0,
+      "max": 0,
+      "text": "0.10.2: gestrichene Panzersperre nicht in der Laden-Liste"
+    },
+    {
       "befehl": "td einsatz stop"
     },
     {

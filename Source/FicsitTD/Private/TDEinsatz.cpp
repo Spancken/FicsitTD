@@ -1184,6 +1184,11 @@ TArray<FString> UTDEinsatzSubsystem::LadenText() const
 	TArray<FString> Kaufbar, Gesperrt;
 	for (const FTDLadenEintrag& E : LadenListe)
 	{
+		// gestrichen seit 0.72.1, wie in LadenZeilen ausblenden
+		if (FCString::Strcmp(E.Key, TEXT("Panzersperre")) == 0)
+		{
+			continue;
+		}
 		if (!RezeptVerfuegbar(GetWorld(), E.Rezept))
 		{
 			Gesperrt.Add(TDAnzeige(E.Key));
