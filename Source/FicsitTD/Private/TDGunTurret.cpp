@@ -43,7 +43,6 @@ ATDGunTurret::ATDGunTurret()
 	mSchadensart = ETDSchadensart::Kugel;
 	mDrehpunkt = FVector(0.f, 0.f, 310.f);   // 0.9.3: Sockel 165 cm hoeher
 	mNeigeachse = FVector(0.f, 0.f, 90.f);
-	mLampenOrt = FVector(-60.f, 205.f, 340.f);   // 0.9.3: Lampe oben auf dem Original-Statusmast
 	mMuendung = GewehrMuendung;
 	mRange = 4200.f;   // Test 0.24.1: Spucker blieben ausserhalb von 35 m, Gewehr kam in Welle 4 nicht zum Schuss
 	mTurnSpeed = 220.f;
@@ -64,8 +63,6 @@ ATDGunTurret::ATDGunTurret()
 	mMuendungsfeuer->SetVisibility(false);
 	// 0.9.3 Original-Anschluesse (Lagen aus Modelle\Original_Anschluesse.json)
 	OriginalTeil(TDOriginal::Eingang, FVector(-235.f, 0.f, 0.f), 90.f);
-	OriginalTeil(TDOriginal::Strom, FVector(-85.f, -185.f, 82.f), -90.f);
-	OriginalTeil(TDOriginal::Mast, FVector(-60.f, 205.f, 0.f), 180.f);
 
 }
 

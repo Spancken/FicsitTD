@@ -26,11 +26,8 @@ ATDSlickPlate::ATDSlickPlate()
 	mDrehpunkt = SchlickRad;            // Handrad (Pivot TD_Valve) dreht sich, solange Oel fliesst
 	mMuendung = FVector::ZeroVector;
 	mHalbmasse = FVector(SchlickHalb, SchlickHalb, 15.f);
-	mLampenOrt = FVector(375.f, -140.f, 340.f);
 	// 0.9.3 Original-Anschluesse (Modelle\Original_Anschluesse.json, Gebaeude-Review)
 	OriginalTeil(TDOriginal::Rohr, FVector(450.f, 0.f, 112.f), -90.f);
-	OriginalTeil(TDOriginal::Strom, FVector(375.f, 115.f, 80.f), 90.f);
-	OriginalTeil(TDOriginal::Mast, FVector(375.f, -140.f, 0.f), 0.f);
 
 	mKlarraumHoehe = 60.f;
 	mKlarraumHalb = FVector2D(SchlickHalb, SchlickHalb);

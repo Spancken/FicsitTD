@@ -39,7 +39,6 @@ ATDTeslaCoil::ATDTeslaCoil()
 	// Masse aus Modelle\TD_TeslaCoil_Stufen.blend (0.62, nach Marius' Stufenbildern), Unreal-cm
 	mDrehpunkt = FVector(0.f, 0.f, 90.f);           // Spule steht fest auf dem Deck (liegt in mYawMesh)
 	mMuendung = FVector(0.f, 0.f, 594.f);           // Kugelmitte im Spulen-Raum
-	mLampenOrt = FVector(-60.f, 170.f, 340.f);   // 0.9.3: Lampe oben auf dem Original-Statusmast
 	mRange = 3000.f;
 	mKlarraumHoehe = 900.f;
 	mYawModell = TEXT("/FicsitTD/Buildings/TeslaCoil/Mesh/SM_TD_TeslaCoil_Coil.SM_TD_TeslaCoil_Coil");
@@ -55,8 +54,6 @@ ATDTeslaCoil::ATDTeslaCoil()
 		mBlitze.Add(Blitz);
 	}
 	// 0.9.3 Original-Anschluesse (Lagen aus Modelle\Original_Anschluesse.json)
-	OriginalTeil(TDOriginal::Strom, FVector(-45.f, -165.f, 49.f), -90.f);
-	OriginalTeil(TDOriginal::Mast, FVector(-60.f, 170.f, 0.f), 180.f);
 
 }
 

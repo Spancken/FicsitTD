@@ -296,8 +296,18 @@ protected:
 	FVector mLampenOrt = FVector(150.f, -150.f, 225.f);
 	/** Freiraum-Hoehe in cm */
 	float mKlarraumHoehe = 560.f;
-	/** Halbe Grundflaeche des Freiraums in cm (0.81: Lockfeuer 2 x 2 m, Oelschlick 8 x 8 m) */
+	/** Halbe Grundflaeche des Freiraums in cm (0.81: Lockfeuer 2 x 2 m, Oelschlick 8 x 8 m); Rueckfall ohne Eintrag in TDAnbauten.inl */
 	FVector2D mKlarraumHalb = FVector2D(205.f, 205.f);
+	/** Optik-Durchgang 16.11.2026: Werte aus TDAnbauten.inl (Blender-Modell, Modelle/td_anbauten.py) - Klarraum asymmetrisch
+	 *  (nur die Seite mit dem Original-Eingang waechst), Stromanschluss am Anschlusskasten im Sockel. Gesetzt in PostInitProperties. */
+	bool mHatAnbauDaten = false;
+	FVector2D mKlarraumMin = FVector2D(-205.f, -205.f);
+	FVector2D mKlarraumMax = FVector2D(205.f, 205.f);
+	FVector mStromOrt = FVector::ZeroVector;
+	/** Lampe, Stromort und Klarraum aus der Tabelle TDAnbauten.inl nach mTurmName uebernehmen */
+	void UebernimmAnbauDaten();
+	/** Stromanschluss-Komponente(n) an den Anschlusskasten setzen (BeginPlay) */
+	void SetzeStromAnschluss();
 	float mNeigungMin = -30.f;   // 0.64.1: vorher -10, Tuerme auf Felsen kamen nicht an Gegner direkt darunter
 	float mNeigungMax = 40.f;
 	/** false = feststehender Turm (Teslaspule): kein Drehen/Neigen, immer ausgerichtet */
@@ -429,7 +439,8 @@ private:
 	/** Stufen-Optik (Marius 04.11.2026: Level am Turm sichtbar): Anbauteile SM_TD_<Turm>_<Teil>_S<n>, sichtbar ab Level n */
 	void BaueStufenTeile();
 protected:
-	/** 0.9.3 Original-Anschluesse des Spiels (Bandeingang, Rohreingang, Wand-Stromanschluss, Statusmast): per Pfad geladen, nicht mitgeliefert */
+	/** 0.9.3 Original-Anschluesse des Spiels (Bandeingang, Rohreingang): per Pfad geladen, nicht mitgeliefert.
+	 *  Seit dem Optik-Durchgang 16.11.2026 keine Wand-Strommasten und Statusmasten mehr (Anschlusskasten und Lampenkonsole im Sockel). */
 	void BaueOriginalTeile();
 	void OriginalTeil(const TCHAR* Modell, const FVector& Ort, float Gier) { mOriginalTeile.Add({ Modell, Ort, Gier }); }
 	struct FTDOriginalTeil { FString Modell; FVector Ort; float Gier = 0.f; };

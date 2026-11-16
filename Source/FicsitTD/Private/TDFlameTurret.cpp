@@ -24,7 +24,6 @@ ATDFlameTurret::ATDFlameTurret()
 	mSchadensart = ETDSchadensart::Feuer;
 	mDrehpunkt = FVector(0.f, 0.f, 315.f);   // 0.9.3: Sockel 165 cm hoeher
 	mNeigeachse = FVector(0.f, 0.f, 95.f);
-	mLampenOrt = FVector(-60.f, 180.f, 340.f);   // 0.9.3: Lampe oben auf dem Original-Statusmast
 	mMuendung = FlammeDuese;
 	mRange = 2000.f;   // Test G2: 15 m zu kurz (Balance-Datei: Tuerme.Flammenwerfer.Reichweite)
 	mTurnSpeed = 120.f;
@@ -50,8 +49,6 @@ ATDFlameTurret::ATDFlameTurret()
 	mFlamme->SetVisibility(false);
 	// 0.9.3 Original-Anschluesse (Lagen aus Modelle\Original_Anschluesse.json)
 	OriginalTeil(TDOriginal::Rohr, FVector(-175.f, 0.f, 120.f), 90.f);
-	OriginalTeil(TDOriginal::Strom, FVector(-45.f, -175.f, 82.f), -90.f);
-	OriginalTeil(TDOriginal::Mast, FVector(-60.f, 180.f, 0.f), 180.f);
 
 }
 

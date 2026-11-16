@@ -24,6 +24,7 @@ MOD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 QUELLE = os.path.join(MOD, "Source", "FicsitTD", "Private")
 MASSE = os.path.join(MOD, "Tests", "Modellmasse.json")
 BASIS = os.path.join(MOD, "Tests", "optik_basis.json")
+ANBAUTEN = os.path.join(MOD, "Tests", "Anbauten.json")
 BACKEN = r"D:\OneDrive\Claude\Claude Modding\Satisfactory\Modelle\td_backen.py"
 EXPORT = r"E:\Modding\Export"
 
@@ -75,6 +76,8 @@ def konstruktoren():
             rumpf = text[m.end():ende]
             name = m.group(1)
             d = {"datei": os.path.basename(pfad), "teile": []}
+            tn = re.search(r'mTurmName\s*=\s*TEXT\("([^"]+)"\)', rumpf)
+            d["turm"] = tn.group(1) if tn else None
             k = re.search(r"mKlarraumHalb\s*=\s*FVector2D\(([^,]+),([^)]+)\)", rumpf)
             if k:
                 d["klarraum"] = (zahl(k.group(1), konst), zahl(k.group(2), konst))
@@ -97,16 +100,52 @@ def box(art, ort, gier):
     return (min(e[0] for e in ecken), max(e[0] for e in ecken)), (min(e[1] for e in ecken), max(e[1] for e in ecken)), (z0 + ort[2], z1 + ort[2])
 
 
+def anbau_daten():
+    """mTurmName -> Eintrag aus Tests/Anbauten.json (Blender-Modell, Scripts/erzeuge_anbauten.py)"""
+    if not os.path.exists(ANBAUTEN):
+        return {}
+    ns = {"__name__": "modul", "__file__": os.path.join(MOD, "Scripts", "erzeuge_anbauten.py")}
+    exec(open(os.path.join(MOD, "Scripts", "erzeuge_anbauten.py"), encoding="utf-8").read(), ns)
+    daten = json.load(open(ANBAUTEN, encoding="utf-8"))
+    erg = {}
+    for schl, e in daten.items():
+        e = dict(e)
+        if schl in ns["KLARRAUM_X"] and "klarraum_min_cm" in e:
+            e["klarraum_min_cm"] = [ns["KLARRAUM_X"][schl][0], e["klarraum_min_cm"][1]]
+            e["klarraum_max_cm"] = [ns["KLARRAUM_X"][schl][1], e["klarraum_max_cm"][1]]
+        erg[ns["TURM"][schl]] = e
+    # erzeugte Tabelle aktuell?
+    import subprocess
+    r = subprocess.run([sys.executable, os.path.join(MOD, "Scripts", "erzeuge_anbauten.py"), "--pruefen"], capture_output=True, text=True)
+    if r.returncode != 0:
+        FEHLER(f"TDAnbauten.inl / Tests/Anbauten.json passen nicht zu Modelle/Anbauten.json: {r.stdout.strip()} (python Scripts\\erzeuge_anbauten.py)")
+    return erg
+
+
 def pruefe_anbauten():
     masse = json.load(open(MASSE, encoding="utf-8")) if os.path.exists(MASSE) else {}
     if not masse:
         HINWEIS(f"{MASSE} fehlt: Sockelhoehen unbekannt (einmal Scripts\\pruefe_optik.py im Editor laufen lassen)")
+    anbau = anbau_daten()
     for name, d in sorted(konstruktoren().items()):
+        a = anbau.get(d.get("turm") or "")
+        if a:
+            kmin, kmax = a["klarraum_min_cm"], a["klarraum_max_cm"]
+            if not a.get("lampe") or not a.get("strom"):
+                FEHLER(f"{name}: Anbauten.json ohne Lampe/Strom")
+            else:
+                for wo, p in (("Statuslampe", a["lampe"]), ("Stromanschluss", a["strom"])):
+                    if not (kmin[0] - TOLERANZ <= p[0] <= kmax[0] + TOLERANZ and kmin[1] - TOLERANZ <= p[1] <= kmax[1] + TOLERANZ):
+                        FEHLER(f"{name}: {wo} {p} ausserhalb des Klarraums {kmin}..{kmax}")
+        else:
+            if d["teile"]:
+                HINWEIS(f"{name}: kein Eintrag in Anbauten.json, Klarraum aus dem Konstruktor")
+            kx, ky = d.get("klarraum") or KLARRAUM_STANDARD
+            if kx is None or ky is None:
+                HINWEIS(f"{name}: Klarraum ueber Konstante, nicht auswertbar")
+                continue
+            kmin, kmax = [-kx, -ky], [kx, ky]
         if not d["teile"]:
-            continue
-        kx, ky = d.get("klarraum") or KLARRAUM_STANDARD
-        if kx is None or ky is None:
-            HINWEIS(f"{name}: Klarraum ueber Konstante, nicht auswertbar")
             continue
         sockel = masse.get(f"Build_TD_{name}")
         for art, ort, gier in d["teile"]:
@@ -114,7 +153,8 @@ def pruefe_anbauten():
                 HINWEIS(f"{name}: {art} nicht auswertbar ({ort})")
                 continue
             (x0, x1), (y0, y1), (z0, z1) = box(art, ort, gier)
-            raus = max(-kx - x0, x1 - kx, -ky - y0, y1 - ky, 0.0)
+            raus = max(kmin[0] - x0, x1 - kmax[0], kmin[1] - y0, y1 - kmax[1], 0.0)
+            kx, ky = max(-kmin[0], kmax[0]), max(-kmin[1], kmax[1])
             if raus > TOLERANZ:
                 FEHLER(f"{name}: {art} ragt {raus:.0f} cm aus dem Klarraum (+-{kx:.0f}/{ky:.0f}) - Nachbarn bauen hinein, am Fundamentrand haengt es in der Luft ({d['datei']})")
             if art == "Mast":

@@ -36,6 +36,8 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include "TimerManager.h"
 #include "TDSprache.h"
+#include "FGPowerConnectionComponent.h"
+#include "TDAnbauten.inl"
 
 /** Anzeigename eines Turms fuer Spielertexte; mTurmName selbst bleibt deutscher Schluessel (Balance, Forschung, Statistik) */
 static FString TDTurmAnzeige(const FString& Turm)
@@ -114,6 +116,53 @@ void ATDTurretBase::PostInitProperties()
 	{
 		mRangeRing->SetRelativeScale3D(FVector(mRange / 100.f, mRange / 100.f, 1.f));
 	}
+	// Optik-Durchgang 16.11.2026: Lampe, Stromanschluss, Klarraum aus dem Modell (auch am Klassen-Standardobjekt fuer die Bauvorschau)
+	UebernimmAnbauDaten();
+}
+
+void ATDTurretBase::UebernimmAnbauDaten()
+{
+	mKlarraumMin = -mKlarraumHalb;
+	mKlarraumMax = mKlarraumHalb;
+	for (const FTDAnbau& A : TDAnbauTabelle)
+	{
+		if (mTurmName == A.Turm)
+		{
+			mHatAnbauDaten = true;
+			mLampenOrt = A.Lampe;
+			mStromOrt = A.Strom;
+			mKlarraumMin = A.KlarraumMin;
+			mKlarraumMax = A.KlarraumMax;
+			mKlarraumHalb = FVector2D(FMath::Max(-A.KlarraumMin.X, A.KlarraumMax.X), FMath::Max(-A.KlarraumMin.Y, A.KlarraumMax.Y));
+			// Original-Statusmast und Wand-Strommast sind durch Lampenkonsole und Anschlusskasten im Sockelmodell ersetzt
+			mOriginalTeile.RemoveAll([](const FTDOriginalTeil& T) { return T.Modell == TDOriginal::Strom || T.Modell == TDOriginal::Mast; });
+			return;
+		}
+	}
+}
+
+void ATDTurretBase::SetzeStromAnschluss()
+{
+	// Kabel rastet an der Kappe des Anschlusskastens ein (Lage aus dem Modell); der Bauplan kann noch den alten Ort des Wandmasts tragen
+	if (!mHatAnbauDaten)
+	{
+		return;
+	}
+	TInlineComponentArray<UFGPowerConnectionComponent*> Strom(this);
+	for (UFGPowerConnectionComponent* S : Strom)
+	{
+		if (S && !S->GetRelativeLocation().Equals(mStromOrt, 1.f))
+		{
+			S->SetRelativeLocation(mStromOrt);
+		}
+	}
+	static TSet<FString> Gemeldet;
+	if (!Gemeldet.Contains(mTurmName))
+	{
+		Gemeldet.Add(mTurmName);
+		UE_LOG(LogFicsitTD, Log, TEXT("Anbauten %s: Lampe %s, Strom %s (%d Anschluss), Klarraum %s..%s"), *mTurmName, *mLampenOrt.ToCompactString(),
+			*mStromOrt.ToCompactString(), Strom.Num(), *mKlarraumMin.ToString(), *mKlarraumMax.ToString());
+	}
 }
 
 void ATDTurretBase::SperreTakt()
@@ -165,7 +214,7 @@ void ATDTurretBase::ZeigeReichweite(bool bAn)
 void ATDTurretBase::GetClearanceData_Implementation(TArray<FFGClearanceData>& out_data) const
 {
 	FFGClearanceData Data;
-	Data.ClearanceBox = FBox(FVector(-mKlarraumHalb.X, -mKlarraumHalb.Y, 0.f), FVector(mKlarraumHalb.X, mKlarraumHalb.Y, mKlarraumHoehe));
+	Data.ClearanceBox = FBox(FVector(mKlarraumMin.X, mKlarraumMin.Y, 0.f), FVector(mKlarraumMax.X, mKlarraumMax.Y, mKlarraumHoehe));
 	out_data.Add(Data);
 }
 
@@ -612,6 +661,7 @@ void ATDTurretBase::BeginPlay()
 	{
 		mHeadMesh->SetRelativeLocation(mNeigeachse);
 	}
+	SetzeStromAnschluss();   // vor Super::BeginPlay, damit Kabel am neuen Ort ankommen
 	Super::BeginPlay();
 	NachMaschinenStart();
 	SetzeModell(mYawMesh, mYawModell);
