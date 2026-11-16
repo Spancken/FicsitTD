@@ -93,6 +93,11 @@ Die Konsistenzprüfung (`Tests\pruefe_konsistenz.py`) prüft:
 
 Kein Testen von Fehler zu Fehler. Zwischen den Testfenstern läuft nur `Pipeline.ps1 -OhneSpiel` (Build, Prüfungen, Simulation) – kein Spielstart. Ein Testfenster gibt Marius frei; was darin läuft, steht vorher im Fahrplan (`Satisfactory\Notizen\Fahrplan-<Version>-*.md`, Abschnitt Testfenster), danach kommt ein Bericht mit allen Befunden. Befunde werden gesammelt (Befundliste im Fahrplan) und im nächsten Fenster mitgetestet; nach zwei erfolglosen Anläufen entscheidet Marius (bekannter Fehler oder Experiment).
 
+## 4b. Spielersicht und Fabrik-Prüfstand (16.11.)
+
+- **Spielersicht:** Alle Selbsttests laufen im Entwicklermodus. Der Schritt `"spielersicht": true` schaltet ihn zur Laufzeit ab (`UTDKernplatz::SetzeSpielersicht`), `"pruefe": "TestKnoepfe"` prüft die sichtbaren Entwickler-Knöpfe im Kern-Menü, `"befehl"` mit `"antwortEnthaelt"` prüft die Ablehnung. Jeder Plan beginnt wieder mit Entwicklermodus. Plan `Spielersicht` gehört in jede Regression.
+- **Fabrik-Prüfstand** (`Notizen\Konzept-Fabrik-Pruefstand-2026-11-16.md`): `"fabrik": "Bolzen"` baut eine echte Munitionslinie mit Spielgebäuden und Bändern (`TDFabrikPruefstand.cpp`, Bänder über die Testbibliothek des Spiels), `"fabrikbericht"` meldet Produktivität und Munition. Plan `Fabrik-F1`. Stufen F2–F4 (zweite Linie, Endlos mit Bauzeit, Bohrung) und die Bausteine Strom (B5) und Kontingent (B6) folgen.
+
 ## 5. Release
 
 1. `entwicklung` ist grün in **Voll**, Thema(s) fertig. Version in `FicsitTD.uplugin` erhöhen.

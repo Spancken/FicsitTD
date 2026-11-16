@@ -3,7 +3,7 @@ titel: Selbsttests Spielersicht und Fabrik-Pruefstand F1, Meldungen Ueberlauf un
 typ: intern
 modi: einsatz, endlos
 sichtbar: ja
-doku: nein
+doku: ja
 simulation: ja
 tests: Spielersicht, Fabrik-F1
 ---
