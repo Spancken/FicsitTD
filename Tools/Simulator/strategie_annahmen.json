@@ -323,5 +323,33 @@
   "VerlustBezugKernLP": {
     "Wert": 20000,
     "Quelle": "16.11.2026: Die Verlustkurve (verlust_fit.py, 07.11.) ist an Einsaetzen der Stufe Normal gemessen, Kern-LP damals und heute 20000 (TDBalance.cpp Stufen.Normal.KernLP, seit 0.76 unveraendert). Verlust in % wird mit 20000 / Kern-LP der Stufe bzw. Bohrung umgerechnet; vorher galt fuer alle Stufen derselbe Prozentwert."
+  },
+  "BauSekundenJeGebaeude": {
+    "Wert": 111,
+    "Quelle": "16.11.2026, Annahme fuer Endlos-Wellen (sim_modi.kalibriere_bauzeit): Im Einsatz wartete Marius im Median 195 s je Bauphase (BauphaseSekunden), der Modell-Spieler kauft im Einsatz Normal W2-30 im Mittel 1,75 Kontingente je Bauphase -> 195 / 1,75 = 111 s je Gebaeude (Turm, Fabrikgebaeude, Kraftwerk, Stuetzbau). Obergrenze: die Bauphase enthielt auch Warten, Verlegen, Versorgen. Level im Turmfenster kosten keine Bauzeit."
+  },
+  "BauAnteilInWelle": {
+    "Wert": 0.5,
+    "Quelle": "16.11.2026, Annahme: Endlos hat keine Bausperre, aber waehrend der Welle versorgt und beobachtet der Spieler; die Haelfte der Wellenzeit zaehlt als Bauzeit. Nicht gemessen."
+  },
+  "EndlosAnlaufSekunden": {
+    "Wert": 20,
+    "Quelle": "16.11.2026, Annahme: Laufzeit der ersten Gegner von der Front bis in Turmreichweite. Nicht gemessen."
+  },
+  "EndlosFeuerAnteil": {
+    "Wert": 0.54,
+    "Quelle": "16.11.2026: Wellendauer = Anlauf + max(Gegnerstrom, Q x 60 s / Feueranteil). Feueranteil wie FeueranteilJeWelle ab W10 (Uptime-Messung 06.11., Einsatz). Im Endlos-Strom vermutlich hoeher, nicht gemessen."
+  },
+  "EndlosBonusKernUnter": {
+    "Wert": 60,
+    "Quelle": "16.11.2026, Annahme Spielerverhalten: nach der Bosswelle Kern +30 % waehlen, wenn der Kern unter 60 % steht, sonst +80 Coupons. Festplatten waehlt das Modell nie."
+  },
+  "BauzeitSpeicherSekunden": {
+    "Wert": 300,
+    "Quelle": "16.11.2026, Annahme Endlos: Bauzeit, die in einem Zyklus nicht fuer ein ganzes Paket (z. B. Turm + Miner) reicht, geht nicht verloren (angefangene Bauten); hoechstens 300 s werden mitgenommen."
+  },
+  "EndlosVorziehenUnterQ": {
+    "Wert": 0.25,
+    "Quelle": "16.11.2026, Annahme Spielerverhalten (Variante 'Vorziehen'): die naechste Welle wird nur vorgezogen, wenn die letzte Welle locker war (wirksames Q unter 0,25, Kern ab 90 %) und Bauzeit uebrig ist; vorgezogen wird hoechstens die ungenutzte Bauzeit."
   }
 }

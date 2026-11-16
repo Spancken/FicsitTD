@@ -1,8 +1,95 @@
 ﻿# FicsitTD-Simulator
 
-Berechnet ohne Spiel für jede Welle, wie viel Gegnerdruck auf wie viel Abwehr trifft. Die Kennzahl ist die Druckquote **Q**, dieselbe wie im Log ab FicsitTD 0.29. Grundlage ist Abschnitt 3 von `..\..\Notizen\Recherche-Progression-Endgame-Balancing.md`.
+Rechnet ohne Spiel, wie viel Gegnerdruck auf wie viel Abwehr trifft, für alle Spielmodi. Die Kennzahl ist die Druckquote **Q** (wie im Log: Gegner-EHP / (Σ Nenn-DPS × 60 s)). Nur Python-Standardbibliothek. Liest den Mod-Code direkt aus `Source\FicsitTD\Private` (Pfade relativ zum Repo), Änderungen an der Balance wirken also ohne Anpassung.
 
-## Aufruf
+## Stand 16.11.2026 (Code 0.11-dev / 0.12-dev, Turmlevel, Coupons, Festplatten)
+
+### Aufruf
+
+```bash
+python sim_alle_modi.py --aus Ausgabe\Pipeline     # alle Modi und Stufen, etwa 30 s
+python simulator.py [--stufe Normal]               # Q-Kurven Einsatz, Ausgabe\Simulation.html/.csv (etwa 40 s alle Stufen)
+python strategien.py --stand 091 --laeufe 3        # Strategie-Prüfstand Einsatz (091 = heutiger Forschungsbaum)
+```
+
+`sim_alle_modi.py` ist die Schnittstelle für die Pipeline:
+
+- `<ordner>\sim_ergebnis.json`: je Modus und Stufe `kennzahlen`, `pruefungen` (je Band `ok` und Wert), `ok`; oben `ok` gesamt, `code_stand` (SHA-256 je Quelldatei), `balance`, `laufzeit_s`.
+- `<ordner>\sim_ergebnis.md`: Tabellen je Modus und Stufe, Liste der Bandverletzungen.
+- `Tools\Simulator\sim_stand.json` (einchecken): Datum und dieselben Hashes. Weicht ein Hash vom aktuellen Code ab, ist die Simulation nicht nachgezogen.
+- Gehasht werden `TDBalance.cpp`, `TDWaveSubsystem.cpp`, `TDEinsatz.cpp`, `TDBohrung.cpp`, `TDTurretBase.cpp`, `TDForschungInfo.inl`, `TDForschungVoraussetzungen.inl` und `Scripts\create_research.py` (daraus liest der Prüfstand den Forschungsbaum).
+- Exit **0** alles im Band, **1** mindestens ein Band verletzt, **2** Fehler: das Modell passt nicht zum Code. Vor dem Rechnen prüft `pruefe_modell`: Forschungskosten und Freigabewellen aus `create_research.py` gleich `TDForschungInfo.inl` (nach Balance-Override), Level-Pakete in `TDTurretBase.cpp` lesbar, alle nötigen Balance-Schlüssel (Stufen, Endlos, Bohrung, Level, Coupons) vorhanden, Munitionswerte vorhanden, Gegnerkatalog und 5 Phasen gelesen, Grund-LP für jede Art, Endlos-Standardwerte in `TDEinsatz.cpp Starte` unverändert. Im Fehlerfall steht in `sim_ergebnis.json` nur `fehler` und `trace`, `sim_stand.json` bleibt unverändert.
+
+### Modi
+
+| Modus | Modell | Datei |
+|---|---|---|
+| 1 Einsatz | Strategie-Prüfstand, 228 Strategien (jede zweite aus `strategien.strategien`) × 1 Startwert, 50 Wellen, Fronten je Stufe | `strategien.py` |
+| 2 Endlos-Wellen | Prüfstand-Spieler auf Zeit: 10 Linien × ohne/mit Vorziehen, Rechengrenze W100 | `sim_modi.py` (`spiele_endlos`) |
+| 3 Freies Spiel mit Abwehr, Bohrung | fester Aufbau (Typ, Level, Munition), kleinste Turmzahl für 80 % Erfolg über 4 Wellensätze | `sim_modi.py` (`bohrung_lauf`) |
+| 0 Aus | nichts zu rechnen | – |
+
+**Endlos** (`TDWaveSubsystem.cpp` `EndlosAbstand`, Wellenende in `LaufTick`, `NaechsteWelleJetzt`; `TDEinsatz.cpp` `Starte`, `WaehleEndlosBonus`; `Endlos.*` in `TDBalance.cpp`):
+
+- Erste Welle nach `Endlos.<Stufe>.ErsteWelle`, Abstand ab Wellenbeginn `A(n) = max(90, Abstand − 1,5 · n)`.
+- Wellendauer im Modell = `EndlosAnlaufSekunden` + max(Gegnerstrom, Q_wirksam × 60 s / `EndlosFeuerAnteil`). Gegnerstrom wie im Code: 2/s, höchstens `Endlos.StromAnteil` × A.
+- Früher fertig: Pause = max(30 s, A − Dauer). Nicht fertig bis A: Überlauf, der Rest-Anteil der Gegner-LP kommt zur nächsten Welle, Pause 5 s. Nach Bosswellen mindestens 300 s und Bonus (Kern +30 % unter 60 % Kern, sonst +80 Coupons).
+- Coupons und Festplatten je Welle wie im Einsatz (`WelleBeendet` läuft auch im Endlos-Modus), eine Front.
+- **Bauzeit:** keine Bausperre, aber jedes Kontingent (Turm, Fabrikgebäude, Kraftwerk, Stützbau) kostet `BauSekundenJeGebaeude` = 111 s. Verfügbar: Pause + 50 % der Wellenzeit, Rest bis 300 s mitgenommen. Level im Turmfenster kosten keine Bauzeit. Fabrikzyklus = tatsächlicher Wellenabstand (kürzer als im Einsatz, also mehr Munition je Minute nötig).
+- Vorziehen-Variante: bei lockerer Welle (Q < 0,25, Kern ≥ 90 %) wird ungenutzte Bauzeit gegen 1 Coupon je 10 s eingetauscht.
+- Ende bei Kern 0, Wertung = letzte geschaffte Welle. Kennzahlen: Median-Welle, „kippt ab“ (erste Welle, die weniger als die Hälfte der Linien schafft), erster Überlauf, Nenn-Q je Welle, Anteil an der Rechengrenze.
+
+**Bohrung** (`TDBohrung.cpp` `StarteBohrung`, `BohrWelleBeendet`; `TDEinsatz.h` `SetzeAbwehrKern`; `Bohrung.*`):
+
+- Wellen `VonWelle..BisWelle` (Leicht 1–4, Mittel 15–19, Schwer 25–30) mit den Werten der Stufe **Normal** (`StarteKernVerteidigung(..., 1)`), Kern-LP 8000/12000/16000.
+- Der Einsatz ist dabei nicht aktiv: keine Coupons, **keine Grundreparatur** zwischen den Wellen. Der Kernverlust summiert sich über alle Wellen.
+- Geprüft wird ein fester Aufbau ohne Kern-Ausbau, Doktrin und Stützbauten, Munition voll versorgt. Ausgabe: Mindestzahl Türme je Aufbau und Stufe; Erz und Erstlohn stehen nur als Kennzahl dabei.
+
+### Was am Modell geändert wurde (16.11.2026)
+
+- **Turmlevel statt Stufen** (`simulator.py` `Spieler`): Level 1–5, gekauft mit Coupons. Preise `Tuerme.Level.Preis2..5` (Standard aus `ATDTurretBase::LevelPreis`), Doktrin-Rabatt. Wirkung `Tuerme.Level.<Turm>.L<n>.<Wert>` mit Standards aus `TDLevelStandards[]` in `TDTurretBase.cpp` (`LevelWertBis`). Nenn-DPS = Schaden × `SchadenBonus` × `TaktBonus` wie `NennDPS()`. Level-Grenze wie `LevelMax`: 2 mit dem Turm, 3/4 mit Turmfertigung II/III, 5 mit IV oder Doktrin. Der Modell-Spieler wählt je Kauf das Beste aus „neuer Turm“ und „ein Level mehr“ (Nenn-DPS je Coupon). Der alte KeyError `Tuerme.Stufen.SchadenJeStufe` ist damit weg. Der Prüfstand (`strategien.py`) hatte Level schon.
+- **Forschung in Festplatten** (`simulator.lade_forschung_info`): Kosten, Freigabewelle, Voraussetzungen und Gabelungen aus `TDForschungInfo.inl`, Balance `Forschung.<Knoten>.AbWelle` geht vor. Die Reihenfolge in `annahmen.json` enthält nur noch Namen (dazu Turmfertigung II–IV). `strategien.lade_alles` übernimmt jetzt ebenfalls die Balance-Freigabewellen (vorher z. B. Teslaspule W6 statt W5).
+- **Gegner-LP je Welle** (`simulator.Wellen.lp_faktor`): wie `TDWaveSubsystem.cpp` `1 + LPJeWelle · min(n−1, 30) + LPJeWelleAb31 · max(n−31, 0)`. Vorher wuchs das Leben ohne Knick weiter, ab W31 also zu schnell.
+- **Munition** in `annahmen.json` auf den heutigen Stand (kein Biotreibstoff mehr, Raketentreibstoff, Plasmaflamme, Streu-/Schockbolzen, Puls/Streu-Nobelisk). `Turmname` Flammenwerfer für die Level-Schlüssel (Ladenschlüssel heißt Flammenturm).
+- **Kernverlust je Stufe** (`strategien.Lauf.kampf`): Die Verlustkurve ist in % eines Normal-Kerns kalibriert (20000 LP). Jetzt × 20000 / Kern-LP der Stufe bzw. Bohrung. Vorher verlor ein Albtraum-Kern (10000 LP) prozentual so viel wie ein Normal-Kern.
+- **Nenn-Q im Verlauf** des Prüfstands (7. Feld), damit die Pipeline Q wie im Log gegen `Tests\zielbaender.json` prüft.
+- Neu: `sim_modi.py`, `sim_alle_modi.py`, `sim_baender.json`, `sim_stand.json`; neue Annahmen in `strategie_annahmen.json`: `VerlustBezugKernLP`, `BauSekundenJeGebaeude`, `BauAnteilInWelle`, `BauzeitSpeicherSekunden`, `EndlosAnlaufSekunden`, `EndlosFeuerAnteil`, `EndlosBonusKernUnter`, `EndlosVorziehenUnterQ` (jede mit Quelle bzw. „nicht gemessen“).
+
+### Neue Annahmen und ihre Begründung
+
+- **`BauSekundenJeGebaeude` 111 s:** Im Einsatz wartete Marius im Median 195 s je Bauphase (Live 03./04.11.). Der Modell-Spieler kauft im Einsatz Normal W2–30 im Mittel 1,75 Kontingente je Bauphase (`sim_modi.kalibriere_bauzeit`), also 195 / 1,75. Das ist eine Obergrenze, denn die Bauphase enthielt auch Warten und Versorgen. **Endlos reagiert stark darauf** (Normal, Median-Welle der 10 Linien): 0–55 s → W22, 111 s → W12,5, 160 s → W8. Ab etwa 55 s je Gebäude bremst die Bauzeit gar nicht mehr, darunter bestimmen nur Coupons und Fabrikzyklus.
+- **`BauzeitSpeicherSekunden` 300 s:** Ohne Mitnahme scheitert jede Linie bis W7, weil ein Paket aus Turm und Miner (2 × 111 s) nie in eine Pause passt. Ein echter Spieler baut über zwei Pausen.
+- **`BauAnteilInWelle` 0,5, `EndlosAnlaufSekunden` 20, `EndlosFeuerAnteil` 0,54** (Uptime-Messung im Einsatz): nicht gemessen bzw. aus dem Einsatz übertragen.
+- **`EndlosBonusKernUnter` 60, `EndlosVorziehenUnterQ` 0,25:** Spielerverhalten, frei gewählt.
+
+### Zielbänder (`sim_baender.json`, Vorschläge zum Abgleich mit Marius)
+
+- **Einsatz Normal:** Q je Phase aus `Tests\zielbaender.json` (Median-Nenn-Q je Welle, mindestens 70 % der Wellen W1–30 im Band), Kern-Tiefpunkt der Erfolgreichen ≥ 50 % (`Kern_Proz_min`), Zielbild des Prüfstands (mehrere Wege, keine Linie > 90 %, nicht zu leicht, keine tote Kombination), Erfolg 30–65 % (`ZielQuoteMax`).
+- **Einsatz andere Stufen:** nur Erfolgsquote; Erkundung ≥ 60 %, Hart 15–55 %, Albtraum 5–35 %. Begründung: Erkundung leichter als Normal, Hart und Albtraum selten, aber nicht unmöglich („mehrere Wege führen zum Sieg“).
+- **Endlos:** Median-Welle (ohne Vorziehen) Erkundung W30–99, Normal W20–60, Hart W12–45, Albtraum W8–35; höchstens 10 % der Läufe an der Rechengrenze. Begründung: Bestwert-Jagd, auf Normal soll eine gute Abwehr den zweiten Boss schaffen, mit Zeitdruck aber meist vor der Einsatzlänge fallen; der Modus muss kippen, sonst gibt es keinen Bestwert.
+- **Bohrung:** Bolzenturm L2 (Einstiegsturm) braucht Leicht 2–6, Mittel 6–20, Schwer 10–35 Türme; kein Aufbau darf Mittel mit weniger als 3 oder Schwer mit weniger als 5 Türmen schaffen.
+
+### Ergebnis 16.11.2026 (`sim_alle_modi.py`, Exit 1)
+
+Siehe `Ausgabe\Pipeline\sim_ergebnis.md`. Kurz:
+
+- **Einsatz:** Erkundung 100 % Siege (im Band), Normal 76 % (über 65 %), fünf Linien über 90 %, Kern-Tiefpunkt 41 %. **Hart und Albtraum scheitern im Modell immer in W2**: Mit dem einen Start-Bolzenturm und 0 Coupons trifft W1 auf Budget × 2 (34 Punkte, Q_wirksam 0,76 bzw. 0,80).
+- **Endlos:** Normal Median W12,5, kippt ab W14 (Einsatz Normal: Scheitern im Median W17). Erster Überlauf um W14. Erkundung W24, aber die Hälfte der Läufe erreicht W100 (die Rechengrenze). Hart/Albtraum W1, wie im Einsatz.
+- **Bohrung:** Leicht schafft fast alles mit 1–2 Türmen. Mittel braucht 33 Bolzentürme L2, aber nur 2 Flammenwerfer; Schwer 57 Bolzentürme L2 gegen 3 Flammenwerfer.
+
+### Grenzen des Modells
+
+- **Kein Spieler/Pionier**: Der Spieler als Turm (10–20 %, Fabrikmunition, Rollen) fehlt. Gerade der Anfang von Hart/Albtraum hängt daran.
+- **Keine echte Fabrik**: Munition kommt aus einer Bilanz bis zum Erz (Kontingente, Strom), ohne Bänder, Wege, Platz und Fehler. In der Bohrung ist die Versorgung immer voll.
+- Kein Ort: keine Reichweite, keine Fronten-Aufteilung, keine Laufwege, keine Mauern. Flächenwirkung nur über Faktoren (`Mehrziel_*`, Flamme 2,7 × 2 Ziele: daher der sehr starke Flammenwerfer in der Bohrung).
+- Kernverlust aus Q ist eine Kurve aus Einsatz-Messungen bis W30 (R² 0,46). Alles danach und alles in Endlos/Bohrung ist hochgerechnet.
+- Endlos: Wellendauer, Überlauf-Rest und Bauzeit sind grob. Die Bauzeit ist die wichtigste und unsicherste Annahme (siehe oben). Nach W50 begrenzt `Wellen.MaxGesamt` die Gegnerzahl, das Leben wächst nur linear: deshalb laufen einzelne Linien bis zur Rechengrenze.
+- Bohrung: nur reine Aufbauten eines Turmtyps, Mindestzahl über 4 Wellensätze (Zufall der Wellen, nicht des Spiels: andere Zufallsfolge als `FRandomStream`).
+- Meisterfähigkeiten (Level 5) sind wie in `NennDPS()` nicht eingerechnet.
+
+## Frühere Stände
+
+### Aufruf simulator.py (Stand bis 09.11.)
 
 ```bash
 python simulator.py
@@ -23,7 +110,7 @@ Ausgabe in `Ausgabe\`:
 - `Simulation.html`: zwei Diagramme (Q je Welle mit Zielbändern; Gegner-EHP gegen K × Referenzzeit), Wachstumsexponenten, Wert je EP, Abgleich mit den Spiel-Logs und eine Tabelle je Welle mit Filter
 - `Simulation.csv`
 
-## Woher die Werte kommen
+### Woher die Werte kommen
 
 | Was | Quelle |
 |---|---|
@@ -37,7 +124,7 @@ Ausgabe in `Ausgabe\`:
 
 Der Simulator liest den Mod-Code direkt aus `E:\Modding\...\FicsitTD\Source`. Änderungen an der Balance-Tabelle wirken also ohne Anpassung.
 
-## Modell-Spieler
+### Modell-Spieler
 
 - Er startet mit dem Startkontingent, also einem Bolzenturm.
 - Nach jeder Welle bekommt er EP und FP nach der Formel des Spiels. Der Kern gilt dabei als voll (`KernAnteilProzent`).
@@ -48,7 +135,7 @@ Der Simulator liest den Mod-Code direkt aus `E:\Modding\...\FicsitTD\Source`. Ä
 - **EHP** sind die Gegner-LP geteilt durch den DPS-gewichteten Resistenzfaktor.
 - **Q = EHP / (K × Referenzzeit)**.
 
-## Stand 02.11.2026 (Balance.json und Standards, 300 Durchläufe)
+### Stand 02.11.2026 (Balance.json und Standards, 300 Durchläufe)
 
 - **Abgleich Wellengröße Normal (Spiel-Log / Simulation):**
 
@@ -64,7 +151,7 @@ Der Simulator liest den Mod-Code direkt aus `E:\Modding\...\FicsitTD\Source`. Ä
 - **Was das heißt:** Die absolute Höhe von Q ist **noch nicht kalibriert**. Die Nenn-DPS unterstellen, dass jeder Turm ständig ein Ziel hat. Im Spiel kam ein Bolzenturm in Welle 10 nur auf etwa die Hälfte. Die Zielbänder aus der Recherche (0,55–0,75 für Normal) passen deshalb noch nicht zu dieser Skala.
 - **Nächster Schritt:** einen Einsatz mit 0.29 spielen. Die gemessenen Werte aus `Metriken.csv` (Q, Kernverlust, Uptime) erscheinen dann als Punkte im Q-Diagramm. Danach werden die Referenzzeit oder die Bänder angepasst.
 
-## Stand 03.11.2026 (0.53, 50 Wellen, 300 Durchläufe)
+### Stand 03.11.2026 (0.53, 50 Wellen, 300 Durchläufe)
 
 - Umgestellt auf Katalog und Phasen ab 0.51 sowie auf Flammenturm und Nobelisk-Werfer.
   - Flächenwaffen zählen mit einer angenommenen Zahl von Zielen (`Ziele`: Flamme 2, Nobelisk 3).
@@ -73,7 +160,7 @@ Der Simulator liest den Mod-Code direkt aus `E:\Modding\...\FicsitTD\Source`. Ä
 - **Im Spiel gemessen (0.51, nur 3 Bolzentürme):** W10 Q 0,31, W20 Q 1,45 mit Kernverlust. Der Modell-Spieler kauft dagegen mit 60 % seiner EP Türme und liegt deshalb weit darunter.
   - Für P4 (Q_krit) zählt der Messpunkt im Spiel, nicht die absolute Höhe der Simulation.
 
-## Auswertung eines Balancing-Laufs (ab 0.55)
+### Auswertung eines Balancing-Laufs (ab 0.55)
 
 ```
 python auswertung_lauf.py [--ab "2026-11-04 18:00"]
@@ -83,14 +170,14 @@ python auswertung_lauf.py [--ab "2026-11-04 18:00"]
 - Ohne `--ab` nimmt es den letzten Lauf ab Welle 1.
 - Ergebnis ist `Ausgabe/Lauf.html`: Q im Spiel gegen die Simulation (Normal), EP-Kurven, Strom und Bauphase. Dazu eine Tabelle je Welle mit Noten. Wellen mit Eingriff sind markiert.
 
-## Grenzen
+### Grenzen
 
 - Ort und Weg spielen keine Rolle: keine Reichweite, keine Fronten-Aufteilung, keine Mauern.
 - Flächen- und Kettenschaden fließen nicht in K ein, genauso wenig wie im Spiel-Q.
 - Das Gewehr ist ohne Nachladepause gerechnet, wie die Nenn-DPS im Spiel.
 - Munitionsversorgung und Strom gelten als immer ausreichend. Wie oft das nicht stimmt, zeigt erst das Log.
 
-## Balance-Kreislauf (`balance_kreislauf.py`, 06.11.2026)
+### Balance-Kreislauf (`balance_kreislauf.py`, 06.11.2026)
 
 Ablauf und Ziele: `Notizen/Testplan-Balance-Kreislauf.md`. Ein System je Iteration, Schrauben und Logikregeln in `stellschrauben.json`.
 
@@ -116,7 +203,7 @@ python balance_kreislauf.py status
   - Davor galten 36,8 · Q ohne Streckung, Dezile nicht normiert, Alpha-Hog mit 80 LP. Ganz am Anfang waren es 1 + 4 · Q.
 - **Gegner-LP:** `annahmen.json` → `Gegner_GrundLP`. Alpha-Hog hat 60 LP, aus der Messung bestimmt. Die Spucker-Werte sind geschätzt, in W24–30 liegt das Modell 10–15 % zu niedrig.
 
-## Strategie-Prüfstand (`strategien.py`, 06.11.2026)
+### Strategie-Prüfstand (`strategien.py`, 06.11.2026)
 
 **Zweck:** Spielweisen automatisch durchspielen, mit Wirtschaft, Forschung und Kampf zusammen. Das Ziel (Marius): mehrere Wege führen zum Sieg, aber nicht alles funktioniert und es ist nicht zu leicht.
 
@@ -160,15 +247,15 @@ Ausgabe: `Ausgabe/Balance_Sweep.html`. Je Variante gibt es die Erfolgsquote je T
 - Der Kernverlust ist geschätzt.
 - Ergebnisse sind Richtungen für den Prüfstand im Spiel, keine fertige Balance.
 
-## Spielpläne aus Modellstrategien
+### Spielpläne aus Modellstrategien
 
 `python strategie_plaene.py --nur Mono [--vorziehen]` wählt je Linie den besten Plan, verdichtet auf die Abschnitte des Selbsttests (nur Neubau). Es schreibt `Tests\Plaene\Strat-*.json`, das Paket `Strategie` und die Ablage `Ausgabe\Kreislauf\strategie_plaene.json`. Die Ablage liest `balance_kreislauf.py auswerten` mit. Mit `--nur-modell` wird nur gerechnet. Details stehen im Testplan 3.4.
 
-## Wirtschaft wie im Spiel (06.11.)
+### Wirtschaft wie im Spiel (06.11.)
 
 `zyklus_min` (Bauphase des Spielers + Welle, `BauphaseSekunden` 195 s aus Live-Daten), Munitionsvorrat je Turm (`STAPEL`, Munitionspuffer ×2), `FeueranteilJeWelle` aus der Uptime-Messung, `TURM_STROM` je Typ. Geprüft gegen Marius' Live-Spiel vom 03.11. (Fabrik bis W13 auf ±1–2 Gebäude). Details: Testplan 3.6. Sicherung des Vorstands: `Ausgabe\Kreislauf\*.vor_Wirtschaft`.
 
-## Stand 09.11.2026 (0.9.1, Endgame-Pakete E1–E3)
+### Stand 09.11.2026 (0.9.1, Endgame-Pakete E1–E3)
 
 **Neu im Prüfstand:**
 

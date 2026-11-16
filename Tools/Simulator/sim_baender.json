@@ -1,0 +1,80 @@
+{
+  "_Hinweis": "Zielbaender der Pipeline-Simulation (sim_alle_modi.py), Stand 16.11.2026. Einsatz Normal nutzt zusaetzlich Tests/zielbaender.json (Q je Phase) und das Zielbild aus strategie_annahmen.json. Alle anderen Baender sind Vorschlaege der Simulation, Begruendung im README (Abschnitt Zielbaender). Mit Marius abgleichen.",
+  "Einsatz": {
+    "Q_Band_Anteil_min": {
+      "Wert": 0.7,
+      "Grund": "Anteil der Wellen W1-30, deren Median-Nenn-Q im Band aus Tests/zielbaender.json liegt; einzelne Wellen duerfen streuen (Prüfstand zaehlt Verletzungen nur als Hinweis)."
+    },
+    "KernMin_Median_min": {
+      "Wert": 50,
+      "Grund": "Tests/zielbaender.json Kern_Proz_min, auf den Median der Kern-Tiefpunkte erfolgreicher Laeufe angewandt."
+    },
+    "Erfolg": {
+      "Erkundung": [
+        0.6,
+        1.0
+      ],
+      "Normal": [
+        0.3,
+        0.65
+      ],
+      "Hart": [
+        0.15,
+        0.55
+      ],
+      "Albtraum": [
+        0.05,
+        0.35
+      ],
+      "Grund": "Normal: Zielbild ZielQuoteMax 0,65 (nicht alles funktioniert), mindestens 30 % damit mehrere Wege tragen. Erkundung leichter als Normal. Hart/Albtraum seltener, aber nicht unmoeglich (Marius 06.11.: mehrere Wege fuehren zum Sieg)."
+    }
+  },
+  "Endlos": {
+    "Welle_Median": {
+      "Erkundung": [
+        30,
+        99
+      ],
+      "Normal": [
+        20,
+        60
+      ],
+      "Hart": [
+        12,
+        45
+      ],
+      "Albtraum": [
+        8,
+        35
+      ],
+      "Grund": "Median der erreichten Welle ueber alle Linien ohne Vorziehen. Endlos ist Bestwert-Jagd: eine gute Verteidigung soll auf Normal mindestens den zweiten Boss (W20) schaffen, mit Zeitdruck aber meist vor der Einsatzlaenge (50) fallen; die anderen Stufen entsprechend verschoben."
+    },
+    "Kappung_Anteil_max": {
+      "Wert": 0.1,
+      "Grund": "Hoechstens 10 % der Laeufe duerfen die Rechengrenze (max_wellen) erreichen; sonst kippt der Modus nie und es gibt keinen Bestwert."
+    }
+  },
+  "Bohrung": {
+    "Bolzen_L2_Mindestzahl": {
+      "Leicht": [
+        2,
+        6
+      ],
+      "Mittel": [
+        6,
+        20
+      ],
+      "Schwer": [
+        10,
+        35
+      ],
+      "Grund": "Bolzenturm Level 2 ist der Einstiegsturm. Leicht soll mit einer kleinen Abwehr gehen, Mittel und Schwer eine echte Abwehr fordern, aber im Freien Spiel ohne Kontingent noch baubar sein."
+    },
+    "Beste_Mindestzahl_min": {
+      "Leicht": 1,
+      "Mittel": 3,
+      "Schwer": 5,
+      "Grund": "Kein Turmtyp soll Mittel/Schwer mit 1-2 Tuermen schaffen (sonst ist die Stufe trivial)."
+    }
+  }
+}

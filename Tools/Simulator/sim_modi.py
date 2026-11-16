@@ -12,7 +12,8 @@ Endlos (TDWaveSubsystem.cpp mEndlos, EndlosAbstand, Endlos.* in TDBalance.cpp, T
   - Vorziehen: 1 Coupon je Endlos.VorziehSekundenJeCoupon Restzeit.
   - Keine Bausperre, aber Bauzeit ist begrenzt: jedes Kontingent (Turm, Fabrikgebaeude, Kraftwerk, Stuetzbau) kostet
     BauSekundenJeGebaeude (Annahme, aus der Bauphasen-Messung abgeleitet, siehe kalibriere_bauzeit), Level im Turmfenster
-    kosten keine Bauzeit. Verfuegbar ist die Pause plus BauAnteilInWelle der Wellenzeit.
+    kosten keine Bauzeit. Verfuegbar ist die Pause plus BauAnteilInWelle der Wellenzeit; Ungenutztes wird bis
+    BauzeitSpeicherSekunden mitgenommen (angefangene Bauten).
   - Kernverlust beendet den Lauf, Wertung = letzte geschaffte Welle.
 
 Bohrung (TDBohrung.cpp, Bohrung.* in TDBalance.cpp):
@@ -111,12 +112,14 @@ def spiele_endlos(s, wellen, B, Z, K, gabeln, tw, wi, stufe, max_wellen, rng, vo
                 L.kern = min(100.0, L.kern + 100 * B.get("Endlos.Bonus.Kern", 0.3))
             else:
                 L.ep += B.get("Endlos.Bonus.Coupons", 80)
-        if vorziehen and not boss and not ueberlauf and ungenutzt > 0:
+        if vorziehen and not boss and not ueberlauf and ungenutzt > 0 and q < Z["EndlosVorziehenUnterQ"] and L.kern >= 90:
             # Wer nichts mehr zu bauen hat, zieht die naechste Welle vor und bekommt Coupons fuer die Restzeit
-            spar = min(pause - 0.0, ungenutzt)
+            spar = min(pause, ungenutzt)
             L.ep += math.floor(spar / B.get("Endlos.VorziehSekundenJeCoupon", 10))
             pause -= spar
-        bauzeit = pause + Z["BauAnteilInWelle"] * ende
+            ungenutzt -= spar
+        # angefangene Arbeit bleibt liegen: ungenutzte Bauzeit wird bis BauzeitSpeicherSekunden mitgenommen (Annahme)
+        bauzeit = min(ungenutzt, Z["BauzeitSpeicherSekunden"]) + pause + Z["BauAnteilInWelle"] * ende
         D_prev, luecke_prev = ende, pause
     return {"Welle": geschafft, "Kappung": geschafft >= max_wellen, "Verlauf": verlauf, "Ueberlaeufe": ueberlaeufe,
             "Gebaut": L.gebaut, "Tuerme": len(L.tuerme), "Level": statistics.mean(lv for _, lv in L.tuerme)}
