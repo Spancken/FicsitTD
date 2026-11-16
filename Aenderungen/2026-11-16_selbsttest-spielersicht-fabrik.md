@@ -4,7 +4,7 @@ typ: intern
 modi: einsatz, endlos
 sichtbar: ja
 doku: nein
-simulation: nein
+simulation: ja
 tests: Spielersicht, Fabrik-F1
 ---
 
@@ -14,3 +14,7 @@ tests: Spielersicht, Fabrik-F1
 - Meldungen: Ueberlauf im Endlos-Modus heisst nicht mehr „abgewehrt“ (N4); die Bau-Meldung des Kernplatzes nennt die gewaehlte Stufe (E7).
 
 **Offen:** Im Spiel noch nicht gelaufen (Fenster B Teil 2).
+
+**Changelog EN:** Endless waves: an overflowing wave is no longer announced as repelled. The core site message names the chosen difficulty.
+
+**Changelog DE:** Endlos-Wellen: Eine überlaufende Welle heißt nicht mehr „abgewehrt“. Die Meldung beim Bau des Kernplatzes nennt die gewählte Stufe.
