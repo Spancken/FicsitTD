@@ -389,8 +389,15 @@ void UTDAutotest::StarteNeuesSpiel(UWorld* World)
 	// 0.11: "Modus" (Standard 1 = Einsatz, 0 = Aus fuer den Plan ModusAus). Wert ist ein FVariant als Base64:
 	// Typ 14 (Int32), Laenge 4, Wert - also DgAAAAQAAAA + Base64 der letzten 4 Byte
 	const int32 Modus = Neu->HasField(TEXT("Modus")) ? static_cast<int32>(Neu->GetNumberField(TEXT("Modus"))) : 1;
-	FString Optionen = FString::Printf(TEXT("?sessionName=Autotest_Neu?SessionSettings=FicsitTD.ModusInt=%s?skiponboarding"),
-		Modus == 0 ? TEXT("DgAAAAQAAAAAAAAA") : Modus == 2 ? TEXT("DgAAAAQAAAACAAAA") : Modus == 3 ? TEXT("DgAAAAQAAAADAAAA") : TEXT("DgAAAAQAAAABAAAA"));
+	// 0.11 (Gegencheck Einsatz, B12): optional "Stufe" (0 nach Startort, 1..4 Erkundung..Albtraum) als zweite Einstellung,
+	// SML trennt die Einstellungen mit Komma (USessionSettingsManager::SerializeSettingsToString)
+	static const TCHAR* IntWert[] = { TEXT("DgAAAAQAAAAAAAAA"), TEXT("DgAAAAQAAAABAAAA"), TEXT("DgAAAAQAAAACAAAA"), TEXT("DgAAAAQAAAADAAAA"), TEXT("DgAAAAQAAAAEAAAA") };
+	FString Einstellungen = FString::Printf(TEXT("FicsitTD.ModusInt=%s"), IntWert[FMath::Clamp(Modus, 0, 3)]);
+	if (Neu->HasField(TEXT("Stufe")))
+	{
+		Einstellungen += FString::Printf(TEXT(",FicsitTD.StufeInt=%s"), IntWert[FMath::Clamp(static_cast<int32>(Neu->GetNumberField(TEXT("Stufe"))), 0, 4)]);
+	}
+	FString Optionen = FString::Printf(TEXT("?sessionName=Autotest_Neu?SessionSettings=%s?skiponboarding"), *Einstellungen);
 	if (Neu->HasField(TEXT("Startort")))
 	{
 		Optionen += FString::Printf(TEXT("?%s=%s"), AFGGameMode::StartLocationOption, *Neu->GetStringField(TEXT("Startort")));

@@ -1,9 +1,10 @@
 {
   "Name": "EinsatzPhase",
-  "_Hinweis": "0.11 Gegencheck Einsatz (Marius 16.11.): Auswahl Stufe geladen, Phasenabschluss nach Welle 10 mit Kurzbericht und Bonuswahl, Abschlussbericht nach der Niederlage, Lauf mit Eingriffen ohne Wertung (Freies Bauen und Sprung sind Eingriffe). Laeuft im Entwicklermodus (Selbsttest). Neues Spiel Grasfelder = Erkundung.",
+  "_Hinweis": "0.11 Gegencheck Einsatz (Marius 16.11.): Auswahl Stufe geladen, Phasenabschluss nach Welle 10 mit Kurzbericht und Bonuswahl, Abschlussbericht nach der Niederlage, Lauf mit Eingriffen ohne Wertung (Freies Bauen und Sprung sind Eingriffe). Laeuft im Entwicklermodus (Selbsttest). Neues Spiel Grasfelder mit Auswahl Stufe 2 = Normal (Startort waere Erkundung).",
   "NeuesSpiel": {
     "Startort": "Grass Fields",
-    "Modus": 1
+    "Modus": 1,
+    "Stufe": 2
   },
   "ErweiterteEinstellungen": false,
   "WarteNachLaden": 60,
@@ -12,10 +13,11 @@
     { "pruefe": "Version", "soll": "{VERSION}", "text": "richtige Mod-Version geladen" },
     { "warteBis": "EinsatzAktiv", "max": 120 },
     { "pruefe": "LogEnthaelt", "suche": "SessionSetting_Stufe nicht gefunden", "min": 0, "max": 0, "text": "Auswahl Stufe ist im Paket" },
+    { "pruefe": "LogEnthaelt", "suche": "Stufe Normal gewaehlt (Startort waere Erkundung)", "min": 1, "text": "Auswahl Stufe schlaegt den Startort" },
     { "befehl": "td einsatz frei an" },
     { "stromfrei": true },
-    { "versorgung": { "Bolzenturm": 100 } },
-    { "baue": "Bolzenturm", "anzahl": 8, "level": 2, "rezept": "Recipe_TD_Shoot_SpikedRebar" },
+    { "versorgung": { "Bolzenturm": 150 } },
+    { "baue": "Bolzenturm", "anzahl": 12, "level": 2, "rezept": "Recipe_TD_Shoot_SpikedRebar" },
     { "befehl": "td einsatz frei aus" },
     { "befehl": "td kern springe 10" },
     { "zeitraffer": 4 },
