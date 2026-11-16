@@ -3510,10 +3510,43 @@ bool UTDWaveSubsystem::SperreKlippe(AActor* Klippe, const FVector* Stelle)
 	// Sperre und fanden nicht hinaus): Startpunkte der Fronten nie aussperren
 	for (int32 i = 0; i < mFronten.Num(); ++i)
 	{
-		if (FBox(Mitte - Halb, Mitte + Halb).ExpandBy(TDBalance::Wert(TEXT("Gegner.KlippenFrontAbstand"), 15.f) * 100.f).IsInsideXY(mFronten[i].Ort))
+		const FBox Schutz = FBox(Mitte - Halb, Mitte + Halb).ExpandBy(TDBalance::Wert(TEXT("Gegner.KlippenFrontAbstand"), 15.f) * 100.f);
+		if (Schutz.IsInsideXY(mFronten[i].Ort))
 		{
-			UE_LOG(LogFicsitTD, Log, TEXT("Klippensperre: %s bei %s schliesst den Startpunkt von Front %d ein - nicht gesperrt"), *Modell, *Mitte.ToCompactString(), i + 1);
-			return false;
+			// 16.11. (Fenster B2, B16: dieselbe Kapsel hing 224-mal am Startpunkt von Front 2, CliffPillar_07): bei einer Probenstelle
+			// den Startpunkt entlang des Frontwegs hinter die Klippe verlegen, dann sperren - statt die Stelle jede Welle stehen zu lassen
+			bool bVerlegt = false;
+			const TArray<FVector>& Weg = mFronten[i].Punkte;
+			if (Stelle && Weg.Num() >= 2 && TDBalance::Ganz(TEXT("Gegner.FrontVerlegen"), 1) > 0)
+			{
+				int32 Naechster = 0;
+				for (int32 k = 1; k < Weg.Num(); ++k)
+				{
+					if (FVector::DistSquared2D(Weg[k], *Stelle) < FVector::DistSquared2D(Weg[Naechster], *Stelle))
+					{
+						Naechster = k;
+					}
+				}
+				for (int32 k = Naechster; k < Weg.Num() - 1 && !bVerlegt; ++k)
+				{
+					if (!Schutz.IsInsideXY(Weg[k]) && FVector::Dist2D(Weg[k], Kern->GetActorLocation()) > 6000.f)
+					{
+						UE_LOG(LogFicsitTD, Log, TEXT("Klippensperre: Startpunkt von Front %d hinter %s verlegt (%s -> %s)"), i + 1, *Modell,
+							*mFronten[i].Ort.ToCompactString(), *Weg[k].ToCompactString());
+						mFronten[i].Ort = Weg[k];
+						if (Kern->mLaufFrontOrte.IsValidIndex(i))
+						{
+							Kern->mLaufFrontOrte[i] = Weg[k];
+						}
+						bVerlegt = true;
+					}
+				}
+			}
+			if (!bVerlegt)
+			{
+				UE_LOG(LogFicsitTD, Log, TEXT("Klippensperre: %s bei %s schliesst den Startpunkt von Front %d ein - nicht gesperrt"), *Modell, *Mitte.ToCompactString(), i + 1);
+				return false;
+			}
 		}
 	}
 	if (Stelle)

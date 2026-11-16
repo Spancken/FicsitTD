@@ -49,7 +49,7 @@
    - Im Verteidigungsfeld (120 m um den Kern) ist das Bauen aller Gebäude mit Kontingent gesperrt, also auch Splitter, Verbinder, Lager, Puffer und Generatoren. Bänder, Rohre, Stromleitungen und Fundamente darf man weiter bauen (Marius 12.11.). Der Laden ist in der Welle zu, Turmlevel und Talente gehen.
    - Während der Welle kann nicht gespeichert werden, auch der Autosave ruht. Sonst ließe sich Beute durch Laden wiederholen.
    - Die Welle endet, wenn alle Gegner tot sind. Nachzügler werden versetzt oder entfernt.
-   - **Klippenprobe (ab 0.11-dev):** Vor jeder Welle fährt eine Gegner-Kapsel (Radius und Halbhöhe 70 cm) jeden vollen Frontweg in 2-m-Schritten ab. Klippen mit Flächen steiler als 45 Grad, an denen sie hängen bleibt, werden vorab aus dem Navigationsnetz genommen (`Gegner.KlippenProbe*`, höchstens `Gegner.KlippenSperrenMax` = 24). Nach dem Netzumbau planen marschierende Gegner ihren Weg neu.
+   - **Klippenprobe (ab 0.11-dev):** Vor jeder Welle fährt eine Gegner-Kapsel (Radius und Halbhöhe 70 cm) jeden vollen Frontweg in 2-m-Schritten ab. Klippen mit Flächen steiler als 45 Grad, an denen sie hängen bleibt, werden vorab aus dem Navigationsnetz genommen (`Gegner.KlippenProbe*`, höchstens `Gegner.KlippenSperrenMax` = 24). Nach dem Netzumbau planen marschierende Gegner ihren Weg neu. Liegt die Hängestelle am Startpunkt einer Front, wird der Startpunkt entlang des Frontwegs hinter die Sperrfläche verlegt (`Gegner.FrontVerlegen`, 16.11.).
 4. **Nach der Welle:**
    - Es gibt Coupons, Festplatten und Biomasse.
    - Der Kern repariert sich (Grundreparatur, mit Forschung mehr).
