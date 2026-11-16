@@ -95,7 +95,7 @@ void UTDAbwehrSubsystem::Pruefe()
 void UTDAbwehrSubsystem::SchalteStrahlenschutzFrei()
 {
 	// 16.11. (Marius: Singularitaetswerfer strahlt): mit der Forschung Singularitaet kommen Hazmat-Anzug und Iod-Filter des Spiels
-	// (sonst ueber den HUB, im Einsatz gesperrt). Gilt in allen Modi; Rezepte nach Namen in der Asset-Registry gesucht.
+	// (sonst ueber den HUB, im Einsatz gesperrt). Gilt in allen Modi.
 	if (mStrahlenschutz || !UTDKernplatz::ModAktiv(this) || !TDForschung::Hat(this, TEXT("Singularitaet")))
 	{
 		return;
@@ -107,30 +107,26 @@ void UTDAbwehrSubsystem::SchalteStrahlenschutzFrei()
 		mStrahlenschutz = false;
 		return;
 	}
-	IAssetRegistry* Registry = IAssetRegistry::Get();
-	if (!Registry)
-	{
-		mStrahlenschutz = false;
-		return;
-	}
-	TArray<FAssetData> Gefunden;
-	Registry->GetAssetsByPath(FName(TEXT("/Game/FactoryGame/Recipes")), Gefunden, true);
+	// Fenster A 16.11.: die Suche ueber die Asset-Registry fand im Spiel 0 Rezepte (Plan Strahlenschutz). Die Pfade sind
+	// bekannt (Starter Project Recipes/Equipment) - direkt laden, jeden Fehlschlag einzeln melden.
+	static const TCHAR* Pfade[] = {
+		TEXT("/Game/FactoryGame/Recipes/Equipment/Recipe_HazmatSuit.Recipe_HazmatSuit_C"),
+		TEXT("/Game/FactoryGame/Recipes/Equipment/Recipe_FilterHazmat.Recipe_FilterHazmat_C"),
+	};
 	TArray<FString> Namen;
-	for (const FAssetData& A : Gefunden)
+	for (const TCHAR* Pfad : Pfade)
 	{
-		const FString Name = A.AssetName.ToString();
-		if (!Name.StartsWith(TEXT("Recipe_")) || !Name.Contains(TEXT("Hazmat")))
+		UClass* Rezept = LoadClass<UFGRecipe>(nullptr, Pfad);
+		if (!Rezept)
 		{
+			UE_LOG(LogFicsitTD, Warning, TEXT("Strahlenschutz: Rezept %s nicht gefunden"), Pfad);
 			continue;
 		}
-		if (UClass* Rezept = LoadClass<UFGRecipe>(nullptr, *FString::Printf(TEXT("%s.%s_C"), *A.PackageName.ToString(), *Name)))
+		if (!Rezepte->IsRecipeAvailable(Rezept))
 		{
-			if (!Rezepte->IsRecipeAvailable(Rezept))
-			{
-				Rezepte->AddAvailableRecipe(Rezept);
-			}
-			Namen.Add(Name);
+			Rezepte->AddAvailableRecipe(Rezept);
 		}
+		Namen.Add(Rezept->GetName());
 	}
 	UE_LOG(LogFicsitTD, Log, TEXT("Strahlenschutz: %d Rezepte freigeschaltet (%s)"), Namen.Num(), *FString::Join(Namen, TEXT(", ")));
 }
