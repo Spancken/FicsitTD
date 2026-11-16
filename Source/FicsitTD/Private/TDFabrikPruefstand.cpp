@@ -2,6 +2,7 @@
 #include "FicsitTDModule.h"
 #include "TDDefenseCore.h"
 #include "TDTurretBase.h"
+#include "TDWaveSubsystem.h"
 #include "FGBuildableSubsystem.h"
 #include "FGFactoryConnectionComponent.h"
 #include "FGRecipe.h"
@@ -193,12 +194,26 @@ bool TDFabrik::BaueLinie(UWorld* World, ATDDefenseCore* Kern, const FString& Lin
 		Vorher = M;
 	}
 
-	// Tuerme im Halbkreis 20 m um den Kern auf der Fabrikseite, Splitter-Kette 26 m vom Kern davor
+	// Tuerme 20 m um den Kern. Fenster B2 16.11.: im Halbkreis auf der Fabrikseite fiel der Kern in W3 (die Front lag gegenueber) -
+	// jetzt gleichmaessig im Kreis, beginnend bei der ersten Front. Splitter-Kette 26 m vom Kern Richtung Fabrik.
+	FVector FrontRichtung = Richtung;
+	if (const UTDWaveSubsystem* Waves = World->GetSubsystem<UTDWaveSubsystem>())
+	{
+		for (const FTDFront& F : Waves->GetFronten())
+		{
+			const FVector R = (F.Ort - KernOrt).GetSafeNormal2D();
+			if (!R.IsNearlyZero())
+			{
+				FrontRichtung = R;
+				break;
+			}
+		}
+	}
 	TArray<AActor*> TurmListe;
 	for (int32 k = 0; k < Tuerme; ++k)
 	{
-		const float Winkel = (Tuerme > 1 ? -60.f + 120.f * k / (Tuerme - 1) : 0.f);
-		const FVector Ort = Boden(World, KernOrt + Richtung.RotateAngleAxis(Winkel, FVector::UpVector) * 2000.f);
+		const float Winkel = 360.f * k / FMath::Max(1, Tuerme);
+		const FVector Ort = Boden(World, KernOrt + FrontRichtung.RotateAngleAxis(Winkel, FVector::UpVector) * 2000.f);
 		AFGBuildable* T = Setze(World, TurmKlasse, FTransform(Dreh, Ort), [](AFGBuildable*) {});
 		if (ATDTurretBase* Turm = Cast<ATDTurretBase>(T))
 		{

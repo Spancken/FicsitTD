@@ -269,7 +269,9 @@ AActor* UTDWaveSubsystem::NaechsterKoeder(const FVector& Location) const
 	for (TActorIterator<ATDDecoy> It(GetWorld()); It; ++It)
 	{
 		ATDDecoy* Decoy = *It;
-		if (IsValid(Decoy) && Decoy->GetActiveTarget())
+		// 16.11. (Nachpruefung F9): ein zweiter Kern am Gegnerweg ist kein Ziel - nur der Kern dieses Laufs
+		const ATDDefenseCore* AndererKern = Decoy ? Cast<ATDDefenseCore>(Decoy->GetActiveTarget()) : nullptr;
+		if (IsValid(Decoy) && Decoy->GetActiveTarget() && !(AndererKern && AndererKern != mKern.Get()))
 		{
 			const float Dist = FVector::DistSquared(Decoy->GetActorLocation(), Location);
 			if (Dist < BestDist)
@@ -3000,6 +3002,14 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 			{
 				Einsatz->HeileVerteidigung();
 			}
+			// 16.11. (Nachpruefung F7): Kern-Schild auch in der Bohrung (dort ist der Einsatz-Kern leer)
+			if (mBohrung)
+			{
+				if (ATDDefenseCore* BohrKern = mKern.Get())
+				{
+					BohrKern->LadeSchild();
+				}
+			}
 			SpawneKernWelle(mWelle);
 			MesseWellenStart();
 			SpeichereLauf();
@@ -3152,7 +3162,9 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 	}
 	if ((mWelle + 1) % 10 == 0)
 	{
-		Ansage(TDF(TEXT("WARNUNG: Welle %d ist ein BOSSKAMPF (%s). Verteidigung bündeln - danach gibt es Extra-Coupons."), TEXT("WARNING: Wave %d is a BOSS FIGHT (%s). Concentrate your defense - extra Coupons afterwards."), mWelle + 1,
+		Ansage(mBohrung ? TDF(TEXT("WARNUNG: Welle %d ist ein BOSSKAMPF (%s). Verteidigung bündeln."), TEXT("WARNING: Wave %d is a BOSS FIGHT (%s). Concentrate your defense."), mWelle + 1,
+			*PhasenBossName(((mWelle + 1) / 10 - 1) % KernPhasenAnzahl)) :
+			TDF(TEXT("WARNUNG: Welle %d ist ein BOSSKAMPF (%s). Verteidigung bündeln - danach gibt es Extra-Coupons."), TEXT("WARNING: Wave %d is a BOSS FIGHT (%s). Concentrate your defense - extra Coupons afterwards."), mWelle + 1,
 			*PhasenBossName(((mWelle + 1) / 10 - 1) % KernPhasenAnzahl)));
 	}
 	// Wellen-Progression: zur Mitte einer Phase die naechste Familie ankuendigen, damit man Fabrik und Forschung vorbereitet

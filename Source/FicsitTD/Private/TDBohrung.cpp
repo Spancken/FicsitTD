@@ -9,6 +9,7 @@
 #include "TDKernplatz.h"
 #include "TDPionier.h"
 #include "TDBalance.h"
+#include "TDForschung.h"
 #include "TDSprache.h"
 #include "FicsitTDModule.h"
 #include "Resources/FGResourceNode.h"
@@ -238,6 +239,11 @@ void UTDWaveSubsystem::BohrWelleBeendet(float KernAnteil)
 	if (ATDDefenseCore* Kern = mKern.Get())
 	{
 		Kern->HealTD(Kern->GetTDMaxHealth() * TDBalance::Wert(TEXT("Bohrung.Reparatur"), 0.1f));
+		// 16.11. (Nachpruefung F7): gekaufte Kern-Forschung wirkt auch in der Bohrung
+		if (TDForschung::Hat(this, TEXT("KernNotrep")))
+		{
+			Kern->HealTD(Kern->GetTDMaxHealth() * TDBalance::Wert(TEXT("Forschung.KernNotrep.Anteil"), 0.1f));
+		}
 	}
 	Ansage(TDF(TEXT("Bohrung: Welle %d abgewehrt - %s."), TEXT("Drilling: wave %d repelled - %s."), mWelle, *Text));
 }

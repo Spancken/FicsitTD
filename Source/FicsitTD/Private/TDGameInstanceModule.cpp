@@ -82,10 +82,10 @@ void UTDGameInstanceModule::SetzeTexte()
 	mModus->ToolTip = FText::FromString(mModus->ToolTip.ToString() + TDT(
 		TEXT(" FREIES SPIEL MIT ABWEHR: normales Satisfactory mit HUB und Meilensteinen, dazu Türme, Mauern und Abwehr-Forschung im MAM (mit Coupons). "
 			"Nichts greift an, was du nicht einschaltest: Stell einen Abwehrkern als Tiefbohrer neben einen Rohstoffknoten und starte dort eine Bohrung - "
-			"hält deine Verteidigung, gibt es Erz, beim ersten Erfolg auch Festplatten und einen Talentpunkt."),
+			"hält deine Verteidigung, gibt es Erz, beim ersten Erfolg je Rohstoff und Stufe auch Festplatten, auf Schwer zusätzlich einen Talentpunkt."),
 		TEXT(" FREE PLAY WITH DEFENSE: regular Satisfactory with HUB and milestones, plus turrets, walls and defense research in the MAM (paid with Coupons). "
 			"Nothing attacks unless you switch it on: place a Defense Core as a deep drill next to a resource node and start a drilling there - "
-			"if your defense holds, you get ore, and on the first success also Hard Drives and a Talent Point.")));
+			"if your defense holds, you get ore, and on the first success per resource and level also Hard Drives, plus a Talent Point on Hard.")));
 	if (UFGUserSetting_IntSelector* Wahl = Cast<UFGUserSetting_IntSelector>(mModus->ValueSelector))
 	{
 		// 0.11: Eintrag fuer Wert 2 zur Laufzeit anlegen (das Asset kennt nur 0 und 1)

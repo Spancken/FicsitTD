@@ -1,5 +1,6 @@
 ﻿#include "TDBandUpgrade.h"
 #include "TDForschung.h"
+#include "TDKernplatz.h"
 #include "FicsitTDModule.h"
 #include "TDSprache.h"
 #include "EngineUtils.h"
@@ -71,7 +72,9 @@ void UTDBandUpgrade::Erforscht(TSubclassOf<UFGSchematic> Schematic)
 		TDForschung::GibStilleRezepte(this);
 	}
 	const int32 Stufe = Pfad.Contains(TEXT("Research_TD_BandMk3")) ? 3 : Pfad.Contains(TEXT("Research_TD_BandMk2")) ? 2 : 0;
-	if (Stufe == 0)
+	// 16.11. (Nachpruefung F6): im Freien Spiel mit Abwehr gibt es keinen Gratis-Umbau - dort kommen Baender ueber den HUB,
+	// der verborgene Industrie-Knoten wird nur nachgezogen
+	if (Stufe == 0 || UTDKernplatz::IstAbwehr(this))
 	{
 		return;
 	}

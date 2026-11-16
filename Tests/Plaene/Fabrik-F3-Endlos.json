@@ -1,0 +1,60 @@
+{
+  "Name": "Fabrik-F3-Endlos",
+  "_Hinweis": "Fabrik-Pruefstand F3 (16.11.): Endlos-Wellen Normal mit echter Bolzenlinie (6 Tuerme L2, Band Mk2), Wellen auf Zeit, keine geschenkte Munition. Frage: wie weit kommt eine Fabrik-Linie unter Zeitdruck? Strom noch frei.",
+  "NeuesSpiel": {
+    "Startort": "Grass Fields",
+    "Modus": 2,
+    "Stufe": 2
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 90,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warteBis": "EinsatzAktiv",
+      "max": 180
+    },
+    {
+      "befehl": "td einsatz frei an"
+    },
+    {
+      "stromfrei": true
+    },
+    {
+      "fabrik": "Bolzen",
+      "tuerme": 6,
+      "level": 2,
+      "band": 2
+    },
+    {
+      "befehl": "td einsatz frei aus"
+    },
+    {
+      "fabrikbericht": true
+    },
+    {
+      "foto": "Fabrik_F3"
+    },
+    {
+      "wellenlauf": 40,
+      "zeitraffer": 4,
+      "max": 900,
+      "aufZeit": true
+    },
+    {
+      "zeitraffer": 1
+    },
+    {
+      "fabrikbericht": true
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}

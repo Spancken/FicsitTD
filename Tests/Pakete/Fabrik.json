@@ -1,0 +1,9 @@
+{
+  "Name": "Fabrik",
+  "_Hinweis": "Fabrik-Pruefstand (Konzept-Fabrik-Pruefstand-2026-11-16.md): F1 Einsatz bis W10, F3 Endlos auf Zeit, F4 Bohrung Leicht - Munition nur ueber echte Baender. Laeuft in der Pipeline-Stufe Release (G3) und bei Wirtschafts-/Balanceaenderungen.",
+  "Plaene": [
+    "Fabrik-F1",
+    "Fabrik-F3-Endlos",
+    "Fabrik-F4-Bohrung"
+  ]
+}

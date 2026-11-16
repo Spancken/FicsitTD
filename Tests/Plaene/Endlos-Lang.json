@@ -1,6 +1,6 @@
 {
   "Name": "Endlos-Lang",
-  "_Hinweis": "0.11 (Marius 15.11.): Langlauf Endlos-Wellen. Basis wie Strat-Gewehr-Tesla (Simulator-Strategie), aber Spielmodus 2: Wellen auf Zeit (aufZeit, kein Vorziehen), eine Front, schrumpfender Abstand. Kennzahlen je Welle im Pruefstand-Abschnitt des Berichts. Ziel: sehen, wie weit die Basis kommt und wo der Druck kippt.",
+  "_Hinweis": "0.11 (Marius 15.11.): Langlauf Endlos-Wellen. Basis wie Strat-Gewehr-Tesla (Simulator-Strategie), aber Spielmodus 2: Wellen auf Zeit (aufZeit, kein Vorziehen), eine Front, schrumpfender Abstand. Kennzahlen je Welle im Pruefstand-Abschnitt des Berichts. Ziel: sehen, wie weit die Basis kommt und wo der Druck kippt. 16.11. (Fenster B2): Pruefung \"Kern hat Welle 30 ueberstanden\" entfernt - sie mass den Kern am Ende des Laufs (im Endlos-Modus immer 0); die Pruefung \"Welle 30 abgewehrt\" deckt es ab.",
   "NeuesSpiel": {
     "Startort": "Rocky Desert",
     "Modus": 2
@@ -325,10 +325,6 @@
     },
     {
       "foto": "Strat-Gewehr-Tesla_W30"
-    },
-    {
-      "pruefe": "KernLebt",
-      "text": "Kern hat Welle 30 überstanden"
     },
     {
       "pruefe": "Sicherheitsnetze",

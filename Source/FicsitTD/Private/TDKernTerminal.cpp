@@ -814,7 +814,8 @@ void UTDKernTerminal::Aktualisiere()
 		const FString Namen[] = { TDT(TEXT("Kurz (20)"), TEXT("Short (20)")), TDT(TEXT("Mittel (30)"), TEXT("Medium (30)")), TDT(TEXT("Standard (50)"), TEXT("Standard (50)")),
 			TDT(TEXT("Endlos"), TEXT("Endless")) };   // 0.77 Marius: 50 Wellen sind Standard
 		const FString Wellen[] = { TDT(TEXT("20 Wellen"), TEXT("20 waves")), TDT(TEXT("30 Wellen"), TEXT("30 waves")), TDT(TEXT("50 Wellen"), TEXT("50 waves")), TDT(TEXT("endlos"), TEXT("endless")) };
-		mLaengeKnopf->SetVisibility(bEinsatz ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
+		// 16.11. (Nachpruefung F10): nur zusammen mit "Einsatz starten" (sonst stand er im Freien Spiel ohne Wirkung da)
+		mLaengeKnopf->SetVisibility(mStartKnopf ? mStartKnopf->GetVisibility() : ESlateVisibility::Collapsed);
 		mLaengeText->SetText(TDFX(TEXT("Länge: %s"), TEXT("Length: %s"), *Namen[mLaenge]));
 		mStartText->SetText(TDFX(TEXT("Einsatz starten (Normal, %s)"), TEXT("Start operation (Normal, %s)"), *Wellen[mLaenge]));
 	}
@@ -1483,10 +1484,10 @@ void UTDKernTerminal::BauePionier()
 		: TDF(TEXT("%d / %d XP bis Rang %d"), TEXT("%d / %d XP to rank %d"), XP, Bis, Rang + 1), 13, TDUI::Grau), 4.f);
 	// 0.9.8 P3: XP vor allem fuer eigene Leistung, hoechstens 15 Punkte, Rangboni ohne Punkte
 	UTextBlock* Info = NeuerText(TDF(TEXT("XP gibt es für deinen Anteil am Wellenschaden, für Abschüsse (normal 3, Elite 10, Boss 50), Assists und reparierte LP, dazu etwas für jede abgewehrte Welle. "
-		"Jeder Rang bringt einen Talentpunkt, höchstens %d: Wähle zwei Rollen ganz oder drei zur Hälfte. Alle 3 Ränge: +10 LP und +3 %% Lauftempo (jetzt +%d LP). Rang und Talente gelten für diesen Einsatz."),
+		"Jeder Rang bringt einen Talentpunkt, höchstens %d: Wähle zwei Rollen ganz oder drei zur Hälfte. Alle 3 Ränge: +10 LP und +3 %% Lauftempo (jetzt +%d LP). Rang und Talente gehören zum Spielstand."),
 		TEXT("You earn XP for your share of the wave damage, for kills (normal 3, Elite 10, Boss 50), assists and repaired HP, plus a little for every repelled wave. "
-		"Each rank gives one Talent Point, at most %d: pick two roles in full or three halfway. Every 3 ranks: +10 HP and +3 %% walk speed (now +%d HP). Rank and talents apply to this operation."),
-		UTDPionier::MaxRang() - 1, 10 * P->RangBoni()), 13, TDUI::Grau);
+		"Each rank gives one Talent Point, at most %d: pick two roles in full or three halfway. Every 3 ranks: +10 HP and +3 %% walk speed (now +%d HP). Rank and talents belong to the save."),
+		FMath::Min(UTDPionier::MaxRang() - 1, TDBalance::Ganz(TEXT("Pionier.MaxPunkte"), 15)), 10 * P->RangBoni()), 13, TDUI::Grau);
 	Info->SetAutoWrapText(true);
 	Abschnitt(Info, 14.f);
 

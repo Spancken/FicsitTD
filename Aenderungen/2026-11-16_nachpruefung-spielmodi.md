@@ -17,6 +17,12 @@ Freies Spiel mit Abwehr:
 - **F5:** Bohrung nur an echten Rohstoffknoten, nicht an Rohstoffbrocken (`AFGResourceDeposit`).
 - **F8:** Talentpunkte aus Rang und Bohrung zusammen hoechstens 15 (`Pionier.MaxPunkte`).
 
+- **F3:** Wildtiere greifen im Freien Spiel keine Abwehrbauten an (Koeder nur fuer Wellengegner der Bohrung).
+- **F6:** Kein Gratis-Umbau der Baender im Freien Spiel (Baender kommen dort ueber den HUB).
+- **F7:** Kern-Schild und Notreparatur wirken auch in der Bohrung.
+- **F9:** Ein zweiter Kern am Gegnerweg ist kein Ziel der Wellengegner.
+- **F10:** Einsatz-Texte im Freien Spiel: Talentpunkt nur auf Schwer (Modus-Text), Laengenknopf nur mit „Einsatz starten“, neutrale Speicher-Meldung, kein „Extra-Coupons“ beim Bohrungs-Boss, „Rang und Talente gehoeren zum Spielstand“.
+
 Einsatz:
 - **E1:** Nach „Einsatz beenden“ bleibt die Welt frei: Merkmal `mEinsatzBeendet` im Spielstand (`ATDSpielstand`), danach kein neuer Kernplatz (auch nach Abriss des Kerns) und ohne Entwicklermodus kein Start von Hand.
 - **E3:** Erweiterte Spieleinstellungen des Spiels (Kreativ-Modus) = Lauf ohne Wertung, im Einsatz und im Endlos-Modus; Endlos beachtet jetzt auch Eingriffe (E8).
@@ -30,7 +36,7 @@ Endlos-Wellen:
 
 **Simulation:** Bonuswahl ist im Modell nicht enthalten; Freigabe „ab Welle“ im Modus 3 betrifft die Bohrungs-Simulation nicht (Tuerme fest vorgegeben). Simulation neu gerechnet, Stand in `sim_stand.json`.
 
-**Offen (Fahrplan B13):** E2 Wiederholen zaehlt voll (so entschieden), E6 Chatzeilen an der Phasengrenze, E7 Stufe in der Bau-Meldung des Kernplatzes, N4 Ueberlauf heisst im Chat „abgewehrt“, N5 Vorziehen vor W1 (bleibt), N6–N8, F3 Wildtiere und Abwehrbauten, F6 Band-Upgrade, F7 Kern-Forschung ohne Wirkung im Modus 3, F9 zweiter Kern, F10 Einsatz-Texte im Modus 3, Plan „Spielersicht“ ohne Entwicklermodus. Im Spiel nicht nachgewiesen.
+**Offen (Fahrplan B13):** E2 Wiederholen zaehlt voll (so entschieden), E6 Chatzeilen an der Phasengrenze, E7 Stufe in der Bau-Meldung des Kernplatzes, N4 Ueberlauf heisst im Chat „abgewehrt“, N5 Vorziehen vor W1 (bleibt), N6–N8, Plan „Spielersicht“ ohne Entwicklermodus. Im Spiel nicht nachgewiesen.
 
 **Changelog EN:** Free play with defense: research no longer waits for wave numbers, destroyed buildings refund their materials during drilling and defenses heal each drilling wave, drilling only works at real resource nodes, talent points are capped at 15. Operation: after ending an operation the world stays free to build, advanced game settings make a run unranked, the Core bonus now permanently adds 10 % Core HP and unclaimed bonuses are kept. Endless waves: the timer keeps running while enemies are still queued, an unfinished boss wave gives no break or bonus, the shop is open during waves, no saves per wave.
 

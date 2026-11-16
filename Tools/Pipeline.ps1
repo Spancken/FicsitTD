@@ -114,6 +114,7 @@ if ($OhneSpiel) {
     }
     if ($Stufe -eq "Release") {
         Schritt "G3 Langlauf ReleaseLang" { Testlauf @{ Paket = "ReleaseLang" } }
+        Schritt "G3 Fabrik-Pruefstand (echte Munitionslinien)" { Testlauf @{ Paket = "Fabrik" } }
         Schritt "Release-Zip bauen" {
             $ausgabe = & (Join-Path $Skill "Release-Mod.ps1") -Mod FicsitTD *>&1 | ForEach-Object { "$_" }
             $ausgabe | Set-Content (Join-Path $Aus "release-zip.log") -Encoding utf8

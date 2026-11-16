@@ -226,8 +226,9 @@ static bool SpeichernGesperrt(const UObject* Kontext, bool bMelden)
 	}
 	if (bMelden)
 	{
-		Einsatz->Melde(TDT(TEXT("Während einer Welle kann nicht gespeichert werden. Nach der Welle speichert der Einsatz selbst."),
-			TEXT("You cannot save during a wave. The operation saves on its own after the wave.")));
+		// 16.11. (Nachpruefung F10): neutral - gilt auch fuer Bohrung und Endlos (dort speichert der Mod nicht selbst)
+		Einsatz->Melde(TDT(TEXT("Während einer Welle kann nicht gespeichert werden - nach der Welle wieder."),
+			TEXT("You cannot save during a wave - you can again once it is over.")));
 	}
 	return true;
 }
@@ -376,6 +377,18 @@ static bool IstAktiverKoeder(const AActor* Actor)
 	return Decoy && Decoy->GetActiveTarget() != nullptr;
 }
 
+/** 16.11. (Nachpruefung F3): im Freien Spiel mit Abwehr greifen nur Wellengegner der Bohrung die Koeder an - Wildtiere nicht
+ *  ("nichts greift an, was du nicht eingeschaltet hast"). Im Einsatz bleibt es wie bisher. */
+static bool KoederFuer(const AFGCreatureController* Self, const AActor* Actor)
+{
+	if (!IstAktiverKoeder(Actor))
+	{
+		return false;
+	}
+	const APawn* Selbst = Self ? Self->GetPawn() : nullptr;
+	return IstWellenKreatur(Selbst) || !UTDKernplatz::IstAbwehr(Self);
+}
+
 void FFicsitTDModule::StartupModule()
 {
 	UE_LOG(LogFicsitTD, Log, TEXT("FICSIT Tower Defense geladen"));
@@ -387,9 +400,13 @@ void FFicsitTDModule::StartupModule()
 	// Test 0.43 (Marius): Gegner griffen sich gegenseitig an - Wellengegner sind fuer keine Kreatur Ziel, Feind oder Bedrohung
 	SUBSCRIBE_METHOD_VIRTUAL(AFGCreatureController::IsValidTarget, Sample, [](auto& Scope, const AFGCreatureController* Self, const AActor* Actor)
 	{
-		if (IstAktiverKoeder(Actor))
+		if (KoederFuer(Self, Actor))
 		{
 			Scope.Override(true);
+		}
+		else if (IstAktiverKoeder(Actor))
+		{
+			Scope.Override(false);   // 16.11. (F3): Wildtier im Freien Spiel
 		}
 		else if (IstWellenKreatur(Actor) || IstWellenKreatur(Self ? Self->GetPawn() : nullptr))
 		{
@@ -398,9 +415,13 @@ void FFicsitTDModule::StartupModule()
 	});
 	SUBSCRIBE_METHOD_VIRTUAL(AFGCreatureController::CanBeHostileTowards, Sample, [](auto& Scope, const AFGCreatureController* Self, const AActor* Actor)
 	{
-		if (IstAktiverKoeder(Actor))
+		if (KoederFuer(Self, Actor))
 		{
 			Scope.Override(true);
+		}
+		else if (IstAktiverKoeder(Actor))
+		{
+			Scope.Override(false);   // 16.11. (F3): Wildtier im Freien Spiel
 		}
 		else if (IstWellenKreatur(Actor) || IstWellenKreatur(Self ? Self->GetPawn() : nullptr))
 		{
@@ -409,9 +430,13 @@ void FFicsitTDModule::StartupModule()
 	});
 	SUBSCRIBE_METHOD_VIRTUAL(AFGCreatureController::IsActorConsideredThreat_Implementation, Sample, [](auto& Scope, const AFGCreatureController* Self, const AActor* Actor)
 	{
-		if (IstAktiverKoeder(Actor))
+		if (KoederFuer(Self, Actor))
 		{
 			Scope.Override(true);
+		}
+		else if (IstAktiverKoeder(Actor))
+		{
+			Scope.Override(false);   // 16.11. (F3): Wildtier im Freien Spiel
 		}
 		else if (IstWellenKreatur(Actor))
 		{
