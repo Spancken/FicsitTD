@@ -1,0 +1,469 @@
+{
+  "Name": "Optik",
+  "_Hinweis": "Optik-Durchgang 16.11.2026 (Satisfactory\\Notizen\\Optik-Durchgang-2026-11-16.md): jeden Turm/Bau einmal bauen und von zwei Seiten fotografieren. Im Log je Gebaeude 'Umfeld ...': nach dem Fix keine InputFogPlane mehr. Vorstufe der Fotostrecke P4.",
+  "NeuesSpiel": {
+    "Startort": "Rocky Desert"
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 20,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warte": 15
+    },
+    {
+      "befehl": "td einsatz stop"
+    },
+    {
+      "befehl": "td kern stop"
+    },
+    {
+      "befehl": "td einsatz start normal 30"
+    },
+    {
+      "befehl": "td einsatz frei an"
+    },
+    {
+      "stromfrei": true
+    },
+    {
+      "versorgung": {
+        "Bolzenturm": 50,
+        "Gewehrturm": 20,
+        "Nobelisk-Werfer": 10,
+        "Himmelsturm": 30,
+        "Singularitaet": 8,
+        "Stoerfeld": 2,
+        "Drohnenplatz": 20
+      }
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 1,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 1,
+      "rezept": "Recipe_TD_Gun_Standard"
+    },
+    {
+      "baue": "Teslaspule",
+      "anzahl": 1,
+      "rezept": "Recipe_TD_Tesla_Discharge"
+    },
+    {
+      "baue": "Flammenwerfer",
+      "anzahl": 1,
+      "rezept": "Recipe_TD_Flame_Fuel"
+    },
+    {
+      "baue": "Nobelisk-Werfer",
+      "anzahl": 1,
+      "rezept": "Recipe_TD_Nobelisk_Explosive"
+    },
+    {
+      "baue": "Himmelsturm",
+      "anzahl": 1,
+      "rezept": "Recipe_TD_Flak_Shoot"
+    },
+    {
+      "baue": "Singularitaet",
+      "anzahl": 1,
+      "rezept": "Recipe_TD_Singularitaet_Ficsonium"
+    },
+    {
+      "baue": "Stoerfeld",
+      "anzahl": 1,
+      "rezept": "Recipe_TD_Feld_SAM",
+      "ring": "weg"
+    },
+    {
+      "baue": "Funkmast",
+      "anzahl": 1,
+      "rezept": "Recipe_TD_Funk_Strom",
+      "ring": "innen"
+    },
+    {
+      "baue": "Schildgenerator",
+      "anzahl": 1,
+      "rezept": "Recipe_TD_Schild_Strom",
+      "ring": "innen"
+    },
+    {
+      "baue": "Drohnenplatz",
+      "anzahl": 1,
+      "rezept": "Recipe_TD_Drohne_Kampf",
+      "ring": "innen"
+    },
+    {
+      "baue": "Elektrozaun",
+      "anzahl": 1,
+      "rezept": "Recipe_TD_Zaun_Strom",
+      "ring": "weg"
+    },
+    {
+      "baue": "Lockfeuer",
+      "anzahl": 1,
+      "rezept": "Recipe_TD_Lure_Coal",
+      "ring": "weg"
+    },
+    {
+      "baue": "Oelschlick",
+      "anzahl": 1,
+      "rezept": "Recipe_TD_Slick_HeavyOil",
+      "ring": "weg"
+    },
+    {
+      "warte": 20
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "Optik_Ueberblick",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Bolzenturm",
+      "abstand": 10,
+      "winkel": 30
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Bolzenturm_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Bolzenturm",
+      "abstand": 10,
+      "winkel": 210
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Bolzenturm_210",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Gewehrturm",
+      "abstand": 10,
+      "winkel": 30
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Gewehrturm_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Gewehrturm",
+      "abstand": 10,
+      "winkel": 210
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Gewehrturm_210",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Teslaspule",
+      "abstand": 10,
+      "winkel": 30
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Teslaspule_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Teslaspule",
+      "abstand": 10,
+      "winkel": 210
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Teslaspule_210",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Flammenwerfer",
+      "abstand": 10,
+      "winkel": 30
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Flammenwerfer_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Flammenwerfer",
+      "abstand": 10,
+      "winkel": 210
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Flammenwerfer_210",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Nobelisk-Werfer",
+      "abstand": 10,
+      "winkel": 30
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Nobelisk-Werfer_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Nobelisk-Werfer",
+      "abstand": 10,
+      "winkel": 210
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Nobelisk-Werfer_210",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Himmelsturm",
+      "abstand": 10,
+      "winkel": 30
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Himmelsturm_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Himmelsturm",
+      "abstand": 10,
+      "winkel": 210
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Himmelsturm_210",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Singularitaet",
+      "abstand": 10,
+      "winkel": 30
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Singularitaet_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Singularitaet",
+      "abstand": 10,
+      "winkel": 210
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Singularitaet_210",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Stoerfeld",
+      "abstand": 10,
+      "winkel": 30
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Stoerfeld_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Stoerfeld",
+      "abstand": 10,
+      "winkel": 210
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Stoerfeld_210",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Funkmast",
+      "abstand": 10,
+      "winkel": 30
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Funkmast_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Funkmast",
+      "abstand": 10,
+      "winkel": 210
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Funkmast_210",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Schildgenerator",
+      "abstand": 10,
+      "winkel": 30
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Schildgenerator_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Schildgenerator",
+      "abstand": 10,
+      "winkel": 210
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Schildgenerator_210",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Drohnenplatz",
+      "abstand": 10,
+      "winkel": 30
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Drohnenplatz_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Drohnenplatz",
+      "abstand": 10,
+      "winkel": 210
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Drohnenplatz_210",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Elektrozaun",
+      "abstand": 10,
+      "winkel": 30
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Elektrozaun_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Elektrozaun",
+      "abstand": 10,
+      "winkel": 210
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Elektrozaun_210",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Lockfeuer",
+      "abstand": 10,
+      "winkel": 30
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Lockfeuer_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Lockfeuer",
+      "abstand": 10,
+      "winkel": 210
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Lockfeuer_210",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Oelschlick",
+      "abstand": 10,
+      "winkel": 30
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Oelschlick_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Oelschlick",
+      "abstand": 10,
+      "winkel": 210
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Oelschlick_210",
+      "ohneHUD": true
+    }
+  ]
+}

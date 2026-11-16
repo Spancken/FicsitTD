@@ -63,6 +63,27 @@ Die Konsistenzprüfung (`Tests\pruefe_konsistenz.py`) prüft:
 - Handbuch: gleich viele deutsche wie englische Abschnitte.
 - Testpläne aus den Zetteln vorhanden.
 
+**Optik** (seit 16.11.2026, Optik-Durchgang, Bericht `Satisfactory\Notizen\Optik-Durchgang-2026-11-16.md`), in allen Stufen:
+
+- **`Tests\pruefe_optik_statisch.py`** (ohne Editor, Sekunden), Schritt „Optik statisch“. Er prüft:
+  - Original-Anschlussteile (C++ `OriginalTeil`) im Klarraum der Bauvorschau
+  - kein Original-Statusmast und kein Wand-Strommast (Entscheidung 16.11.)
+  - Bandeingang nicht höher als der Sockel
+  - Backfarben in `td_backen.py` nicht dunkler als die Spielwerte (Gummi ≥ 0,03)
+  - keine großen fast schwarzen Flächen in den gebackenen Texturen
+  - Flächen ohne AO (nur Hinweis)
+- **Sperrklinke `Tests\optik_basis.json`:**
+  - Bekannte Fehler (Stand 16.11.) bleiben grün, jeder neue Fehler macht rot.
+  - Wer Fehler behebt, verkleinert die Basis mit `--basis-schreiben`.
+  - `--streng` ignoriert die Basis.
+- **`Scripts\pruefe_optik.py`** (Editor-Commandlet, nur lesen, ~3 min, nach jedem Asset-Skript). Er prüft:
+  - geerbte Nebelflächen (`mFogPlaneLocations`)
+  - Komponenten des Spiel-Vorbilds
+  - Material-Slots ohne Material oder mit Standardmaterial
+  - Anschluss-Komponenten außerhalb bzw. tief in der Sockelfläche
+
+  Er schreibt `E:\Modding\Logs\pruefe_optik.json` und `Tests\Modellmasse.json`; die Sockelhöhen daraus nutzt die statische Prüfung.
+
 ## 4a. Testfenster (Marius 16.11.)
 
 Kein Testen von Fehler zu Fehler. Zwischen den Testfenstern läuft nur `Pipeline.ps1 -OhneSpiel` (Build, Prüfungen, Simulation) – kein Spielstart. Ein Testfenster gibt Marius frei; was darin läuft, steht vorher im Fahrplan (`Satisfactory\Notizen\Fahrplan-<Version>-*.md`, Abschnitt Testfenster), danach kommt ein Bericht mit allen Befunden. Befunde werden gesammelt (Befundliste im Fahrplan) und im nächsten Fenster mitgetestet; nach zwei erfolglosen Anläufen entscheidet Marius (bekannter Fehler oder Experiment).

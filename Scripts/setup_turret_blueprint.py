@@ -113,6 +113,11 @@ def richte_ein(turm, cfg):
         log(f"  entfernt ({geloescht}): {[n for _, n in weg]}")
     unreal.BlueprintEditorLibrary.compile_blueprint(bp)
     cdo = unreal.get_default_object(bp.generated_class())
+    # Optik-Durchgang 16.11.2026 (U1): geerbte Nebelflaechen des Spiel-Vorbilds stehen sonst frei neben dem Sockel
+    import sys
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from entferne_nebelflaechen import leere_nebelflaechen
+    leere_nebelflaechen(bp, log)
     if cfg["strom"] is not None:
         cdo.set_editor_property("mPowerConsumption", cfg["strom"])
         log(f"  Strom {cdo.get_editor_property('mPowerConsumption')} MW")

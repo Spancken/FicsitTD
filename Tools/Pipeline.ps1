@@ -74,6 +74,16 @@ Schritt "Konsistenz (Zettel, Doku, Simulation, Experimente$(if ($Stufe -eq 'Rele
     [pscustomobject]@{ Ok = ($LASTEXITCODE -eq 0); Ist = ($ausgabe | Select-Object -First 1) }
 }
 
+# ---- S2b Optik ohne Editor (Optik-Durchgang 16.11.): Anbauten im Klarraum, Backfarben, schwarze Flaechen in den Texturen.
+# Sperrklinke Tests\optik_basis.json: bekannte Fehler bleiben gruen, neue machen rot; behobene -> Basis verkleinern.
+Schritt "Optik statisch (Anbauten, Backfarben, Texturen)" {
+    $ausgabe = & python (Join-Path $Mod "Tests\pruefe_optik_statisch.py") 2>&1 | ForEach-Object { "$_" }
+    $ausgabe | Set-Content (Join-Path $Aus "optik.txt") -Encoding utf8
+    $ausgabe | Select-String "^FEHLER " | ForEach-Object { $Offen.Add("FEHLER Optik: " + $_.Line.Substring(7)) }
+    $ausgabe | Select-String "^BEHOBEN " | Select-Object -First 1 | ForEach-Object { $Offen.Add("HINWEIS Optik: Fehler behoben, Basis verkleinern (pruefe_optik_statisch.py --basis-schreiben)") }
+    [pscustomobject]@{ Ok = ($LASTEXITCODE -eq 0); Ist = ($ausgabe | Select-String "^Optik statisch:" | Select-Object -Last 1).Line }
+}
+
 # ---- S3 Simulation aller Modi
 Schritt "Simulation aller Spielmodi" {
     $sim = Join-Path $Mod "Tools\Simulator\sim_alle_modi.py"
