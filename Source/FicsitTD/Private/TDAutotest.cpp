@@ -970,6 +970,18 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		{
 			mUhr = 0.f;
 		}
+		// 16.11. (B19: Fabrik-F1-3K4T stand 12 min vor Welle 1): die Uhr oben wird bei jedem Startversuch zurueckgesetzt -
+		// startet die Welle gar nicht, hier nach "max" abbrechen statt bis zum Stillstand des Testskripts zu warten
+		mStartWarteUhr = Waves->LaeuftWelle() ? 0.f : mStartWarteUhr + Dt;
+		if (mStartWarteUhr > Max)
+		{
+			mStartWarteUhr = 0.f;
+			UGameplayStatics::SetGlobalTimeDilation(World, 1.f);
+			UE_LOG(LogFicsitTD, Warning, TEXT("Autotest: Welle %d startet seit %.0f s nicht (Lauf %d, Countdown %.0f s)"), Waves->GetWelle() + 1, Max,
+				static_cast<int32>(Waves->LaeuftWelle()), Waves->GetCountdown());
+			Ergebnis(TEXT("Wellenlauf"), FString::Printf(TEXT("bis Welle %d"), Ziel), false, FString::Printf(TEXT("Welle %d startet nicht"), Waves->GetWelle() + 1));
+			return true;
+		}
 		return false;
 	}
 	if (S->TryGetStringField(TEXT("speichere"), Wort))

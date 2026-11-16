@@ -117,4 +117,6 @@ private:
 	class FTDAutotestLog* mLog = nullptr;
 	/** 16.11. Fabrik-Pruefstand: gebaute Linie fuer den Bericht */
 	TArray<TWeakObjectPtr<class AFGBuildable>> mFabrik;
+	/** 16.11. (B19): Sekunden, die der Wellenlauf schon auf den Start der naechsten Welle wartet */
+	float mStartWarteUhr = 0.f;
 };
