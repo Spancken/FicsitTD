@@ -86,11 +86,12 @@ def pruefe_code_ohne_zettel(zettel):
 
 
 def quell_hashes(namen):
+    # sim_stand.json fuehrt Pfade relativ zur Repo-Wurzel (z. B. Source/FicsitTD/Private/TDBalance.cpp)
     h = {}
     for name in namen:
-        for wurzel, _, dateien in os.walk(QUELLE):
-            if name in dateien:
-                h[name] = hashlib.sha256(open(os.path.join(wurzel, name), "rb").read()).hexdigest()
+        p = os.path.join(MOD, *name.replace("\\", "/").split("/"))
+        if os.path.exists(p):
+            h[name] = hashlib.sha256(open(p, "rb").read()).hexdigest()
     return h
 
 
