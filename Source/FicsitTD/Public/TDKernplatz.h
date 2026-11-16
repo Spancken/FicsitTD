@@ -32,6 +32,19 @@ public:
 	virtual void OnWorldBeginPlay(UWorld& InWorld) override;
 	/** 0.69.1 (S4): ist die Spieleinstellung "FICSIT Tower Defense" an? */
 	static bool TowerDefenseAn(const UObject* WorldContext);
+	/** 0.11 (Modus Aus, Marius 15.11.: nur der Spielmodus zaehlt): ist FicsitTD in dieser Welt aktiv? Spielmodus "Einsatz",
+	 *  oder ein von Hand (Entwicklermodus, Selbsttests) gestarteter Einsatz bzw. Kern-Verteidigung. Ein gebauter Kern allein zaehlt nicht. */
+	static bool ModAktiv(const UObject* WorldContext);
+	/** 0.11 (Marius 15.11.): Spielmodus "Endlos-Wellen" (Wellen auf Zeit, endlos, eine Front) */
+	static bool IstEndlos(const UObject* WorldContext);
+	/** 0.12-dev: Spielmodus 3 "Freies Spiel mit Abwehr" (HUB normal, Tuerme, Bohrung) */
+	static bool IstAbwehr(const UObject* WorldContext);
+	/** /td modus abwehr: alte Staende auf Modus 3 stellen (bleibt im Spielstand) */
+	static bool SetzeModusAbwehr(const UObject* WorldContext);
+	/** Entwicklermodus: Saved/FicsitTD/Entwickler.txt oder -TDEntwickler */
+	static bool Entwicklermodus();
+	/** 0.11: Spielmodus nachtraeglich auf "Einsatz" stellen (alte Staende ohne Modus 1); true, wenn gesetzt */
+	static bool SetzeModusEinsatz(const UObject* WorldContext);
 	/** 0.69.4 (Marius: Begruessung durch ADA): ADA-Nachricht "Einsatzbeginn" abspielen (Nachrichtensystem des Spiels, Untertitel) */
 	static bool SpieleBegruessung(const UObject* WorldContext, class APawn* Spieler);
 	/** 0.69.7: Projekt-ID der Init-Bank des Spiels ins Log (eigene Soundbanks brauchen sie im Kopf, sonst Fehler 92) */

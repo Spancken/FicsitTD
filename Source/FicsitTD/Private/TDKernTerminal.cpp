@@ -4,6 +4,7 @@
 #include "FicsitTDModule.h"
 #include "TDDefenseCore.h"
 #include "TDEinsatz.h"
+#include "TDKernplatz.h"
 #include "TDTurretBase.h"
 #include "TDWaveSubsystem.h"
 #include "TDBalance.h"
@@ -426,6 +427,13 @@ void UTDKernTerminal::BaueOberflaeche()
 	{
 		S->SetPadding(FMargin(0.f, 8.f, 0.f, 0.f));
 	}
+	// 0.12-dev Freies Spiel mit Abwehr: Knoten, Stufen und Lohn der Bohrung
+	mBohrInfo = NeuerText(TEXT(""), 12, TDUI::Hell);
+	mBohrInfo->SetAutoWrapText(true);
+	if (UVerticalBoxSlot* S = StatusSpalte->AddChildToVerticalBox(mBohrInfo))
+	{
+		S->SetPadding(FMargin(0.f, 8.f, 0.f, 0.f));
+	}
 	Zeile(Status, 12.f);
 
 	// Aktionen
@@ -453,6 +461,29 @@ void UTDKernTerminal::BaueOberflaeche()
 	mEndeBeenden = NeuerKnopf(TDT(TEXT("Einsatz beenden"), TEXT("End operation")), Knopftext);
 	mEndeBeenden->OnClicked.AddDynamic(this, &UTDKernTerminal::EndeBeenden);
 	Aktion(mEndeBeenden);
+	// 0.12-dev Freies Spiel mit Abwehr: Bohrung starten (drei Stufen) und abbrechen
+	mBohr0 = NeuerKnopf(TDF(TEXT("Bohrung %s"), TEXT("Drill %s"), *UTDWaveSubsystem::BohrStufenName(0)), Knopftext, true);
+	mBohr0->OnClicked.AddDynamic(this, &UTDKernTerminal::Bohre0);
+	Aktion(mBohr0);
+	mBohr1 = NeuerKnopf(TDF(TEXT("Bohrung %s"), TEXT("Drill %s"), *UTDWaveSubsystem::BohrStufenName(1)), Knopftext, true);
+	mBohr1->OnClicked.AddDynamic(this, &UTDKernTerminal::Bohre1);
+	Aktion(mBohr1);
+	mBohr2 = NeuerKnopf(TDF(TEXT("Bohrung %s"), TEXT("Drill %s"), *UTDWaveSubsystem::BohrStufenName(2)), Knopftext, true);
+	mBohr2->OnClicked.AddDynamic(this, &UTDKernTerminal::Bohre2);
+	Aktion(mBohr2);
+	mBohrAbbruch = NeuerKnopf(TDT(TEXT("Bohrung abbrechen"), TEXT("Abort drilling")), Knopftext);
+	mBohrAbbruch->OnClicked.AddDynamic(this, &UTDKernTerminal::BohrungAbbrechen);
+	Aktion(mBohrAbbruch);
+	// 0.11 Endlos (Marius 15.11.): nach der Bosswelle einer von drei Boni
+	mBonus0 = NeuerKnopf(UTDEinsatzSubsystem::EndlosBonusName(0), Knopftext, true);
+	mBonus0->OnClicked.AddDynamic(this, &UTDKernTerminal::WaehleBonus0);
+	Aktion(mBonus0);
+	mBonus1 = NeuerKnopf(UTDEinsatzSubsystem::EndlosBonusName(1), Knopftext, true);
+	mBonus1->OnClicked.AddDynamic(this, &UTDKernTerminal::WaehleBonus1);
+	Aktion(mBonus1);
+	mBonus2 = NeuerKnopf(UTDEinsatzSubsystem::EndlosBonusName(2), Knopftext, true);
+	mBonus2->OnClicked.AddDynamic(this, &UTDKernTerminal::WaehleBonus2);
+	Aktion(mBonus2);
 	UButton* WegeKnopf = NeuerKnopf(TDT(TEXT("Wegvorschau an"), TEXT("Path preview on")), Knopftext);
 	mWegeText = Knopftext;
 	WegeKnopf->OnClicked.AddDynamic(this, &UTDKernTerminal::WegeUmschalten);
@@ -684,7 +715,8 @@ void UTDKernTerminal::Aktualisiere()
 		return;
 	}
 	const bool bEinsatz = Einsatz->IstAktiv();
-	mTitel->SetText(bEinsatz ? TDTX(TEXT("Abwehrkern - Einsatz"), TEXT("Defense Core - Operation")) : TDTX(TEXT("Abwehrkern"), TEXT("Defense Core")));
+	mTitel->SetText(bEinsatz ? TDTX(TEXT("Abwehrkern - Einsatz"), TEXT("Defense Core - Operation"))
+		: UTDKernplatz::IstAbwehr(this) ? TDTX(TEXT("Abwehrkern - Tiefbohrer"), TEXT("Defense Core - Deep Drill")) : TDTX(TEXT("Abwehrkern"), TEXT("Defense Core")));
 	FString WelleText;
 	if (Waves->LaeuftWelle())
 	{
@@ -694,7 +726,7 @@ void UTDKernTerminal::Aktualisiere()
 	}
 	else if (Waves->LaeuftKernVerteidigung())
 	{
-		WelleText = TDF(TEXT("%d / %d bereit"), TEXT("%d / %d ready"), Waves->GetWelle() + 1, Waves->mWellenGesamt);
+		WelleText = Waves->GetBereitText(true);   // Gegencheck 15.11. (F1): auf Zeit mit Countdown
 	}
 	else
 	{
@@ -702,26 +734,68 @@ void UTDKernTerminal::Aktualisiere()
 	}
 	mWelle->SetText(FText::FromString(WelleText));
 	mKernLP->SetText(FText::FromString(K ? FString::Printf(TEXT("%.0f %%"), 100.f * K->GetTDHealth() / FMath::Max(K->GetTDMaxHealth(), 1.f)) : TEXT("-")));
-	mKonto->SetText(FText::FromString(bEinsatz ? TDF(TEXT("%d Coupons  ·  %d Festplatten"), TEXT("%d Coupons  ·  %d Hard Drives"), Einsatz->Konto(), Einsatz->FPImInventar()) : FString(TEXT("-"))));
-	mWelleText->SetText(Waves->LaeuftWelle() ? TDTX(TEXT("Welle läuft ..."), TEXT("Wave running ...")) : TDTX(TEXT("Welle starten"), TEXT("Start wave")));
+	mKonto->SetText(FText::FromString(bEinsatz || UTDKernplatz::IstAbwehr(this) ? TDF(TEXT("%d Coupons  ·  %d Festplatten"), TEXT("%d Coupons  ·  %d Hard Drives"), Einsatz->Konto(), Einsatz->FPImInventar()) : FString(TEXT("-"))));
+	{
+		// 0.11 Endlos: der Knopf zieht vor und nennt den Vorzieh-Bonus
+		const int32 VorziehBonus = Waves->IstEndlos() && Waves->GetCountdown() > 0.f
+			? FMath::FloorToInt(Waves->GetCountdown() / FMath::Max(1.f, TDBalance::Wert(TEXT("Endlos.VorziehSekundenJeCoupon"), 10.f))) : 0;
+		mWelleText->SetText(Waves->LaeuftWelle() ? TDTX(TEXT("Welle läuft ..."), TEXT("Wave running ..."))
+			: VorziehBonus > 0 ? TDFX(TEXT("Welle vorziehen (+%d Coupons)"), TEXT("Bring wave forward (+%d Coupons)"), VorziehBonus)
+			: TDTX(TEXT("Welle starten"), TEXT("Start wave")));
+	}
 	mWegeText->SetText(K && K->ZeigtWege() ? TDTX(TEXT("Wegvorschau aus"), TEXT("Path preview off")) : TDTX(TEXT("Wegvorschau an"), TEXT("Path preview on")));
 	mFreiText->SetText(Einsatz->IstFrei() ? TDTX(TEXT("Freies Bauen: AN"), TEXT("Free Build: ON")) : TDTX(TEXT("Freies Bauen: aus"), TEXT("Free Build: off")));
-	mStartKnopf->SetVisibility(bEinsatz ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
+	// 0.11 (Modus Aus): von Hand nur mit Spielmodus "Einsatz" oder im Entwicklermodus (Selbsttests)
+	mStartKnopf->SetVisibility(bEinsatz || !(UTDKernplatz::TowerDefenseAn(this) || UTDKernplatz::Entwicklermodus()) ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
 	{
 		const int32 Ende = Einsatz->LaufEnde();
 		if (mWelleKnopf)
 		{
 			mWelleKnopf->SetVisibility(Ende ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
 		}
+		const bool bEndlosEnde = K && K->mLaufEndlos;
+		// 0.12-dev Freies Spiel mit Abwehr: Bohr-Knoepfe statt Einsatz; "Welle starten" nur in der Bohrung (zieht vor)
+		const bool bAbwehr = UTDKernplatz::IstAbwehr(this) && !bEinsatz;
+		if (mBohr0)
+		{
+			const bool bBohrt = Waves->IstBohrung();
+			auto Sicht = [](bool b) { return b ? ESlateVisibility::Visible : ESlateVisibility::Collapsed; };
+			mBohr0->SetVisibility(Sicht(bAbwehr && !bBohrt));
+			mBohr1->SetVisibility(Sicht(bAbwehr && !bBohrt && UTDWaveSubsystem::BohrStufeFrei(K, 1)));
+			mBohr2->SetVisibility(Sicht(bAbwehr && !bBohrt && UTDWaveSubsystem::BohrStufeFrei(K, 2)));
+			mBohrAbbruch->SetVisibility(Sicht(bAbwehr && bBohrt));
+			mBohrInfo->SetVisibility(Sicht(bAbwehr));
+			if (bAbwehr && mWelleKnopf && !bBohrt)
+			{
+				mWelleKnopf->SetVisibility(ESlateVisibility::Collapsed);
+			}
+			// Platzpruefung kostet eine Wegsuche: hoechstens alle 3 s neu
+			mBohrInfoUhr -= 0.5f;
+			if (bAbwehr && mBohrInfoUhr <= 0.f && K)
+			{
+				mBohrInfoUhr = 3.f;
+				mBohrInfo->SetText(FText::FromString(FString::Join(const_cast<UTDWaveSubsystem*>(Waves)->BohrInfo(K), TEXT("\n"))));
+			}
+		}
+		if (mBonus0)
+		{
+			const ESlateVisibility Sicht = !Ende && Einsatz->EndlosBonusOffen() ? ESlateVisibility::Visible : ESlateVisibility::Collapsed;
+			mBonus0->SetVisibility(Sicht);
+			mBonus1->SetVisibility(Sicht);
+			mBonus2->SetVisibility(Sicht);
+		}
 		if (mEndeWiederholen)
 		{
-			mEndeWiederholen->SetVisibility(Ende == 2 ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+			// 0.11 (Marius 15.11.): ein Endlos-Lauf endet mit Wertung - kein Wiederholen
+			mEndeWiederholen->SetVisibility(Ende == 2 && !bEndlosEnde ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 			mEndeNeustart->SetVisibility(Ende ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 			mEndeBeenden->SetVisibility(Ende ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 		}
 		if (Ende)
 		{
-			mWelle->SetText(Ende == 1 ? TDTX(TEXT("SIEG"), TEXT("VICTORY")) : TDFX(TEXT("Niederlage in Welle %d"), TEXT("Defeat in wave %d"), K ? K->mLaufEndWelle : 0));
+			mWelle->SetText(Ende == 1 ? TDTX(TEXT("SIEG"), TEXT("VICTORY"))
+				: bEndlosEnde ? TDFX(TEXT("Ende in Welle %d (Bestwert %d)"), TEXT("Over in wave %d (best %d)"), K->mLaufEndWelle, UTDEinsatzSubsystem::EndlosBestwert(K->mLaufStufe))
+				: TDFX(TEXT("Niederlage in Welle %d"), TEXT("Defeat in wave %d"), K ? K->mLaufEndWelle : 0));
 		}
 	}
 	if (mLaengeKnopf)
@@ -1361,7 +1435,7 @@ void UTDKernTerminal::BauePionier()
 	};
 	UTDPionier* P = UTDPionier::Get(this);
 	const UTDEinsatzSubsystem* Einsatz = GetWorld() ? GetWorld()->GetSubsystem<UTDEinsatzSubsystem>() : nullptr;
-	if (!P || !Einsatz || !Einsatz->IstAktiv())
+	if (!P || !Einsatz || (!Einsatz->IstAktiv() && !UTDKernplatz::IstAbwehr(this)))
 	{
 		Abschnitt(NeuerText(TDT(TEXT("Rang und Talente gibt es im Einsatz. Starte am Kern einen Einsatz."), TEXT("Rank and talents come with an operation. Start an operation at the Core.")), 15, TDUI::Grau), 0.f);
 		return;
@@ -1913,7 +1987,10 @@ void UTDKernTerminal::BaueListen()
 		mKorb.Reset();
 		UHorizontalBox* Reihe = nullptr;
 		NeueKarte(mLaden, TDUI::ZeileA, Reihe);
-		Fuellen(Reihe, NeuerText(TDT(TEXT("Erst einen Einsatz starten."), TEXT("Start an operation first.")), 13, TDUI::Grau));
+		Fuellen(Reihe, NeuerText(UTDKernplatz::IstAbwehr(this)
+			? TDT(TEXT("Im Freien Spiel mit Abwehr gibt es keinen Laden: Coupons aus dem AWESOME-Sink bezahlen Abwehr-Forschung im MAM und Turmlevel."),
+				TEXT("Free play with defense has no shop: Coupons from the AWESOME Sink pay for defense research in the MAM and turret levels."))
+			: TDT(TEXT("Erst einen Einsatz starten."), TEXT("Start an operation first.")), 13, TDUI::Grau));
 		mKorbSumme->SetText(TDTX(TEXT("Summe: 0 Coupons"), TEXT("Total: 0 Coupons")));
 		mKorbRest->SetText(FText::GetEmpty());
 		mBestaetigen->SetIsEnabled(false);
@@ -2209,6 +2286,53 @@ void UTDKernTerminal::EndeWiederholen()
 	{
 		Melde(Einsatz->WiederholeWelle(GetOwningPlayer()));
 		Schliessen();
+	}
+}
+
+void UTDKernTerminal::Bohre0() { Bohre(0); }
+void UTDKernTerminal::Bohre1() { Bohre(1); }
+void UTDKernTerminal::Bohre2() { Bohre(2); }
+
+void UTDKernTerminal::Bohre(int32 Stufe)
+{
+	UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
+	UTDEinsatzSubsystem* Einsatz = GetWorld()->GetSubsystem<UTDEinsatzSubsystem>();
+	ATDDefenseCore* K = Kern();
+	if (!Waves || !K)
+	{
+		return;
+	}
+	FString Meldung;
+	Waves->StarteBohrung(K, Stufe, Meldung);
+	Melde(Meldung);
+	if (Einsatz)
+	{
+		Einsatz->Melde(Meldung);
+	}
+	mBohrInfoUhr = 0.f;
+	Aktualisiere();
+}
+
+void UTDKernTerminal::BohrungAbbrechen()
+{
+	if (UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>())
+	{
+		Melde(Waves->BrecheBohrungAb());
+		mBohrInfoUhr = 0.f;
+		Aktualisiere();
+	}
+}
+
+void UTDKernTerminal::WaehleBonus0() { WaehleBonus(0); }
+void UTDKernTerminal::WaehleBonus1() { WaehleBonus(1); }
+void UTDKernTerminal::WaehleBonus2() { WaehleBonus(2); }
+
+void UTDKernTerminal::WaehleBonus(int32 Nr)
+{
+	if (UTDEinsatzSubsystem* Einsatz = GetWorld()->GetSubsystem<UTDEinsatzSubsystem>())
+	{
+		Melde(Einsatz->WaehleEndlosBonus(Nr));
+		Aktualisiere();
 	}
 }
 
@@ -2976,7 +3100,7 @@ void UTDHud::Aktualisiere()
 	FString Lauf = Waves->GetLaufText();
 	if (!Lauf.Split(TEXT(", aus "), &Lauf, nullptr)) { Lauf.Split(TEXT(", from "), &Lauf, nullptr); }
 	const FString Welle = Waves->LaeuftWelle() ? Lauf
-		: Waves->LaeuftKernVerteidigung() ? TDF(TEXT("Welle %d/%d bereit (Kern-Menü: E)"), TEXT("Wave %d/%d ready (Core Menu: E)"), Waves->GetWelle() + 1, Waves->mWellenGesamt)
+		: Waves->LaeuftKernVerteidigung() ? Waves->GetBereitText()
 		: TDT(TEXT("Kein Lauf"), TEXT("No run"));
 	const UTDPionier* Pionier = UTDPionier::Get(this);
 	const int32 Frei = Pionier ? Pionier->FreiePunkte() : 0;

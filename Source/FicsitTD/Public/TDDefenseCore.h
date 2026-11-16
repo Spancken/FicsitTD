@@ -64,6 +64,21 @@ public:
 	/** Wellen nur auf Befehl (Einsatz: Planung ohne Zeitdruck) */
 	UPROPERTY(SaveGame)
 	bool mLaufManuell = false;
+	/** 0.11 (Gegencheck 15.11.): Lauf im Spielmodus Endlos-Wellen - am Kern gemerkt, damit ein spaeterer Moduswechsel ihn nicht kippt */
+	UPROPERTY(SaveGame)
+	bool mLaufEndlos = false;
+	/** 0.11 (Marius 15.11.): nach einer Endlos-Bosswelle wartet eine Bonuswahl (Coupons, Kernreparatur, Festplatten) */
+	UPROPERTY(SaveGame)
+	bool mEndlosBonusOffen = false;
+	/** 0.12-dev Freies Spiel mit Abwehr: laeuft am Kern gerade eine Bohrung (wird nach dem Laden ohne Strafe beendet) */
+	UPROPERTY(SaveGame)
+	bool mLaufBohrung = false;
+	/** Erste Erfolge der Bohrung je Rohstoff und Stufe ("<Rohstoff-Klassenpfad>|<Stufe>") - Erstlohn nur einmal */
+	UPROPERTY(SaveGame)
+	TArray<FString> mBohrErfolge;
+	/** Talentpunkte aus Erstlohn der Bohrung (zusaetzlich zu den Punkten aus dem Rang) */
+	UPROPERTY(SaveGame)
+	int32 mPionierBonusPunkte = 0;
 	/** 0.9.6 (Gesamtreview 12.11.: nach Sieg oder Niederlage kein Ausweg): Ende des letzten Durchgangs - 0 offen, 1 Sieg, 2 Niederlage,
 	 *  dazu die Welle. Das Kern-Menue bietet dann Welle wiederholen, neu starten oder Einsatz beenden. */
 	UPROPERTY(SaveGame)

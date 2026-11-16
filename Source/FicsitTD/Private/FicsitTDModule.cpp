@@ -1,5 +1,6 @@
 #include "FicsitTDModule.h"
 #include "TDPionier.h"
+#include "TDKernplatz.h"
 #include "AI/FGCreatureController.h"
 #include "Patching/NativeHookManager.h"
 #include "Misc/CommandLine.h"
@@ -218,7 +219,8 @@ static bool SpeichernGesperrt(const UObject* Kontext, bool bMelden)
 	UWorld* World = Kontext ? Kontext->GetWorld() : nullptr;
 	const UTDWaveSubsystem* Waves = World ? World->GetSubsystem<UTDWaveSubsystem>() : nullptr;
 	const UTDEinsatzSubsystem* Einsatz = World ? World->GetSubsystem<UTDEinsatzSubsystem>() : nullptr;
-	if (!Waves || !Einsatz || !Waves->LaeuftWelle() || !Einsatz->IstAktiv() || TDBalance::Wert(TEXT("Einsatz.SpeichernInWelle"), 0.f) > 0.f)
+	// 0.12-dev (Marius 15.11.: Speichersperre bleibt): auch in einer Welle der Bohrung
+	if (!Waves || !Einsatz || !Waves->LaeuftWelle() || !(Einsatz->IstAktiv() || Waves->IstBohrung()) || TDBalance::Wert(TEXT("Einsatz.SpeichernInWelle"), 0.f) > 0.f)
 	{
 		return false;
 	}
@@ -255,7 +257,8 @@ static bool MeilensteinGesperrt(const UObject* Kontext, TSubclassOf<UFGSchematic
 /** Freigabe je Phase (Wellen-Progression 7): Knoten erst ab Welle N (Forschung.<Knoten>.AbWelle), gezaehlt wird die naechste Welle */
 static bool WelleZuFrueh(const AFGResearchManager* Forschung, UClass* Schematic)
 {
-	if (!Forschung || !Schematic)
+	// 0.12-dev: im Freien Spiel mit Abwehr gibt es keine Wellennummer - keine Freigabe "ab Welle"
+	if (!Forschung || !Schematic || UTDKernplatz::IstAbwehr(Forschung))
 	{
 		return false;
 	}

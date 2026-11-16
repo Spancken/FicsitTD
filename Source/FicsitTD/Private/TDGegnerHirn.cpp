@@ -716,6 +716,17 @@ void UTDGegnerHirn::SetzeBlockade(const AFGCreature* Kreatur, ATDDecoy* Mauer, c
 		Mauer && Mauer->GetActiveTarget() ? *Mauer->GetActiveTarget()->GetName() : TEXT("?"), Grund);
 }
 
+bool UTDGegnerHirn::PlaneNachNetzumbau()
+{
+	const AFGCreature* Kreatur = Cast<AFGCreature>(GetOwner());
+	if (!Kreatur || GetPhase() != ETDHirnPhase::Marsch)
+	{
+		return false;
+	}
+	NeuerWeg(Kreatur);
+	return true;
+}
+
 void UTDGegnerHirn::NeuerWeg(const AFGCreature* Kreatur)
 {
 	mNeuWeg = 10.f;

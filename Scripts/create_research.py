@@ -740,6 +740,13 @@ for b_key, b_name, b_text, b_icon, knoten in BAEUME:
             log(f"  Baum {b_key} erscheint nach {baum_vor}")
         else:
             cdo.set_editor_property("mUnlockDependencies", [])
+        # 0.11 (Modus Aus): Baum nur sichtbar und nutzbar, wenn FicsitTD in der Welt aktiv ist (siehe setze_modus_abhaengigkeit.py)
+        modus_klasse = unreal.load_class(None, "/Script/FicsitTD.TDModusAbhaengigkeit")
+        if modus_klasse is not None:
+            cdo.set_editor_property("mVisibilityDependencies", [unreal.new_object(modus_klasse, outer=cdo)])
+            cdo.set_editor_property("mUnlockDependencies", list(cdo.get_editor_property("mUnlockDependencies")) + [unreal.new_object(modus_klasse, outer=cdo)])
+        else:
+            log("  WARNUNG: TDModusAbhaengigkeit fehlt (Editor nicht gebaut) - Baum ohne Modus-Bedingung")
         baum_pinsel = cdo.get_editor_property("mResearchTreeIcon")
         baum_pinsel.set_editor_property("resource_object", icon_von(b_icon))
         cdo.set_editor_property("mResearchTreeIcon", baum_pinsel)

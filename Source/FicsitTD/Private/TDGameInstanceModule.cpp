@@ -63,8 +63,35 @@ void UTDGameInstanceModule::SetzeTexte()
 			"in five phases with bosses. Your factory supplies the ammo for the turrets. Buildings are limited by quotas (FICSIT Coupons buy more), "
 			"research happens in the MAM with Hard Drives, HUB milestones and blueprints are locked. Difficulty follows the start location: Grass Fields easy, "
 			"Rocky Desert normal, Northern Forest hard, Dune Desert nightmare. More modes will follow.")));
+	// 0.11 (Marius 15.11.): dritter Modus "Endlos-Wellen" - Hilfetext ergaenzen
+	mModus->ToolTip = FText::FromString(mModus->ToolTip.ToString() + TDT(
+		TEXT(" ENDLOS-WELLEN: wie Einsatz, aber die Wellen kommen auf Zeit und ohne Ende aus einer einzigen Richtung. Anhalten geht nicht - "
+			"baue weiter aus und halte die Türme ständig mit Munition versorgt. Coupons und Festplatten gibt es wie im Einsatz."),
+		TEXT(" ENDLESS WAVES: like Operation, but waves arrive on a timer and never stop, always from one direction. You cannot pause them - "
+			"keep expanding and keep your turrets supplied with ammo. Coupons and Hard Drives work as in Operation.")));
+	// 0.12-dev (Marius 15.11.): vierter Modus "Freies Spiel mit Abwehr"
+	mModus->ToolTip = FText::FromString(mModus->ToolTip.ToString() + TDT(
+		TEXT(" FREIES SPIEL MIT ABWEHR: normales Satisfactory mit HUB und Meilensteinen, dazu Türme, Mauern und Abwehr-Forschung im MAM (mit Coupons). "
+			"Nichts greift an, was du nicht einschaltest: Stell einen Abwehrkern als Tiefbohrer neben einen Rohstoffknoten und starte dort eine Bohrung - "
+			"hält deine Verteidigung, gibt es Erz, beim ersten Erfolg auch Festplatten und einen Talentpunkt."),
+		TEXT(" FREE PLAY WITH DEFENSE: regular Satisfactory with HUB and milestones, plus turrets, walls and defense research in the MAM (paid with Coupons). "
+			"Nothing attacks unless you switch it on: place a Defense Core as a deep drill next to a resource node and start a drilling there - "
+			"if your defense holds, you get ore, and on the first success also Hard Drives and a Talent Point.")));
 	if (UFGUserSetting_IntSelector* Wahl = Cast<UFGUserSetting_IntSelector>(mModus->ValueSelector))
 	{
+		// 0.11: Eintrag fuer Wert 2 zur Laufzeit anlegen (das Asset kennt nur 0 und 1)
+		if (!Wahl->IntegerSelectionValues.ContainsByPredicate([](const FIntegerSelection& W) { return W.Value == ETDModus::Endlos; }))
+		{
+			FIntegerSelection Neu;
+			Neu.Value = ETDModus::Endlos;
+			Wahl->IntegerSelectionValues.Add(Neu);
+		}
+		if (!Wahl->IntegerSelectionValues.ContainsByPredicate([](const FIntegerSelection& W) { return W.Value == ETDModus::Abwehr; }))
+		{
+			FIntegerSelection Neu;
+			Neu.Value = ETDModus::Abwehr;
+			Wahl->IntegerSelectionValues.Add(Neu);
+		}
 		for (FIntegerSelection& W : Wahl->IntegerSelectionValues)
 		{
 			if (W.Value == ETDModus::Aus)
@@ -74,6 +101,14 @@ void UTDGameInstanceModule::SetzeTexte()
 			else if (W.Value == ETDModus::Einsatz)
 			{
 				W.Name = FText::FromString(TDT(TEXT("Einsatz – Abwehrkern, 50 Wellen"), TEXT("Operation – Defense Core, 50 waves")));
+			}
+			else if (W.Value == ETDModus::Endlos)
+			{
+				W.Name = FText::FromString(TDT(TEXT("Endlos-Wellen – auf Zeit, eine Front"), TEXT("Endless waves – timed, one front")));
+			}
+			else if (W.Value == ETDModus::Abwehr)
+			{
+				W.Name = FText::FromString(TDT(TEXT("Freies Spiel mit Abwehr – HUB, Türme, Bohrung"), TEXT("Free play with defense – HUB, turrets, drilling")));
 			}
 		}
 	}

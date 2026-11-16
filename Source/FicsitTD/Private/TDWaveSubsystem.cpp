@@ -433,6 +433,17 @@ void UTDWaveSubsystem::SchalteRezepteFrei()
 	{
 		return; // noch nicht da, naechster Versuch spaeter
 	}
+	// 0.11 (Modus Aus, Marius 15.11.): Grundrezepte (Kern, Mauer, Bolzenturm, Rohbolzen) nur, wenn FicsitTD in dieser Welt
+	// aktiv ist. Sonst alle 2 s erneut pruefen - der Modus kann per /td modus einsatz nachgestellt werden.
+	if (!UTDKernplatz::ModAktiv(this))
+	{
+		if (!mModusAusGemeldet)
+		{
+			mModusAusGemeldet = true;
+			UE_LOG(LogFicsitTD, Log, TEXT("Modus Aus: keine TD-Rezepte (Spielmodus nicht \"Einsatz\")"));
+		}
+		return;
+	}
 	for (const TCHAR* Pfad : GrundRezepte)
 	{
 		if (UClass* Recipe = LoadClass<UFGRecipe>(nullptr, Pfad))
@@ -803,6 +814,11 @@ int32 UTDWaveSubsystem::StufeAusText(const FString& Text)
 
 int32 UTDWaveSubsystem::AktiveFrontenFuer(int32 Welle) const
 {
+	// 0.11 (Marius 15.11.): Endlos-Wellen kommen immer aus genau einer Richtung
+	if (mEndlos)
+	{
+		return FMath::Min(1, mFronten.Num());
+	}
 	const FTDStufe& S = GetStufe(mStufe);
 	int32 N = S.FrontenStart;
 	N += Welle >= S.NeueFrontAb ? 1 : 0;
@@ -1220,6 +1236,8 @@ void UTDWaveSubsystem::Ansage(const FString& Text) const
 bool UTDWaveSubsystem::StarteKernVerteidigung(ATDDefenseCore* Kern, int32 Wellen, float ErsterCountdown, float Countdown, int32 Stufe)
 {
 	mPlanWelle = -1;   // T3: Wellenplan haengt an Kern und Stufe
+	mFrontCheckWelle = -1;
+	mKlippenWarte = 0.f;
 	if (!Kern || mLauf != ETDLauf::Aus)
 	{
 		return false;
@@ -1245,7 +1263,17 @@ bool UTDWaveSubsystem::StarteKernVerteidigung(ATDDefenseCore* Kern, int32 Wellen
 	FrontenFuer(Kern);   // dieselben Fronten wie in der Vorschau (bei gleicher Stufe)
 	const FString StufenText = StufenAnzeige(mStufe);
 	const FString WellenText = mWellenGesamt > 0 ? TDF(TEXT("%d Wellen"), TEXT("%d waves"), mWellenGesamt) : TDT(TEXT("endlos"), TEXT("endless"));
-	if (mManuell)
+	if (mBohrung)
+	{
+		// 0.12-dev: Ansage kommt aus StarteBohrung (Meldung an den Spieler)
+	}
+	else if (mEndlos)
+	{
+		Ansage(TDF(TEXT("Endlos-Wellen gestartet (%s): Kern %.0f LP, eine Front. Erste Welle in %.0f min, danach alle %.0f min ab Wellenbeginn - mit jeder Welle etwas schneller, nach jeder Bosswelle %.0f min Pause. Anhalten geht nicht: Munition herstellen und Tuerme versorgen!"),
+			TEXT("Endless waves started (%s): Core %.0f HP, one front. First wave in %.0f min, then every %.0f min from wave start - a little faster each wave, %.0f min break after every boss wave. No pausing: produce ammo and keep your turrets supplied!"),
+			*StufenText, S.KernLP, mCountdown / 60.f, mZwischenCountdown / 60.f, TDBalance::Wert(TEXT("Endlos.BossPause"), 300.f) / 60.f));
+	}
+	else if (mManuell)
 	{
 		Ansage(TDF(TEXT("Einsatz gestartet (%s): %s, Kern %.0f LP. Bauen ohne Zeitdruck - die Welle startest du am Kern (E) mit \"Welle starten\"."),
 			TEXT("Operation started (%s): %s, Core %.0f HP. Build without time pressure - start the wave at the Core (E) with \"Start wave\"."),
@@ -1302,6 +1330,20 @@ bool UTDWaveSubsystem::NaechsteWelleJetzt()
 	if (mLauf != ETDLauf::Aufbau)
 	{
 		return false;
+	}
+	// 0.11 (Marius 15.11.): Endlos - wer vorzieht, bekommt Coupons fuer die Restzeit (Standard 1 je 10 s)
+	if (mEndlos && mCountdown > 0.f)
+	{
+		const float JeCoupon = FMath::Max(1.f, TDBalance::Wert(TEXT("Endlos.VorziehSekundenJeCoupon"), 10.f));
+		const int32 Bonus = FMath::FloorToInt(mCountdown / JeCoupon);
+		if (UTDEinsatzSubsystem* Einsatz = GetWorld() ? GetWorld()->GetSubsystem<UTDEinsatzSubsystem>() : nullptr)
+		{
+			if (Bonus > 0 && Einsatz->IstAktiv())
+			{
+				Einsatz->GibEndlosCoupons(Bonus, TDF(TEXT("Welle %d vorgezogen (%.0f s Restzeit)"), TEXT("Wave %d brought forward (%.0f s left)"), mWelle + 1, mCountdown));
+			}
+		}
+		UE_LOG(LogFicsitTD, Log, TEXT("Endlos: Welle %d vorgezogen, %.0f s Restzeit -> %d Coupons"), mWelle + 1, mCountdown, Bonus);
 	}
 	mCountdown = 0.f;
 	return true;
@@ -1381,6 +1423,8 @@ void UTDWaveSubsystem::SpeichereLauf() const
 		Kern->mLaufZwischen = mZwischenCountdown;
 		Kern->mLaufStufe = mStufe;
 		Kern->mLaufManuell = mManuell;
+		Kern->mLaufEndlos = mEndlos;
+		Kern->mLaufBohrung = mBohrung && mLauf != ETDLauf::Aus;
 		Kern->mLaufFrontOrte.Reset();
 		Kern->mLaufFrontWinkel.Reset();
 		Kern->mLaufFrontWeg.Reset();
@@ -1396,6 +1440,8 @@ void UTDWaveSubsystem::SpeichereLauf() const
 void UTDWaveSubsystem::SetzeLaufFort(ATDDefenseCore* Kern)
 {
 	mPlanWelle = -1;   // T3: Wellenplan haengt an Kern und Stufe
+	mFrontCheckWelle = -1;
+	mKlippenWarte = 0.f;
 	if (!Kern || mLauf != ETDLauf::Aus)
 	{
 		return;
@@ -1408,10 +1454,30 @@ void UTDWaveSubsystem::SetzeLaufFort(ATDDefenseCore* Kern)
 			Ansage(TDF(TEXT("%d liegengebliebene Wellengegner aus dem Spielstand entfernt (%s)."), TEXT("%d leftover wave enemies removed from the save (%s)."), Weg, *Bericht));
 		}
 	}
+	// 0.12-dev (Marius 15.11.: gemuetlich): eine Bohrung wird nach dem Laden nicht fortgesetzt - sie endet ohne Strafe
+	if (Kern->mLaufBohrung)
+	{
+		Kern->mLaufBohrung = false;
+		Kern->mLaufAktiv = false;
+		Kern->Aufladen();
+		UE_LOG(LogFicsitTD, Log, TEXT("Bohrung nach dem Laden beendet (zaehlt als nicht gespielt)"));
+		FTimerHandle Handle;
+		TWeakObjectPtr<UTDWaveSubsystem> Weak = this;
+		GetWorld()->GetTimerManager().SetTimer(Handle, FTimerDelegate::CreateLambda([Weak]()
+		{
+			if (UTDWaveSubsystem* S = Weak.Get())
+			{
+				S->Ansage(TDT(TEXT("Die Bohrung von vor dem Speichern ist beendet - ohne Strafe. Starte sie am Kern neu, wenn du willst."),
+					TEXT("The drilling from before saving has ended - no penalty. Restart it at the Core if you like.")));
+			}
+		}), 5.f, false);
+		return;
+	}
 	mWellenGesamt = Kern->mLaufWellenGesamt;
 	mZwischenCountdown = Kern->mLaufZwischen;
 	mStufe = FMath::Clamp(Kern->mLaufStufe, 0, 3);
 	mManuell = Kern->mLaufManuell;
+	mEndlos = Kern->mLaufEndlos;
 	mFronten.Reset();
 	for (int32 i = 0; i < Kern->mLaufFrontOrte.Num(); ++i)
 	{
@@ -1458,8 +1524,33 @@ void UTDWaveSubsystem::KernGefallen(ATDDefenseCore* Kern)
 			WelleAusgewertet(0.f, true);
 		}
 		const int32 Welle = mWelle;
-		StoppeLauf(TDF(TEXT("NIEDERLAGE: Der Abwehrkern ist in Welle %d von %d gefallen. Im Kern-Menü (E am Kern): Welle wiederholen, neu starten oder Einsatz beenden."),
-			TEXT("DEFEAT: The Defense Core fell in wave %d of %d. In the Core menu (E at the Core): retry the wave, restart or end the operation."), mWelle, mWellenGesamt));
+		if (mBohrung)
+		{
+			// 0.12-dev: der Bohrer geht nie verloren - nur der Lauf endet, der Ertrag bis hierher bleibt
+			BohrungEnde(false, TDF(TEXT("Bohrung in Welle %d gescheitert - der Bohrer repariert sich, versuch es nochmal"), TEXT("Drilling failed in wave %d - the drill repairs itself, try again"), Welle));
+			return;
+		}
+		if (mEndlos)
+		{
+			// 0.11 (Marius 15.11.): der Endlos-Lauf endet mit Wertung - Bestwert je Startort/Stufe, kein Wiederholen
+			FString Wertung;
+			if (UTDEinsatzSubsystem* Einsatz = GetWorld()->GetSubsystem<UTDEinsatzSubsystem>())
+			{
+				Wertung = Einsatz->WerteEndlosAus(FMath::Max(0, Welle - 1), mStufe);
+			}
+			StoppeLauf(TDF(TEXT("ENDE: Der Abwehrkern ist in Welle %d gefallen. %s Im Kern-Menü (E am Kern): neu starten oder beenden."),
+				TEXT("GAME OVER: The Defense Core fell in wave %d. %s In the Core menu (E at the Core): restart or end."), Welle, *Wertung));
+		}
+		else if (mWellenGesamt > 0)
+		{
+			StoppeLauf(TDF(TEXT("NIEDERLAGE: Der Abwehrkern ist in Welle %d von %d gefallen. Im Kern-Menü (E am Kern): Welle wiederholen, neu starten oder Einsatz beenden."),
+				TEXT("DEFEAT: The Defense Core fell in wave %d of %d. In the Core menu (E at the Core): retry the wave, restart or end the operation."), mWelle, mWellenGesamt));
+		}
+		else
+		{
+			StoppeLauf(TDF(TEXT("NIEDERLAGE: Der Abwehrkern ist in Welle %d gefallen. Im Kern-Menü (E am Kern): Welle wiederholen, neu starten oder Einsatz beenden."),
+				TEXT("DEFEAT: The Defense Core fell in wave %d. In the Core menu (E at the Core): retry the wave, restart or end the operation."), mWelle));
+		}
 		Kern->mLaufEnde = 2;
 		Kern->mLaufEndWelle = Welle;
 	}
@@ -1484,11 +1575,45 @@ FString UTDWaveSubsystem::GetLaufText() const
 			Lebend += G.bKern && G.Kreatur.IsValid() && G.Kreatur->IsAliveAndWell() ? 1 : 0;
 		}
 		const int32 Offen = FMath::Max(0, mNachschub.Num() - mNachschubIndex);
+		if (mEndlos)
+		{
+			// Endlos: Restzeit bis zur naechsten Welle (Abstand zaehlt ab Wellenbeginn)
+			const int32 Rest = FMath::Max(0, FMath::CeilToInt(EndlosAbstand(mWelle) - mWellenZeit));
+			return TDF(TEXT("Welle %d (endlos): %d Gegner uebrig, naechste in %d:%02d min, aus %s"), TEXT("Wave %d (endless): %d enemies left, next in %d:%02d min, from %s"),
+				mWelle, Lebend + Offen, Rest / 60, Rest % 60, *mRichtungen);
+		}
+		if (mWellenGesamt <= 0)
+		{
+			return TDF(TEXT("Welle %d: %d / %d Gegner uebrig (%d unterwegs), aus %s"), TEXT("Wave %d: %d / %d enemies left (%d on the way), from %s"), mWelle, Lebend + Offen, mWellenGroesse, Lebend, *mRichtungen);
+		}
 		return TDF(TEXT("Welle %d von %d: %d / %d Gegner uebrig (%d unterwegs), aus %s"), TEXT("Wave %d of %d: %d / %d enemies left (%d on the way), from %s"), mWelle, mWellenGesamt, Lebend + Offen, mWellenGroesse, Lebend, *mRichtungen);
 	}
 	default:
 		return TDT(TEXT("Bereit - /td kern start"), TEXT("Ready - /td kern start"));
 	}
+}
+
+float UTDWaveSubsystem::EndlosAbstand(int32 Welle) const
+{
+	return FMath::Max(TDBalance::Wert(TEXT("Endlos.AbstandMin"), 90.f), mZwischenCountdown - TDBalance::Wert(TEXT("Endlos.AbstandJeWelle"), 1.5f) * Welle);
+}
+
+FString UTDWaveSubsystem::GetBereitText(bool bKurz) const
+{
+	// Gegencheck 15.11. (F1): auf Zeit zeigt die Zeile den Countdown statt "3/0 bereit"
+	if (!mManuell && mLauf == ETDLauf::Aufbau)
+	{
+		const int32 Rest = FMath::Max(0, FMath::CeilToInt(mCountdown));
+		const FString Nr = mWellenGesamt > 0 ? FString::Printf(TEXT("%d/%d"), mWelle + 1, mWellenGesamt) : FString::FromInt(mWelle + 1);
+		return bKurz ? TDF(TEXT("Welle %s in %d:%02d"), TEXT("Wave %s in %d:%02d"), *Nr, Rest / 60, Rest % 60)
+			: TDF(TEXT("Welle %s in %d:%02d min (Kern-Menü: E)"), TEXT("Wave %s in %d:%02d min (Core Menu: E)"), *Nr, Rest / 60, Rest % 60);
+	}
+	if (mWellenGesamt <= 0)
+	{
+		return bKurz ? TDF(TEXT("Welle %d bereit"), TEXT("Wave %d ready"), mWelle + 1) : TDF(TEXT("Welle %d bereit (Kern-Menü: E)"), TEXT("Wave %d ready (Core Menu: E)"), mWelle + 1);
+	}
+	return bKurz ? TDF(TEXT("%d / %d bereit"), TEXT("%d / %d ready"), mWelle + 1, mWellenGesamt)
+		: TDF(TEXT("Welle %d/%d bereit (Kern-Menü: E)"), TEXT("Wave %d/%d ready (Core Menu: E)"), mWelle + 1, mWellenGesamt);
 }
 
 FString UTDWaveSubsystem::OptikFamilie(const UClass* Klasse)
@@ -2228,6 +2353,56 @@ FTDKreaturSteckbrief UTDWaveSubsystem::Steckbrief(const FString& Pfad)
 	return B;
 }
 
+void UTDWaveSubsystem::PruefeFrontenVorWelle(int32 Nummer)
+{
+	const ATDDefenseCore* Kern = mKern.Get();
+	if (!Kern)
+	{
+		return;
+	}
+	const FVector Mitte = Kern->GetActorLocation();
+	if (mFronten.Num() == 0)
+	{
+		SucheFronten(Mitte);
+	}
+	// 0.9.0 (Pruefung0846: alle 52 versperrten Nachzuegler 30 m hinter Front 2, deren Weg bei der Wahl voll war): das Netz aendert
+	// sich nach der Wahl (Gelaende und Bauten werden nachgeladen). Vor jeder Welle den Weg der aktiven Fronten neu pruefen und
+	// bei einem Teilweg die Fronten neu bestimmen.
+	for (int32 i = 0; i < AktiveFrontenFuer(Nummer) && mFronten.IsValidIndex(i); ++i)
+	{
+		bool bVoll = false;
+		const TArray<FVector> Probe = UTDGegnerHirn::BerechneWeg(GetWorld(), mFronten[i].Ort, mKern.Get(), &bVoll);
+		if (bVoll)
+		{
+			ProbeWegKlippen(Probe, i + 1);
+		}
+		if (!bVoll)
+		{
+			// 0.10.0 (Release-Test 14.11., Baender W11 und Pionier098 bei 6 Bildern/s): EntschaerfeLogistik oben nimmt im selben
+			// Frame bis zu 165 Teile aus dem Netz. Waehrend des Umbaus findet die Wegsuche gar keinen Weg (0 Punkte), und die
+			// Neuwahl fand dann 0 von 16 gueltigen Richtungen.
+			// 0.10.1 (Plan Netzumbau 15.11.): 1 s nach dem Laden meldet das Netz noch keinen Umbau (0 Auftraege), die Kacheln um
+			// den Kern fehlen aber noch. Merkmal ist "0 Punkte": die Wegsuche findet keinen Anfang - ein echt gesperrter Weg liefert
+			// einen Teilweg mit Punkten. Kein Weg = Netz nicht bereit: Fronten behalten, die naechste Welle prueft erneut.
+			UNavigationSystemV1* Nav = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
+			const bool bNetzImBau = Nav && Nav->IsNavigationBuildInProgress();
+			const int32 Auftraege = Nav ? Nav->GetNumRemainingBuildTasks() : -1;
+			if (Probe.Num() == 0)
+			{
+				UE_LOG(LogFicsitTD, Log, TEXT("Frontpruefung Welle %d: Front %d ohne Weg, Netz nicht bereit (Umbau %d, %d Auftraege) - Fronten bleiben"),
+					Nummer, i + 1, bNetzImBau ? 1 : 0, Auftraege);
+				continue;
+			}
+			UE_LOG(LogFicsitTD, Warning, TEXT("Frontpruefung Welle %d: Front %d (%s) hat nur noch einen Teilweg (%d Punkte, Ende %s, Netz im Umbau %d, %d Auftraege) - Fronten neu bestimmen"),
+				Nummer, i + 1, *FrontText(mFronten, i, true), Probe.Num(), Probe.Num() ? *Probe.Last().ToCompactString() : TEXT("-"), bNetzImBau ? 1 : 0, Auftraege);
+			mFronten.Reset();
+			SucheFronten(Mitte);
+			MarkiereFronten();
+			break;
+		}
+	}
+}
+
 void UTDWaveSubsystem::SpawneKernWelle(int32 Nummer)
 {
 	const ATDDefenseCore* Kern = mKern.Get();
@@ -2266,38 +2441,7 @@ void UTDWaveSubsystem::SpawneKernWelle(int32 Nummer)
 	{
 		SucheFronten(Mitte);
 	}
-	// 0.9.0 (Pruefung0846: alle 52 versperrten Nachzuegler 30 m hinter Front 2, deren Weg bei der Wahl voll war): das Netz aendert
-	// sich nach der Wahl (Gelaende und Bauten werden nachgeladen). Vor jeder Welle den Weg der aktiven Fronten neu pruefen und
-	// bei einem Teilweg die Fronten neu bestimmen.
-	for (int32 i = 0; i < AktiveFrontenFuer(Nummer) && mFronten.IsValidIndex(i); ++i)
-	{
-		bool bVoll = false;
-		const TArray<FVector> Probe = UTDGegnerHirn::BerechneWeg(GetWorld(), mFronten[i].Ort, mKern.Get(), &bVoll);
-		if (!bVoll)
-		{
-			// 0.10.0 (Release-Test 14.11., Baender W11 und Pionier098 bei 6 Bildern/s): EntschaerfeLogistik oben nimmt im selben
-			// Frame bis zu 165 Teile aus dem Netz. Waehrend des Umbaus findet die Wegsuche gar keinen Weg (0 Punkte), und die
-			// Neuwahl fand dann 0 von 16 gueltigen Richtungen.
-			// 0.10.1 (Plan Netzumbau 15.11.): 1 s nach dem Laden meldet das Netz noch keinen Umbau (0 Auftraege), die Kacheln um
-			// den Kern fehlen aber noch. Merkmal ist "0 Punkte": die Wegsuche findet keinen Anfang - ein echt gesperrter Weg liefert
-			// einen Teilweg mit Punkten. Kein Weg = Netz nicht bereit: Fronten behalten, die naechste Welle prueft erneut.
-			UNavigationSystemV1* Nav = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
-			const bool bNetzImBau = Nav && Nav->IsNavigationBuildInProgress();
-			const int32 Auftraege = Nav ? Nav->GetNumRemainingBuildTasks() : -1;
-			if (Probe.Num() == 0)
-			{
-				UE_LOG(LogFicsitTD, Log, TEXT("Frontpruefung Welle %d: Front %d ohne Weg, Netz nicht bereit (Umbau %d, %d Auftraege) - Fronten bleiben"),
-					Nummer, i + 1, bNetzImBau ? 1 : 0, Auftraege);
-				continue;
-			}
-			UE_LOG(LogFicsitTD, Warning, TEXT("Frontpruefung Welle %d: Front %d (%s) hat nur noch einen Teilweg (%d Punkte, Ende %s, Netz im Umbau %d, %d Auftraege) - Fronten neu bestimmen"),
-				Nummer, i + 1, *FrontText(mFronten, i, true), Probe.Num(), Probe.Num() ? *Probe.Last().ToCompactString() : TEXT("-"), bNetzImBau ? 1 : 0, Auftraege);
-			mFronten.Reset();
-			SucheFronten(Mitte);
-			MarkiereFronten();
-			break;
-		}
-	}
+	PruefeFrontenVorWelle(Nummer);
 	TArray<FVector> Orte;
 	mRichtungen.Reset();
 	float Abstand = 0.f;
@@ -2740,12 +2884,23 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 		}
 		const float Vorher = mCountdown;
 		mCountdown -= mManuell ? 0.f : DeltaTime;   // Einsatz: Countdown steht, /td kern weiter setzt ihn auf 0
+		// 16.11. (W06: Klippenprobe und Wellenstart im selben Frame - ein Hog fuhr sich fest, bevor das Netz die Sperre kannte):
+		// Frontpruefung schon 20 s vor dem Start, damit der Netzumbau vor der Welle fertig ist
+		if (mFrontCheckWelle != mWelle + 1 && mCountdown <= TDBalance::Wert(TEXT("Gegner.FrontPruefungVorStart"), 20.f))
+		{
+			mFrontCheckWelle = mWelle + 1;
+			PruefeFrontenVorWelle(mWelle + 1);
+		}
 		if (FMath::FloorToInt(Vorher / 10.f) != FMath::FloorToInt(mCountdown / 10.f))
 		{
 			SpeichereLauf();   // alle 10 s reicht fuer den Spielstand
 		}
 		for (const float Marke : { 600.f, 300.f, 120.f, 60.f, 30.f, 10.f })
 		{
+			if (mEndlos && Marke != 60.f && Marke != 10.f)
+			{
+				continue;
+			}
 			if (Vorher > Marke && mCountdown <= Marke)
 			{
 				Ansage(Marke >= 120.f ? TDF(TEXT("Welle %d in %.0f Minuten."), TEXT("Wave %d in %.0f minutes."), mWelle + 1, Marke / 60.f)
@@ -2755,6 +2910,23 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 					PruefeVersorgung();
 				}
 			}
+		}
+		if (mCountdown <= 0.f && mKlippenOffen > 0 && mKlippenWarte < TDBalance::Wert(TEXT("Gegner.KlippenWarteMax"), 20.f))
+		{
+			// Sperre noch nicht im Netz: Start halten, bis der Umbau bestaetigt ist (hoechstens Gegner.KlippenWarteMax)
+			if (mKlippenWarte <= 0.f)
+			{
+				++mStartGewartet;
+				UE_LOG(LogFicsitTD, Log, TEXT("Wellenstart %d wartet auf den Netzumbau nach %d Klippensperre(n) (%d. Mal)"), mWelle + 1, mKlippenOffen, mStartGewartet);
+			}
+			mKlippenWarte += DeltaTime;
+			mCountdown = 0.f;
+			return;
+		}
+		if (mCountdown <= 0.f && mKlippenWarte > 0.f)
+		{
+			UE_LOG(LogFicsitTD, Log, TEXT("Wellenstart %d nach %.1f s Warten auf den Netzumbau (offen %d)"), mWelle + 1, mKlippenWarte, mKlippenOffen);
+			mKlippenWarte = 0.f;
 		}
 		if (mCountdown <= 0.f)
 		{
@@ -2810,8 +2982,17 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 		if (mNachschubTakt <= 0.f)
 		{
 			mNachschubTakt = TDBalance::Wert(TEXT("Wellen.NachschubTakt"), 0.25f);
+			int32 Paket = TDBalance::Ganz(TEXT("Wellen.NachschubPaket"), 5);
+			if (mEndlos)
+			{
+				// 0.11 (Gegencheck 15.11., Marius: Strom statt Klumpen): 2 je Sekunde; grosse Wellen schneller, damit der Nachschub
+				// spaetestens nach Endlos.StromAnteil des Abstands draussen ist
+				mNachschubTakt = FMath::Max(0.1f, TDBalance::Wert(TEXT("Endlos.NachschubTakt"), 1.f));
+				const float Fenster = FMath::Max(10.f, EndlosAbstand(mWelle) * TDBalance::Wert(TEXT("Endlos.StromAnteil"), 0.5f));
+				Paket = FMath::Max(TDBalance::Ganz(TEXT("Endlos.NachschubPaket"), 2), FMath::CeilToInt(mNachschub.Num() * mNachschubTakt / Fenster));
+			}
 			const int32 Gleichzeitig = TDBalance::Ganz(TEXT("Wellen.MaxGleichzeitig"), TDBalance::Ganz(TEXT("Wellen.MaxGegner"), KernMaxGegner));
-			int32 Frei = FMath::Min(Gleichzeitig - Lebend, TDBalance::Ganz(TEXT("Wellen.NachschubPaket"), 5));
+			int32 Frei = FMath::Min(Gleichzeitig - Lebend, Paket);
 			while (Frei-- > 0 && mNachschubIndex < mNachschub.Num())
 			{
 				const FTDNachschub& N = mNachschub[mNachschubIndex++];
@@ -2825,9 +3006,17 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 		}
 		return;
 	}
+	bool bUeberlauf = false;
 	if (Lebend > 0)
 	{
-		return;
+		// 0.11 (Gegencheck F3, Marius 15.11.): im Endlos-Modus zaehlt der Abstand ab Wellenbeginn - laeuft er ab, kommt die naechste
+		// Welle obendrauf (die Reste bleiben im Feld). So haelt auch ein ueberlebender Nachzuegler die Uhr nicht an.
+		if (!mEndlos || mWellenZeit < EndlosAbstand(mWelle))
+		{
+			return;
+		}
+		bUeberlauf = true;
+		UE_LOG(LogFicsitTD, Log, TEXT("Endlos: Welle %d nach %.0f s nicht abgewehrt (%d Gegner uebrig) - naechste Welle kommt obendrauf"), mWelle, mWellenZeit, Lebend);
 	}
 	const ATDDefenseCore* Kern = mKern.Get();
 	const float Anteil = 100.f * Kern->GetTDHealth() / FMath::Max(Kern->GetTDMaxHealth(), 1.f);
@@ -2836,6 +3025,15 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 	if (UTDEinsatzSubsystem* Einsatz = GetWorld()->GetSubsystem<UTDEinsatzSubsystem>())
 	{
 		Einsatz->WelleBeendet(mWelle, Anteil);
+	}
+	if (mBohrung)
+	{
+		BohrWelleBeendet(Anteil);
+		if (mWelle >= mBohrEndWelle)
+		{
+			BohrungEnde(true, TDF(TEXT("BOHRUNG GESCHAFFT (%s, Kern %.0f %%)"), TEXT("DRILLING COMPLETE (%s, Core %.0f %%)"), *BohrStufenName(mBohrStufe), Anteil));
+			return;
+		}
 	}
 	if (mWellenGesamt > 0 && mWelle >= mWellenGesamt)
 	{
@@ -2853,13 +3051,31 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 	}
 	mLauf = ETDLauf::Aufbau;
 	mCountdown = mZwischenCountdown;
+	// 0.11 (Marius 15.11.): Endlos-Wellen - Abstand ab Wellenbeginn, schrumpft mit jeder Welle bis zum Minimum; nach dem Wellenende
+	// mindestens Endlos.MinPause, beim Ueberlauf nur Endlos.UeberlaufPause. Nach einer Bosswelle lange Pause mit Bonuswahl.
+	if (mEndlos)
+	{
+		mCountdown = bUeberlauf ? TDBalance::Wert(TEXT("Endlos.UeberlaufPause"), 5.f)
+			: FMath::Max(TDBalance::Wert(TEXT("Endlos.MinPause"), 30.f), EndlosAbstand(mWelle) - mWellenZeit);
+		if (mWelle % 10 == 0)
+		{
+			mCountdown = FMath::Max(mCountdown, TDBalance::Wert(TEXT("Endlos.BossPause"), 300.f));
+			if (UTDEinsatzSubsystem* Einsatz = GetWorld()->GetSubsystem<UTDEinsatzSubsystem>())
+			{
+				Einsatz->BieteEndlosBonusAn(mWelle);
+			}
+		}
+		UE_LOG(LogFicsitTD, Log, TEXT("Endlos: Welle %d abgewehrt, naechste in %.0f s (Welle dauerte %.0f s, Abstand %.0f s%s)"), mWelle, mCountdown, mWellenZeit, EndlosAbstand(mWelle),
+			bUeberlauf ? TEXT(", Ueberlauf") : TEXT(""));
+	}
 	SpeichereLauf();
 	if (UTDLaufProtokoll* Lauf = UTDLaufProtokoll::Get(this))
 	{
 		Lauf->SpeichereSpielstand(FString::Printf(TEXT("FicsitTD_W%02d_Ende"), mWelle));
 	}
 	Ansage(mManuell ? TDT(TEXT("Bauen, so lange du willst - naechste Welle am Kern (E) mit \"Welle starten\"."), TEXT("Build as long as you like - next wave at the Core (E) with \"Start wave\"."))
-		: TDF(TEXT("Naechste Welle in %.0f min (sofort: am Kern \"Welle starten\")."), TEXT("Next wave in %.0f min (now: \"Start wave\" at the Core)."), mCountdown / 60.f));
+		: TDF(TEXT("Naechste Welle in %d:%02d min (sofort: am Kern \"Welle starten\")."), TEXT("Next wave in %d:%02d min (now: \"Start wave\" at the Core)."),
+			FMath::FloorToInt(mCountdown / 60.f), FMath::FloorToInt(mCountdown) % 60));
 	const int32 Jetzt = AktiveFrontenFuer(mWelle);
 	const int32 Danach = AktiveFrontenFuer(mWelle + 1);
 	for (int32 i = Jetzt; i < Danach; ++i)
@@ -3108,6 +3324,66 @@ void UTDWaveSubsystem::EntschaerfeLogistik(const FVector& Mitte)
 	}
 }
 
+int32 UTDWaveSubsystem::ProbeWegKlippen(const TArray<FVector>& Weg, int32 Front)
+{
+	UWorld* World = GetWorld();
+	if (!World || Weg.Num() < 2 || TDBalance::Wert(TEXT("Gegner.KlippenProbe"), 1.f) <= 0.f)
+	{
+		return 0;
+	}
+	// Kapsel etwa wie ein Hog (Radius 55, Halbhoehe 55), etwas groesser, damit auch Elite-Hogs erfasst werden
+	const float Radius = TDBalance::Wert(TEXT("Gegner.KlippenProbe.Radius"), 70.f);
+	const float Halb = TDBalance::Wert(TEXT("Gegner.KlippenProbe.Halbhoehe"), 70.f);
+	const float Schritt = 200.f;
+	const float SteilZ = FMath::Cos(FMath::DegreesToRadians(TDBalance::Wert(TEXT("Gegner.KlippenProbe.Neigung"), 45.f)));
+	const FCollisionShape Kapsel = FCollisionShape::MakeCapsule(Radius, Halb);
+	FCollisionQueryParams Abfrage(TEXT("TDKlippenProbe"), false);
+	TSet<AActor*> Gemeldet;
+	int32 Gesperrt = 0;
+	// G2 15.11. (BautenP2): Gegner planen ab ihrem eigenen Spawnpunkt und laufen seitlich neben dem Frontweg um Pfeiler herum -
+	// deshalb auch parallele Linien links und rechts abfahren (Gegner.KlippenProbe.Breite = halbe Breite in m)
+	const float Breite = TDBalance::Wert(TEXT("Gegner.KlippenProbe.Breite"), 6.f) * 100.f;
+	const float Versaetze[] = { 0.f, -Breite * 0.5f, Breite * 0.5f, -Breite, Breite };
+	for (int32 i = 0; i + 1 < Weg.Num(); ++i)
+	{
+		const FVector Richtung = (Weg[i + 1] - Weg[i]).GetSafeNormal2D();
+		const FVector Quer(-Richtung.Y, Richtung.X, 0.f);
+		for (const float V : Versaetze)
+		{
+		if (V != 0.f && Breite <= 0.f)
+		{
+			continue;
+		}
+		const FVector A = Weg[i] + Quer * V + FVector(0.f, 0.f, Halb + 20.f);
+		const FVector B = Weg[i + 1] + Quer * V + FVector(0.f, 0.f, Halb + 20.f);
+		const int32 Teile = FMath::Max(1, FMath::CeilToInt(FVector::Dist(A, B) / Schritt));
+		for (int32 t = 0; t < Teile; ++t)
+		{
+			const FVector Von = FMath::Lerp(A, B, (float)t / Teile);
+			const FVector Bis = FMath::Lerp(A, B, (float)(t + 1) / Teile);
+			TArray<FHitResult> Treffer;
+			World->SweepMultiByChannel(Treffer, Von, Bis, FQuat::Identity, ECC_WorldStatic, Kapsel, Abfrage);
+			for (const FHitResult& H : Treffer)
+			{
+				AActor* Klippe = H.GetActor();
+				if (!Klippe || Gemeldet.Contains(Klippe) || !Klippe->GetClass()->GetName().Contains(TEXT("CliffActor")) || H.ImpactNormal.Z >= SteilZ)
+				{
+					continue;
+				}
+				Gemeldet.Add(Klippe);
+				UE_LOG(LogFicsitTD, Log, TEXT("Klippenprobe Front %d: Kapsel haengt bei %s an %s (Neigung %.0f Grad) - vorab sperren"),
+					Front, *H.ImpactPoint.ToCompactString(), *Klippe->GetName(), FMath::RadiansToDegrees(FMath::Acos(FMath::Clamp(H.ImpactNormal.Z, -1.f, 1.f))));
+				if (SperreKlippe(Klippe))
+				{
+					++Gesperrt;
+				}
+			}
+		}
+		}
+	}
+	return Gesperrt;
+}
+
 bool UTDWaveSubsystem::SperreKlippe(AActor* Klippe)
 {
 	ATDDefenseCore* Kern = mKern.Get();
@@ -3134,10 +3410,21 @@ bool UTDWaveSubsystem::SperreKlippe(AActor* Klippe)
 		UE_LOG(LogFicsitTD, Log, TEXT("Klippensperre: %s bei %s liegt zu nah am Kern - nicht gesperrt"), *Modell, *Mitte.ToCompactString());
 		return false;
 	}
+	// 16.11. (W06: Sperrflaeche von CliffPillar_01, 113 x 109 m, schloss den Startpunkt von Front 1 ein - die Hogs entstanden in der
+	// Sperre und fanden nicht hinaus): Startpunkte der Fronten nie aussperren
+	for (int32 i = 0; i < mFronten.Num(); ++i)
+	{
+		if (FBox(Mitte - Halb, Mitte + Halb).ExpandBy(TDBalance::Wert(TEXT("Gegner.KlippenFrontAbstand"), 15.f) * 100.f).IsInsideXY(mFronten[i].Ort))
+		{
+			UE_LOG(LogFicsitTD, Log, TEXT("Klippensperre: %s bei %s schliesst den Startpunkt von Front %d ein - nicht gesperrt"), *Modell, *Mitte.ToCompactString(), i + 1);
+			return false;
+		}
+	}
 	UNavModifierComponent* Mod = NewObject<UNavModifierComponent>(Klippe, TEXT("TDKlippenNetz"));
 	Mod->SetAreaClass(UNavArea_Null::StaticClass());
 	Mod->RegisterComponent();
 	++mKlippenGesperrt;
+	++mKlippenOffen;
 	UE_LOG(LogFicsitTD, Log, TEXT("Klippensperre: %s bei %s (%.0f x %.0f x %.0f m) als Sperrflaeche ins Netz genommen (%d.), pruefe die Frontwege nach dem Netzumbau"),
 		*Modell, *Mitte.ToCompactString(), Halb.X / 50.f, Halb.Y / 50.f, Halb.Z / 50.f, mKlippenGesperrt);
 	FTimerHandle Takt;
@@ -3153,6 +3440,7 @@ void UTDWaveSubsystem::PruefeKlippenSperre(TWeakObjectPtr<AActor> Klippe, int32 
 	UNavigationSystemV1* Nav = World ? FNavigationSystem::GetCurrent<UNavigationSystemV1>(World) : nullptr;
 	if (!K || !Kern || !Nav)
 	{
+		mKlippenOffen = FMath::Max(0, mKlippenOffen - 1);
 		return;
 	}
 	if (Nav->IsNavigationBuildInProgress() && Versuch < 10)
@@ -3161,6 +3449,7 @@ void UTDWaveSubsystem::PruefeKlippenSperre(TWeakObjectPtr<AActor> Klippe, int32 
 		World->GetTimerManager().SetTimer(Takt, FTimerDelegate::CreateUObject(this, &UTDWaveSubsystem::PruefeKlippenSperre, Klippe, Versuch + 1), 2.f, false);
 		return;
 	}
+	mKlippenOffen = FMath::Max(0, mKlippenOffen - 1);   // Netzumbau fertig (oder Wartezeit um): Wellenstart darf los
 	bool bVoll = true;
 	TArray<FString> Teile;
 	FNavLocation MitteNav;
@@ -3183,7 +3472,20 @@ void UTDWaveSubsystem::PruefeKlippenSperre(TWeakObjectPtr<AActor> Klippe, int32 
 	}
 	if (bVoll)
 	{
-		UE_LOG(LogFicsitTD, Log, TEXT("Klippensperre bestaetigt (nach %d Warterunden): Frontwege weiter voll - %s"), Versuch, *FString::Join(Teile, TEXT(", ")));
+		// 0.11 (G2 15.11.): Gegner, die schon unterwegs sind, planten noch auf dem Netz vor der Sperre - jetzt neu planen
+		int32 NeuGeplant = 0;
+		for (TActorIterator<AFGCreature> It(World); It; ++It)
+		{
+			if (It->Tags.Contains(TEXT("FicsitTD")))
+			{
+				if (UTDGegnerHirn* Hirn = UTDGegnerHirn::Von(*It); Hirn && Hirn->PlaneNachNetzumbau())
+				{
+					++NeuGeplant;
+				}
+			}
+		}
+		UE_LOG(LogFicsitTD, Log, TEXT("Klippensperre bestaetigt (nach %d Warterunden): Frontwege weiter voll - %s; %d Gegner neu geplant"),
+			Versuch, *FString::Join(Teile, TEXT(", ")), NeuGeplant);
 		return;
 	}
 	TArray<UNavModifierComponent*> Mods;

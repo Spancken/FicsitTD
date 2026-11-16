@@ -105,6 +105,22 @@ private:
 	UFUNCTION()
 	void EndeWiederholen();
 	UFUNCTION()
+	void Bohre0();
+	UFUNCTION()
+	void Bohre1();
+	UFUNCTION()
+	void Bohre2();
+	UFUNCTION()
+	void BohrungAbbrechen();
+	void Bohre(int32 Stufe);
+	UFUNCTION()
+	void WaehleBonus0();
+	UFUNCTION()
+	void WaehleBonus1();
+	UFUNCTION()
+	void WaehleBonus2();
+	void WaehleBonus(int32 Nr);
+	UFUNCTION()
 	void EndeNeustart();
 	UFUNCTION()
 	void EndeBeenden();
@@ -210,6 +226,25 @@ private:
 	TObjectPtr<UButton> mEndeNeustart;
 	UPROPERTY()
 	TObjectPtr<UButton> mEndeBeenden;
+	/** 0.11 Endlos (Marius 15.11.): Bonuswahl nach der Bosswelle */
+	UPROPERTY()
+	TObjectPtr<UButton> mBonus0;
+	UPROPERTY()
+	TObjectPtr<UButton> mBonus1;
+	UPROPERTY()
+	TObjectPtr<UButton> mBonus2;
+	/** 0.12-dev Freies Spiel mit Abwehr: Bohrung am Kern */
+	UPROPERTY()
+	TObjectPtr<UTextBlock> mBohrInfo;
+	UPROPERTY()
+	TObjectPtr<UButton> mBohr0;
+	UPROPERTY()
+	TObjectPtr<UButton> mBohr1;
+	UPROPERTY()
+	TObjectPtr<UButton> mBohr2;
+	UPROPERTY()
+	TObjectPtr<UButton> mBohrAbbruch;
+	float mBohrInfoUhr = 0.f;
 	UPROPERTY()
 	TObjectPtr<UVerticalBox> mLaden;
 	UPROPERTY()

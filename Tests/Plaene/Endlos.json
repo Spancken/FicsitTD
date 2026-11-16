@@ -1,0 +1,125 @@
+{
+  "Name": "Endlos",
+  "_Hinweis": "0.11 (Marius 15.11.): Spielmodus Endlos-Wellen. Neues Spiel mit Modus 2: Einsatz startet automatisch ohne Wellenende, Wellen kommen auf Zeit (nicht manuell), nur eine Front, Abstand schrumpft. Zeitraffer, damit mehrere Wellen in den Plan passen.",
+  "NeuesSpiel": {
+    "Startort": "Grass Fields",
+    "Modus": 2
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 25,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warteBis": "EinsatzAktiv",
+      "max": 120
+    },
+    {
+      "befehl": "td einsatz frei an"
+    },
+    {
+      "stromfrei": true
+    },
+    {
+      "versorgung": {
+        "Bolzenturm": 50
+      }
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 4,
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Endlos-Wellen gestartet",
+      "min": 1,
+      "text": "Lauf mit Countdown gestartet (nicht manuell)"
+    },
+    {
+      "foto": "Endlos_Start"
+    },
+    {
+      "zeitraffer": 8
+    },
+    {
+      "warteBis": "WelleLaeuft",
+      "max": 700
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Einsatz gestartet (Stufe",
+      "min": 1,
+      "text": "Einsatz automatisch gestartet"
+    },
+    {
+      "warteBis": "WelleVorbei",
+      "max": 400
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Endlos: Welle 1 abgewehrt, naechste in",
+      "min": 1,
+      "text": "nach Welle 1: Abstand ab Wellenbeginn (178,5 s minus Wellendauer, mindestens 30 s)"
+    },
+    {
+      "warteBis": "WelleLaeuft",
+      "max": 700
+    },
+    {
+      "warteBis": "WelleVorbei",
+      "max": 400
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Endlos: Welle 2 abgewehrt",
+      "min": 1,
+      "text": "Welle 2 kam ohne Knopfdruck und wurde abgewehrt"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "ACHTUNG: Ab Welle",
+      "min": 0,
+      "max": 0,
+      "text": "keine zweite Front angekuendigt"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Einsatz: Welle 2 geschafft: +",
+      "min": 1,
+      "text": "Endlos: eine Sammelzeile je Welle (Coupons, Festplatten, Kern)"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "in 2 Minuten.",
+      "min": 0,
+      "max": 0,
+      "text": "Endlos: keine 120-s-Marke im Chat (nur 60 und 10 s)"
+    },
+    {
+      "befehl": "td modus einsatz"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Spielmodus nachtraeglich auf Einsatz gesetzt",
+      "min": 0,
+      "max": 0,
+      "text": "Endlos-Spiel laesst sich nicht auf Einsatz kippen"
+    },
+    {
+      "zeitraffer": 1
+    },
+    {
+      "foto": "Endlos_W2"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}

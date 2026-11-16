@@ -260,6 +260,29 @@ public:
 	/** Einsatz: kein Countdown, die naechste Welle kommt nur mit /td kern weiter */
 	void SetManuell(bool bManuell) { mManuell = bManuell; }
 	bool IstManuell() const { return mManuell; }
+	/** 0.11 Endlos-Wellen: Abstand ab Wellenbeginn, Gegnerstrom, eine Front, Boss-Pause (vor StarteKernVerteidigung setzen) */
+	void SetEndlos(bool bEndlos) { mEndlos = bEndlos; }
+	bool IstEndlos() const { return mEndlos; }
+	/** Endlos: Abstand von Wellenbeginn zu Wellenbeginn nach Welle W (schrumpft bis zum Minimum) */
+	float EndlosAbstand(int32 Welle) const;
+	/** Zeile fuer HUD, Kern-Menue und To-do zwischen den Wellen: Countdown (Endlos) oder "x / y bereit" (Einsatz) */
+	FString GetBereitText(bool bKurz = false) const;
+	/** Restzeit bis zur naechsten Welle (nur Aufbau, sonst -1) */
+	float GetCountdown() const { return mLauf == ETDLauf::Aufbau ? mCountdown : -1.f; }
+	// ---- 0.12-dev Freies Spiel mit Abwehr: Bohrung am Kern-Ableger (TDBohrung.cpp) ----
+	/** Bohrung der Stufe 0 Leicht, 1 Mittel, 2 Schwer starten; false mit Grund in OutMeldung (Platzpruefung im Klartext) */
+	bool StarteBohrung(ATDDefenseCore* Kern, int32 Stufe, FString& OutMeldung);
+	/** Abbruch ohne Strafe: Gegner weg, kein Lohn, Kern voll */
+	FString BrecheBohrungAb();
+	bool IstBohrung() const { return mBohrung && mLauf != ETDLauf::Aus; }
+	/** Leer = Platz taugt; sonst was fehlt (kein Knoten, kein Weg, laeuft schon ...) */
+	FString BohrPruefung(ATDDefenseCore* Kern, class AFGResourceNode** OutKnoten = nullptr);
+	static FString BohrStufenName(int32 Stufe);
+	/** Mittel nach einem Erfolg auf Leicht, Schwer nach Mittel (irgendein Knoten) */
+	static bool BohrStufeFrei(const ATDDefenseCore* Kern, int32 Stufe);
+	/** Zeilen fuer das Kern-Menue (Knoten, Stufen, Erstlohn) */
+	TArray<FString> BohrInfo(ATDDefenseCore* Kern);
+	int32 GetBohrStufe() const { return mBohrStufe; }
 	/** Alle TD-Rezepte freischalten (freier Modus; im Einsatz kommen sie ueber das MAM) */
 	void SchalteSandkastenFrei();
 	int32 mWellenGesamt = 30;
@@ -350,11 +373,23 @@ public:
 	 *  genau diese Klippe als Sperrflaeche ins Netz nehmen. Nach dem Netzumbau pruefen, ob alle aktiven Frontwege noch voll sind -
 	 *  sonst die Sperre zuruecknehmen. Jede Klippe wird nur einmal versucht. */
 	bool SperreKlippe(AActor* Klippe);
+	/** 0.11 (Felspfeiler-Rest in G2, 15.11.: jeder Lauf 1x "Festgefahren" am selben CliffPillar_02_Top): vor der Welle den Frontweg
+	 *  mit einer Gegner-Kapsel abfahren; Klippen mit steiler Flaeche, an denen sie haengt, vorab sperren. Liefert die Zahl der Sperren. */
+	int32 ProbeWegKlippen(const TArray<FVector>& Weg, int32 Front);
 private:
 	void PruefeKlippenSperre(TWeakObjectPtr<AActor> Klippe, int32 Versuch);
 	TSet<TWeakObjectPtr<AActor>> mKlippenGeprueft;
 	int32 mKlippenGesperrt = 0;
 	int32 mKlippenZurueck = 0;
+	/** 16.11. (W06: Sperre und Wellenstart im selben Frame): Klippensperren, deren Netzumbau noch nicht bestaetigt ist */
+	int32 mKlippenOffen = 0;
+	/** Welle, fuer die die Frontpruefung vor dem Start schon lief */
+	int32 mFrontCheckWelle = -1;
+	/** so lange wartet der Wellenstart schon auf den Netzumbau; wie oft gewartet wurde (Log) */
+	float mKlippenWarte = 0.f;
+	int32 mStartGewartet = 0;
+	/** Weg der aktiven Fronten pruefen (Klippenprobe, Teilweg -> Fronten neu); vor dem Start und beim Spawnen */
+	void PruefeFrontenVorWelle(int32 Nummer);
 	/** Beim Start war das Navigationsnetz noch nicht fertig (0 Richtungen geprueft): alle 15 s neu suchen, bis es klappt */
 	void PruefeFrontenNach();
 	FTimerHandle mFrontenNachTimer;
@@ -522,6 +557,16 @@ private:
 	FString mRichtungen;
 	int32 mStufe = 1;
 	bool mManuell = false;
+	bool mEndlos = false;
+	bool mBohrung = false;
+	int32 mBohrStufe = 0;
+	int32 mBohrEndWelle = 0;
+	TWeakObjectPtr<class AFGResourceNode> mBohrKnoten;
+	FString mBohrRohstoff;
+	float mBohrReinheit = 1.f;
+	int32 mBohrErz = 0;
+	void BohrWelleBeendet(float KernAnteil);
+	void BohrungEnde(bool bErfolg, const FString& Grund);
 	TArray<FTDFront> mFronten;
 	TWeakObjectPtr<ATDDefenseCore> mFrontenKern;
 	int32 mFrontenStufe = -1;
@@ -545,6 +590,8 @@ private:
 	TArray<TWeakObjectPtr<ATDTestWall>> mTestMauern;
 
 	bool mRezepteFreigeschaltet = false;
+	/** 0.11: einmal "Modus Aus" ins Log */
+	bool mModusAusGemeldet = false;
 	float mZeitBisSteuerung = 0.f;
 	float mZeitBisLog = 0.f;
 	float mZeitBisRezeptVersuch = 0.f;

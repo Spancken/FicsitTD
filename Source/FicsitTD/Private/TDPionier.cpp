@@ -1,4 +1,5 @@
 #include "TDPionier.h"
+#include "TDKernplatz.h"
 #include "TDGegnerHirn.h"
 #include "FicsitTDModule.h"
 #include "TDBalance.h"
@@ -114,7 +115,23 @@ void UTDPionier::OnWorldBeginPlay(UWorld& InWorld)
 ATDDefenseCore* UTDPionier::Kern() const
 {
 	const UTDEinsatzSubsystem* Einsatz = GetWorld() ? GetWorld()->GetSubsystem<UTDEinsatzSubsystem>() : nullptr;
-	return Einsatz && Einsatz->IstAktiv() ? Einsatz->GetKern() : nullptr;
+	if (Einsatz && Einsatz->IstAktiv())
+	{
+		return Einsatz->GetKern();
+	}
+	// 0.12-dev Freies Spiel mit Abwehr: Rang und Talente am Kern der Bohrung, sonst am ersten Abwehrkern der Welt
+	if (UTDKernplatz::IstAbwehr(this))
+	{
+		if (Einsatz && Einsatz->GetKern())
+		{
+			return Einsatz->GetKern();
+		}
+		for (TActorIterator<ATDDefenseCore> It(GetWorld()); It; ++It)
+		{
+			return *It;
+		}
+	}
+	return nullptr;
 }
 
 int32 UTDPionier::GetXP() const
@@ -177,7 +194,8 @@ int32 UTDPionier::FreiePunkte() const
 	{
 		Vergeben += GetStufe(i);
 	}
-	return FMath::Max(0, GetRang() - 1 - Vergeben);
+	const ATDDefenseCore* K = Kern();
+	return FMath::Max(0, GetRang() - 1 + (K ? K->mPionierBonusPunkte : 0) - Vergeben);
 }
 
 FString UTDPionier::Lerne(int32 Zweig)

@@ -47,6 +47,7 @@
 #include "Widgets/SWindow.h"
 #include "FGSchematic.h"
 #include "FGResearchManager.h"
+#include "FGResearchTree.h"
 #include "Camera/PlayerCameraManager.h"
 #include "FGSchematicManager.h"
 #include "FGRecipe.h"
@@ -127,7 +128,9 @@ public:
 		int32 N = 0;
 		for (const FString& Z : mAlle)
 		{
-			if (Z.Contains(Text))
+			// 16.11. (Bohrung: "kein zweiter Erstlohn" zaehlte die eigene OK-Zeile mit, die den Fund wiederholt): Zeilen des
+			// Autotests selbst zaehlen nicht
+			if (!Z.StartsWith(TEXT("Autotest")) && Z.Contains(Text))
 			{
 				OutErste = N++ == 0 ? Z : OutErste;
 			}
@@ -312,8 +315,18 @@ bool UTDAutotest::Tick(float /*BildDt*/)
 		}
 		else if (TDIstSpielwelt(World))
 		{
-			mPhase = EPhase::Laedt;   // schon im Spiel (z. B. Startparameter)
-			mUhr = 0.f;
+			// 0.11 (Paket EndlosTest 15.11.: nach einem Plan, der am Ende einen Spielstand laedt, war die Welt beim Planwechsel
+			// noch im Wechsel; der naechste Plan mit "NeuesSpiel" lief dann in der alten Welt weiter): neues Spiel nachholen
+			if (mPlan->HasField(TEXT("NeuesSpiel")) && World->GetFirstPlayerController() && mUhr > 3.f)
+			{
+				UE_LOG(LogFicsitTD, Log, TEXT("Autotest: Plan verlangt ein neues Spiel - starte es aus der laufenden Welt"));
+				StarteNeuesSpiel(World);
+			}
+			else if (!mPlan->HasField(TEXT("NeuesSpiel")))
+			{
+				mPhase = EPhase::Laedt;   // schon im Spiel (z. B. Startparameter)
+				mUhr = 0.f;
+			}
 		}
 		break;
 	case EPhase::Laedt:
@@ -369,7 +382,11 @@ void UTDAutotest::StarteNeuesSpiel(UWorld* World)
 	// 0.77 Neustart-Rauchtest: neues Spiel mit dem Sitzungsschalter "FICSIT Tower Defense" (Wert wie im Log einer echten Sitzung)
 	const TSharedPtr<FJsonObject> Neu = mPlan->GetObjectField(TEXT("NeuesSpiel"));
 	// Optionsnamen wie im Log einer echten Sitzung ("?sessionName=...", AFGGameMode::SessionNameOption ist nicht linkbar)
-	FString Optionen = TEXT("?sessionName=Autotest_Neu?SessionSettings=FicsitTD.ModusInt=DgAAAAQAAAABAAAA?skiponboarding");
+	// 0.11: "Modus" (Standard 1 = Einsatz, 0 = Aus fuer den Plan ModusAus). Wert ist ein FVariant als Base64:
+	// Typ 14 (Int32), Laenge 4, Wert - also DgAAAAQAAAA + Base64 der letzten 4 Byte
+	const int32 Modus = Neu->HasField(TEXT("Modus")) ? static_cast<int32>(Neu->GetNumberField(TEXT("Modus"))) : 1;
+	FString Optionen = FString::Printf(TEXT("?sessionName=Autotest_Neu?SessionSettings=FicsitTD.ModusInt=%s?skiponboarding"),
+		Modus == 0 ? TEXT("DgAAAAQAAAAAAAAA") : Modus == 2 ? TEXT("DgAAAAQAAAACAAAA") : Modus == 3 ? TEXT("DgAAAAQAAAADAAAA") : TEXT("DgAAAAQAAAABAAAA"));
 	if (Neu->HasField(TEXT("Startort")))
 	{
 		Optionen += FString::Printf(TEXT("?%s=%s"), AFGGameMode::StartLocationOption, *Neu->GetStringField(TEXT("Startort")));
@@ -438,7 +455,12 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 	{
 		const UTDWaveSubsystem* Waves = World->GetSubsystem<UTDWaveSubsystem>();
 		const bool bLaeuft = Waves && Waves->LaeuftWelle();
-		const bool bErreicht = Wort == TEXT("WelleLaeuft") ? bLaeuft : !bLaeuft;
+		// 0.11: "EinsatzAktiv" fuer den Plan Endlos (der Kernplatz startet den Einsatz erst nach dem Netz)
+		const UTDEinsatzSubsystem* EinsatzWarte = World->GetSubsystem<UTDEinsatzSubsystem>();
+		const bool bErreicht = Wort == TEXT("WelleLaeuft") ? bLaeuft
+			: Wort == TEXT("EinsatzAktiv") ? (EinsatzWarte && EinsatzWarte->IstAktiv())
+			: Wort == TEXT("BohrungVorbei") ? (Waves && !Waves->IstBohrung())   // 0.12-dev Freies Spiel mit Abwehr
+			: !bLaeuft;
 		const double Max = S->HasField(TEXT("max")) ? S->GetNumberField(TEXT("max")) : 300.0;
 		if (bErreicht || mSchrittUhr >= Max)
 		{
@@ -760,6 +782,8 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		{
 			// 0.78.1: nach dem Kernverlust keine weiteren Wellen; der erste Abbruch steht schon im Bericht
 			UE_LOG(LogFicsitTD, Log, TEXT("Autotest: Wellenlauf bis %d uebersprungen (Kern schon gefallen)"), Ziel);
+			// Gegencheck 15.11.: im Bericht sichtbar machen, sonst liest sich der Plan wie ein Lauf bis zur letzten Welle
+			Ergebnis(TEXT("Wellenlauf"), FString::Printf(TEXT("bis Welle %d"), Ziel), true, TEXT("uebersprungen: Kern schon gefallen"));
 			return true;
 		}
 		if (mSchrittUhr <= Dt + 0.01f)
@@ -829,6 +853,21 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 			UGameplayStatics::SetGlobalTimeDilation(World, 1.f);
 			Ergebnis(TEXT("Wellenlauf"), FString::Printf(TEXT("bis Welle %d"), Ziel), true, FString::Printf(TEXT("%.0f s"), mSchrittUhr));
 			return true;
+		}
+		// 0.11 (Endlos-Wellen): "aufZeit" wartet auf den Countdown statt die naechste Welle vorzuziehen; die Haenger-Uhr
+		// misst dann nur die Wellen selbst
+		if (S->HasField(TEXT("aufZeit")) && S->GetBoolField(TEXT("aufZeit")))
+		{
+			// Ohne Countdown (manueller Einsatz) kaeme nie eine Welle: sofort als Fehler melden statt endlos zu warten
+			if (Waves->IstManuell())
+			{
+				UGameplayStatics::SetGlobalTimeDilation(World, 1.f);
+				Ergebnis(TEXT("Wellenlauf"), FString::Printf(TEXT("bis Welle %d"), Ziel), false,
+					TEXT("aufZeit, aber der Lauf ist manuell (kein Countdown) - Spielmodus nicht Endlos?"));
+				return true;
+			}
+			mUhr = 0.f;
+			return false;
 		}
 		if (mUhr > 2.f && Waves->NaechsteWelleJetzt())
 		{
@@ -1406,6 +1445,16 @@ bool UTDAutotest::Pruefe(UWorld* World, const TSharedPtr<FJsonObject>& S, FStrin
 			bAlt |= Kosten.ItemClass && Kosten.ItemClass->GetName().Contains(TEXT("Kampfdaten"));
 		}
 		OutIst = FString::Join(Teile, TEXT(", "));
+		// 0.12-dev: "coupons": true erwartet im Freien Spiel mit Abwehr Coupons statt Festplatten
+		if (S->HasField(TEXT("coupons")) && S->GetBoolField(TEXT("coupons")))
+		{
+			bool bCoupon = false;
+			for (const FItemAmount& Kosten : UFGSchematic::GetCost(Klasse))
+			{
+				bCoupon |= Kosten.ItemClass == UTDEinsatzSubsystem::CouponKlasse();
+			}
+			return bCoupon && !bFestplatte;
+		}
 		return bFestplatte && !bAlt;
 	}
 	if (Name == TEXT("ForschungStartbar"))
@@ -1416,6 +1465,22 @@ bool UTDAutotest::Pruefe(UWorld* World, const TSharedPtr<FJsonObject>& S, FStrin
 		const bool bSoll = !S->HasField(TEXT("erwartet")) || S->GetBoolField(TEXT("erwartet"));
 		const bool bIst = Klasse && Forschung && Forschung->CanResearchBeInitiated(Klasse);
 		OutIst = !Klasse ? FString(TEXT("Schematic nicht gefunden")) : FString::Printf(TEXT("%s %s"), *Klasse->GetName(), bIst ? TEXT("startbar") : TEXT("gesperrt"));
+		return Klasse && bIst == bSoll;
+	}
+	if (Name == TEXT("BaumFrei"))
+	{
+		// 0.11 (Modus Aus): ist ein TD-Forschungsbaum freigeschaltet? "baum" = Industrie|Ballistik|Elementar|Festung, "erwartet"
+		// Vorher UpdateUnlockedResearchTrees, damit die Modus-Bedingung frisch ausgewertet wird
+		const FString Baum = S->GetStringField(TEXT("baum"));
+		UClass* Klasse = LoadClass<UFGResearchTree>(nullptr, *FString::Printf(TEXT("/FicsitTD/Research/BPD_ResearchTree_TD_%s.BPD_ResearchTree_TD_%s_C"), *Baum, *Baum));
+		AFGResearchManager* Forschung = AFGResearchManager::Get(World);
+		if (Forschung)
+		{
+			Forschung->UpdateUnlockedResearchTrees();
+		}
+		const bool bSoll = !S->HasField(TEXT("erwartet")) || S->GetBoolField(TEXT("erwartet"));
+		const bool bIst = Klasse && Forschung && Forschung->IsResesearchTreeUnlocked(Klasse);
+		OutIst = !Klasse ? FString(TEXT("Baum nicht gefunden")) : FString::Printf(TEXT("%s %s"), *Baum, bIst ? TEXT("frei") : TEXT("gesperrt"));
 		return Klasse && bIst == bSoll;
 	}
 	if (Name == TEXT("ForschungZustand"))

@@ -33,4 +33,8 @@ namespace ETDModus
 {
 	constexpr int32 Aus = 0;
 	constexpr int32 Einsatz = 1;
+	/** 0.11 (Marius 15.11.): Wellen auf Zeit, endlos, eine Front */
+	constexpr int32 Endlos = 2;
+	/** 0.12-dev (Marius 15.11.): normales Satisfactory mit HUB, dazu Tuerme, Mauern und die Bohrung auf Knopfdruck */
+	constexpr int32 Abwehr = 3;
 }

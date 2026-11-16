@@ -13,6 +13,8 @@
 #include "Resources/FGResourceNode.h"
 #include "Resources/FGItemDescriptor.h"
 #include "Misc/FileHelper.h"
+#include "Misc/CommandLine.h"
+#include "Misc/Variant.h"
 #include "Misc/Paths.h"
 #include "HAL/FileManager.h"
 #include "NavigationSystem.h"
@@ -1651,7 +1653,8 @@ void UTDKernplatz::WarteNetzFuerEinsatz()
 		Waves->VerwerfeFronten();   // Fronten mit dem fertigen Netz neu suchen
 	}
 	TArray<FString> Meldungen;
-	Einsatz->Starte(Kern, mStufe, TDBalance::Ganz(TEXT("Einsatz.WellenStandard"), 50), mSpieler.Get(), Meldungen);   // 0.77 Marius: 50 Wellen Standard
+	// 0.77 Marius: 50 Wellen Standard; 0.11 Endlos-Wellen: 0 = ohne Ende (Countdown und eine Front setzt Starte)
+	Einsatz->Starte(Kern, mStufe, IstEndlos(this) ? 0 : TDBalance::Ganz(TEXT("Einsatz.WellenStandard"), 50), mSpieler.Get(), Meldungen);
 	for (const FString& M : Meldungen)
 	{
 		Melde(M);
@@ -1733,8 +1736,77 @@ bool UTDKernplatz::TowerDefenseAn(const UObject* WorldContext)
 	UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
 	const USessionSettingsManager* Einstellungen = World ? World->GetSubsystem<USessionSettingsManager>() : nullptr;
 	// 0.10.1: Auswahl "Spielmodus" (FicsitTD.ModusInt); die alte Ankreuzbox zaehlt weiter, falls ein Stand sie noch traegt
-	return Einstellungen && (Einstellungen->GetIntOptionValue(UTDGameInstanceModule::ModusId) == ETDModus::Einsatz
-		|| Einstellungen->GetBoolOptionValue(UTDGameInstanceModule::TowerDefenseId));
+	// 0.11: Endlos-Wellen (2) ist ebenfalls ein TD-Spiel
+	if (!Einstellungen)
+	{
+		return false;
+	}
+	const int32 Modus = Einstellungen->GetIntOptionValue(UTDGameInstanceModule::ModusId);
+	return Modus == ETDModus::Einsatz || Modus == ETDModus::Endlos || Einstellungen->GetBoolOptionValue(UTDGameInstanceModule::TowerDefenseId);
+}
+
+bool UTDKernplatz::IstEndlos(const UObject* WorldContext)
+{
+	UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
+	const USessionSettingsManager* Einstellungen = World ? World->GetSubsystem<USessionSettingsManager>() : nullptr;
+	return Einstellungen && Einstellungen->GetIntOptionValue(UTDGameInstanceModule::ModusId) == ETDModus::Endlos;
+}
+
+bool UTDKernplatz::IstAbwehr(const UObject* WorldContext)
+{
+	UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
+	const USessionSettingsManager* Einstellungen = World ? World->GetSubsystem<USessionSettingsManager>() : nullptr;
+	return Einstellungen && Einstellungen->GetIntOptionValue(UTDGameInstanceModule::ModusId) == ETDModus::Abwehr;
+}
+
+bool UTDKernplatz::SetzeModusAbwehr(const UObject* WorldContext)
+{
+	UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
+	USessionSettingsManager* Einstellungen = World ? World->GetSubsystem<USessionSettingsManager>() : nullptr;
+	if (!Einstellungen)
+	{
+		return false;
+	}
+	Einstellungen->ForceSetOptionValue(UTDGameInstanceModule::ModusId, FVariant(static_cast<int32>(ETDModus::Abwehr)), Einstellungen);
+	const bool bOk = Einstellungen->GetIntOptionValue(UTDGameInstanceModule::ModusId) == ETDModus::Abwehr;
+	UE_LOG(LogFicsitTD, Log, TEXT("Spielmodus nachtraeglich auf Freies Spiel mit Abwehr gesetzt: %s"), bOk ? TEXT("ok") : TEXT("FEHLGESCHLAGEN"));
+	return bOk;
+}
+
+bool UTDKernplatz::Entwicklermodus()
+{
+	static const bool bEntwickler = FParse::Param(FCommandLine::Get(), TEXT("TDEntwickler"))
+		|| FPaths::FileExists(FPaths::ProjectSavedDir() / TEXT("FicsitTD") / TEXT("Entwickler.txt"));
+	return bEntwickler;
+}
+
+bool UTDKernplatz::ModAktiv(const UObject* WorldContext)
+{
+	if (TowerDefenseAn(WorldContext) || IstAbwehr(WorldContext))
+	{
+		return true;
+	}
+	// von Hand gestartet (nur Entwicklermodus: /td einsatz start, /td kern start; Selbsttests) - Spieler kommen in Modus 0
+	// nicht dorthin, weil der Knopf "Einsatz starten" und das Kern-Rezept ohne Modus fehlen
+	UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
+	const UTDEinsatzSubsystem* Einsatz = World ? World->GetSubsystem<UTDEinsatzSubsystem>() : nullptr;
+	const UTDWaveSubsystem* Waves = World ? World->GetSubsystem<UTDWaveSubsystem>() : nullptr;
+	return (Einsatz && Einsatz->IstAktiv()) || (Waves && Waves->LaeuftKernVerteidigung());
+}
+
+bool UTDKernplatz::SetzeModusEinsatz(const UObject* WorldContext)
+{
+	UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
+	USessionSettingsManager* Einstellungen = World ? World->GetSubsystem<USessionSettingsManager>() : nullptr;
+	if (!Einstellungen)
+	{
+		return false;
+	}
+	// ForceSet: ohne Apply-Zyklus; SML schreibt den Wert in die GameMode-Optionen (OnOptionUpdated), damit er mitgespeichert wird
+	Einstellungen->ForceSetOptionValue(UTDGameInstanceModule::ModusId, FVariant(static_cast<int32>(ETDModus::Einsatz)), Einstellungen);
+	const bool bOk = Einstellungen->GetIntOptionValue(UTDGameInstanceModule::ModusId) == ETDModus::Einsatz;
+	UE_LOG(LogFicsitTD, Log, TEXT("Spielmodus nachtraeglich auf Einsatz gesetzt: %s"), bOk ? TEXT("ok") : TEXT("FEHLGESCHLAGEN"));
+	return bOk;
 }
 
 void UTDKernplatz::OnWorldBeginPlay(UWorld& InWorld)

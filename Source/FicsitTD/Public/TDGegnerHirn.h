@@ -85,6 +85,9 @@ public:
 	 *  bVoll = false: der Weg endet vor dem Kern (versperrt, z. B. eingemauert) */
 	static TArray<FVector> BerechneWeg(UWorld* World, const FVector& Ort, const ATDDefenseCore* Kern, bool* bVoll = nullptr, const APawn* Wer = nullptr);
 	static UTDGegnerHirn* Von(const AActor* Kreatur);
+	/** 0.11 (Klippenprobe, G2 15.11.: Gegner planten noch auf dem Netz vor der Sperre und hingen am gesperrten Pfeiler): nach einem
+	 *  Netzumbau den Weg neu berechnen, wenn der Gegner marschiert. Liefert true, wenn neu geplant wurde. */
+	bool PlaneNachNetzumbau();
 	/** 0.9.5: nach unserem Treffer - bleibt ein Rest unter Treffer.Rundungsrest (Standard 1 LP), ist es der toedliche Treffer
 	 *  (die Gesundheitskomponente des Spiels toetet erst bei 0). true, wenn getoetet. */
 	static bool RestToeten(AActor* Ziel);

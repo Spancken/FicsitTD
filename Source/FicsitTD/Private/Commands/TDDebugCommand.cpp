@@ -19,6 +19,11 @@
 #include "TDEinsatz.h"
 #include "TDBalance.h"
 #include "TDWaveSubsystem.h"
+#include "FGRecipe.h"
+#include "Buildables/FGBuildable.h"
+#include "FGBuildableSubsystem.h"
+#include "Resources/FGResourceDescriptor.h"
+#include "Resources/FGResourceNode.h"
 #include "TDKernplatz.h"
 #include "TDSzenario.h"
 #include "TDBandUpgrade.h"
@@ -83,13 +88,67 @@ EExecutionStatus ATDDebugCommand::ExecuteCommand_Implementation(UCommandSender* 
 		const FString Befehl = Arguments.Num() > 0 ? Arguments[0].ToLower() : FString();
 		const FString Unter = Arguments.Num() > 1 ? Arguments[1].ToLower() : FString();
 		const bool bSpieler = Befehl == TEXT("ada") || Befehl == TEXT("baender") || Befehl == TEXT("hilfe") || Befehl == TEXT("help")
-			|| (Befehl == TEXT("kern") && (Unter == TEXT("status") || Unter == TEXT("weiter")));
+			|| (Befehl == TEXT("kern") && (Unter == TEXT("status") || Unter == TEXT("weiter"))) || Befehl == TEXT("modus");
 		if (Entwickler == 0 && !bSpieler)
 		{
-			Antwort(Sender, TDT(TEXT("Dieser Befehl ist nur im Entwicklermodus verfuegbar. Spielerbefehle: /td ada, /td kern status, /td kern weiter, /td baender reparieren."),
-				TEXT("This command is only available in developer mode. Player commands: /td ada, /td kern status, /td kern weiter, /td baender reparieren.")));
+			Antwort(Sender, TDT(TEXT("Dieser Befehl ist nur im Entwicklermodus verfuegbar. Spielerbefehle: /td ada, /td kern status, /td kern weiter, /td baender reparieren, /td modus einsatz, /td modus abwehr."),
+				TEXT("This command is only available in developer mode. Player commands: /td ada, /td kern status, /td kern weiter, /td baender reparieren, /td modus einsatz, /td modus abwehr.")));
 			return EExecutionStatus::COMPLETED;
 		}
+	}
+	// 0.11 (Modus Aus, Marius 15.11.: nur der Spielmodus zaehlt): alte Staende, in denen der Einsatz ohne Spielmodus "Einsatz"
+	// lief (Start per /td oder Kern-Menue), stellen den Modus einmal nach. Ohne Argument: aktuellen Modus zeigen.
+	if (Arguments[0].Equals(TEXT("modus"), ESearchCase::IgnoreCase))
+	{
+		// Gegencheck 15.11. (F4): ein Endlos-Spiel darf der Befehl nicht auf Einsatz kippen (sonst mehrere Fronten, fester Abstand)
+		const UTDWaveSubsystem* ModusWaves = GetWorld() ? GetWorld()->GetSubsystem<UTDWaveSubsystem>() : nullptr;
+		const bool bEndlosSpiel = UTDKernplatz::IstEndlos(this) || (ModusWaves && ModusWaves->IstEndlos());
+		const UTDEinsatzSubsystem* ModusEinsatz = GetWorld() ? GetWorld()->GetSubsystem<UTDEinsatzSubsystem>() : nullptr;
+		if (Arguments.Num() > 1 && Arguments[1].Equals(TEXT("abwehr"), ESearchCase::IgnoreCase) && ModusEinsatz && ModusEinsatz->IstAktiv() && !bEndlosSpiel)
+		{
+			Antwort(Sender, TDT(TEXT("In diesem Spiel laeuft ein Einsatz - erst im Kern-Menue beenden, dann /td modus abwehr."), TEXT("An operation is running in this game - end it in the Core menu first, then /td modus abwehr.")));
+		}
+		else if (Arguments.Num() > 1 && (Arguments[1].Equals(TEXT("einsatz"), ESearchCase::IgnoreCase) || Arguments[1].Equals(TEXT("abwehr"), ESearchCase::IgnoreCase)) && bEndlosSpiel)
+		{
+			Antwort(Sender, TDT(TEXT("Dieses Spiel laeuft im Spielmodus \"Endlos-Wellen\" - es bleibt dabei."), TEXT("This game runs in Game Mode \"Endless waves\" - it stays that way.")));
+		}
+		else if (Arguments.Num() > 1 && Arguments[1].Equals(TEXT("abwehr"), ESearchCase::IgnoreCase))
+		{
+			// 0.12-dev (Marius 15.11.): bestehende Spielstaende ins Freie Spiel mit Abwehr holen
+			const bool bOk = UTDKernplatz::SetzeModusAbwehr(this);
+			Antwort(Sender, bOk ? TDT(TEXT("Spielmodus auf \"Freies Spiel mit Abwehr\" gestellt. Speichere jetzt, damit es im Spielstand bleibt; Tuerme und Abwehr-Forschung erscheinen in wenigen Sekunden."),
+					TEXT("Game Mode set to \"Free play with defense\". Save now so it stays in your save; turrets and defense research appear within a few seconds."))
+				: TDT(TEXT("Spielmodus konnte nicht gesetzt werden (Sitzungseinstellungen nicht gefunden)."), TEXT("Could not set the Game Mode (session settings not found).")));
+			if (bOk)
+			{
+				if (UTDEinsatzSubsystem* Einsatz = GetWorld() ? GetWorld()->GetSubsystem<UTDEinsatzSubsystem>() : nullptr)
+				{
+					Einsatz->AktualisiereToDo();
+				}
+			}
+		}
+		else if (Arguments.Num() > 1 && Arguments[1].Equals(TEXT("einsatz"), ESearchCase::IgnoreCase))
+		{
+			const bool bOk = UTDKernplatz::SetzeModusEinsatz(this);
+			Antwort(Sender, bOk ? TDT(TEXT("Spielmodus auf \"Einsatz\" gestellt. Speichere jetzt, damit es im Spielstand bleibt; TD-Rezepte und MAM-Baeume erscheinen in wenigen Sekunden."),
+					TEXT("Game Mode set to \"Operation\". Save now so it stays in your save; TD recipes and MAM trees appear within a few seconds."))
+				: TDT(TEXT("Spielmodus konnte nicht gesetzt werden (Sitzungseinstellungen nicht gefunden)."), TEXT("Could not set the Game Mode (session settings not found).")));
+			if (bOk)
+			{
+				if (UTDEinsatzSubsystem* Einsatz = GetWorld() ? GetWorld()->GetSubsystem<UTDEinsatzSubsystem>() : nullptr)
+				{
+					Einsatz->AktualisiereToDo();   // prueft die Forschungsbaeume sofort neu
+				}
+			}
+		}
+		else
+		{
+			const int32 Aktuell = bEndlosSpiel ? 2 : UTDKernplatz::IstAbwehr(this) ? 3 : UTDKernplatz::TowerDefenseAn(this) ? 1 : 0;
+			UE_LOG(LogFicsitTD, Log, TEXT("Spielmodus aktuell: %d"), Aktuell);
+			Antwort(Sender, TDF(TEXT("Spielmodus: %s. Alte Staende ohne Modus: /td modus einsatz oder /td modus abwehr"), TEXT("Game Mode: %s. Old saves without a mode: /td modus einsatz or /td modus abwehr"),
+				Aktuell == 3 ? *TDT(TEXT("Freies Spiel mit Abwehr"), TEXT("Free play with defense")) : Aktuell == 2 ? *TDT(TEXT("Endlos-Wellen"), TEXT("Endless waves")) : Aktuell == 1 ? *TDT(TEXT("Einsatz"), TEXT("Operation")) : *TDT(TEXT("Aus"), TEXT("Off"))));
+		}
+		return EExecutionStatus::COMPLETED;
 	}
 	// /td optik: Knochen (mit Lage in der Grundhaltung), Sockel, Materialien und ihre Parameter aller Gegnerarten -
 	// Grundlage fuer Anbauteile aus Blender und fuer das Einfaerben (T4). Je Art eine Datei unter Saved/FicsitTD/Optik/.
@@ -445,6 +504,95 @@ EExecutionStatus ATDDebugCommand::ExecuteCommand_Implementation(UCommandSender* 
 			Waves->SchalteSandkastenFrei();
 		}
 		Antwort(Sender, TDT(TEXT("Alle FicsitTD-Gebaeude und -Rezepte freigeschaltet."), TEXT("All FicsitTD buildings and recipes unlocked.")));
+		return EExecutionStatus::COMPLETED;
+	}
+	// 0.12-dev Freies Spiel mit Abwehr: /td bohrung [info|platz|leicht|mittel|schwer|abbrechen] (Selbsttests; Spieler nutzen das Kern-Menue)
+	if (Arguments[0].Equals(TEXT("bohrung"), ESearchCase::IgnoreCase))
+	{
+		UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
+		const FString Was = Arguments.Num() > 1 ? Arguments[1].ToLower() : TEXT("info");
+		if (!Waves)
+		{
+			return EExecutionStatus::UNCOMPLETED;
+		}
+		if (Was == TEXT("platz"))
+		{
+			// naechster fester Rohstoffknoten zum Spieler, Kern 12 m daneben auf ebenem Boden
+			AFGResourceNode* Knoten = nullptr;
+			float Best = TNumericLimits<float>::Max();
+			for (TActorIterator<AFGResourceNode> It(GetWorld()); It; ++It)
+			{
+				const TSubclassOf<UFGResourceDescriptor> Art = It->GetResourceClass();
+				const float D = Pawn ? FVector::DistSquared(It->GetActorLocation(), Pawn->GetActorLocation()) : 0.f;
+				if (Art && UFGItemDescriptor::GetForm(Art) == EResourceForm::RF_SOLID && D < Best)
+				{
+					Best = D;
+					Knoten = *It;
+				}
+			}
+			AFGBuildableSubsystem* Bau = AFGBuildableSubsystem::Get(GetWorld());
+			UClass* KernKlasse = LoadClass<AFGBuildable>(nullptr, TEXT("/FicsitTD/Buildings/DefenseCore/Build_TD_DefenseCore.Build_TD_DefenseCore_C"));
+			UClass* KernRezept = LoadClass<UFGRecipe>(nullptr, TEXT("/FicsitTD/Buildings/DefenseCore/Recipe_TD_DefenseCore.Recipe_TD_DefenseCore_C"));
+			bool bGesetzt = false;
+			if (Knoten && Bau && KernKlasse)
+			{
+				for (int32 w = 0; w < 8 && !bGesetzt; ++w)
+				{
+					const FVector Mitte = Knoten->GetActorLocation() + FRotator(0.f, w * 45.f, 0.f).Vector() * 1200.f;
+					FHitResult Treffer;
+					FCollisionQueryParams Q;
+					Q.AddIgnoredActor(Knoten);
+					if (Pawn)
+					{
+						Q.AddIgnoredActor(Pawn);
+					}
+					if (GetWorld()->LineTraceSingleByChannel(Treffer, Mitte + FVector(0.f, 0.f, 2000.f), Mitte - FVector(0.f, 0.f, 4000.f), ECC_WorldStatic, Q)
+						&& Treffer.ImpactNormal.Z > 0.9f)
+					{
+						if (AFGBuildable* K = Bau->BeginSpawnBuildable(KernKlasse, FTransform(FRotator::ZeroRotator, Treffer.ImpactPoint)))
+						{
+							K->SetBuiltWithRecipe(KernRezept);
+							K->FinishSpawning(FTransform(FRotator::ZeroRotator, Treffer.ImpactPoint));
+							bGesetzt = true;
+							UE_LOG(LogFicsitTD, Log, TEXT("Bohrung: Testkern gesetzt bei %s neben %s"), *Treffer.ImpactPoint.ToCompactString(),
+								*UFGItemDescriptor::GetItemName(Knoten->GetResourceClass()).ToString());
+						}
+					}
+				}
+			}
+			Antwort(Sender, bGesetzt ? TEXT("Abwehrkern neben dem naechsten Rohstoffknoten gesetzt.") : TEXT("Kein Platz fuer den Testkern gefunden."));
+			return EExecutionStatus::COMPLETED;
+		}
+		ATDDefenseCore* Kern = nullptr;
+		float Best = TNumericLimits<float>::Max();
+		for (TActorIterator<ATDDefenseCore> It(GetWorld()); It; ++It)
+		{
+			const float D = Pawn ? FVector::DistSquared(It->GetActorLocation(), Pawn->GetActorLocation()) : 0.f;
+			if (D < Best)
+			{
+				Best = D;
+				Kern = *It;
+			}
+		}
+		if (Was == TEXT("abbrechen"))
+		{
+			Antwort(Sender, Waves->BrecheBohrungAb());
+		}
+		else if (Was == TEXT("leicht") || Was == TEXT("mittel") || Was == TEXT("schwer"))
+		{
+			FString Meldung;
+			const bool bOk = Waves->StarteBohrung(Kern, Was == TEXT("leicht") ? 0 : Was == TEXT("mittel") ? 1 : 2, Meldung);
+			UE_LOG(LogFicsitTD, Log, TEXT("Bohrung per Befehl: %s - %s"), bOk ? TEXT("gestartet") : TEXT("abgelehnt"), *Meldung);
+			Antwort(Sender, Meldung);
+		}
+		else
+		{
+			for (const FString& Zeile : Waves->BohrInfo(Kern))
+			{
+				UE_LOG(LogFicsitTD, Log, TEXT("Bohrung Info: %s"), *Zeile);
+				Antwort(Sender, Zeile);
+			}
+		}
 		return EExecutionStatus::COMPLETED;
 	}
 	if (Arguments[0].Equals(TEXT("kern"), ESearchCase::IgnoreCase))
