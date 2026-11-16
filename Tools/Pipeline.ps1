@@ -83,6 +83,13 @@ Schritt "Optik statisch (Anbauten, Backfarben, Texturen)" {
     $ausgabe | Select-String "^BEHOBEN " | Select-Object -First 1 | ForEach-Object { $Offen.Add("HINWEIS Optik: Fehler behoben, Basis verkleinern (pruefe_optik_statisch.py --basis-schreiben)") }
     [pscustomobject]@{ Ok = ($LASTEXITCODE -eq 0); Ist = ($ausgabe | Select-String "^Optik statisch:" | Select-Object -Last 1).Line }
 }
+Schritt "Optik AO (gebackene Teile, Blender)" {
+    $ausgabe = & python (Join-Path $Mod "Tests\pruefe_ao.py") 2>&1 | ForEach-Object { "$_" }
+    $ausgabe | Set-Content (Join-Path $Aus "ao.txt") -Encoding utf8
+    $ausgabe | Select-String "^FEHLER " | ForEach-Object { $Offen.Add("FEHLER AO: " + $_.Line.Substring(7)) }
+    $ausgabe | Select-String "^BEHOBEN " | Select-Object -First 1 | ForEach-Object { $Offen.Add("HINWEIS AO: Teile besser, Basis verkleinern (pruefe_ao.py --basis-schreiben)") }
+    [pscustomobject]@{ Ok = ($LASTEXITCODE -eq 0); Ist = ($ausgabe | Select-String "^AO:" | Select-Object -Last 1).Line }
+}
 
 # ---- S3 Simulation aller Modi
 Schritt "Simulation aller Spielmodi" {

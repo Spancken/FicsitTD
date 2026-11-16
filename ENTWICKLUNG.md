@@ -83,6 +83,11 @@ Die Konsistenzprüfung (`Tests\pruefe_konsistenz.py`) prüft:
   - Anschluss-Komponenten außerhalb bzw. tief in der Sockelfläche
 
   Er schreibt `E:\Modding\Logs\pruefe_optik.json` und `Tests\Modellmasse.json`; die Sockelhöhen daraus nutzt die statische Prüfung.
+- **`Tests\pruefe_ao.py`** (Blender, ~20 s), Schritt „Optik AO“. Er misst je gebackenem Teil den Anteil sichtbarer Fläche mit AO < 0,1 (`Satisfactory\Modelle\td_ao_sichtbar.py`; Kontaktflächen und schmale Spalte gelten als verdeckt).
+  - Sperrklinke `Tests\ao_basis.json`: Fehler, wenn ein Teil mehr als 3 Prozentpunkte schlechter wird oder ein neues Teil über 20 % liegt.
+  - Ohne Blender oder Modellquellen nur ein Hinweis.
+- **Selbsttest `Optik`** (Plan `Tests\Plaene\Optik.json`, Testfenster): Prüfung `pruefe: Optik` auf Level 1 und 5 (kein Original-Strom-/Statusmast, keine Nebelfläche, Stromanschluss im Klarraum), Fotos aller Bauten und dreier Spielgebäude als Vergleich. Danach `python Tools\kontaktabzug.py` für den Kontaktabzug (P4).
+- **Modelle:** `Satisfactory\Modelle\td_deckgleich.py` findet sichtbare deckungsgleiche Flächen (Z-Fighting) und schiebt mit `--beheben` das kleinere Teil 3 mm heraus.
 
 ## 4a. Testfenster (Marius 16.11.)
 

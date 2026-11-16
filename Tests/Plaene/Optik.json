@@ -1,6 +1,6 @@
 {
   "Name": "Optik",
-  "_Hinweis": "Optik-Durchgang 16.11.2026 (Satisfactory\\Notizen\\Optik-Durchgang-2026-11-16.md): jeden Turm/Bau und das Tor bauen, Laufzeitpruefung 'Optik' (kein Original-Strom-/Statusmast, keine Nebelflaeche, Stromanschluss im Klarraum) auf Level 1 und 5, Fotos von zwei Seiten auf Level 1 und von einer Seite auf Level 5 (Fotostrecke P4).",
+  "_Hinweis": "Optik-Durchgang 16.11.2026 (Satisfactory\\Notizen\\Optik-Durchgang-2026-11-16.md): jeden Turm/Bau und das Tor bauen, Laufzeitpruefung 'Optik' (kein Original-Strom-/Statusmast, keine Nebelflaeche, Stromanschluss im Klarraum) auf Level 1 und 5, Fotos von zwei Seiten auf Level 1 und von einer Seite auf Level 5 (Fotostrecke P4). Konstruktor, Schmelzofen und Assembler des Spiels stehen als Vergleich im selben Licht (Tools\\kontaktabzug.py).",
   "NeuesSpiel": {
     "Startort": "Rocky Desert"
   },
@@ -123,6 +123,24 @@
       "baue": "Tor",
       "anzahl": 1,
       "ring": "weg"
+    },
+    {
+      "baue": "Konstruktor",
+      "anzahl": 1,
+      "klasse": "/Game/FactoryGame/Buildable/Factory/ConstructorMk1/Build_ConstructorMk1.Build_ConstructorMk1_C",
+      "text": "Spielgebaeude als Vergleich (Kontaktabzug P4)"
+    },
+    {
+      "baue": "Schmelzofen",
+      "anzahl": 1,
+      "klasse": "/Game/FactoryGame/Buildable/Factory/SmelterMk1/Build_SmelterMk1.Build_SmelterMk1_C",
+      "text": "Spielgebaeude als Vergleich (Kontaktabzug P4)"
+    },
+    {
+      "baue": "Assembler",
+      "anzahl": 1,
+      "klasse": "/Game/FactoryGame/Buildable/Factory/AssemblerMk1/Build_AssemblerMk1.Build_AssemblerMk1_C",
+      "text": "Spielgebaeude als Vergleich (Kontaktabzug P4)"
     },
     {
       "warte": 20
@@ -526,6 +544,84 @@
     },
     {
       "foto": "Optik_Tor_210",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Build_ConstructorMk1",
+      "abstand": 10,
+      "winkel": 30,
+      "suchen": true
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Original-Konstruktor_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Build_ConstructorMk1",
+      "abstand": 10,
+      "winkel": 210,
+      "suchen": true
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Original-Konstruktor_210",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Build_SmelterMk1",
+      "abstand": 10,
+      "winkel": 30,
+      "suchen": true
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Original-Schmelzofen_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Build_SmelterMk1",
+      "abstand": 10,
+      "winkel": 210,
+      "suchen": true
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Original-Schmelzofen_210",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Build_AssemblerMk1",
+      "abstand": 10,
+      "winkel": 30,
+      "suchen": true
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Original-Assembler_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Build_AssemblerMk1",
+      "abstand": 10,
+      "winkel": 210,
+      "suchen": true
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Original-Assembler_210",
       "ohneHUD": true
     },
     {

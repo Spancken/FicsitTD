@@ -542,6 +542,17 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 				Turm = *It;
 			}
 		}
+		else if (Wort.StartsWith(TEXT("Build_")))
+		{
+			// Optik-Durchgang 16.11.2026 (P4): Spielgebaeude nach Klassenname (z. B. Build_ConstructorMk1)
+			for (TActorIterator<AFGBuildable> It(World); It && !Turm; ++It)
+			{
+				if (It->GetClass()->GetName().StartsWith(Wort))
+				{
+					Turm = *It;
+				}
+			}
+		}
 		else
 		{
 			Turm = TDTestTurm(World, Wort);
@@ -642,6 +653,12 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 			{ TEXT("Elektrozaun"), TEXT("ConductorWall") }, { TEXT("Funkmast"), TEXT("RadioMast") }, { TEXT("Schildgenerator"), TEXT("ShieldGenerator") }, { TEXT("Himmelsturm"), TEXT("FlakTurret") }, { TEXT("Stoerfeld"), TEXT("FieldProjector") }, { TEXT("Singularitaet"), TEXT("SingularityLauncher") }, { TEXT("Dimensionslager"), TEXT("DimensionalDepot") }, { TEXT("Drohnenplatz"), TEXT("DronePort") } };   // 0.83 Bauten P2/P3, 0.9.3 Drohnenplatz
 		const FString* O = Ordner.Find(Wort);
 		UClass* Klasse = O ? LoadClass<AFGBuildable>(nullptr, *FString::Printf(TEXT("/FicsitTD/Buildings/%s/Build_TD_%s.Build_TD_%s_C"), **O, **O, **O)) : nullptr;
+		// Optik-Durchgang 16.11.2026 (P4): Spielgebaeude als Vergleich im selben Licht, "klasse": voller Klassenpfad
+		// (z. B. /Game/FactoryGame/Buildable/Factory/ConstructorMk1/Build_ConstructorMk1.Build_ConstructorMk1_C)
+		if (!Klasse && S->HasField(TEXT("klasse")))
+		{
+			Klasse = LoadClass<AFGBuildable>(nullptr, *S->GetStringField(TEXT("klasse")));
+		}
 		UClass* BauRezept = O ? LoadClass<UFGRecipe>(nullptr, *FString::Printf(TEXT("/FicsitTD/Buildings/%s/Recipe_TD_%s.Recipe_TD_%s_C"), **O, **O, **O)) : nullptr;
 		UClass* Munition = O && S->HasField(TEXT("rezept")) ? LoadClass<UFGRecipe>(nullptr, *FString::Printf(TEXT("/FicsitTD/Buildings/%s/%s.%s_C"), **O,
 			*S->GetStringField(TEXT("rezept")), *S->GetStringField(TEXT("rezept")))) : nullptr;
