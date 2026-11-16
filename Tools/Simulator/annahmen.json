@@ -1,0 +1,248 @@
+{
+  "_Hinweis": "Annahmen des FicsitTD-Simulators, die nicht im Mod-Code stehen. Werte aendern, Simulator neu starten.",
+  "Gegner_GrundLP": {
+    "_Quelle": "satisfactory.wiki.gg/wiki/Creatures (Stand 11/2026); AlphaHog 60 statt 80 aus der LP-Spalte der Kreislauf-Messung 06.11.2026 (W7, W9); Spitter als Mitte der Spanne; Johnny 120 kalibriert an der EHP der Spielwellen W46-50 (08.11.2026, vorher 1000 geschaetzt); rote, Wuesten- und kleine Wasserspucker geschaetzt (0.53)",
+    "Hog": 20,
+    "AlphaHog": 60,
+    "CliffHog": 90,
+    "NuclearHog": 150,
+    "Johnny": 120,
+    "Stinger_Child": 10,
+    "Stinger": 50,
+    "EliteStinger": 100,
+    "SpitterForestSmall": 25,
+    "SpitterForestAlpha": 70,
+    "SpitterAquaticAlpha": 70,
+    "SpitterForestRedSmall": 30,
+    "SpitterForestRedAlpha": 85,
+    "SpitterDesertSmall": 35,
+    "SpitterDesertAlpha": 90,
+    "SpitterAquaticSmall": 30
+  },
+  "Spieler": {
+    "_Hinweis": "Modell-Spieler: gibt je Welle einen Anteil der EP fuer Tuerme aus, den Rest fuer Produktion; Kernzustand bestimmt den EP-Bonus",
+    "TurmAnteil": 0.6,
+    "KernAnteilProzent": 100,
+    "StartEP": 0,
+    "Turmwahl": "bester_wert"
+  },
+  "Tuerme": {
+    "_Hinweis": "Kontingent-Schluessel im Laden, Schadensart, Rezeptdauer s (create_turret_recipes.py), frei ab Forschung (leer = Start); Ziele = mittlere Zahl getroffener Gegner bei Flaechenwaffen (Annahme)",
+    "Bolzenturm": {
+      "Art": "Durchschlag",
+      "Zyklus": 1.2,
+      "Forschung": ""
+    },
+    "Gewehrturm": {
+      "Art": "Kugel",
+      "Zyklus": 0.6,
+      "Forschung": "Gewehrturm"
+    },
+    "Teslaspule": {
+      "Art": "Strom",
+      "Zyklus": 4.0,
+      "Forschung": "Teslaspule"
+    },
+    "Flammenturm": {
+      "Art": "Feuer",
+      "Zyklus": 1.0,
+      "Forschung": "Flammenwerfer",
+      "Ziele": 2.0
+    },
+    "Nobelisk-Werfer": {
+      "Art": "Explosion",
+      "Zyklus": 4.0,
+      "Forschung": "NobeliskWerfer",
+      "Ziele": 3.0
+    }
+  },
+  "Munition": {
+    "_Hinweis": "Munition je Turm; Balance-Schluessel unter Munition.*; frei ab Forschung; Art = Schadensart, falls anders als der Turm (0.73). Der Simulator waehlt je Welle die wirksamste.",
+    "Bolzenturm": [
+      {
+        "Name": "Armierungsbolzen",
+        "Schluessel": "Bolzen.Armierungsbolzen",
+        "Forschung": ""
+      },
+      {
+        "Name": "Durchschlagbolzen",
+        "Schluessel": "Bolzen.Durchschlagbolzen",
+        "Forschung": "Durchschlagbolzen"
+      },
+      {
+        "Name": "Explosivbolzen",
+        "Schluessel": "Bolzen.Explosivbolzen",
+        "Forschung": "Explosivbolzen"
+      },
+      {
+        "Name": "Schockbolzen",
+        "Schluessel": "Bolzen.Betaeubungsbolzen",
+        "Forschung": "Schockbolzen",
+        "Art": "Strom"
+      }
+    ],
+    "Gewehrturm": [
+      {
+        "Name": "Standard",
+        "Schluessel": "Patronen.Standard",
+        "Forschung": ""
+      },
+      {
+        "Name": "Zielsuch",
+        "Schluessel": "Patronen.Zielsuch",
+        "Forschung": "Zielsuchmunition"
+      },
+      {
+        "Name": "Panzerbrechend",
+        "Schluessel": "Patronen.Panzerbrechend",
+        "Forschung": "Panzerbrechend",
+        "Art": "Durchschlag"
+      },
+      {
+        "Name": "Brand",
+        "Schluessel": "Patronen.Brand",
+        "Forschung": "Brandmunition"
+      },
+      {
+        "Name": "Turbo",
+        "Schluessel": "Patronen.Turbo",
+        "Forschung": "Turbomunition"
+      }
+    ],
+    "Teslaspule": [
+      {
+        "Name": "Entladung",
+        "Schluessel": "Tesla",
+        "Forschung": ""
+      }
+    ],
+    "Flammenturm": [
+      {
+        "Name": "Biotreibstoff",
+        "Schluessel": "Treibstoff.Biotreibstoff",
+        "Forschung": ""
+      },
+      {
+        "Name": "Treibstoff",
+        "Schluessel": "Treibstoff.Treibstoff",
+        "Forschung": "Treibstoff"
+      },
+      {
+        "Name": "Turbotreibstoff",
+        "Schluessel": "Treibstoff.Turbotreibstoff",
+        "Forschung": "Turbotreibstoff"
+      }
+    ],
+    "Nobelisk-Werfer": [
+      {
+        "Name": "Nobelisk",
+        "Schluessel": "Nobelisk.Nobelisk",
+        "Forschung": ""
+      }
+    ]
+  },
+  "Forschung": {
+    "_Hinweis": "Reihenfolge, in der der Modell-Spieler FP ausgibt, mit Kosten je Phase (0.73: 3/4/6/8/10); Knoten mit Freigabe je Phase ueberspringt er bis zur Welle.",
+    "Reihenfolge": [
+      [
+        "Assembler",
+        3
+      ],
+      [
+        "Durchschlagbolzen",
+        4
+      ],
+      [
+        "Kupfer",
+        3
+      ],
+      [
+        "Kohlekraft",
+        4
+      ],
+      [
+        "Gewehrturm",
+        4
+      ],
+      [
+        "Explosivbolzen",
+        4
+      ],
+      [
+        "Teslaspule",
+        4
+      ],
+      [
+        "Panzerbrechend",
+        4
+      ],
+      [
+        "Giesserei",
+        3
+      ],
+      [
+        "NobeliskWerfer",
+        4
+      ],
+      [
+        "Schockbolzen",
+        4
+      ],
+      [
+        "Raffinerie",
+        6
+      ],
+      [
+        "Flammenwerfer",
+        6
+      ],
+      [
+        "Brandmunition",
+        6
+      ],
+      [
+        "Treibstoff",
+        6
+      ],
+      [
+        "Turbomunition",
+        8
+      ],
+      [
+        "Turbotreibstoff",
+        8
+      ],
+      [
+        "StreuNobelisk",
+        8
+      ]
+    ]
+  },
+  "Q": {
+    "Referenzzeit": 60
+  },
+  "Zielbaender_Q": {
+    "_Quelle": "Recherche 3.3, Vorschlag",
+    "Erkundung": [
+      0.4,
+      0.6
+    ],
+    "Normal": [
+      0.55,
+      0.75
+    ],
+    "Hart": [
+      0.7,
+      0.9
+    ],
+    "Albtraum": [
+      0.85,
+      1.05
+    ]
+  },
+  "Simulation": {
+    "Wellen": 50,
+    "Durchlaeufe": 300,
+    "Seed": 1
+  }
+}

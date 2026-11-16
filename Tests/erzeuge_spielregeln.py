@@ -10,7 +10,7 @@ import sys
 from unittest import mock
 
 MOD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DOK = r"D:\OneDrive\Claude\Claude Modding\Satisfactory\Spielregeln.md"
+DOK = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "Doku", "Spielregeln.md")
 ANFANG, ENDE = "<!-- ZAHLEN-ANFANG -->", "<!-- ZAHLEN-ENDE -->"
 # Gestrichen (0.9.3 bzw. frueher): Balance-Schluessel bleiben fuer alte Spielstaende, in den Tabellen nicht zeigen
 GESTRICHEN = {"Reparaturstation", "Dimensionslager", "Panzersperre"}

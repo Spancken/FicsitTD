@@ -15,7 +15,7 @@ from unittest import mock
 MOD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 QUELLE = os.path.join(MOD, "Source", "FicsitTD")
 SKRIPTE = os.path.join(MOD, "Scripts")
-SIMULATOR = r"D:\OneDrive\Claude\Claude Modding\Satisfactory\Werkzeuge\FicsitTD-Simulator\simulator.py"
+SIMULATOR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "Tools", "Simulator", "simulator.py")
 BALANCE_JSON = os.path.join(os.environ.get("LOCALAPPDATA", ""), "FactoryGame", "Saved", "FicsitTD", "Balance.json")
 AUSNAHMEN = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ausnahmen.json")
 
