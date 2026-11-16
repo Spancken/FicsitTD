@@ -113,6 +113,8 @@ def anbau_daten():
         if schl in ns["KLARRAUM_X"] and "klarraum_min_cm" in e:
             e["klarraum_min_cm"] = [ns["KLARRAUM_X"][schl][0], e["klarraum_min_cm"][1]]
             e["klarraum_max_cm"] = [ns["KLARRAUM_X"][schl][1], e["klarraum_max_cm"][1]]
+        if schl in ns.get("KLARRAUM_FEST", {}):
+            e["klarraum_min_cm"], e["klarraum_max_cm"] = map(list, ns["KLARRAUM_FEST"][schl])
         erg[ns["TURM"][schl]] = e
     # erzeugte Tabelle aktuell?
     import subprocess
@@ -127,6 +129,22 @@ def pruefe_anbauten():
     if not masse:
         HINWEIS(f"{MASSE} fehlt: Sockelhoehen unbekannt (einmal Scripts\\pruefe_optik.py im Editor laufen lassen)")
     anbau = anbau_daten()
+    # Bauten ohne ATDTurretBase (Tor): Lampe und Strom muessen im eigenen Klarraum liegen
+    turmnamen = {d.get("turm") for d in konstruktoren().values()}
+    for tn, a in sorted(anbau.items()):
+        if tn in turmnamen or "klarraum_min_cm" not in a:
+            continue
+        kmin, kmax = a["klarraum_min_cm"], a["klarraum_max_cm"]
+        for wo, p in (("Statuslampe", a.get("lampe")), ("Stromanschluss", a.get("strom"))):
+            if not p:
+                FEHLER(f"{tn}: Anbauten.json ohne {wo}")
+            elif not (kmin[0] - TOLERANZ <= p[0] <= kmax[0] + TOLERANZ and kmin[1] - TOLERANZ <= p[1] <= kmax[1] + TOLERANZ):
+                FEHLER(f"{tn}: {wo} {p} ausserhalb des Klarraums {kmin}..{kmax}")
+    # Original-Strommast oder -Statusmast zur Laufzeit angebaut (z. B. NewObject + SetStaticMesh in BeginPlay)?
+    for datei in sorted(glob.glob(os.path.join(MOD, "Source", "FicsitTD", "Private", "*.cpp"))):
+        text = open(datei, encoding="utf-8", errors="replace").read()
+        for m in re.finditer(r"(SetStaticMesh|OriginalTeil)\([^;]*TDOriginal::(Strom|Mast)", text):
+            FEHLER(f"{os.path.basename(datei)}: baut TDOriginal::{m.group(2)} an (Entscheidung 16.11.: Anschlusskasten/Lampentraeger im Modell)")
     for name, d in sorted(konstruktoren().items()):
         a = anbau.get(d.get("turm") or "")
         if a:

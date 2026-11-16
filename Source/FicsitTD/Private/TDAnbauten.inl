@@ -20,4 +20,5 @@ static const FTDAnbau TDAnbauTabelle[] = {
 	{ TEXT("Singularitaet"), FVector(-124.3f, 310.0f, 114.3f), FVector(-240.0f, -324.3f, 103.0f), FVector2D(-390.0f, -350.0f), FVector2D(310.0f, 350.0f) },
 	{ TEXT("Stoerfeld"), FVector(-85.0f, 174.3f, 214.3f), FVector(-0.0f, -184.3f, 128.0f), FVector2D(-250.0f, -210.0f), FVector2D(220.0f, 250.0f) },
 	{ TEXT("Teslaspule"), FVector(-90.0f, -90.0f, 170.3f), FVector(-90.0f, -118.1f, 133.9f), FVector2D(-210.0f, -210.0f), FVector2D(210.0f, 210.0f) },
+	{ TEXT("Tor"), FVector(0.0f, -0.0f, 522.0f), FVector(-300.0f, -112.3f, 158.0f), FVector2D(-400.0f, -120.0f), FVector2D(400.0f, 100.0f) },
 };

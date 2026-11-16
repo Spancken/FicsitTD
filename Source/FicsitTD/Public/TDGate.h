@@ -78,8 +78,6 @@ protected:
 	UPROPERTY(Transient)
 	TObjectPtr<UStaticMeshComponent> mStatusLampe;
 	UPROPERTY(Transient)
-	TObjectPtr<UStaticMeshComponent> mStromDose;
-	UPROPERTY(Transient)
 	TObjectPtr<class UMaterialInstanceDynamic> mLampenMaterial;
 	bool mOhneStromOffen = false;
 	int32 mLampe = -1;

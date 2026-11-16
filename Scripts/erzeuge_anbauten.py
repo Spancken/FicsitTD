@@ -15,9 +15,13 @@ INL = os.path.join(MOD, "Source", "FicsitTD", "Private", "TDAnbauten.inl")
 # Schluessel in Anbauten.json -> mTurmName im Code
 TURM = {"Bolzen": "Bolzenturm", "Gewehr": "Gewehrturm", "Nobelisk": "Nobelisk-Werfer", "Flamme": "Flammenwerfer", "Tesla": "Teslaspule",
         "Himmel": "Himmelsturm", "Singu": "Singularitaet", "Stoerfeld": "Stoerfeld", "Funkmast": "Funkmast", "Schild": "Schildgenerator",
-        "Drohnenplatz": "Drohnenplatz", "Elektrozaun": "Elektrozaun", "Lockfeuer": "Lockfeuer", "Oelschlick": "Oelschlick"}
+        "Drohnenplatz": "Drohnenplatz", "Elektrozaun": "Elektrozaun", "Lockfeuer": "Lockfeuer", "Oelschlick": "Oelschlick",
+        "Tor": "Tor"}   # Tor: ATDGate liest seinen Eintrag selbst (kein ATDTurretBase)
 # Ausnahmen beim Klarraum: Zaunstuecke stossen der Laenge nach aneinander (Endpfosten ragen 10 cm, wie bisher)
 KLARRAUM_X = {"Elektrozaun": (-400.0, 400.0)}
+# Tor: ersetzt ein 8-m-Mauerstueck (X genau +-400). Die Rampen der Schwelle und die Saeulenfuesse liegen flach am Boden und zaehlen
+# nicht; Y umfasst Anschlusskasten hinten (-112) und Bedienfeld vorn (+100).
+KLARRAUM_FEST = {"Tor": ((-400.0, -120.0), (400.0, 100.0))}
 
 
 def v(x):
@@ -41,6 +45,8 @@ def erzeuge(daten):
         kmin, kmax = list(e["klarraum_min_cm"]), list(e["klarraum_max_cm"])
         if schl in KLARRAUM_X:
             kmin[0], kmax[0] = KLARRAUM_X[schl]
+        if schl in KLARRAUM_FEST:
+            kmin, kmax = map(list, KLARRAUM_FEST[schl])
         zeilen.append(f'\t{{ TEXT("{TURM[schl]}"), {v(e["lampe"])}, {v(e["strom"])}, {v2(kmin)}, {v2(kmax)} }},')
     zeilen += ["};", ""]
     return "\n".join(zeilen)

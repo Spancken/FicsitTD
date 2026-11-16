@@ -13,6 +13,10 @@
 #include "FGGameMode.h"
 #include "FGGameState.h"
 #include "FGBuildableSubsystem.h"
+#include "TDGate.h"
+#include "FGPowerConnectionComponent.h"
+#include "FGClearanceInterface.h"
+#include "Components/InstancedStaticMeshComponent.h"
 #include "TDEinsatz.h"
 #include "TDGegnerHirn.h"
 #include "TDSicherheitsnetz.h"
@@ -500,7 +504,8 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		// 0.10.2 (Screenshots): Figur neben einen Turm ("*" = irgendeiner) auf den Boden stellen, Blick zum Turm.
 		// "abstand" in m (Standard 9), "winkel" in Grad um den Turm (Standard 0)
 		// "gegner": waehrend der Welle den Turm, der den Wellengegnern am naechsten steht; die Figur steht hinter ihm und blickt zu den Gegnern
-		ATDTurretBase* Turm = nullptr;
+		// Optik-Durchgang 16.11.2026: auch "Tor" (ATDGate); Standplatz wird gesucht (siehe unten)
+		AActor* Turm = nullptr;
 		bool bGegner = false;
 		FVector GegnerMitte = FVector::ZeroVector;
 		if (Wort == TEXT("gegner"))
@@ -530,6 +535,13 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 				}
 			}
 		}
+		else if (Wort == TEXT("Tor"))
+		{
+			for (TActorIterator<ATDGate> It(World); It && !Turm; ++It)
+			{
+				Turm = *It;
+			}
+		}
 		else
 		{
 			Turm = TDTestTurm(World, Wort);
@@ -547,13 +559,33 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 				// hinter den Turm (von den Gegnern aus gesehen), seitlich versetzt um "winkel"
 				Winkel += (Mitte - GegnerMitte).GetSafeNormal2D().Rotation().Yaw;
 			}
+			// Optik-Durchgang 16.11.2026 (Drohnenplatz-Foto zeigte nur Himmel): mit "suchen": true den Standplatz reihum in
+			// 30-Grad-Schritten suchen, bis der Boden frei von Gebaeuden ist und hoechstens 4 m ueber/unter dem Fuss des Baus liegt;
+			// sonst der erste Bodentreffer. Ohne "suchen" wie bisher genau ein Versuch unter "winkel".
 			FVector Ort = Mitte + FRotator(0.f, Winkel, 0.f).RotateVector(FVector(Abstand, 0.f, 0.f));
-			FHitResult Treffer;
 			FCollisionQueryParams Abfrage(TEXT("TDStelle"), false, Figur);
-			if (World->LineTraceSingleByChannel(Treffer, Ort + FVector(0.f, 0.f, 3000.f), Ort - FVector(0.f, 0.f, 5000.f), ECC_Visibility, Abfrage))
+			const int32 Versuche = S->HasField(TEXT("suchen")) && S->GetBoolField(TEXT("suchen")) ? 12 : 1;
+			bool bErster = true;
+			for (int32 Versuch = 0; Versuch < Versuche; ++Versuch)
 			{
-				Ort = Treffer.ImpactPoint + FVector(0.f, 0.f, Figur->GetSimpleCollisionHalfHeight() + 5.f);
-				bBoden = true;
+				const FVector Probe = Mitte + FRotator(0.f, Winkel + Versuch * 30.f, 0.f).RotateVector(FVector(Abstand, 0.f, 0.f));
+				FHitResult Treffer;
+				if (!World->LineTraceSingleByChannel(Treffer, Probe + FVector(0.f, 0.f, 3000.f), Probe - FVector(0.f, 0.f, 5000.f), ECC_Visibility, Abfrage))
+				{
+					continue;
+				}
+				const FVector Stand = Treffer.ImpactPoint + FVector(0.f, 0.f, Figur->GetSimpleCollisionHalfHeight() + 5.f);
+				const bool bFrei = !Cast<AFGBuildable>(Treffer.GetActor()) && FMath::Abs(Treffer.ImpactPoint.Z - Mitte.Z) <= 400.f;
+				if (bErster || bFrei)
+				{
+					Ort = Stand;
+					bBoden = true;
+					bErster = false;
+				}
+				if (bFrei)
+				{
+					break;
+				}
 			}
 			if (Figur->GetCharacterMovement())
 			{
@@ -1305,6 +1337,66 @@ bool UTDAutotest::Pruefe(UWorld* World, const TSharedPtr<FJsonObject>& S, FStrin
 		const TSharedPtr<IPlugin> Plugin = IPluginManager::Get().FindPlugin(TEXT("FicsitTD"));
 		OutIst = Plugin.IsValid() ? Plugin->GetDescriptor().VersionName : TEXT("nicht geladen");
 		return !S->HasField(TEXT("soll")) || OutIst == S->GetStringField(TEXT("soll"));
+	}
+	if (Name == TEXT("Optik"))
+	{
+		// Optik-Durchgang 16.11.2026 (P3): je Turm/Tor kein Original-Strommast oder -Statusmast als Teil, keine Nebelflaeche des
+		// Spiel-Vorbilds im Umkreis von 6 m, Stromanschluss im eigenen Klarraum (sonst haengt das Kabel ausserhalb des Sockels)
+		TArray<FString> Fehler;
+		int32 Bauten = 0;
+		TArray<const UInstancedStaticMeshComponent*> Nebel;
+		for (TObjectIterator<UInstancedStaticMeshComponent> It; It; ++It)
+		{
+			if (It->GetWorld() == World && It->GetStaticMesh() && It->GetStaticMesh()->GetName().Contains(TEXT("FogPlane")))
+			{
+				Nebel.Add(*It);
+			}
+		}
+		for (TActorIterator<AFGBuildable> It(World); It; ++It)
+		{
+			if (!Cast<ATDTurretBase>(*It) && !Cast<ATDGate>(*It))
+			{
+				continue;
+			}
+			++Bauten;
+			const FString Wer = It->GetClass()->GetName().Replace(TEXT("Build_TD_"), TEXT("")).Replace(TEXT("_C"), TEXT(""));
+			TInlineComponentArray<UStaticMeshComponent*> Teile(*It);
+			for (const UStaticMeshComponent* T : Teile)
+			{
+				const FString M = T->GetStaticMesh() ? T->GetStaticMesh()->GetName() : FString();
+				if (M == TEXT("SM_PowerPoleWall_MK1") || M == TEXT("SM_ProductionLight_01"))
+				{
+					Fehler.Add(FString::Printf(TEXT("%s: %s"), *Wer, *M));
+				}
+			}
+			TArray<FFGClearanceData> Klar;
+			IFGClearanceInterface::Execute_GetClearanceData(*It, Klar);
+			const FBox Box = Klar.Num() ? Klar[0].ClearanceBox.ExpandBy(FVector(15.f, 15.f, 0.f)) : FBox(ForceInit);
+			TInlineComponentArray<UFGPowerConnectionComponent*> Strom(*It);
+			for (const UFGPowerConnectionComponent* P : Strom)
+			{
+				const FVector L = It->GetActorTransform().InverseTransformPosition(P->GetComponentLocation());
+				if (Box.IsValid && (L.X < Box.Min.X || L.X > Box.Max.X || L.Y < Box.Min.Y || L.Y > Box.Max.Y))
+				{
+					Fehler.Add(FString::Printf(TEXT("%s: Stromanschluss %s ausserhalb des Klarraums"), *Wer, *L.ToCompactString()));
+				}
+			}
+			for (const UInstancedStaticMeshComponent* N : Nebel)
+			{
+				for (int32 i = 0; i < N->GetInstanceCount(); ++i)
+				{
+					FTransform T;
+					if (N->GetInstanceTransform(i, T, true) && FVector::Dist(T.GetLocation(), It->GetActorLocation()) < 600.f)
+					{
+						Fehler.Add(FString::Printf(TEXT("%s: Nebelflaeche"), *Wer));
+						break;
+					}
+				}
+			}
+		}
+		OutIst = FString::Printf(TEXT("%d Bauten, %d Befunde%s%s"), Bauten, Fehler.Num(), Fehler.Num() ? TEXT(": ") : TEXT(""),
+			*FString::Join(TArray<FString>(Fehler.GetData(), FMath::Min(Fehler.Num(), 6)), TEXT("; ")));
+		return Bauten > 0 && Fehler.Num() == 0;
 	}
 	if (Name == TEXT("KernLebt"))
 	{

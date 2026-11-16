@@ -416,5 +416,35 @@
    510.0,
    410.0
   ]
+ },
+ "Tor": {
+  "datei": "TD_Gate.blend",
+  "entfernt": 3,
+  "sockelteile": 144,
+  "versuche": [
+   1,
+   0
+  ],
+  "kasten_skala": 1.0,
+  "strom": [
+   -300.0,
+   -112.3,
+   158.0
+  ],
+  "strom_gier": -90,
+  "lampe": [
+   0.0,
+   -0.0,
+   522.0
+  ],
+  "lampe_gier": 0,
+  "klarraum_min_cm": [
+   -420.0,
+   -160.0
+  ],
+  "klarraum_max_cm": [
+   420.0,
+   160.0
+  ]
  }
 }
