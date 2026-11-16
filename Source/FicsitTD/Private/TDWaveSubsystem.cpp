@@ -1,4 +1,5 @@
 #include "TDWaveSubsystem.h"
+#include "Components/BoxComponent.h"
 #include "Engine/StaticMeshActor.h"
 #include "NavModifierComponent.h"
 #include "NavAreas/NavArea_Null.h"
@@ -3366,14 +3367,20 @@ int32 UTDWaveSubsystem::ProbeWegKlippen(const TArray<FVector>& Weg, int32 Front)
 			for (const FHitResult& H : Treffer)
 			{
 				AActor* Klippe = H.GetActor();
-				if (!Klippe || Gemeldet.Contains(Klippe) || !Klippe->GetClass()->GetName().Contains(TEXT("CliffActor")) || H.ImpactNormal.Z >= SteilZ)
+				if (!Klippe || !Klippe->GetClass()->GetName().Contains(TEXT("CliffActor")) || H.ImpactNormal.Z >= SteilZ)
+				{
+					continue;
+				}
+				// 16.11. (W06): je Stelle ein kleiner Sperrkasten - eine Stelle, die schon ein Kasten abdeckt, nicht erneut melden
+				const float SperrAbstand = TDBalance::Wert(TEXT("Gegner.KlippenProbe.SperrAbstand"), 6.f) * 100.f;
+				if (mKlippenStellen.ContainsByPredicate([&H, SperrAbstand](const FVector& P) { return FVector::Dist(P, H.ImpactPoint) < SperrAbstand; }))
 				{
 					continue;
 				}
 				Gemeldet.Add(Klippe);
 				UE_LOG(LogFicsitTD, Log, TEXT("Klippenprobe Front %d: Kapsel haengt bei %s an %s (Neigung %.0f Grad) - vorab sperren"),
 					Front, *H.ImpactPoint.ToCompactString(), *Klippe->GetName(), FMath::RadiansToDegrees(FMath::Acos(FMath::Clamp(H.ImpactNormal.Z, -1.f, 1.f))));
-				if (SperreKlippe(Klippe))
+				if (SperreKlippe(Klippe, &H.ImpactPoint))
 				{
 					++Gesperrt;
 				}
@@ -3384,14 +3391,17 @@ int32 UTDWaveSubsystem::ProbeWegKlippen(const TArray<FVector>& Weg, int32 Front)
 	return Gesperrt;
 }
 
-bool UTDWaveSubsystem::SperreKlippe(AActor* Klippe)
+bool UTDWaveSubsystem::SperreKlippe(AActor* Klippe, const FVector* Stelle)
 {
 	ATDDefenseCore* Kern = mKern.Get();
-	if (!Klippe || !Kern || TDBalance::Wert(TEXT("Gegner.KlippenSperren"), 1.f) <= 0.f || mKlippenGeprueft.Contains(Klippe))
+	if (!Klippe || !Kern || TDBalance::Wert(TEXT("Gegner.KlippenSperren"), 1.f) <= 0.f || (!Stelle && mKlippenGeprueft.Contains(Klippe)))
 	{
 		return false;
 	}
-	mKlippenGeprueft.Add(Klippe);
+	if (!Stelle)
+	{
+		mKlippenGeprueft.Add(Klippe);
+	}
 	FString Modell = Klippe->GetClass()->GetName();
 	if (const UStaticMeshComponent* Netz = Klippe->FindComponentByClass<UStaticMeshComponent>(); Netz && Netz->GetStaticMesh())
 	{
@@ -3399,6 +3409,13 @@ bool UTDWaveSubsystem::SperreKlippe(AActor* Klippe)
 	}
 	FVector Mitte, Halb;
 	Klippe->GetActorBounds(true, Mitte, Halb);
+	if (Stelle)
+	{
+		// Kasten um die Probenstelle: so gross, dass ein Hog seitlich nicht hineinlaeuft, aber kein begehbarer Boden daneben
+		const float R = TDBalance::Wert(TEXT("Gegner.KlippenProbe.SperrRadius"), 6.f) * 100.f;
+		Mitte = *Stelle;
+		Halb = FVector(R, R, R * 0.7f);
+	}
 	if (mKlippenGesperrt >= (int32)TDBalance::Wert(TEXT("Gegner.KlippenSperrenMax"), 12.f))
 	{
 		UE_LOG(LogFicsitTD, Log, TEXT("Klippensperre: %s bei %s nicht gesperrt - Hoechstzahl %d erreicht"), *Modell, *Mitte.ToCompactString(), mKlippenGesperrt);
@@ -3420,9 +3437,34 @@ bool UTDWaveSubsystem::SperreKlippe(AActor* Klippe)
 			return false;
 		}
 	}
-	UNavModifierComponent* Mod = NewObject<UNavModifierComponent>(Klippe, TEXT("TDKlippenNetz"));
-	Mod->SetAreaClass(UNavArea_Null::StaticClass());
-	Mod->RegisterComponent();
+	if (Stelle)
+	{
+		// Dynamisches Hindernis ohne Kollision (keine unsichtbare Wand fuer den Spieler), gehoert der Klippe, wird nicht gespeichert
+		FActorSpawnParameters P;
+		P.Owner = Klippe;
+		AActor* Kasten = GetWorld()->SpawnActor<AActor>(AActor::StaticClass(), FTransform(Mitte), P);
+		UBoxComponent* Box = Kasten ? NewObject<UBoxComponent>(Kasten, TEXT("TDKlippenKasten")) : nullptr;
+		if (!Box)
+		{
+			return false;
+		}
+		Box->SetBoxExtent(Halb);
+		Box->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		Box->bDynamicObstacle = true;
+		Box->SetAreaClassOverride(UNavArea_Null::StaticClass());
+		Box->SetCanEverAffectNavigation(true);
+		Kasten->SetRootComponent(Box);
+		Box->RegisterComponent();
+		Box->SetWorldLocation(Mitte);
+		Kasten->Tags.Add(TEXT("TDKlippenKasten"));
+		mKlippenStellen.Add(Mitte);
+	}
+	else
+	{
+		UNavModifierComponent* Mod = NewObject<UNavModifierComponent>(Klippe, TEXT("TDKlippenNetz"));
+		Mod->SetAreaClass(UNavArea_Null::StaticClass());
+		Mod->RegisterComponent();
+	}
 	++mKlippenGesperrt;
 	++mKlippenOffen;
 	UE_LOG(LogFicsitTD, Log, TEXT("Klippensperre: %s bei %s (%.0f x %.0f x %.0f m) als Sperrflaeche ins Netz genommen (%d.), pruefe die Frontwege nach dem Netzumbau"),
@@ -3495,6 +3537,14 @@ void UTDWaveSubsystem::PruefeKlippenSperre(TWeakObjectPtr<AActor> Klippe, int32 
 		if (M && M->GetFName() == TEXT("TDKlippenNetz"))
 		{
 			M->DestroyComponent();
+		}
+	}
+	for (TActorIterator<AActor> It(World); It; ++It)
+	{
+		if (It->GetOwner() == K && It->Tags.Contains(TEXT("TDKlippenKasten")))
+		{
+			mKlippenStellen.RemoveAll([Ort = It->GetActorLocation()](const FVector& P) { return FVector::Dist(P, Ort) < 10.f; });
+			It->Destroy();
 		}
 	}
 	--mKlippenGesperrt;

@@ -338,6 +338,9 @@ class Lauf:
                 self.tuerme.append([t, 1])
         self.kern = 100.0
         self.kern_min = 100.0
+        # 16.11.2026: Kern-LP der Stufe (Stufen.<Stufe>.KernLP; Bohrung setzt Bohrung.<Stufe>.LP). Die Verlustkurve ist in %
+        # eines Normal-Kerns (VerlustBezugKernLP) kalibriert, der Schaden der Gegner haengt nicht an den Kern-LP.
+        self.kern_lp = B.get(f"Stufen.{stufe}.KernLP", Z.get("VerlustBezugKernLP", 20000))
         # Brennstoff der Biomassegeneratoren: Startkit 300 Biomasse + 200 Blätter (15 MJ) + 100 Holz (100 MJ), je Welle +100 (TDEinsatz.cpp:493)
         self.biomasse = Z["BiomasseStart"]
         self.biomasse_mangel = 0
@@ -839,6 +842,7 @@ class Lauf:
             verlust *= f
         elif rng.random() < Z["AusreisserChance"]:
             verlust *= Z["AusreisserFaktor"]
+        verlust *= Z.get("VerlustBezugKernLP", 20000) / max(1.0, self.kern_lp)
         if "KernPanzer" in self.erforscht:
             verlust /= self.B.get("Forschung.KernPanzer.Faktor", 1.3)
         if "KernSchild" in self.erforscht:
@@ -907,7 +911,7 @@ def spiele(s, wellen_liste, B, Z, K, gabeln, tw, wi, stufe, laenge, rng):
         q, Kd, verl = L.kampf(gegner, elite, n, rng)
         qs.append(q)
         if Z.get("Verlauf"):
-            L.verlauf.append((n, round(q, 4), round(verl, 3), round(max(0.0, L.kern), 2), round(L.ep, 1), round(L.fp_summe, 1)))
+            L.verlauf.append((n, round(q, 4), round(verl, 3), round(max(0.0, L.kern), 2), round(L.ep, 1), round(L.fp_summe, 1), round(L.q_nenn, 4)))   # 16.11.: Nenn-Q angehaengt
         if L.kern <= 0:
             if L.versorgung < 1:
                 ursache = "Munition/Fabrik (EP)"
@@ -935,6 +939,9 @@ def lade_alles(balance_ueber=None, stand="090"):
     Z = {k: v["Wert"] if isinstance(v, dict) else v for k, v in Z.items() if not k.startswith("_")}
     katalog, phasen = sim.lade_katalog(B)
     K, gabeln = lade_forschung(stand) if stand != "090" else lade_forschung()   # ohne Argument: szenario_stufen.py ersetzt die Funktion
+    # 16.11.2026: wie im Spiel geht die Balance Forschung.<Knoten>.AbWelle vor (z. B. Teslaspule 5 statt 6)
+    for k, kn in K.items():
+        kn["ab"] = int(B.get(f"Forschung.{k}.AbWelle", kn["ab"]))
     Z["Stand"] = stand
     if stand == "091":
         Z["KnotenGesamt"] = Z.get("KnotenGesamt091", len(K))

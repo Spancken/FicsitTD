@@ -1,5 +1,6 @@
 #include "TDAbwehr.h"
 #include "TDKernplatz.h"
+#include "TDSpielstand.h"
 #include "TDEinsatz.h"
 #include "TDBalance.h"
 #include "FicsitTDModule.h"
@@ -82,6 +83,10 @@ void UTDAbwehrSubsystem::Pruefe()
 	}
 	TauscheKosten();
 	ZieheIndustrieNach();
+	if (ATDSpielstand* Stand = ATDSpielstand::Get(this))
+	{
+		Stand->Gleiche();
+	}
 }
 
 void UTDAbwehrSubsystem::TauscheKosten()

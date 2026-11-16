@@ -80,6 +80,13 @@ This mod was developed with substantial help of AI (Anthropic Claude): most of t
 
 ## Changelog für die nächste hochgeladene Version
 
+> **Entwurf 0.11 (unveröffentlicht, aus den Änderungszetteln, `python Tests\pruefe_konsistenz.py --changelog`):**
+> - New Game Mode “Endless waves”: timed waves from one direction that never stop – build and keep your turrets supplied.
+> - New Game Mode “Free play with defense”: regular Satisfactory plus turrets and an optional drilling challenge at resource nodes – nothing attacks unless you start it.
+> - Changed: Game Mode “Off” is now plain Satisfactory (no turret recipes, no defense research); old saves switch with `/td modus einsatz`.
+> - Fixed: fewer enemies stuck at cliff overhangs.
+
+
 **0.10.2 (Tag `v0.10.2`, G2 DE 12/14 mit bekanntem Felspfeiler-Rest, EN 5/5, G5 bestanden):**
 
 ```

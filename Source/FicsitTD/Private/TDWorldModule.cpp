@@ -1,5 +1,6 @@
-﻿#include "TDWorldModule.h"
+#include "TDWorldModule.h"
 #include "TDBalance.h"
+#include "TDSpielstand.h"
 #include "TDSprache.h"
 #include "Misc/CommandLine.h"
 #include "Misc/Paths.h"
@@ -21,6 +22,8 @@ UTDWorldModule::UTDWorldModule()
 		mChatCommands.Add(AMauerCommand::StaticClass());
 	}
 	mChatCommands.Add(ATDDebugCommand::StaticClass());
+	// 0.12-dev: Fortschritt je Spielstand (Freies Spiel mit Abwehr)
+	ModSubsystems.Add(ATDSpielstand::StaticClass());
 }
 
 void UTDWorldModule::DispatchLifecycleEvent(ELifecyclePhase Phase)

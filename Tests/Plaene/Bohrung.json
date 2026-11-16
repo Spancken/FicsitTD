@@ -53,6 +53,14 @@
     { "befehl": "td bohrung abbrechen" },
     { "pruefe": "LogEnthaelt", "suche": "Bohrung beendet (Mittel, ohne Erfolg)", "min": 1, "text": "Abbruch ohne Strafe" },
     { "pruefe": "KernLebt", "text": "Kern steht nach dem Abbruch" },
+    { "pruefe": "LogEnthaelt", "suche": "Spielstand: 1 Bohr-Erfolge", "min": 1, "text": "Erfolg im Spielstand gemerkt (nicht nur am Kern)" },
+    { "befehl": "td bohrung abriss" },
+    { "pruefe": "LogEnthaelt", "suche": "Bohrung: Testkern", "min": 2, "text": "Kern abgerissen" },
+    { "befehl": "td bohrung platz" },
+    { "warte": 8 },
+    { "befehl": "td bohrung mittel" },
+    { "pruefe": "LogEnthaelt", "suche": "Bohrung gestartet: Mittel", "min": 2, "text": "neuer Kern: Mittel bleibt frei (Fortschritt je Spielstand)" },
+    { "befehl": "td bohrung abbrechen" },
     { "pruefe": "KeineWarnungen", "text": "keine Warnungen oder Fehler des Mods im Log" }
   ]
 }

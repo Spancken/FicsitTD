@@ -27,7 +27,7 @@
     "Turmwahl": "bester_wert"
   },
   "Tuerme": {
-    "_Hinweis": "Kontingent-Schluessel im Laden, Schadensart, Rezeptdauer s (create_turret_recipes.py), frei ab Forschung (leer = Start); Ziele = mittlere Zahl getroffener Gegner bei Flaechenwaffen (Annahme)",
+    "_Hinweis": "Kontingent-Schluessel im Laden, Schadensart, Rezeptdauer s (create_turret_recipes.py), frei ab Forschung (leer = Start); Ziele = mittlere Zahl getroffener Gegner bei Flaechenwaffen (Annahme); Turmname = mTurmName im Code (Tuerme.Level.<Turmname>.*), nur wo er vom Ladenschluessel abweicht (16.11.2026)",
     "Bolzenturm": {
       "Art": "Durchschlag",
       "Zyklus": 1.2,
@@ -47,7 +47,8 @@
       "Art": "Feuer",
       "Zyklus": 1.0,
       "Forschung": "Flammenwerfer",
-      "Ziele": 2.0
+      "Ziele": 2.0,
+      "Turmname": "Flammenwerfer"
     },
     "Nobelisk-Werfer": {
       "Art": "Explosion",
@@ -57,7 +58,7 @@
     }
   },
   "Munition": {
-    "_Hinweis": "Munition je Turm; Balance-Schluessel unter Munition.*; frei ab Forschung; Art = Schadensart, falls anders als der Turm (0.73). Der Simulator waehlt je Welle die wirksamste.",
+    "_Hinweis": "Munition je Turm; Balance-Schluessel unter Munition.*; frei ab Forschung (Knoten in TDForschungInfo.inl); Art = Schadensart, falls anders als der Turm. Der Simulator waehlt je Welle die wirksamste. Stand 16.11.2026 wie strategien.MUNITION (create_turret_recipes.py): Flamme startet mit Treibstoff, Biotreibstoff gibt es nicht mehr; Gabel Streu-/Schockbolzen und Zielsuch/Panzerbrechend schliessen sich aus.",
     "Bolzenturm": [
       {
         "Name": "Armierungsbolzen",
@@ -70,15 +71,20 @@
         "Forschung": "Durchschlagbolzen"
       },
       {
-        "Name": "Explosivbolzen",
-        "Schluessel": "Bolzen.Explosivbolzen",
-        "Forschung": "Explosivbolzen"
-      },
-      {
         "Name": "Schockbolzen",
         "Schluessel": "Bolzen.Betaeubungsbolzen",
         "Forschung": "Schockbolzen",
         "Art": "Strom"
+      },
+      {
+        "Name": "Streubolzen",
+        "Schluessel": "Bolzen.Streubolzen",
+        "Forschung": "Streubolzen"
+      },
+      {
+        "Name": "Explosivbolzen",
+        "Schluessel": "Bolzen.Explosivbolzen",
+        "Forschung": "Explosivbolzen"
       }
     ],
     "Gewehrturm": [
@@ -118,19 +124,24 @@
     ],
     "Flammenturm": [
       {
-        "Name": "Biotreibstoff",
-        "Schluessel": "Treibstoff.Biotreibstoff",
-        "Forschung": ""
-      },
-      {
         "Name": "Treibstoff",
         "Schluessel": "Treibstoff.Treibstoff",
-        "Forschung": "Treibstoff"
+        "Forschung": ""
       },
       {
         "Name": "Turbotreibstoff",
         "Schluessel": "Treibstoff.Turbotreibstoff",
         "Forschung": "Turbotreibstoff"
+      },
+      {
+        "Name": "Raketentreibstoff",
+        "Schluessel": "Treibstoff.Raketentreibstoff",
+        "Forschung": "Raketentreibstoff"
+      },
+      {
+        "Name": "Ionisiert",
+        "Schluessel": "Treibstoff.Ionisiert",
+        "Forschung": "Plasmaflamme"
       }
     ],
     "Nobelisk-Werfer": [
@@ -138,84 +149,44 @@
         "Name": "Nobelisk",
         "Schluessel": "Nobelisk.Nobelisk",
         "Forschung": ""
+      },
+      {
+        "Name": "Puls",
+        "Schluessel": "Nobelisk.Puls",
+        "Forschung": "PulsNobelisk"
+      },
+      {
+        "Name": "Streu",
+        "Schluessel": "Nobelisk.Streu",
+        "Forschung": "StreuNobelisk"
       }
     ]
   },
   "Forschung": {
-    "_Hinweis": "Reihenfolge, in der der Modell-Spieler FP ausgibt, mit Kosten je Phase (0.73: 3/4/6/8/10); Knoten mit Freigabe je Phase ueberspringt er bis zur Welle.",
+    "_Hinweis": "Reihenfolge, in der der Modell-Spieler Festplatten ausgibt. Kosten (FP), Freigabewelle und Voraussetzungen kommen seit 16.11.2026 aus TDForschungInfo.inl (Balance Forschung.<Knoten>.AbWelle geht vor); fehlende Voraussetzungen werden davor eingereiht, die andere Seite einer Gabelung wird uebersprungen. Turmfertigung II-IV schalten Level 3-5 frei.",
     "Reihenfolge": [
-      [
-        "Assembler",
-        3
-      ],
-      [
-        "Durchschlagbolzen",
-        4
-      ],
-      [
-        "Kupfer",
-        3
-      ],
-      [
-        "Kohlekraft",
-        4
-      ],
-      [
-        "Gewehrturm",
-        4
-      ],
-      [
-        "Explosivbolzen",
-        4
-      ],
-      [
-        "Teslaspule",
-        4
-      ],
-      [
-        "Panzerbrechend",
-        4
-      ],
-      [
-        "Giesserei",
-        3
-      ],
-      [
-        "NobeliskWerfer",
-        4
-      ],
-      [
-        "Schockbolzen",
-        4
-      ],
-      [
-        "Raffinerie",
-        6
-      ],
-      [
-        "Flammenwerfer",
-        6
-      ],
-      [
-        "Brandmunition",
-        6
-      ],
-      [
-        "Treibstoff",
-        6
-      ],
-      [
-        "Turbomunition",
-        8
-      ],
-      [
-        "Turbotreibstoff",
-        8
-      ],
-      [
-        "StreuNobelisk",
-        8
-      ]
+      "Assembler",
+      "Durchschlagbolzen",
+      "Kupfer",
+      "Kohlekraft",
+      "Gewehrturm",
+      "Panzerbrechend",
+      "Teslaspule",
+      "Giesserei",
+      "NobeliskWerfer",
+      "Turmfertigung2",
+      "Schockbolzen",
+      "Raffinerie",
+      "Flammenwerfer",
+      "Brandmunition",
+      "Turmfertigung3",
+      "Explosivbolzen",
+      "Turbomunition",
+      "Turbotreibstoff",
+      "StreuNobelisk",
+      "Turmfertigung4",
+      "Raketentreibstoff",
+      "Plasmaflamme"
     ]
   },
   "Q": {

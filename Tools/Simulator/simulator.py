@@ -3,7 +3,7 @@
 Liest die Standardwerte aus dem Mod-Code (TDBalance.cpp, Gegnerkatalog in TDWaveSubsystem.cpp), legt die eigene
 Balance.json des Spiels darueber und ergaenzt, was nicht im Code steht, aus annahmen.json (Grund-LP der Kreaturen,
 Modell-Spieler, Forschungsreihenfolge). Die Wellen werden wie im Spiel zusammengestellt (gleicher Zufallsablauf),
-der Modell-Spieler kauft mit seinen EP Tuerme und erforscht mit FP bessere Munition.
+der Modell-Spieler kauft mit seinen Coupons Tuerme und Turmlevel und erforscht mit Festplatten bessere Munition (Stand 16.11.2026).
 
 Aufruf:  python simulator.py [--stufe Normal] [--balance PFAD] [--aus ORDNER]
 Ausgabe: Ausgabe/Simulation.html (Diagramme + Tabellen), Ausgabe/Simulation.csv
@@ -74,6 +74,46 @@ def lade_forschung_ab_welle(B):
     return {k: int(B.get(f"Forschung.{k}.AbWelle", int(w))) for k, w in re.findall(r'TEXT\("[^"]+"\),\s*TEXT\("(\w+)"\),\s*(\d+)\s*\}', text)}
 
 
+def lade_forschung_info(B):
+    """16.11.2026: alle MAM-Knoten aus TDForschungInfo.inl (erzeugt von create_research.py): Kosten in Festplatten (FP),
+    Standard-Welle (Balance Forschung.<Knoten>.AbWelle geht vor, wie TDForschung.cpp), Voraussetzungen, andere Seite der Gabelung"""
+    text = open(os.path.join(QUELLE, "TDForschungInfo.inl"), encoding="utf-8-sig").read()
+    info = {}
+    for zeile in text.splitlines():
+        if not zeile.strip().startswith("{ TEXT("):
+            continue
+        key = re.match(r'\s*\{\s*TEXT\("[^"]*"\),\s*TEXT\("[^"]*"\),\s*TEXT\("(\w+)"\)', zeile)
+        rest = re.search(r'\),\s*(\d+),\s*(\d+),\s*TEXT\("([^"]*)"\),\s*TEXT\("([^"]*)"\),\s*TEXT\("(/FicsitTD[^"]*)"\)\s*\},?\s*$', zeile)
+        if not key or not rest:
+            raise ValueError(f"TDForschungInfo.inl: Zeile nicht lesbar (Format geaendert?): {zeile[:80]}")
+        k = key.group(1)
+        info[k] = {"FP": int(rest.group(1)), "AbWelle": int(B.get(f"Forschung.{k}.AbWelle", int(rest.group(2)))),
+                   "Braucht": [v for v in rest.group(3).split(",") if v], "Andere": [v for v in rest.group(4).split(",") if v]}
+    return info
+
+
+def lade_level_standards():
+    """Turmlevel (0.63+): Standard-Pakete je Turm und Level aus TDLevelStandards[] in TDTurretBase.cpp.
+    Balance Tuerme.Level.<Turm>.L<n>.<Wert> geht vor (LevelWertBis)."""
+    text = open(os.path.join(QUELLE, "TDTurretBase.cpp"), encoding="utf-8-sig").read()
+    block = text[text.index("TDLevelStandards[]"):text.index("TDLevelWerte[]")]
+    std = re.findall(r'\{\s*TEXT\("([\w-]+)"\),\s*(\d+),\s*TEXT\("(\w+)"\),\s*([0-9.]+)f\s*\}', block)
+    if not std:
+        raise ValueError("TDTurretBase.cpp: TDLevelStandards nicht gefunden (Format geaendert?)")
+    m = re.search(r'Standard\[\]\s*=\s*\{([^}]*)\}', text[text.index("ATDTurretBase::LevelPreis"):])
+    preise = [int(x) for x in m.group(1).split(",")] if m else [0, 0, 8, 15, 25, 40]
+    return [(t, int(l), w, float(b)) for t, l, w, b in std], preise
+
+
+def level_wert_bis(B, standards, turm, level, wert):
+    """Wie ATDTurretBase::LevelWertBis: Summe der Pakete L2..Level fuer diesen Wert (nur Werte mit Standard)"""
+    s = 0.0
+    for t, l, w, betrag in standards:
+        if t == turm and w == wert and 2 <= l <= min(level, 5):
+            s += B.get(f"Tuerme.Level.{turm}.L{l}.{wert}", betrag)
+    return s
+
+
 def familie(name):
     """Wie ATDTurretBase::Resistenz"""
     if "Aquatic" in name: return "WasserSpitter"
@@ -92,8 +132,10 @@ def runde(x):
 
 # ---------------------------------------------------------------- Wellen wie im Spiel
 class Wellen:
-    def __init__(self, B, katalog, phasen, grund_lp, stufe):
+    def __init__(self, B, katalog, phasen, grund_lp, stufe, endlos=False):
         self.B, self.katalog, self.phasen, self.lp, self.stufe = B, katalog, phasen, grund_lp, stufe
+        # 0.11 Endlos-Wellen: immer genau eine Front (UTDWaveSubsystem::AktiveFrontenFuer)
+        self.endlos = endlos
 
     def w(self, k, std=0.0):
         return self.B.get(k, std)
@@ -101,7 +143,14 @@ class Wellen:
     def s(self, k):
         return self.B[f"Stufen.{self.stufe}.{k}"]
 
+    def lp_faktor(self, n):
+        """LPFaktor in UTDWaveSubsystem (StarteWelle): bis W31 je Welle Wellen.LPJeWelle, danach Wellen.LPJeWelleAb31 (0.9.1)"""
+        return self.s("GegnerLP") * (1 + self.w("Wellen.LPJeWelle", 0.08) * min(n - 1, 30)
+                                     + self.w("Wellen.LPJeWelleAb31", 0.1) * max(n - 31, 0))
+
     def fronten(self, n):
+        if self.endlos:
+            return 1
         neu = int(self.s("NeueFrontAbWelle"))
         z = int(self.s("FrontenStart")) + (n >= neu) + (n >= 2 * neu - 1)
         return max(1, min(z, KERN_MAX_FRONTEN))
@@ -113,7 +162,7 @@ class Wellen:
         if n % 10 == 0:
             # 0.84: Bosswellen mit weniger Begleitern (Wellen.BossBudget, 1 = volles Budget wie bis 0.83)
             budget = max(2, runde(budget * self.w("Wellen.BossBudget", 1.0)))
-        lp_faktor = self.s("GegnerLP") * (1 + self.w("Wellen.LPJeWelle") * (n - 1))
+        lp_faktor = self.lp_faktor(n)
         max_gegner = int(self.w("Wellen.MaxGesamt", 120))
         art = n % 5
         rolle = {1: 0, 2: 1, 4: 2, 0: 3}.get(art, -1)
@@ -160,24 +209,56 @@ class Wellen:
 
 # ---------------------------------------------------------------- Modell-Spieler
 class Spieler:
-    def __init__(self, B, A, stufe, ab_welle=None, mono=None):
+    """Modell-Spieler (Stand 16.11.2026): Coupons aus der Wellenabrechnung (UTDEinsatzSubsystem::WelleBeendet) gehen zum Anteil
+    TurmAnteil in die Abwehr - neue Tuerme (Ladenpreis steigt je Kauf) oder Turmlevel 2-5 (Tuerme.Level.Preis<n>, im Turmfenster).
+    Festplatten (FP) gehen in die Forschung, Kosten und Freigabewelle aus TDForschungInfo.inl. Seit 0.63 gibt es keine Stufen nach
+    Abschuessen mehr: Level 2 mit dem Turm-Knoten, 3/4 mit Turmfertigung II/III, 5 mit Turmfertigung IV oder Doktrin (LevelMax)."""
+    DOKTRIN = {"Bolzenturm": "DoktrinBolzen", "Gewehrturm": "DoktrinGewehr", "Teslaspule": "DoktrinTesla",
+               "Flammenwerfer": "DoktrinFlamme", "Nobelisk-Werfer": "DoktrinNobelisk"}
+
+    def __init__(self, B, A, stufe, ab_welle=None, mono=None, info=None, level=None):
         self.B, self.A, self.stufe = B, A, stufe
-        # 0.73 Spezialisierung: nur diese Turmlinie kaufen (bis sie frei ist: Bolzenturm), ab Welle 15 mit Doktrin
+        # 0.73 Spezialisierung: nur diese Turmlinie kaufen (bis sie frei ist: Bolzenturm), mit Doktrin sobald erforscht
         self.mono = mono
         self.welle = 1
         self.ab_welle = ab_welle or {}
+        self.info = info if info is not None else lade_forschung_info(B)
+        self.level_std, self.level_preise = level if level is not None else lade_level_standards()
         self.ep_turm = float(A["Spieler"].get("StartEP", 0)) * A["Spieler"]["TurmAnteil"]
         self.ep_rest = 0.0
         self.fp = 0
         self.erforscht = set()
         self.gekauft = {t: 0 for t in A["Tuerme"] if not t.startswith("_")}
-        # Startkontingent (Einsatz.Start.*): kostenlos, zaehlt nicht als gekauft
+        # Startkontingent (Einsatz.Start.*): kostenlos, zaehlt nicht als gekauft; jeder Turm steht auf Level 1
         self.tuerme = []
         for t in self.gekauft:
             for _ in range(int(B.get(f"Einsatz.Start.{t}", 0))):
-                self.tuerme.append({"Typ": t, "Kills": 0.0})
+                self.tuerme.append({"Typ": t, "Level": 1})
         self.ep_ausgegeben = 0
+        self.ep_level = 0
         self.ep_verfall = 0.0
+        self._lw = {}
+        self.reihenfolge = self._reihenfolge()
+
+    def _reihenfolge(self):
+        """Forschungsreihenfolge aus annahmen.json, Voraussetzungen (TDForschungInfo.inl) werden davor eingereiht"""
+        plan = []
+
+        def add(k):
+            if k in plan or k not in self.info:
+                return
+            for v in self.info[k]["Braucht"]:
+                add(v)
+            plan.append(k)
+        for eintrag in self.A["Forschung"]["Reihenfolge"]:
+            add(eintrag[0] if isinstance(eintrag, list) else eintrag)
+        if self.mono and self.DOKTRIN.get(self.balance_name(self.mono)):
+            add(self.DOKTRIN[self.balance_name(self.mono)])
+        return plan
+
+    def balance_name(self, typ):
+        """Turmname im Code (mTurmName, Tuerme.Level.*), weicht beim Flammenturm vom Ladenschluessel ab"""
+        return self.A["Tuerme"][typ].get("Turmname", typ)
 
     def frei(self, forschung):
         return not forschung or forschung in self.erforscht
@@ -194,29 +275,44 @@ class Spieler:
     def munitionen(self, typ):
         return [m for m in self.A["Munition"][typ] if self.frei(m["Forschung"])]
 
-    def doktrin(self, typ):
-        return 1 + self.B.get("Doktrin.Schaden", 0.25) if self.mono == typ and self.welle >= 15 else 1.0
+    def hat_doktrin(self, typ):
+        k = self.DOKTRIN.get(self.balance_name(typ))
+        return bool(k) and self.mono == typ and k in self.erforscht
 
-    def stufe_von(self, kills):
-        s = 0
-        for i in range(1, 6):
-            if kills >= self.B.get(f"Tuerme.Stufen.Abschuesse{i}", 1e9):
-                s = i
-        return s
+    def level_max(self, typ):
+        """ATDTurretBase::LevelMax"""
+        if not self.frei(self.A["Tuerme"][typ]["Forschung"]):
+            return 1
+        if "Turmfertigung2" not in self.erforscht:
+            return 2
+        if "Turmfertigung3" not in self.erforscht:
+            return 3
+        return 5 if "Turmfertigung4" in self.erforscht or self.hat_doktrin(typ) else 4
 
-    def dps(self, turm, stufe=None, m=None):
-        """Nenn-DPS gegen ein Einzelziel wie ATD*::NennDPS (Gewehr inkl. Takt-Bonus, siehe Fix 0.29.1)"""
+    def level_preis(self, typ, naechstes):
+        """ATDTurretBase::LevelPreis (Coupons), Doktrin-Linie mit Doktrin.LevelRabatt"""
+        p = int(self.B.get(f"Tuerme.Level.Preis{naechstes}", self.level_preise[naechstes]))
+        return max(1, runde(p * (1 - self.B.get("Doktrin.LevelRabatt", 0.25)))) if self.hat_doktrin(typ) else p
+
+    def lw(self, typ, level, wert):
+        k = (typ, level, wert)
+        if k not in self._lw:
+            self._lw[k] = level_wert_bis(self.B, self.level_std, self.balance_name(typ), level, wert)
+        return self._lw[k]
+
+    def dps(self, turm, level=None, m=None):
+        """Nenn-DPS gegen ein Einzelziel wie ATD*::NennDPS: Schaden x SchadenBonus / Zykluszeit, SchadenBonus = (1 + Level-Schaden)
+        x Doktrin, Takt = 1 + Level-Takt. Meisterfaehigkeiten (Level 5) stecken wie im Spiel nicht in NennDPS."""
         typ = turm["Typ"]
         m = m or self.munition(typ)
         if not m:
             return 0.0
-        st = self.stufe_von(turm["Kills"]) if stufe is None else stufe
-        sb = 1 + self.B["Tuerme.Stufen.SchadenJeStufe"] * st
-        tb = 1 + self.B["Tuerme.Stufen.TaktJeStufe"] * st
+        lv = turm["Level"] if level is None else level
+        sb = (1 + self.lw(typ, lv, "Schaden")) * (1 + self.B.get("Doktrin.Schaden", 0.25) if self.hat_doktrin(typ) else 1.0)
+        tb = 1 + self.lw(typ, lv, "Takt")
         k = "Munition." + m["Schluessel"]
         zyklus = self.A["Tuerme"][typ]["Zyklus"] / tb
         ziele = self.A["Tuerme"][typ].get("Ziele", 1.0)
-        sb *= self.doktrin(typ)
         if typ == "Gewehrturm":
             return (self.B[k + ".Schaden"] + self.B.get(k + ".BrandSchaden", 0.0)) * sb * self.B[k + ".SchussProSekunde"] * tb
         if typ == "Flammenturm":
@@ -225,9 +321,10 @@ class Spieler:
         return self.B[k + ".Schaden"] * sb / zyklus * ziele
 
     def wert_je_ep(self, typ):
-        return self.dps({"Typ": typ, "Kills": 0}) / max(self.preis(typ), 1)
+        return self.dps({"Typ": typ, "Level": 1}) / max(self.preis(typ), 1)
 
     def welle_beendet(self, n, kern_prozent):
+        """UTDEinsatzSubsystem::WelleBeendet: Coupons (Schluessel weiter Einsatz.EP.*) und Festplatten (Einsatz.FP.*)"""
         B = self.B
         p = int(B["Einsatz.EP.Grund"]) + runde(B["Einsatz.EP.JeWelle"] * n) + (
             int(B["Einsatz.EP.KernVoll"]) if kern_prozent >= 99.5 else int(B["Einsatz.EP.KernAb75"]) if kern_prozent >= 75 else 0)
@@ -241,38 +338,45 @@ class Spieler:
         return p
 
     def plane(self, n=1):
-        """Bauphase vor Welle n: forschen (feste Reihenfolge, Freigabe je Phase), dann Tuerme kaufen"""
-        for name, kosten in self.A["Forschung"]["Reihenfolge"]:
+        """Bauphase vor Welle n: forschen (Reihenfolge, Freigabewelle und Voraussetzungen), dann Tuerme oder Level kaufen"""
+        for name in self.reihenfolge:
             if name in self.erforscht:
                 continue
-            if n < self.ab_welle.get(name, 0):
+            kn = self.info[name]
+            if n < kn["AbWelle"] or any(v not in self.erforscht for v in kn["Braucht"]) or any(v in self.erforscht for v in kn["Andere"]):
                 continue
-            if self.fp < kosten:
+            if self.fp < kn["FP"]:
                 break
-            self.fp -= kosten
+            self.fp -= kn["FP"]
             self.erforscht.add(name)
         self.welle = n
         typen = [t for t in self.gekauft if self.frei(self.A["Tuerme"][t]["Forschung"])]
         if self.mono:
             typen = [self.mono] if self.mono in typen else ["Bolzenturm"]
         while True:
+            # Optionen: neuer Turm (Level 1) oder ein Level mehr fuer einen stehenden Turm; Wert = Nenn-DPS-Gewinn je Coupon
             if self.A["Spieler"]["Turmwahl"] == "gemischt":
                 typ = min(typen, key=lambda t: (sum(1 for x in self.tuerme if x["Typ"] == t), self.preis(t)))
             else:
                 typ = max(typen, key=self.wert_je_ep)
-            if self.preis(typ) > self.ep_turm:
+            optionen = [(self.wert_je_ep(typ), self.preis(typ), "Turm", typ)]
+            for t in self.tuerme:
+                if t["Level"] < self.level_max(t["Typ"]):
+                    p = self.level_preis(t["Typ"], t["Level"] + 1)
+                    g = self.dps(t, t["Level"] + 1) - self.dps(t)
+                    optionen.append((g / max(p, 1), p, "Level", t))
+            optionen = [o for o in optionen if o[1] <= self.ep_turm]
+            if not optionen:
                 break
-            self.ep_turm -= self.preis(typ)
-            self.ep_ausgegeben += self.preis(typ)
-            self.gekauft[typ] += 1
-            self.tuerme.append({"Typ": typ, "Kills": 0.0})
-
-    def verteile_kills(self, anzahl):
-        """Abschuesse nach DPS-Anteil (bestimmt die Turmstufen)"""
-        d = [self.dps(t) for t in self.tuerme]
-        s = sum(d)
-        for t, x in zip(self.tuerme, d):
-            t["Kills"] += anzahl * x / s if s else 0
+            wert, p, art, ziel = max(optionen, key=lambda o: o[0])
+            self.ep_turm -= p
+            if art == "Turm":
+                self.ep_ausgegeben += p
+                self.gekauft[ziel] += 1
+                self.tuerme.append({"Typ": ziel, "Level": 1})
+            else:
+                self.ep_level += p
+                ziel["Level"] += 1
 
 
 # ---------------------------------------------------------------- Simulation
@@ -283,43 +387,54 @@ def resistenz(B, art, name):
 
 def simuliere(B, A, katalog, phasen, ab_welle, stufe, laeufe, seed, mono=None):
     wellen = Wellen(B, katalog, phasen, A["Gegner_GrundLP"], stufe)
+    info, level = lade_forschung_info(B), lade_level_standards()
     ref = A["Q"]["Referenzzeit"]
     N = A["Simulation"]["Wellen"]
     reihen = {n: [] for n in range(1, N + 1)}
     for lauf in range(laeufe):
         rng = random.Random(seed * 100003 + lauf)
-        sp = Spieler(B, A, stufe, ab_welle, mono)
+        sp = Spieler(B, A, stufe, ab_welle, mono, info, level)
         for n in range(1, N + 1):
             sp.plane(n)
             gegner, elite = wellen.erzeuge(n, rng)
             lp_ges = sum(l for _, l in gegner) or 1.0
             # 0.73: jeder Turm laedt die Munition, die gegen diese Welle am meisten bewirkt (Art je Munition, sonst die des Turms)
-            tuerme = []
+            # LP je Gegnerart zusammengefasst; Resistenzmittel je Schadensart einmal je Welle (schneller, gleiches Ergebnis)
+            lp_art = {}
+            for name, l in gegner:
+                lp_art[name] = lp_art.get(name, 0.0) + l
+            res_mittel = {}
+
+            def mittel(art):
+                if art not in res_mittel:
+                    res_mittel[art] = sum(l * resistenz(B, art, name) for name, l in lp_art.items()) / lp_ges
+                return res_mittel[art]
+            tuerme, k_art = [], {}
             for t in sp.tuerme:
                 best = None
                 for m in sp.munitionen(t["Typ"]) or [None]:
                     art = (m or {}).get("Art", A["Tuerme"][t["Typ"]]["Art"])
                     d = sp.dps(t, m=m)
-                    wirk = d * sum(l * resistenz(B, art, name) for name, l in gegner) / lp_ges
+                    wirk = d * mittel(art)
                     if best is None or wirk > best[0]:
                         best = (wirk, art, d)
                 tuerme.append((best[1], best[2], t))
+                k_art[best[1]] = k_art.get(best[1], 0.0) + best[2]
             K = sum(d for _, d, _ in tuerme)
             lp = sum(l for _, l in gegner)
             ehp = 0.0
-            for name, l in gegner:
-                f = sum(d * resistenz(B, art, name) for art, d, _ in tuerme) / K if K else 1.0
+            for name, l in lp_art.items():
+                f = sum(d * resistenz(B, art, name) for art, d in k_art.items()) / K if K else 1.0
                 ehp += l / max(f, 0.05)
             q = ehp / (K * ref) if K else float("inf")
-            stufen = [sp.stufe_von(t["Kills"]) for t in sp.tuerme]
+            stufen = [t["Level"] for t in sp.tuerme]
             reihen[n].append({
                 "Gegner": len(gegner), "Elite": elite, "LP": lp, "EHP": ehp, "K": K, "Q": q,
                 "Tuerme": len(sp.tuerme), "Fronten": wellen.fronten(n),
                 "Mix": "/".join(f"{sum(1 for t in sp.tuerme if t['Typ'] == typ)}" for typ in sp.gekauft),
-                "Stufe": statistics.mean(stufen) if stufen else 0,
+                "Level": statistics.mean(stufen) if stufen else 0, "Coupons_Level": sp.ep_level,
                 "Forschung": len(sp.erforscht), "EP_Turm_offen": sp.ep_turm,
             })
-            sp.verteile_kills(len(gegner))
             sp.welle_beendet(n, A["Spieler"]["KernAnteilProzent"])
     return reihen
 
@@ -329,7 +444,7 @@ def zusammenfassen(reihen):
     for n, rs in reihen.items():
         qs = sorted(r["Q"] for r in rs)
         z = {"Welle": n}
-        for k in ("Gegner", "Elite", "LP", "EHP", "K", "Tuerme", "Fronten", "Stufe", "Forschung", "EP_Turm_offen"):
+        for k in ("Gegner", "Elite", "LP", "EHP", "K", "Tuerme", "Fronten", "Level", "Coupons_Level", "Forschung", "EP_Turm_offen"):
             z[k] = statistics.mean(r[k] for r in rs)
         z["Q"] = statistics.median(qs)
         z["Q_p10"] = qs[int(0.1 * (len(qs) - 1))]
@@ -444,7 +559,7 @@ def html_bericht(ergebnisse, B, A, quelle, gemessen, metriken, exponenten, wert_
             klasse = "ok" if lo <= z["Q"] <= hi else ("hoch" if z["Q"] > hi else "tief")
             zeilen.append(f'<tr data-s="{st}"><td>{st}</td><td>{z["Welle"]}</td><td>{z["Gegner"]:.1f}</td><td>{z["Elite"]:.1f}</td>'
                           f'<td>{z["Fronten"]:.0f}</td><td>{z["LP"]:.0f}</td><td>{z["EHP"]:.0f}</td><td>{z["Tuerme"]:.1f}</td>'
-                          f'<td>{z["Mix"]}</td><td>{z["Stufe"]:.1f}</td><td>{z["K"]:.0f}</td>'
+                          f'<td>{z["Mix"]}</td><td>{z["Level"]:.1f}</td><td>{z["K"]:.0f}</td>'
                           f'<td class="{klasse}">{z["Q"]:.2f}</td><td>{z["Q_p10"]:.2f}–{z["Q_p90"]:.2f}</td></tr>')
     vergleich = []
     norm = {z["Welle"]: z for z in ergebnisse.get("Normal", [])}
@@ -470,20 +585,20 @@ th:first-child,td:first-child {{ text-align:left; }} .ok {{ color:var(--ok); }} 
 .scroll {{ overflow-x:auto; }} select {{ font:inherit; }}
 </style></head><body>
 <h1>FicsitTD Simulation</h1>
-<p class="m">Erzeugt {jetzt} · {quelle} · {A["Simulation"]["Durchlaeufe"]} Durchläufe je Stufe · Modell-Spieler: {int(100 * A["Spieler"]["TurmAnteil"])} % der EP in Türme ({A["Spieler"]["Turmwahl"]}), Kern {A["Spieler"]["KernAnteilProzent"]} % · Q = EHP / (Σ Nenn-DPS × {A["Q"]["Referenzzeit"]} s)</p>
+<p class="m">Erzeugt {jetzt} · {quelle} · {A["Simulation"]["Durchlaeufe"]} Durchläufe je Stufe · Modell-Spieler: {int(100 * A["Spieler"]["TurmAnteil"])} % der Coupons in Türme und Level ({A["Spieler"]["Turmwahl"]}), Kern {A["Spieler"]["KernAnteilProzent"]} % · Q = EHP / (Σ Nenn-DPS × {A["Q"]["Referenzzeit"]} s)</p>
 {q_svg}
 {kurve_svg}
 <h2>Wachstum (Exponent b in y ~ Welle<sup>b</sup>, ab Welle 5)</h2>
 <table><tr><th>Stufe</th><th>Gegner-EHP</th><th>Abwehr K</th><th>Q</th></tr>{exp_zeilen}</table>
 <p class="m">b ≈ 1 linear, ≈ 2 quadratisch, ≈ 3 kubisch. Wächst EHP schneller als K, steigt Q.</p>
-<h2>Wert je EP beim ersten Kauf (Startmunition, Stufe 0)</h2>
-<table><tr><th>Turm</th><th>Munition</th><th>Nenn-DPS</th><th>Preis EP</th><th>DPS je EP</th></tr>{wert_zeilen}</table>
+<h2>Wert je Coupon beim ersten Kauf (Startmunition, Level 1)</h2>
+<table><tr><th>Turm</th><th>Munition</th><th>Nenn-DPS</th><th>Preis Coupons</th><th>DPS je Coupon</th></tr>{wert_zeilen}</table>
 <h2>Abgleich Wellengröße mit dem Spiel (Normal)</h2>
 <table><tr><th>Welle</th><th>Spiel (Logs)</th><th>Simulation (Mittel)</th></tr>{"".join(vergleich) or '<tr><td colspan="3">keine Ansagen in den Logs</td></tr>'}</table>
 <h2>Je Welle</h2>
-<p class="m">Mix = Anzahl {typen}. Q-Farbe: grün im Zielband, rot darüber, gelb darunter. Stufe = mittlere Turmstufe.
+<p class="m">Mix = Anzahl {typen}. Q-Farbe: grün im Zielband, rot darüber, gelb darunter. Level = mittleres Turmlevel (1–5, mit Coupons gekauft).
 <label>Stufe <select id="f"><option value="">alle</option>{"".join(f"<option>{s}</option>" for s in ergebnisse)}</select></label></p>
-<div class="scroll"><table><thead><tr><th>Stufe</th><th>Welle</th><th>Gegner</th><th>Elite</th><th>Fronten</th><th>LP</th><th>EHP</th><th>Türme</th><th>Mix</th><th>Stufe</th><th>K DPS</th><th>Q</th><th>Q p10–p90</th></tr></thead>
+<div class="scroll"><table><thead><tr><th>Stufe</th><th>Welle</th><th>Gegner</th><th>Elite</th><th>Fronten</th><th>LP</th><th>EHP</th><th>Türme</th><th>Mix</th><th>Level</th><th>K DPS</th><th>Q</th><th>Q p10–p90</th></tr></thead>
 <tbody>{"".join(zeilen)}</tbody></table></div>
 <script>
 document.getElementById('f').addEventListener('change', e => {{
@@ -529,17 +644,17 @@ def main():
                           steigung([r["Welle"] for r in ab5], [r["K"] for r in ab5]),
                           steigung([r["Welle"] for r in ab5], [r["Q"] for r in ab5]))
 
-    sp = Spieler(B, A, "Normal")
+    sp = Spieler(B, A, "Normal", ab_welle)
     wert = []
     for typ in A["Tuerme"]:
         m = A["Munition"][typ][0]
-        d = sp.dps({"Typ": typ, "Kills": 0})
+        d = sp.dps({"Typ": typ, "Level": 1}, m=m)
         wert.append((typ, m["Name"], d, sp.preis(typ), d / max(sp.preis(typ), 1)))
 
     os.makedirs(args.aus, exist_ok=True)
     with open(os.path.join(args.aus, "Simulation.csv"), "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f, delimiter=";")
-        spalten = ["Welle", "Gegner", "Elite", "Fronten", "LP", "EHP", "Tuerme", "Mix", "Stufe", "Forschung", "K", "Q", "Q_p10", "Q_p90"]
+        spalten = ["Welle", "Gegner", "Elite", "Fronten", "LP", "EHP", "Tuerme", "Mix", "Level", "Forschung", "K", "Q", "Q_p10", "Q_p90"]
         w.writerow(["Stufe"] + spalten)
         for st, zs in ergebnisse.items():
             for z in zs:

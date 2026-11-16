@@ -3,7 +3,7 @@ titel: Spielmodus Freies Spiel mit Abwehr (Bohrung)
 typ: neu
 modi: abwehr
 sichtbar: ja
-doku: nein
+doku: ja
 simulation: nein
 tests: Bohrung
 ---
@@ -12,7 +12,7 @@ tests: Bohrung
 
 **Warum:** Marius 15.11. nach `Notizen\Gegencheck-Normalspiel-Bericht.md`.
 
-**Offen:** Doku: Handbuch-FAQ und Spielregeln sind nachgezogen, Tester-Anleitung, Rückmeldebogen, Mod-Seite nicht. Simulation: Modell entsteht. Erstlohn-Merker liegt am Kern (Abriss aller Kerne setzt ihn zurück).
+**Offen:** Simulation: Modell entsteht.
 
 **Changelog EN:** New Game Mode “Free play with defense”: regular Satisfactory plus turrets and an optional drilling challenge at resource nodes – nothing attacks unless you start it.
 

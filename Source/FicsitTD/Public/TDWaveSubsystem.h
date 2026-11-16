@@ -372,7 +372,8 @@ public:
 	/** 0.9.6 (Marius' Partie 11.11.: ab Welle 6 hingen fast alle Gegner an einem Klippenpfeiler, den das Netz fuer begehbar hielt):
 	 *  genau diese Klippe als Sperrflaeche ins Netz nehmen. Nach dem Netzumbau pruefen, ob alle aktiven Frontwege noch voll sind -
 	 *  sonst die Sperre zuruecknehmen. Jede Klippe wird nur einmal versucht. */
-	bool SperreKlippe(AActor* Klippe);
+	/** 16.11. (W06): mit Stelle = kleiner Sperrkasten an der Probenstelle statt des ganzen Felsumrisses */
+	bool SperreKlippe(AActor* Klippe, const FVector* Stelle = nullptr);
 	/** 0.11 (Felspfeiler-Rest in G2, 15.11.: jeder Lauf 1x "Festgefahren" am selben CliffPillar_02_Top): vor der Welle den Frontweg
 	 *  mit einer Gegner-Kapsel abfahren; Klippen mit steiler Flaeche, an denen sie haengt, vorab sperren. Liefert die Zahl der Sperren. */
 	int32 ProbeWegKlippen(const TArray<FVector>& Weg, int32 Front);
@@ -383,6 +384,8 @@ private:
 	int32 mKlippenZurueck = 0;
 	/** 16.11. (W06: Sperre und Wellenstart im selben Frame): Klippensperren, deren Netzumbau noch nicht bestaetigt ist */
 	int32 mKlippenOffen = 0;
+	/** Mitten der Sperrkaesten (kein zweiter Kasten naeher als Gegner.KlippenProbe.SperrAbstand) */
+	TArray<FVector> mKlippenStellen;
 	/** Welle, fuer die die Frontpruefung vor dem Start schon lief */
 	int32 mFrontCheckWelle = -1;
 	/** so lange wartet der Wellenstart schon auf den Netzumbau; wie oft gewartet wurde (Log) */

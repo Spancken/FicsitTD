@@ -578,6 +578,16 @@ EExecutionStatus ATDDebugCommand::ExecuteCommand_Implementation(UCommandSender* 
 		{
 			Antwort(Sender, Waves->BrecheBohrungAb());
 		}
+		else if (Was == TEXT("abriss"))
+		{
+			// Selbsttest: Erstlohn und Rang gehoeren zum Spielstand, nicht zum Kern - naechsten Kern entfernen
+			if (Kern && !Waves->IstBohrung())
+			{
+				UE_LOG(LogFicsitTD, Log, TEXT("Bohrung: Testkern %s abgerissen (%d Bohr-Erfolge am Kern)"), *Kern->GetName(), Kern->mBohrErfolge.Num());
+				Kern->Destroy();
+				Antwort(Sender, TEXT("Abwehrkern entfernt."));
+			}
+		}
 		else if (Was == TEXT("leicht") || Was == TEXT("mittel") || Was == TEXT("schwer"))
 		{
 			FString Meldung;

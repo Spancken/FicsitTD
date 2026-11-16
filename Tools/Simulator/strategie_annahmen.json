@@ -319,5 +319,9 @@
   "SparWellen": {
     "Wert": 10,
     "Quelle": "Annahme Spielerverhalten (0.9.1): gespart wird nur, wenn die Kette höchstens so viele Wellen-Einkommen kostet. Mit 3 sparte der Spieler nie (Kette ~400-500 Coupons), deshalb 10"
+  },
+  "VerlustBezugKernLP": {
+    "Wert": 20000,
+    "Quelle": "16.11.2026: Die Verlustkurve (verlust_fit.py, 07.11.) ist an Einsaetzen der Stufe Normal gemessen, Kern-LP damals und heute 20000 (TDBalance.cpp Stufen.Normal.KernLP, seit 0.76 unveraendert). Verlust in % wird mit 20000 / Kern-LP der Stufe bzw. Bohrung umgerechnet; vorher galt fuer alle Stufen derselbe Prozentwert."
   }
 }

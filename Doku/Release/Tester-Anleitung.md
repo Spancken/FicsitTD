@@ -1,6 +1,6 @@
 # FICSIT Tower Defense – Playtest Guide / Anleitung für Tester (Alpha)
 
-> **Stand 0.10.2** (15.11.2026). Die gültigen Regeln stehen in `..\Spielregeln.md`, das Spielerhandbuch unter https://spancken.github.io/FicsitTD/. Bei jeder Version mit sichtbaren Änderungen hier nachziehen.
+> **Stand 0.10.2** (15.11.2026), ergänzt um die Spielmodi aus 0.11/0.12 (noch nicht veröffentlicht, Abschnitte „Other Game Modes“ / „Weitere Spielmodi“). Die gültigen Regeln stehen in `..\Spielregeln.md`, das Spielerhandbuch unter https://spancken.github.io/FicsitTD/. Bei jeder Version mit sichtbaren Änderungen hier nachziehen.
 
 *English first, Deutsch weiter unten.*
 
@@ -27,8 +27,15 @@
 6. Research new turrets, ammo and buildings in the **MAM** with Hard Drives. HUB milestones, blueprints and the AWESOME Sink are locked during an operation.
 7. **Pioneer:** you earn XP and ranks yourself. In the Pioneer tab spend talent points on four roles (Marksman, Commander, Engineer, Hunter). Your strongest role is shown at the top left of the HUD.
 
+### Other Game Modes (from 0.11, not yet released)
+- **Endless waves:** like Operation, but waves come on a timer and never end, always from one direction. The timer counts from the start of a wave; if you are too slow, the next wave comes on top. You can build at any time. After every boss wave: 5-minute break and a bonus at the Core. When the Core falls, the run ends with your best wave.
+- **Free play with defense:** regular Satisfactory with HUB and milestones, plus turrets and defense research in the MAM (paid with Coupons from the AWESOME Sink). Nothing attacks unless you start it: place a Defense Core next to an ore node and start a **drilling** in its menu (Easy, Medium, Hard). Every wave you hold gives ore; the first success per resource and level gives Hard Drives. Abort any time without penalty.
+- Existing saves: `/td modus abwehr` in the chat switches to Free play with defense.
+
 ### What we want to know
 - How far did you get (wave), how long did it take, which turrets did you use?
+- Endless waves: is the timer too hectic or too relaxed? At which wave did it break, and why (turrets, ammo, enemy type)?
+- Free play with defense: did the drilling feel worth it? Was it clear where to place the Core?
 - Fun (1–5), difficulty per section (waves 1–10, 11–20, 21–30, 31+), was it clear what to do?
 - Did the Pioneer matter? Which role did you pick?
 - Bugs: what happened, at which wave, screenshot if possible. Easiest: **Report bug / idea** in the Core Menu.
@@ -69,8 +76,15 @@ Full list in the handbook: https://spancken.github.io/FicsitTD/#issues (section 
 6. Neue Türme, Munition und Bauten im **MAM** mit Festplatten erforschen. HUB-Meilensteine, Blaupausen und der AWESOME-Sink sind im Einsatz gesperrt.
 7. **Pionier:** Du sammelst selbst XP und Ränge. Im Reiter Pionier verteilst du Talentpunkte auf vier Rollen (Schütze, Kommandant, Techniker, Jäger). Die stärkste Rolle steht oben links im HUD.
 
+### Weitere Spielmodi (ab 0.11, noch nicht veröffentlicht)
+- **Endlos-Wellen:** wie Einsatz, aber die Wellen kommen auf Zeit, enden nie und kommen immer aus einer Richtung. Die Uhr zählt ab Wellenbeginn; bist du zu langsam, kommt die nächste Welle obendrauf. Bauen geht jederzeit. Nach jeder Bosswelle: 5 Minuten Pause und ein Bonus am Kern. Fällt der Kern, endet der Lauf mit deinem Bestwert.
+- **Freies Spiel mit Abwehr:** normales Satisfactory mit HUB und Meilensteinen, dazu Türme und Abwehr-Forschung im MAM (bezahlt mit Coupons aus dem AWESOME-Sink). Nichts greift an, was du nicht startest: Stell einen Abwehrkern neben einen Erzknoten und starte in seinem Menü eine **Bohrung** (Leicht, Mittel, Schwer). Jede gehaltene Welle bringt Erz, der erste Erfolg je Rohstoff und Stufe Festplatten. Abbrechen geht jederzeit ohne Strafe.
+- Bestehende Spielstände: `/td modus abwehr` im Chat stellt auf Freies Spiel mit Abwehr um.
+
 ### Was wir wissen wollen
 - Bis zu welcher Welle, wie lange, welche Türme?
+- Endlos-Wellen: Ist die Uhr zu hektisch oder zu ruhig? In welcher Welle kippte es, und woran lag es (Türme, Munition, Gegnerart)?
+- Freies Spiel mit Abwehr: Hat sich die Bohrung gelohnt? War klar, wo der Kern hin muss?
 - Spaß (1–5), Schwierigkeit je Abschnitt (W1–10, 11–20, 21–30, ab 31), war klar, was zu tun ist?
 - Hat der Pionier etwas ausgemacht? Welche Rolle hast du gewählt?
 - Fehler: was, in welcher Welle, möglichst mit Screenshot. Am einfachsten über **Fehler melden / Idee** im Kern-Menü.

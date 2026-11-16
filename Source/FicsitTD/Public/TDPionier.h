@@ -123,6 +123,7 @@ public:
 	FString Uebersteuere(ATDTurretBase* Turm);
 
 private:
+	friend class ATDSpielstand;   // 0.12-dev: Abgleich des Spielstand-Fortschritts mit dem aktiven Kern
 	FSpielerBilanz mBilanz;
 	FSpielerBilanz mLetzte;
 	TSet<FString> mGemeldeteTreffer;

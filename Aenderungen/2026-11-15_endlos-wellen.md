@@ -3,7 +3,7 @@ titel: Spielmodus Endlos-Wellen
 typ: neu
 modi: endlos
 sichtbar: ja
-doku: nein
+doku: ja
 simulation: nein
 tests: Endlos, Endlos-Lang
 ---
@@ -12,7 +12,7 @@ tests: Endlos, Endlos-Lang
 
 **Warum:** Marius 15.11.; Gegencheck `Notizen\Gegencheck-Endlos-Wellen-Bericht.md`.
 
-**Offen:** Doku: Handbuch-FAQ und Spielregeln sind nachgezogen, Tester-Anleitung, Rückmeldebogen und Mod-Seite noch nicht. Simulation: Modell für Endlos entsteht (`Tools\Simulator`). Langlauf kippte vor dem Gegencheck in Welle 12; nach den Änderungen nicht erneut gemessen.
+**Offen:** Simulation: Modell für Endlos entsteht (`Tools\Simulator`). Langlauf kippte vor dem Gegencheck in Welle 12; nach den Änderungen nicht erneut gemessen.
 
 **Changelog EN:** New Game Mode “Endless waves”: timed waves from one direction that never stop – build and keep your turrets supplied.
 
