@@ -1,0 +1,106 @@
+{
+  "Name": "Nachpruefung",
+  "_Hinweis": "16.11. abends: Nachweise aus der Nachpruefung der Spielmodi im Spiel - Kern-Bonus +10 % als Knopftext, Kernreparatur nach Niederlage gesperrt, nach 'Einsatz beenden' bleibt die Welt frei (Merkmal im Spielstand).",
+  "NeuesSpiel": {
+    "Startort": "Grass Fields",
+    "Modus": 1
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 15,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warteBis": "EinsatzAktiv",
+      "max": 120
+    },
+    {
+      "befehl": "td einsatz frei an"
+    },
+    {
+      "stromfrei": true
+    },
+    {
+      "versorgung": {
+        "Bolzenturm": 150
+      }
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 12,
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "befehl": "td einsatz frei aus"
+    },
+    {
+      "befehl": "td kern springe 10"
+    },
+    {
+      "zeitraffer": 4
+    },
+    {
+      "wellenlauf": 10
+    },
+    {
+      "zeitraffer": 1
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Einsatz: Bonuswahl nach Bosswelle 10",
+      "min": 1,
+      "text": "Bonuswahl nach Phase 1"
+    },
+    {
+      "oeffne": "Kern"
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Bonus_KernMax"
+    },
+    {
+      "schliesse": true
+    },
+    {
+      "kernfaellt": true
+    },
+    {
+      "warte": 3
+    },
+    {
+      "endeknopf": "beenden"
+    },
+    {
+      "warte": 2
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Einsatz beendet: Spielstand frei, kein neuer Einsatz",
+      "min": 1,
+      "text": "Welt nach Einsatz-Ende frei (Merkmal gesetzt)"
+    },
+    {
+      "oeffne": "Kern"
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Nach_Einsatz_Ende"
+    },
+    {
+      "schliesse": true
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}
