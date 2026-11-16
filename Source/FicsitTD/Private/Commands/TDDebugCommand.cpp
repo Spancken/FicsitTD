@@ -1,4 +1,4 @@
-﻿#include "Commands/TDDebugCommand.h"
+#include "Commands/TDDebugCommand.h"
 #include "Command/CommandSender.h"
 #include "Misc/CommandLine.h"
 #include "Misc/Paths.h"
@@ -19,6 +19,7 @@
 #include "TDEinsatz.h"
 #include "TDBalance.h"
 #include "TDWaveSubsystem.h"
+#include "TDAda.h"
 #include "FGRecipe.h"
 #include "Buildables/FGBuildable.h"
 #include "FGBuildableSubsystem.h"
@@ -987,6 +988,18 @@ EExecutionStatus ATDDebugCommand::ExecuteCommand_Implementation(UCommandSender* 
 	// /td ada: ADA-Begruessung erneut abspielen (0.69.4)
 	if (Arguments[0].Equals(TEXT("ada"), ESearchCase::IgnoreCase))
 	{
+		// 0.12-dev: /td ada liste | /td ada <Schluessel> (Ansagen bei neuen Gegnern und Bossen pruefen)
+		if (Arguments.Num() > 1 && Arguments[1].Equals(TEXT("liste"), ESearchCase::IgnoreCase))
+		{
+			Antwort(Sender, FString::Join(TDAda::Schluessel(), TEXT(", ")));
+			return EExecutionStatus::COMPLETED;
+		}
+		if (Arguments.Num() > 1 && TDAda::Schluessel().ContainsByPredicate([&](const FString& K) { return K.Equals(Arguments[1], ESearchCase::IgnoreCase); }))
+		{
+			const FString Key = TDAda::Schluessel().FindByPredicate([&](const FString& K) { return K.Equals(Arguments[1], ESearchCase::IgnoreCase); })[0];
+			TDAda::Sage(this, nullptr, Key);
+			return EExecutionStatus::COMPLETED;
+		}
 		if (Arguments.Num() > 1 && Arguments[1].Equals(TEXT("bank"), ESearchCase::IgnoreCase))
 		{
 			Antwort(Sender, UTDKernplatz::PruefeWwiseInitBank());

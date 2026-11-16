@@ -3,6 +3,7 @@
 #include "TDSprache.h"
 #include "SessionSettings/SessionSetting.h"
 #include "Settings/FGUserSetting.h"
+#include "Settings/FGUserSettingCategory.h"   // 16.11.: kam bisher nur zufaellig ueber die Unity-Gruppe mit
 #include "UObject/ConstructorHelpers.h"
 
 const TCHAR* UTDGameInstanceModule::TowerDefenseId = TEXT("FicsitTD.TowerDefense");

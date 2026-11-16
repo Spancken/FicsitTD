@@ -63,6 +63,10 @@ Die Konsistenzprüfung (`Tests\pruefe_konsistenz.py`) prüft:
 - Handbuch: gleich viele deutsche wie englische Abschnitte.
 - Testpläne aus den Zetteln vorhanden.
 
+## 4a. Testfenster (Marius 16.11.)
+
+Kein Testen von Fehler zu Fehler. Zwischen den Testfenstern läuft nur `Pipeline.ps1 -OhneSpiel` (Build, Prüfungen, Simulation) – kein Spielstart. Ein Testfenster gibt Marius frei; was darin läuft, steht vorher im Fahrplan (`Satisfactory\Notizen\Fahrplan-<Version>-*.md`, Abschnitt Testfenster), danach kommt ein Bericht mit allen Befunden. Befunde werden gesammelt (Befundliste im Fahrplan) und im nächsten Fenster mitgetestet; nach zwei erfolglosen Anläufen entscheidet Marius (bekannter Fehler oder Experiment).
+
 ## 5. Release
 
 1. `entwicklung` ist grün in **Voll**, Thema(s) fertig. Version in `FicsitTD.uplugin` erhöhen.

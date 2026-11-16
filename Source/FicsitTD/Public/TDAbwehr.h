@@ -29,6 +29,9 @@ private:
 	void TauscheKosten();
 	void StelleKostenWiederHer();
 	void ZieheIndustrieNach();
+	/** 16.11.: Hazmat-Anzug und Iod-Filter mit der Forschung Singularitaet (alle Modi) */
+	void SchalteStrahlenschutzFrei();
+	bool mStrahlenschutz = false;
 
 	FTimerHandle mTimer;
 	bool mGetauscht = false;

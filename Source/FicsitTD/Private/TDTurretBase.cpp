@@ -1,4 +1,5 @@
 #include "TDTurretBase.h"
+#include "FGRadioactivitySubsystem.h"
 #include "TDPionier.h"
 #include "TDGegnerHirn.h"
 #include "TDForschung.h"
@@ -1230,6 +1231,24 @@ void ATDTurretBase::Spielschritt()
 	// 0.9.6 (Gesamtreview 12.11., C): Takt-Bonus hier auf dem Spiel-Thread lesen (folgt auch /td balance neu)
 	mTaktBonusCache.store(TaktBonus());
 	ZeigeStufenTeile();
+	// 16.11. (Marius: Singularitaetswerfer strahlt): das Munitionslager der Tuerme ist abgeschirmt - radioaktive Munition (Ficsonium,
+	// Uran) strahlt nur beim Transport. Das Inventar meldet sich bei jeder Aenderung neu als Strahlungsquelle, deshalb je Sekunde entfernen.
+	mAbschirmUhr += TurmSchrittIntervall;
+	if (mAbschirmUhr >= 1.f && TDBalance::Wert(TEXT("Tuerme.Abgeschirmt"), 1.f) > 0.f)
+	{
+		mAbschirmUhr = 0.f;
+		if (AFGRadioactivitySubsystem* Strahlung = AFGRadioactivitySubsystem::Get(GetWorld()))
+		{
+			for (UFGInventoryComponent* Lager : { GetInputInventory(), GetOutputInventory() })
+			{
+				if (Lager)
+				{
+					Strahlung->RemoveEmitters(Lager);
+				}
+			}
+			Strahlung->RemoveEmitters(this);
+		}
+	}
 	// Forschung Munitionspuffer: Eingang fasst die doppelte Stapelgroesse (einmal je Munitionssorte setzen)
 	if (UFGInventoryComponent* Eingang = GetInputInventory())
 	{

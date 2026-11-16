@@ -55,11 +55,16 @@ if ($Stufe -eq "Release" -and $zweig -notin @("entwicklung", "master")) { $Offen
 # ---- S1 G0 Build (fuehrt pruefe_mod.py aus)
 Schritt "G0 Build + statische Pruefung" {
     $buildArgs = @{ Mod = "FicsitTD" }; if (-not $MitEditor) { $buildArgs.SkipEditor = $true }
-    $ausgabe = & (Join-Path $Skill "Build-Mod.ps1") @buildArgs *>&1 | ForEach-Object { "$_" }
+    # 16.11.: Build-Mod wirft bei Fehlern (ErrorActionPreference Stop) - abfangen, sonst bricht die ganze Pipeline ohne Bericht ab
+    $abbruch = $null
+    $ausgabe = try { & (Join-Path $Skill "Build-Mod.ps1") @buildArgs *>&1 | ForEach-Object { "$_" } } catch { $abbruch = "$_"; @() }
+    $ok = -not $abbruch -and $LASTEXITCODE -eq 0
     $ausgabe | Set-Content (Join-Path $Aus "build.log") -Encoding utf8
     $fehlerZeilen = $ausgabe | Select-String "FEHLER:| error " | Select-Object -First 3 | ForEach-Object { $_.Line.Trim() }
-    [pscustomobject]@{ Ok = ($LASTEXITCODE -eq 0); Ist = $(if ($LASTEXITCODE -eq 0) { "BUILD SUCCESSFUL" } else { ($fehlerZeilen -join " | ") }) }
+    if (-not $ok) { $script:BuildRot = $true }
+    [pscustomobject]@{ Ok = $ok; Ist = $(if ($ok) { "BUILD SUCCESSFUL" } elseif ($abbruch) { "$abbruch (Log: E:\Modding\Logs\package-FicsitTD.log)" } else { ($fehlerZeilen -join " | ") }) }
 }
+if ($script:BuildRot) { $Offen.Add("Build rot - Selbsttests uebersprungen (sie wuerden den alten Stand pruefen)"); $OhneSpiel = $true }
 
 # ---- S2 Konsistenz Code/Doku/Simulation/Tests
 Schritt "Konsistenz (Zettel, Doku, Simulation, Experimente$(if ($Stufe -eq 'Release') { ', Versionen' }))" {

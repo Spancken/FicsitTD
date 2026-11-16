@@ -402,6 +402,8 @@ private:
 	float mUebersteuernBis = -1.f;
 	float mUebersteuernPauseBis = -1.f;
 	FTimerHandle mSpielTimer;
+	/** 16.11.: Abschirmung des Munitionslagers (Strahlungsquellen je Sekunde entfernen) */
+	float mAbschirmUhr = 0.f;
 	FTimerHandle mZielTimer;
 	/** T2f: seit der letzten Drehung vergangene Zeit (Drehtakt) */
 	float mDrehZeit = 0.f;

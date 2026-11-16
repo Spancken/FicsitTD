@@ -42,6 +42,13 @@
       "text": "Lauf mit Countdown gestartet (nicht manuell)"
     },
     {
+      "pruefe": "LogEnthaelt",
+      "suche": "ADA-Ansage Hog",
+      "min": 1,
+      "max": 1,
+      "text": "ADA kuendigt die erste Gegnerart einmal an"
+    },
+    {
       "foto": "Endlos_Start"
     },
     {

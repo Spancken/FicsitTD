@@ -4,7 +4,7 @@ typ: neu
 modi: abwehr
 sichtbar: ja
 doku: ja
-simulation: nein
+simulation: ja
 tests: Bohrung
 ---
 
@@ -12,7 +12,7 @@ tests: Bohrung
 
 **Warum:** Marius 15.11. nach `Notizen\Gegencheck-Normalspiel-Bericht.md`.
 
-**Offen:** Simulation: Modell entsteht.
+**Offen:** Simulation: `sim_modi.py` (Mittel/Schwer im Modell mit Bolzentürmen zu schwer).
 
 **Changelog EN:** New Game Mode “Free play with defense”: regular Satisfactory plus turrets and an optional drilling challenge at resource nodes – nothing attacks unless you start it.
 

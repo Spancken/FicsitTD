@@ -1,4 +1,5 @@
 #include "TDWaveSubsystem.h"
+#include "TDAda.h"
 #include "Components/BoxComponent.h"
 #include "Engine/StaticMeshActor.h"
 #include "NavModifierComponent.h"
@@ -1254,6 +1255,7 @@ bool UTDWaveSubsystem::StarteKernVerteidigung(ATDDefenseCore* Kern, int32 Wellen
 	const FTDStufe& S = GetStufe(mStufe);
 	mKern = Kern;
 	Kern->mLaufEnde = 0;   // 0.9.6: neuer Durchgang, Ende-Auswahl im Kern-Menue weg
+	Kern->mAdaGesagt.Reset();   // 0.12-dev: ADA-Ansagen je Lauf einmal
 	Kern->SetzeMaxLP(S.KernLP);
 	Kern->Aufladen();
 	mWelle = 0;
@@ -2855,6 +2857,8 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 		{
 			mVorgeladenFuer = mWelle + 1;
 			PlaneWelle(mWelle + 1);
+			// 0.12-dev (Marius 16.11.): ADA meldet neue Gegnerarten und Bosse der naechsten Welle zu Beginn der Bauphase
+			TDAda::VorWelle(this, mKern.Get(), mWelle + 1, mPlan);
 			const double Start = FPlatformTime::Seconds();
 			int32 Neu = 0;
 			for (const FTDKatalogEintrag& E : KernKatalog)
@@ -3372,7 +3376,7 @@ int32 UTDWaveSubsystem::ProbeWegKlippen(const TArray<FVector>& Weg, int32 Front)
 					continue;
 				}
 				// 16.11. (W06): je Stelle ein kleiner Sperrkasten - eine Stelle, die schon ein Kasten abdeckt, nicht erneut melden
-				const float SperrAbstand = TDBalance::Wert(TEXT("Gegner.KlippenProbe.SperrAbstand"), 6.f) * 100.f;
+				const float SperrAbstand = TDBalance::Wert(TEXT("Gegner.KlippenProbe.SperrAbstand"), 8.f) * 100.f;
 				if (mKlippenStellen.ContainsByPredicate([&H, SperrAbstand](const FVector& P) { return FVector::Dist(P, H.ImpactPoint) < SperrAbstand; }))
 				{
 					continue;
@@ -3412,9 +3416,9 @@ bool UTDWaveSubsystem::SperreKlippe(AActor* Klippe, const FVector* Stelle)
 	if (Stelle)
 	{
 		// Kasten um die Probenstelle: so gross, dass ein Hog seitlich nicht hineinlaeuft, aber kein begehbarer Boden daneben
-		const float R = TDBalance::Wert(TEXT("Gegner.KlippenProbe.SperrRadius"), 6.f) * 100.f;
+		const float R = TDBalance::Wert(TEXT("Gegner.KlippenProbe.SperrRadius"), 10.f) * 100.f;
 		Mitte = *Stelle;
-		Halb = FVector(R, R, R * 0.7f);
+		Halb = FVector(R, R, R);   // 16.11. (BautenP2: ein Kasten mit 7 m halber Hoehe liess das Netz am Rand stehen)
 	}
 	if (mKlippenGesperrt >= (int32)TDBalance::Wert(TEXT("Gegner.KlippenSperrenMax"), 12.f))
 	{
@@ -3454,8 +3458,14 @@ bool UTDWaveSubsystem::SperreKlippe(AActor* Klippe, const FVector* Stelle)
 		Box->SetAreaClassOverride(UNavArea_Null::StaticClass());
 		Box->SetCanEverAffectNavigation(true);
 		Kasten->SetRootComponent(Box);
-		Box->RegisterComponent();
+		// 16.11. (BautenP2: Hog hing mitten im Kasten): Ort VOR dem Anmelden setzen und danach ausdruecklich im Navigations-Octree
+		// eintragen - sonst kennt das Netz den Kasten womoeglich am Ursprung
 		Box->SetWorldLocation(Mitte);
+		Box->RegisterComponent();
+		if (UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld()))
+		{
+			NavSys->UpdateComponentInNavOctree(*Box);
+		}
 		Kasten->Tags.Add(TEXT("TDKlippenKasten"));
 		mKlippenStellen.Add(Mitte);
 	}
@@ -3528,6 +3538,18 @@ void UTDWaveSubsystem::PruefeKlippenSperre(TWeakObjectPtr<AActor> Klippe, int32 
 		}
 		UE_LOG(LogFicsitTD, Log, TEXT("Klippensperre bestaetigt (nach %d Warterunden): Frontwege weiter voll - %s; %d Gegner neu geplant"),
 			Versuch, *FString::Join(Teile, TEXT(", ")), NeuGeplant);
+		// Messpunkt (16.11.): wirkt der Sperrkasten im Netz? Die Kastenmitte darf nach dem Umbau nicht mehr auf dem Netz liegen
+		for (TActorIterator<AActor> It(World); It; ++It)
+		{
+			if (It->GetOwner() == K && It->Tags.Contains(TEXT("TDKlippenKasten")))
+			{
+				FNavLocation Auf;
+				const bool bAufNetz = Nav->ProjectPointToNavigation(It->GetActorLocation(), Auf, FVector(300.f, 300.f, 1500.f));
+				UE_LOG(LogFicsitTD, Log, TEXT("Sperrkasten bei %s wirkt: %s"), *It->GetActorLocation().ToCompactString(),
+					bAufNetz ? *FString::Printf(TEXT("NEIN (Netz %.0f m daneben, Versatz %s)"), FVector::Dist(Auf.Location, It->GetActorLocation()) / 100.f,
+						*((Auf.Location - It->GetActorLocation()) / 100.f).ToCompactString()) : TEXT("ja"));
+			}
+		}
 		return;
 	}
 	TArray<UNavModifierComponent*> Mods;

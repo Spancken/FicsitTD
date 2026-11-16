@@ -12,6 +12,8 @@
 #include "ItemAmount.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
+#include "AssetRegistry/IAssetRegistry.h"
+#include "AssetRegistry/AssetData.h"
 #include "TDForschung.h"
 
 /** Knoten des Baums "Industrie" (create_research.py, BAEUME[0]) und ihre Schematic-Pfade */
@@ -76,6 +78,7 @@ void UTDAbwehrSubsystem::Deinitialize()
 
 void UTDAbwehrSubsystem::Pruefe()
 {
+	SchalteStrahlenschutzFrei();
 	if (!UTDKernplatz::IstAbwehr(this))
 	{
 		StelleKostenWiederHer();
@@ -87,6 +90,49 @@ void UTDAbwehrSubsystem::Pruefe()
 	{
 		Stand->Gleiche();
 	}
+}
+
+void UTDAbwehrSubsystem::SchalteStrahlenschutzFrei()
+{
+	// 16.11. (Marius: Singularitaetswerfer strahlt): mit der Forschung Singularitaet kommen Hazmat-Anzug und Iod-Filter des Spiels
+	// (sonst ueber den HUB, im Einsatz gesperrt). Gilt in allen Modi; Rezepte nach Namen in der Asset-Registry gesucht.
+	if (mStrahlenschutz || !UTDKernplatz::ModAktiv(this) || !TDForschung::Hat(this, TEXT("Singularitaet")))
+	{
+		return;
+	}
+	mStrahlenschutz = true;
+	AFGRecipeManager* Rezepte = AFGRecipeManager::Get(GetWorld());
+	if (!Rezepte)
+	{
+		mStrahlenschutz = false;
+		return;
+	}
+	IAssetRegistry* Registry = IAssetRegistry::Get();
+	if (!Registry)
+	{
+		mStrahlenschutz = false;
+		return;
+	}
+	TArray<FAssetData> Gefunden;
+	Registry->GetAssetsByPath(FName(TEXT("/Game/FactoryGame/Recipes")), Gefunden, true);
+	TArray<FString> Namen;
+	for (const FAssetData& A : Gefunden)
+	{
+		const FString Name = A.AssetName.ToString();
+		if (!Name.StartsWith(TEXT("Recipe_")) || !Name.Contains(TEXT("Hazmat")))
+		{
+			continue;
+		}
+		if (UClass* Rezept = LoadClass<UFGRecipe>(nullptr, *FString::Printf(TEXT("%s.%s_C"), *A.PackageName.ToString(), *Name)))
+		{
+			if (!Rezepte->IsRecipeAvailable(Rezept))
+			{
+				Rezepte->AddAvailableRecipe(Rezept);
+			}
+			Namen.Add(Name);
+		}
+	}
+	UE_LOG(LogFicsitTD, Log, TEXT("Strahlenschutz: %d Rezepte freigeschaltet (%s)"), Namen.Num(), *FString::Join(Namen, TEXT(", ")));
 }
 
 void UTDAbwehrSubsystem::TauscheKosten()

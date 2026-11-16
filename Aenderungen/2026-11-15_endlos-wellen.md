@@ -4,7 +4,7 @@ typ: neu
 modi: endlos
 sichtbar: ja
 doku: ja
-simulation: nein
+simulation: ja
 tests: Endlos, Endlos-Lang
 ---
 
@@ -12,7 +12,7 @@ tests: Endlos, Endlos-Lang
 
 **Warum:** Marius 15.11.; Gegencheck `Notizen\Gegencheck-Endlos-Wellen-Bericht.md`.
 
-**Offen:** Simulation: Modell für Endlos entsteht (`Tools\Simulator`). Langlauf kippte vor dem Gegencheck in Welle 12; nach den Änderungen nicht erneut gemessen.
+**Offen:** Simulation `Tools\Simulator\sim_modi.py`: Endlos Normal kippt im Modell ab W14 (Ziel W20–60), nach W50 kippt nichts mehr – Balance-Arbeit. Langlauf kippte vor dem Gegencheck in Welle 12; nach den Änderungen nicht erneut gemessen.
 
 **Changelog EN:** New Game Mode “Endless waves”: timed waves from one direction that never stop – build and keep your turrets supplied.
 

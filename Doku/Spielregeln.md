@@ -41,6 +41,7 @@
    - Der Mod wählt einen von drei festen Kernplätzen im Startbiom.
    - Dort baut er eine Plattform aus Spielfundamenten (6 × 6, 1 m erhöht, Rampenring mit Ecken) und räumt den Bewuchs in 60 m Umkreis.
    - Dann setzt er den Abwehrkern, startet den Einsatz und spielt die ADA-Begrüßung (Deutsch/Englisch).
+   - *(0.12-dev, Marius 16.11.)* ADA meldet sich zu Beginn der Bauphase vor einer Welle mit neuer Gegnerart oder Boss mit einem kurzen Satz (Stimme + ADA-Zeile im Chat, je Lauf einmal, ab W60 ein kurzer Satz je Bosswelle; `TDAda.cpp`, abschaltbar `ADA.Ansagen 0`). Gilt in allen Modi mit Wellen, auch in der Bohrung.
 2. **Aufbauphase:** Ohne Zeitdruck. Die Welle startet mit dem Knopf „Welle starten“ im Kern-Menü (oder `/td kern weiter`); vorher prüft der Kern die Versorgung der Türme. Gebaut wird mit dem Startkontingent und mit gekauften Kontingenten. Meilensteine am HUB sind im Einsatz gesperrt, neue Technik gibt es nur im MAM. Blaupausen sind im Einsatz nicht erlaubt (Marius 12.11.).
 3. **Welle:**
    - Die Gegner kommen aus 1–3 Fronten und laufen auf Navigationswegen zum Kern.

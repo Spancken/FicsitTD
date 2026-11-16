@@ -1,4 +1,5 @@
-﻿#include "TDKernplatz.h"
+#include "TDKernplatz.h"
+#include "TDAda.h"
 #include "FicsitTDModule.h"
 #include "TDDefenseCore.h"
 #include "TDWaveSubsystem.h"
@@ -1686,6 +1687,7 @@ bool UTDKernplatz::SpieleBegruessung(const UObject* WorldContext, APawn* Spieler
 		: TEXT("/FicsitTD/Audio/SW_TD_Begruessung_en.SW_TD_Begruessung_en")))
 	{
 		UGameplayStatics::PlaySound2D(World ? World : Spieler->GetWorld(), Ton, 1.f, 1.f, 0.f, nullptr, nullptr, true);
+		TDAda::Belege(World ? World : Spieler->GetWorld(), Ton->GetDuration());   // 16.11.: Ansagen warten auf das Ende der Begruessung
 		UE_LOG(LogFicsitTD, Log, TEXT("ADA-Begruessung: Ton %s (%.1f s) ueber Unreal-Audio"), *Ton->GetName(), Ton->GetDuration());
 	}
 	UE_LOG(LogFicsitTD, Log, TEXT("ADA-Begruessung abgespielt (%d Untertitel)"), Nachricht->GetSubtitles().Num());

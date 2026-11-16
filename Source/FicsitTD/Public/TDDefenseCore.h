@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "CoreMinimal.h"
 #include "Buildables/FGBuildable.h"
@@ -73,6 +73,9 @@ public:
 	/** 0.12-dev Freies Spiel mit Abwehr: laeuft am Kern gerade eine Bohrung (wird nach dem Laden ohne Strafe beendet) */
 	UPROPERTY(SaveGame)
 	bool mLaufBohrung = false;
+	/** 0.12-dev: ADA-Ansagen, die in diesem Lauf schon kamen (TDAda) */
+	UPROPERTY(SaveGame)
+	TArray<FString> mAdaGesagt;
 	/** Erste Erfolge der Bohrung je Rohstoff und Stufe ("<Rohstoff-Klassenpfad>|<Stufe>") - Erstlohn nur einmal */
 	UPROPERTY(SaveGame)
 	TArray<FString> mBohrErfolge;
