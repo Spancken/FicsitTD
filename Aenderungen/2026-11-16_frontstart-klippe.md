@@ -4,7 +4,7 @@ typ: behoben
 modi: einsatz, endlos, abwehr
 sichtbar: nein
 doku: ja
-simulation: nein
+simulation: ja
 tests: Strat-Gewehr-Tesla, Endlos-Lang
 ---
 
