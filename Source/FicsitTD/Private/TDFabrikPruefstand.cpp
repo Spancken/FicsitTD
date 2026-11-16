@@ -75,7 +75,7 @@ namespace
 }
 
 bool TDFabrik::BaueLinie(UWorld* World, ATDDefenseCore* Kern, const FString& Linie, int32 Tuerme, int32 Level, int32 BandMk,
-	TArray<TWeakObjectPtr<AFGBuildable>>& OutBauten, TArray<FString>& OutBericht)
+	TArray<TWeakObjectPtr<AFGBuildable>>& OutBauten, TArray<FString>& OutBericht, int32 Ketten)
 {
 	if (!World || !Kern)
 	{
@@ -106,33 +106,8 @@ bool TDFabrik::BaueLinie(UWorld* World, ATDDefenseCore* Kern, const FString& Lin
 	}
 	const FVector KernOrt = Kern->GetActorLocation();
 
-	// B1: naechster freier fester Eisenerz-Knoten (keine Brocken) bis 150 m
-	AFGResourceNode* Knoten = nullptr;
-	float Bester = 15000.f;
-	for (TActorIterator<AFGResourceNode> It(World); It; ++It)
-	{
-		const TSubclassOf<UFGResourceDescriptor> Art = It->GetResourceClass();
-		if (!Art || It->IsA<AFGResourceDeposit>() || It->IsOccupied() || !Art->GetName().Contains(ErzName))
-		{
-			continue;
-		}
-		const float D = FVector::Dist2D(It->GetActorLocation(), KernOrt);
-		if (D < Bester)
-		{
-			Bester = D;
-			Knoten = *It;
-		}
-	}
-	if (!Knoten)
-	{
-		OutBericht.Add(TEXT("kein freier Eisenerz-Knoten bis 150 m"));
-		return false;
-	}
-	const FVector Richtung = (FVector(Knoten->GetActorLocation().X, Knoten->GetActorLocation().Y, KernOrt.Z) - KernOrt).GetSafeNormal2D();
-	const FVector Quer = FVector(-Richtung.Y, Richtung.X, 0.f);
-	const FRotator Dreh = Richtung.Rotation();
-	OutBericht.Add(FString::Printf(TEXT("Knoten %s %.0f m vom Kern"), *Knoten->GetName(), Bester / 100.f));
-
+	// 16.11. abends (Befund B18): bis zu drei parallele Ketten, je eigener Miner auf dem naechsten freien Eisenknoten,
+	// zusammengefuehrt ueber einen Verbinder - misst, wie viel Fabrik eine Turmgruppe braucht
 	int32 Baender = 0, BandFehler = 0;
 	auto Verbinde = [&](AActor* Von, AActor* Nach, int32 AusIndex = 0) -> bool
 	{
@@ -155,43 +130,102 @@ bool TDFabrik::BaueLinie(UWorld* World, ATDDefenseCore* Kern, const FString& Lin
 		OutBauten.Add(B);
 		return true;
 	};
-
-	// B2: Miner auf dem Knoten
-	AFGBuildable* MinerBau = Setze(World, MinerKlasse, FTransform(Dreh, Knoten->GetActorLocation()), [Knoten](AFGBuildable* B)
+	const int32 KettenZahl = FMath::Clamp(Ketten, 1, 3);
+	TArray<AActor*> Enden;
+	FVector Richtung = FVector::ForwardVector;
+	for (int32 c = 0; c < KettenZahl; ++c)
 	{
-		if (AFGBuildableResourceExtractorBase* X = Cast<AFGBuildableResourceExtractorBase>(B))
+		// B1: naechster freier fester Eisenerz-Knoten (keine Brocken) bis 150 m
+		AFGResourceNode* Knoten = nullptr;
+		float Bester = 15000.f;
+		for (TActorIterator<AFGResourceNode> It(World); It; ++It)
 		{
-			X->SetExtractableResource(TScriptInterface<IFGExtractableResourceInterface>(Knoten));
+			const TSubclassOf<UFGResourceDescriptor> Art = It->GetResourceClass();
+			if (!Art || It->IsA<AFGResourceDeposit>() || It->IsOccupied() || !Art->GetName().Contains(ErzName))
+			{
+				continue;
+			}
+			const float D = FVector::Dist2D(It->GetActorLocation(), KernOrt);
+			if (D < Bester)
+			{
+				Bester = D;
+				Knoten = *It;
+			}
 		}
-	});
-	if (!MinerBau)
-	{
-		OutBericht.Add(TEXT("Miner nicht gebaut"));
-		return false;
-	}
-	OutBauten.Add(MinerBau);
-
-	// B3: Maschinen auf einer Linie zwischen Kern und Knoten, 30 m vom Kern an, je 14 m
-	AActor* Vorher = MinerBau;
-	const float Abstand = FMath::Min(Bester - 2500.f, 3000.f + 1400.f * UE_ARRAY_COUNT(Kette));
-	for (int32 i = 0; i < UE_ARRAY_COUNT(Kette); ++i)
-	{
-		const FVector Ort = Boden(World, KernOrt + Richtung * (Abstand - 1400.f * i));
-		UClass* Klasse = LoadClass<AFGBuildable>(nullptr, Kette[i].Maschine);
-		UClass* Rezept = LoadClass<UFGRecipe>(nullptr, Kette[i].Rezept);
-		AFGBuildable* M = Setze(World, Klasse, FTransform(Dreh + FRotator(0.f, 180.f, 0.f), Ort), [](AFGBuildable*) {});
-		if (!M || !Rezept)
+		if (!Knoten)
 		{
-			OutBericht.Add(FString::Printf(TEXT("Stufe %d nicht gebaut (Maschine %d, Rezept %d)"), i + 1, M != nullptr, Rezept != nullptr));
+			OutBericht.Add(FString::Printf(TEXT("Kette %d: kein freier Eisenerz-Knoten bis 150 m"), c + 1));
+			break;
+		}
+		const FVector R = (FVector(Knoten->GetActorLocation().X, Knoten->GetActorLocation().Y, KernOrt.Z) - KernOrt).GetSafeNormal2D();
+		// Ketten zum selben Knoten-Gebiet nebeneinander (je 12 m seitlich), damit sich die Maschinen nicht ueberlagern
+		const FVector Seite = FVector(-R.Y, R.X, 0.f) * (1200.f * c);
+		if (c == 0)
+		{
+			Richtung = R;
+		}
+		const FRotator DrehK = R.Rotation();
+		OutBericht.Add(FString::Printf(TEXT("Kette %d: Knoten %s %.0f m vom Kern"), c + 1, *Knoten->GetName(), Bester / 100.f));
+		// B2: Miner auf dem Knoten
+		AFGBuildable* MinerBau = Setze(World, MinerKlasse, FTransform(DrehK, Knoten->GetActorLocation()), [Knoten](AFGBuildable* B)
+		{
+			if (AFGBuildableResourceExtractorBase* X = Cast<AFGBuildableResourceExtractorBase>(B))
+			{
+				X->SetExtractableResource(TScriptInterface<IFGExtractableResourceInterface>(Knoten));
+			}
+		});
+		if (!MinerBau)
+		{
+			OutBericht.Add(TEXT("Miner nicht gebaut"));
 			return false;
 		}
-		if (AFGBuildableManufacturer* Fab = Cast<AFGBuildableManufacturer>(M))
+		OutBauten.Add(MinerBau);
+		// B3: Maschinen auf einer Linie zwischen Kern und Knoten, 30 m vom Kern an, je 14 m
+		AActor* VorherK = MinerBau;
+		const float Abstand = FMath::Min(Bester - 2500.f, 3000.f + 1400.f * UE_ARRAY_COUNT(Kette));
+		for (int32 i = 0; i < UE_ARRAY_COUNT(Kette); ++i)
 		{
-			Fab->SetRecipe(Rezept);
+			const FVector Ort = Boden(World, KernOrt + R * (Abstand - 1400.f * i) + Seite);
+			UClass* Klasse = LoadClass<AFGBuildable>(nullptr, Kette[i].Maschine);
+			UClass* Rezept = LoadClass<UFGRecipe>(nullptr, Kette[i].Rezept);
+			AFGBuildable* M = Setze(World, Klasse, FTransform(DrehK + FRotator(0.f, 180.f, 0.f), Ort), [](AFGBuildable*) {});
+			if (!M || !Rezept)
+			{
+				OutBericht.Add(FString::Printf(TEXT("Stufe %d nicht gebaut (Maschine %d, Rezept %d)"), i + 1, M != nullptr, Rezept != nullptr));
+				return false;
+			}
+			if (AFGBuildableManufacturer* Fab = Cast<AFGBuildableManufacturer>(M))
+			{
+				Fab->SetRecipe(Rezept);
+			}
+			OutBauten.Add(M);
+			Verbinde(VorherK, M);
+			VorherK = M;
 		}
-		OutBauten.Add(M);
-		Verbinde(Vorher, M);
-		Vorher = M;
+		Enden.Add(VorherK);
+	}
+	if (Enden.Num() == 0)
+	{
+		return false;
+	}
+	const FVector Quer = FVector(-Richtung.Y, Richtung.X, 0.f);
+	const FRotator Dreh = Richtung.Rotation();
+	AActor* Vorher = Enden[0];
+	if (Enden.Num() > 1)
+	{
+		UClass* VerbinderKlasse = LoadClass<AFGBuildable>(nullptr, TEXT("/Game/FactoryGame/Buildable/Factory/CA_Merger/Build_ConveyorAttachmentMerger.Build_ConveyorAttachmentMerger_C"));
+		AFGBuildable* V = Setze(World, VerbinderKlasse, FTransform(Dreh + FRotator(0.f, 180.f, 0.f), Boden(World, KernOrt + Richtung * 2900.f) + FVector(0.f, 0.f, 100.f)), [](AFGBuildable*) {});
+		if (!V)
+		{
+			OutBericht.Add(TEXT("Verbinder nicht gebaut"));
+			return false;
+		}
+		OutBauten.Add(V);
+		for (AActor* E : Enden)
+		{
+			Verbinde(E, V);
+		}
+		Vorher = V;
 	}
 
 	// Tuerme 20 m um den Kern. Fenster B2 16.11.: im Halbkreis auf der Fabrikseite fiel der Kern in W3 (die Front lag gegenueber) -
@@ -255,8 +289,8 @@ bool TDFabrik::BaueLinie(UWorld* World, ATDDefenseCore* Kern, const FString& Lin
 			Zufluss = S;
 		}
 	}
-	OutBericht.Add(FString::Printf(TEXT("Linie Bolzen: Miner, %d Maschinen, %d Tuerme, %d Baender Mk%d, %d Bandfehler"),
-		UE_ARRAY_COUNT(Kette), TurmListe.Num(), Baender, BandMk, BandFehler));
+	OutBericht.Add(FString::Printf(TEXT("Linie Bolzen: %d Ketten (je Miner + %d Maschinen), %d Tuerme, %d Baender Mk%d, %d Bandfehler"),
+		Enden.Num(), UE_ARRAY_COUNT(Kette), TurmListe.Num(), Baender, BandMk, BandFehler));
 	for (const FString& Z : OutBericht)
 	{
 		UE_LOG(LogFicsitTD, Log, TEXT("Fabrik: %s"), *Z);

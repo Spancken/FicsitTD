@@ -1,0 +1,70 @@
+{
+  "Name": "Fabrik-F1-3K4T",
+  "_Hinweis": "16.11. abends (Befund B18): wie Fabrik-F1, aber 3 parallele Ketten (je Miner auf eigenem Eisenknoten, 15 Bolzen/min je Kette) fuer 4 Bolzenturm/Tuerme. Misst, wie viel Fabrik eine Turmgruppe bis W10 braucht.",
+  "NeuesSpiel": {
+    "Startort": "Grass Fields",
+    "Modus": 1,
+    "Stufe": 2
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 45,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warteBis": "EinsatzAktiv",
+      "max": 120
+    },
+    {
+      "befehl": "td einsatz frei an"
+    },
+    {
+      "stromfrei": true
+    },
+    {
+      "fabrik": "Bolzen",
+      "tuerme": 4,
+      "level": 2,
+      "band": 1,
+      "ketten": 3
+    },
+    {
+      "befehl": "td einsatz frei aus"
+    },
+    {
+      "warte": 180
+    },
+    {
+      "fabrikbericht": true
+    },
+    {
+      "foto": "Fabrik_F1"
+    },
+    {
+      "zeitraffer": 2
+    },
+    {
+      "wellenlauf": 10
+    },
+    {
+      "zeitraffer": 1
+    },
+    {
+      "fabrikbericht": true
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Bandfehler",
+      "min": 1,
+      "text": "Linie gebaut (Bericht im Log)"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}
