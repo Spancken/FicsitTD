@@ -1321,7 +1321,7 @@ FString UTDKernplatz::BauePlatz(const FString& Biom, const FString& Nr, APawn* S
 	GetWorld()->GetTimerManager().SetTimer(mTimer, this, &UTDKernplatz::SucheBoden, 1.f, true, 1.f);
 	return TDF(TEXT("Baue den Kernplatz %s (%s, Stufe %s, %d von %d Plaetzen): fliege hin und warte auf das Gelaende ..."),
 		TEXT("Building core site %s (%s, difficulty %s, %d of %d sites): flying there and waiting for the terrain ..."),
-		P->Id, *TDBiomAnzeige(Stufe), *TDStufeAnzeige(Stufe), Index + 1, Auswahl.Num());
+		P->Id, *TDBiomAnzeige(Stufe), *TDStufeAnzeige(GewaehlteStufe(this, Stufe)), Index + 1, Auswahl.Num());   // 16.11. (E7): gewaehlte Stufe
 }
 
 void UTDKernplatz::BaueJetzt()
@@ -1788,11 +1788,24 @@ bool UTDKernplatz::SetzeModusAbwehr(const UObject* WorldContext)
 	return bOk;
 }
 
+static bool GTDSpielersicht = false;
+
 bool UTDKernplatz::Entwicklermodus()
 {
 	static const bool bEntwickler = FParse::Param(FCommandLine::Get(), TEXT("TDEntwickler"))
 		|| FPaths::FileExists(FPaths::ProjectSavedDir() / TEXT("FicsitTD") / TEXT("Entwickler.txt"));
-	return bEntwickler;
+	return bEntwickler && !GTDSpielersicht;
+}
+
+void UTDKernplatz::SetzeSpielersicht(bool bAn)
+{
+	GTDSpielersicht = bAn;
+	UE_LOG(LogFicsitTD, Log, TEXT("Spielersicht %s: Entwicklermodus jetzt %s"), bAn ? TEXT("an") : TEXT("aus"), Entwicklermodus() ? TEXT("an") : TEXT("aus"));
+}
+
+bool UTDKernplatz::IstSpielersicht()
+{
+	return GTDSpielersicht;
 }
 
 int32 UTDKernplatz::GewaehlteStufe(const UObject* WorldContext, int32 OrtStufe)

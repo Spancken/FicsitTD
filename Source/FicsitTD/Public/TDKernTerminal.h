@@ -146,6 +146,8 @@ private:
 public:
 	/** 0 Laden, 1 Wellenvorschau, 2 Forschung, 3 Pionier, 4 Statistik, 5 Fehler melden (0.9.6 oeffentlich fuer den Selbsttest) */
 	void ZeigeAnsicht(int32 Ansicht);
+	/** 16.11. (Selbsttest Spielersicht): sichtbare Entwickler-Knoepfe (FreiesBauen, NeuStarten, EinsatzStarten, Testsprung) */
+	TArray<FString> SichtbareTestKnoepfe() const;
 private:
 	void BaueForschung();
 	void BauePionier();
@@ -218,6 +220,8 @@ private:
 	TObjectPtr<UTextBlock> mFreiText;
 	UPROPERTY()
 	TObjectPtr<UButton> mStartKnopf;
+	UPROPERTY()
+	TObjectPtr<UButton> mFreiKnopf;
 	UPROPERTY()
 	TObjectPtr<UButton> mWelleKnopf;
 	UPROPERTY()

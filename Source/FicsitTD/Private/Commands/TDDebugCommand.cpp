@@ -26,6 +26,7 @@
 #include "Resources/FGResourceDescriptor.h"
 #include "Resources/FGResourceNode.h"
 #include "TDKernplatz.h"
+#include "Resources/FGResourceDeposit.h"
 #include "TDSzenario.h"
 #include "TDBandUpgrade.h"
 #include "Buildables/FGBuildablePipeReservoir.h"
@@ -80,12 +81,8 @@ EExecutionStatus ATDDebugCommand::ExecuteCommand_Implementation(UCommandSender* 
 	// 0.9.0 Alpha: Entwickler- und Testbefehle nur mit Saved/FicsitTD/Entwickler.txt (oder -TDEntwickler); Spieler haben
 	// /td ada, /td kern status|weiter, /td baender pruefen|reparieren und die Hilfe
 	{
-		static int32 Entwickler = -1;
-		if (Entwickler < 0)
-		{
-			Entwickler = (FParse::Param(FCommandLine::Get(), TEXT("TDEntwickler"))
-				|| FPaths::FileExists(FPaths::ProjectSavedDir() / TEXT("FicsitTD") / TEXT("Entwickler.txt"))) ? 1 : 0;
-		}
+		// 16.11.: eine Quelle fuer den Entwicklermodus (UTDKernplatz), damit der Selbsttest "Spielersicht" ihn abschalten kann
+		const int32 Entwickler = UTDKernplatz::Entwicklermodus() ? 1 : 0;
 		const FString Befehl = Arguments.Num() > 0 ? Arguments[0].ToLower() : FString();
 		const FString Unter = Arguments.Num() > 1 ? Arguments[1].ToLower() : FString();
 		const bool bSpieler = Befehl == TEXT("ada") || Befehl == TEXT("baender") || Befehl == TEXT("hilfe") || Befehl == TEXT("help")
@@ -525,7 +522,9 @@ EExecutionStatus ATDDebugCommand::ExecuteCommand_Implementation(UCommandSender* 
 			{
 				const TSubclassOf<UFGResourceDescriptor> Art = It->GetResourceClass();
 				const float D = Pawn ? FVector::DistSquared(It->GetActorLocation(), Pawn->GetActorLocation()) : 0.f;
-				if (Art && UFGItemDescriptor::GetForm(Art) == EResourceForm::RF_SOLID && D < Best)
+				// 16.11. (Fenster B1: Testkern stand an einem Kalkstein-Brocken, die Bohrung lehnte ab): dieselbe Regel wie die Bohrung -
+				// nur echte Knoten, keine Rohstoffbrocken
+				if (Art && UFGItemDescriptor::GetForm(Art) == EResourceForm::RF_SOLID && !It->IsA<AFGResourceDeposit>() && D < Best)
 				{
 					Best = D;
 					Knoten = *It;

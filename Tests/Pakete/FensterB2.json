@@ -1,0 +1,14 @@
+﻿{
+    "Name":  "FensterB2",
+    "_Hinweis":  "Testfenster B Teil 2 (16.11. abends, Marius: Rechner bis abends frei): Fabrik-Pruefstand F1, Einsatz-Leiter je Stufe (P6), Mono-Bolzen, Endlos-Langlauf, Mono-Tesla bis W50. G2 Englisch laeuft getrennt: Teste-Mod.ps1 -Paket ReleaseEn -Sprache en.",
+    "Plaene":  [
+                   "Bohrung",
+                   "Fabrik-F1",
+                   "Strat-Gewehr-Tesla",
+                   "Strat-Gewehr-Tesla-Hart",
+                   "Strat-Gewehr-Tesla-Albtraum",
+                   "Strat-MonoBolzen",
+                   "Endlos-Lang",
+                   "Strat-MonoTesla-Vor-W50"
+               ]
+}

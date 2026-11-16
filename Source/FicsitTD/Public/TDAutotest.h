@@ -115,4 +115,6 @@ private:
 	UPROPERTY()
 	TObjectPtr<UTDAutotestSender> mSender;
 	class FTDAutotestLog* mLog = nullptr;
+	/** 16.11. Fabrik-Pruefstand: gebaute Linie fuer den Bericht */
+	TArray<TWeakObjectPtr<class AFGBuildable>> mFabrik;
 };

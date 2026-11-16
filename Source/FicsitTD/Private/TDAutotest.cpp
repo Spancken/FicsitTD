@@ -22,6 +22,7 @@
 #include "TDSicherheitsnetz.h"
 #include "TDBandUpgrade.h"
 #include "TDKernplatz.h"
+#include "TDFabrikPruefstand.h"
 #include "Creature/FGCreature.h"
 #include "FGHealthComponent.h"
 #include "FGSaveManagerInterface.h"
@@ -219,6 +220,11 @@ void UTDAutotest::StartePlan()
 	if (mLog)
 	{
 		mLog->Leeren();
+	}
+	// 16.11.: jeder Plan beginnt mit Entwicklermodus (ein abgebrochener Plan Spielersicht darf die folgenden nicht verfaelschen)
+	if (UTDKernplatz::IstSpielersicht())
+	{
+		UTDKernplatz::SetzeSpielersicht(false);
 	}
 	UE_LOG(LogFicsitTD, Log, TEXT("Autotest: Plan %d/%d %s mit %d Schritten, Spielstand %s"), mPlanNr + 1, mPlaene.Num(), *mPlan->GetStringField(TEXT("Name")),
 		mSchritte.Num(), *mPlan->GetStringField(TEXT("Spielstand")));
@@ -453,12 +459,46 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		Ergebnis(TEXT("Zeitraffer"), FString::Printf(TEXT("x%.1f"), Zahl), true);
 		return true;
 	}
+	if (S->TryGetStringField(TEXT("fabrik"), Wort))
+	{
+		// 16.11. Fabrik-Pruefstand F1: echte Munitionslinie mit Spielgebaeuden und Baendern (TDFabrikPruefstand.cpp)
+		ATDDefenseCore* FabrikKern = nullptr;
+		for (TActorIterator<ATDDefenseCore> It(World); It && !FabrikKern; ++It)
+		{
+			FabrikKern = *It;
+		}
+		TArray<FString> Bericht;
+		const bool bOk = TDFabrik::BaueLinie(World, FabrikKern, Wort, S->HasField(TEXT("tuerme")) ? int32(S->GetNumberField(TEXT("tuerme"))) : 4,
+			S->HasField(TEXT("level")) ? int32(S->GetNumberField(TEXT("level"))) : 2, S->HasField(TEXT("band")) ? int32(S->GetNumberField(TEXT("band"))) : 1, mFabrik, Bericht);
+		Ergebnis(TEXT("Fabrik"), Wort, bOk, FString::Join(Bericht, TEXT(" | ")));
+		return true;
+	}
+	if (S->HasField(TEXT("fabrikbericht")))
+	{
+		const TArray<FString> Zeilen = TDFabrik::Bericht(mFabrik);
+		Ergebnis(TEXT("Fabrik-Bericht"), TEXT("Stand der Linie"), mFabrik.Num() > 0, FString::Join(Zeilen, TEXT(" | ")));
+		return true;
+	}
+	if (S->HasField(TEXT("spielersicht")))
+	{
+		// 16.11. (Nachpruefung B14): Entwicklermodus zur Laufzeit ab- bzw. wieder anschalten
+		UTDKernplatz::SetzeSpielersicht(S->GetBoolField(TEXT("spielersicht")));
+		Ergebnis(TEXT("Spielersicht"), UTDKernplatz::IstSpielersicht() ? TEXT("an") : TEXT("aus"), true,
+			UTDKernplatz::Entwicklermodus() ? TEXT("Entwicklermodus an") : TEXT("Entwicklermodus aus"));
+		return true;
+	}
 	if (S->TryGetStringField(TEXT("befehl"), Wort))
 	{
 		mSender->Antworten.Reset();
 		AChatCommandSubsystem* Befehle = AChatCommandSubsystem::Get(World);
 		const EExecutionStatus Status = Befehle ? Befehle->RunChatCommand(Wort, mSender) : EExecutionStatus::UNCOMPLETED;
-		const bool bOk = Status == EExecutionStatus::COMPLETED;
+		bool bOk = Status == EExecutionStatus::COMPLETED;
+		// 16.11.: optional "antwortEnthaelt" - die Antwort muss diesen Text enthalten (z. B. Ablehnung ohne Entwicklermodus)
+		FString Erwartet;
+		if (S->TryGetStringField(TEXT("antwortEnthaelt"), Erwartet))
+		{
+			bOk = bOk && mSender->Antworten.ContainsByPredicate([&Erwartet](const FString& A) { return A.Contains(Erwartet); });
+		}
 		Ergebnis(TEXT("Befehl"), TEXT("/") + Wort, bOk, bOk ? TEXT("ausgefuehrt") : TEXT("nicht ausgefuehrt"), mSender->Antworten);
 		return true;
 	}
@@ -1356,6 +1396,23 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 bool UTDAutotest::Pruefe(UWorld* World, const TSharedPtr<FJsonObject>& S, FString& OutIst)
 {
 	const FString Name = S->GetStringField(TEXT("pruefe"));
+	if (Name == TEXT("TestKnoepfe"))
+	{
+		// 16.11. (Spielersicht): sichtbare Entwickler-Knoepfe im offenen Kern-Menue; "soll" = erwartete Liste (Standard: keine)
+		const FString Soll = S->HasField(TEXT("soll")) ? S->GetStringField(TEXT("soll")) : FString();
+		bool bOffen = false;
+		TArray<FString> Ist;
+		for (TObjectIterator<UTDKernTerminal> It; It; ++It)
+		{
+			if (It->GetWorld() == World && It->GetCachedWidget().IsValid())
+			{
+				Ist = It->SichtbareTestKnoepfe();
+				bOffen = true;
+			}
+		}
+		OutIst = !bOffen ? FString(TEXT("Kern-Menue nicht offen")) : Ist.Num() ? FString::Join(Ist, TEXT(", ")) : FString(TEXT("keine"));
+		return bOffen && FString::Join(Ist, TEXT(", ")) == Soll;
+	}
 	if (Name == TEXT("Version"))
 	{
 		const TSharedPtr<IPlugin> Plugin = IPluginManager::Get().FindPlugin(TEXT("FicsitTD"));

@@ -495,6 +495,7 @@ void UTDKernTerminal::BaueOberflaeche()
 	Aktion(FreiKnopf);
 	// 0.11 (Gegencheck Einsatz A3, Marius 16.11.): Freies Bauen nur im Entwicklermodus
 	FreiKnopf->SetVisibility(UTDKernplatz::Entwicklermodus() ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+	mFreiKnopf = FreiKnopf;
 
 	UButton* MeldenKnopf = NeuerKnopf(TDT(TEXT("Fehler melden / Idee"), TEXT("Report bug / idea")), Knopftext);
 	MeldenKnopf->OnClicked.AddDynamic(this, &UTDKernTerminal::ReiterMelden);
@@ -1679,6 +1680,17 @@ static FString AuswahlSchluessel(const FTDPlanGruppe& G)
 static bool TestModus()
 {
 	return UTDKernplatz::Entwicklermodus() && !UTDLaufProtokoll::bBalancing && TDBalance::Ganz(TEXT("Test.WellenSprung"), 1) > 0;
+}
+
+TArray<FString> UTDKernTerminal::SichtbareTestKnoepfe() const
+{
+	TArray<FString> Namen;
+	auto Sichtbar = [](const UWidget* W) { return W && W->GetVisibility() != ESlateVisibility::Collapsed && W->GetVisibility() != ESlateVisibility::Hidden; };
+	if (Sichtbar(mFreiKnopf)) Namen.Add(TEXT("FreiesBauen"));
+	if (Sichtbar(mEndeNeustart)) Namen.Add(TEXT("NeuStarten"));
+	if (Sichtbar(mStartKnopf)) Namen.Add(TEXT("EinsatzStarten"));
+	if (TestModus()) Namen.Add(TEXT("Testsprung"));
+	return Namen;
 }
 
 static FString RollenName(int32 Rolle)

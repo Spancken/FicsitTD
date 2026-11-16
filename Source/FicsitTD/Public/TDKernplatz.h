@@ -43,6 +43,10 @@ public:
 	static bool SetzeModusAbwehr(const UObject* WorldContext);
 	/** Entwicklermodus: Saved/FicsitTD/Entwickler.txt oder -TDEntwickler */
 	static bool Entwicklermodus();
+	/** 16.11. (Nachpruefung B14): Selbsttest "Spielersicht" - schaltet den Entwicklermodus zur Laufzeit ab, damit ein Plan
+	 *  prueft, was ein Spieler ohne Entwicklerdatei sieht. Nur der Autotest setzt das; nicht gespeichert. */
+	static void SetzeSpielersicht(bool bAn);
+	static bool IstSpielersicht();
 	/** 0.11 (Gegencheck Einsatz, Marius 16.11.): Stufe aus der Auswahl "Stufe"; 0 = nach Startort -> OrtStufe */
 	static int32 GewaehlteStufe(const UObject* WorldContext, int32 OrtStufe);
 	/** 0.11: Spielmodus nachtraeglich auf "Einsatz" stellen (alte Staende ohne Modus 1); true, wenn gesetzt */

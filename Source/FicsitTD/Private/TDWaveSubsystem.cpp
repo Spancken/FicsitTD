@@ -2699,8 +2699,17 @@ void UTDWaveSubsystem::WelleAusgewertet(float Anteil, bool bVerloren)
 		}
 		SpielerText = Pionier->WellenZeile(TurmSchaden);
 	}
-	Ansage(TDF(TEXT("Welle %d abgewehrt: %d Gegner in %.0f s, Kern bei %.0f %%.%s%s"), TEXT("Wave %d repelled: %d enemies in %.0f s, Core at %.0f %%.%s%s"), mWelle, mWellenGroesse, mWellenZeit, Anteil,
-		*BesteText, *SpielerText));
+	// 16.11. (Nachpruefung N4): ein Ueberlauf ist nicht "abgewehrt"
+	if (mLetzterUeberlauf)
+	{
+		Ansage(TDF(TEXT("Welle %d läuft über: Die Zeit ist um, die Reste bleiben im Feld, die nächste Welle kommt obendrauf. Kern bei %.0f %%.%s%s"),
+			TEXT("Wave %d overflows: time is up, the rest stays in the field and the next wave comes on top. Core at %.0f %%.%s%s"), mWelle, Anteil, *BesteText, *SpielerText));
+	}
+	else
+	{
+		Ansage(TDF(TEXT("Welle %d abgewehrt: %d Gegner in %.0f s, Kern bei %.0f %%.%s%s"), TEXT("Wave %d repelled: %d enemies in %.0f s, Core at %.0f %%.%s%s"), mWelle, mWellenGroesse, mWellenZeit, Anteil,
+			*BesteText, *SpielerText));
+	}
 	MeldeMetrik(Anteil);
 }
 
@@ -3063,7 +3072,9 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 	const ATDDefenseCore* Kern = mKern.Get();
 	const float Anteil = 100.f * Kern->GetTDHealth() / FMath::Max(Kern->GetTDMaxHealth(), 1.f);
 	EntferneWellenLeiste();
+	mLetzterUeberlauf = bUeberlauf;
 	WelleAusgewertet(Anteil);
+	mLetzterUeberlauf = false;
 	if (UTDEinsatzSubsystem* Einsatz = GetWorld()->GetSubsystem<UTDEinsatzSubsystem>())
 	{
 		Einsatz->WelleBeendet(mWelle, Anteil);

@@ -559,6 +559,8 @@ private:
 	int32 mElites = 0;
 	FString mRichtungen;
 	int32 mStufe = 1;
+	/** 16.11. (Nachpruefung N4): die gerade ausgewertete Welle lief ueber (Endlos) - andere Chatzeile */
+	bool mLetzterUeberlauf = false;
 	bool mManuell = false;
 	bool mEndlos = false;
 	bool mBohrung = false;
