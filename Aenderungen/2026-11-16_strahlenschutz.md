@@ -3,7 +3,7 @@ titel: Strahlenschutz für radioaktive Munition
 typ: neu
 modi: alle
 sichtbar: ja
-doku: nein
+doku: ja
 simulation: nicht-noetig
 tests: Strahlenschutz
 ---
@@ -12,7 +12,7 @@ tests: Strahlenschutz
 
 **Warum:** Marius 16.11.: „der Singularitätswerfer strahlt … einen Anzug dagegen … freischaltbar“; Entscheidung: Anzug + abgeschirmter Turm.
 
-**Offen:** Handbuch/Spielregeln, Abschirmung im Spiel nur über den Strahlungsmesser des Spiels sichtbar (kein automatischer Test dafür).
+**Offen:** Abschirmung im Spiel nur über den Strahlungsmesser des Spiels sichtbar (kein automatischer Test dafür).
 
 **Changelog EN:** Turrets shield their ammo storage; researching the Singularity unlocks the Hazmat Suit and Iodine Filters.
 

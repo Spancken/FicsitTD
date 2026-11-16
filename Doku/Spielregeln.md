@@ -483,7 +483,7 @@ Preis aus der Phase der effektiven Freigabe-Welle (Eltern und Voraussetzungen ei
 | Ballistik | Turbomunition | Turbomunition | 25 | 8 |  |
 | Ballistik | StreuNobelisk | Streu-Nobelisk | 25 | 8 |  |
 | Ballistik | Himmelsturm | Himmelsturm | 35 | 10 |  |
-| Ballistik | Singularitaet | Singularitätswerfer | 51 | 10 |  |
+| Ballistik | Singularitaet | Singularitätswerfer; dazu Hazmat-Anzug und Iod-Filter des Spiels (0.11-dev, Strahlenschutz: Turmlager abgeschirmt, `Tuerme.Abgeschirmt`) | 51 | 10 |  |
 | Elementar | Teslaspule | Teslaspule | 6 | 4 |  |
 | Elementar | Kettenblitz | Kettenblitz | 6 | 4 | Ueberlast |
 | Elementar | Ueberlast | Überlast | 6 | 4 | Kettenblitz |
