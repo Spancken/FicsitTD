@@ -8,6 +8,7 @@
 
 const TCHAR* UTDGameInstanceModule::TowerDefenseId = TEXT("FicsitTD.TowerDefense");
 const TCHAR* UTDGameInstanceModule::ModusId = TEXT("FicsitTD.ModusInt");
+const TCHAR* UTDGameInstanceModule::StufeId = TEXT("FicsitTD.StufeInt");
 
 UTDGameInstanceModule::UTDGameInstanceModule()
 {
@@ -19,6 +20,13 @@ UTDGameInstanceModule::UTDGameInstanceModule()
 	{
 		mModus = Modus.Object;
 		SessionSettings.Add(Modus.Object);
+	}
+	// 0.11 (Gegencheck Einsatz, Marius 16.11.): Stufe waehlbar (Scripts/create_session_stufe.py)
+	static ConstructorHelpers::FObjectFinder<USMLSessionSetting> Stufe(TEXT("/FicsitTD/SessionSettings/SessionSetting_Stufe.SessionSetting_Stufe"));
+	if (Stufe.Succeeded())
+	{
+		mStufe = Stufe.Object;
+		SessionSettings.Add(Stufe.Object);
 	}
 }
 
@@ -56,14 +64,14 @@ void UTDGameInstanceModule::SetzeTexte()
 			"AUS: normales Satisfactory, die Mod greift nicht ein. "
 			"EINSATZ: Du landest an einem festen Kernplatz deines Startorts, Plattform und Abwehrkern stehen schon. Kreaturen greifen den Kern in 50 Wellen an, "
 			"in fünf Phasen mit Bossen. Deine Fabrik liefert die Munition für die Türme. Gebäude sind über Kontingente begrenzt (mehr gibt es für FICSIT-Coupons), "
-			"geforscht wird im MAM mit Festplatten, HUB-Meilensteine und Blaupausen sind gesperrt. Die Schwierigkeit folgt dem Startort: Grasfelder leicht, "
-			"Felsenwüste normal, Nördlicher Wald schwer, Dünenwüste Albtraum. Weitere Modi folgen."),
+			"geforscht wird im MAM mit Festplatten, HUB-Meilensteine und Blaupausen sind gesperrt. Die Schwierigkeit stellst du unter „Stufe“ ein, "
+			"Standard ist der Startort: Grasfelder leicht, Felsenwüste normal, Nördlicher Wald schwer, Dünenwüste Albtraum."),
 		TEXT("Choose how FICSIT Tower Defense changes this game. "
 			"OFF: regular Satisfactory, the mod stays out of the way. "
 			"OPERATION: you land at a fixed core site of your start location, the platform and the Defense Core are already built. Creatures attack the core in 50 waves, "
 			"in five phases with bosses. Your factory supplies the ammo for the turrets. Buildings are limited by quotas (FICSIT Coupons buy more), "
-			"research happens in the MAM with Hard Drives, HUB milestones and blueprints are locked. Difficulty follows the start location: Grass Fields easy, "
-			"Rocky Desert normal, Northern Forest hard, Dune Desert nightmare. More modes will follow.")));
+			"research happens in the MAM with Hard Drives, HUB milestones and blueprints are locked. Set the difficulty under \"Difficulty\", "
+			"by default it follows the start location: Grass Fields easy, Rocky Desert normal, Northern Forest hard, Dune Desert nightmare.")));
 	// 0.11 (Marius 15.11.): dritter Modus "Endlos-Wellen" - Hilfetext ergaenzen
 	mModus->ToolTip = FText::FromString(mModus->ToolTip.ToString() + TDT(
 		TEXT(" ENDLOS-WELLEN: wie Einsatz, aber die Wellen kommen auf Zeit und ohne Ende aus einer einzigen Richtung. Anhalten geht nicht - "
@@ -117,6 +125,35 @@ void UTDGameInstanceModule::SetzeTexte()
 	{
 		SetzeKategorieName(Ort.CategoryClass, FText::FromString(TEXT("FICSIT Tower Defense")));
 		SetzeKategorieName(Ort.SubCategoryClass, FText::FromString(TDT(TEXT("Spielmodus"), TEXT("Game Mode"))));
+	}
+	if (mStufe)
+	{
+		mStufe->DisplayName = FText::FromString(TDT(TEXT("Stufe"), TEXT("Difficulty")));
+		mStufe->ToolTip = FText::FromString(TDT(
+			TEXT("Schwierigkeit für Einsatz und Endlos-Wellen. NACH STARTORT: Grasfelder Erkundung, Felsenwüste Normal, Nördlicher Wald Hart, Dünenwüste Albtraum. "
+				"Erkundung ist ohne Druck zum Kennenlernen, Normal ist die vorgesehene Stufe. Hart und Albtraum sind noch ungetestet: Sie sind nur in der Simulation eingestellt, "
+				"ein ganzer Lauf im Spiel steht aus."),
+			TEXT("Difficulty for Operation and Endless waves. BY START LOCATION: Grass Fields Exploration, Rocky Desert Normal, Northern Forest Hard, Dune Desert Nightmare. "
+				"Exploration has no pressure and is for getting to know the mod, Normal is the intended difficulty. Hard and Nightmare are still untested: they are only tuned "
+				"in the simulation, a full run in the game is still missing.")));
+		if (UFGUserSetting_IntSelector* Wahl = Cast<UFGUserSetting_IntSelector>(mStufe->ValueSelector))
+		{
+			for (FIntegerSelection& W : Wahl->IntegerSelectionValues)
+			{
+				switch (W.Value)
+				{
+				case 0: W.Name = FText::FromString(TDT(TEXT("Nach Startort"), TEXT("By start location"))); break;
+				case 1: W.Name = FText::FromString(TDT(TEXT("Erkundung – ohne Druck"), TEXT("Exploration – no pressure"))); break;
+				case 2: W.Name = FText::FromString(TDT(TEXT("Normal"), TEXT("Normal"))); break;
+				case 3: W.Name = FText::FromString(TDT(TEXT("Hart (ungetestet)"), TEXT("Hard (untested)"))); break;
+				default: W.Name = FText::FromString(TDT(TEXT("Albtraum (ungetestet)"), TEXT("Nightmare (untested)"))); break;
+				}
+			}
+		}
+	}
+	else
+	{
+		UE_LOG(LogFicsitTD, Warning, TEXT("Stufe: Einstellung SessionSetting_Stufe nicht gefunden - Stufe folgt dem Startort"));
 	}
 	UE_LOG(LogFicsitTD, Log, TEXT("Spielmodus: Auswahl %s (%s) mit Texten in %s"), *mModus->StrId,
 		mModus->ValueSelector ? *mModus->ValueSelector->GetClass()->GetName() : TEXT("ohne Auswahl"), TDSprache::Englisch() ? TEXT("Englisch") : TEXT("Deutsch"));

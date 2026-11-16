@@ -784,8 +784,8 @@ static const FTDStufe KernStufen[] = {
 	//  Name           Budget LP    Aufbau  Zwischen Start Neu  Elite  Min      Max      KernLP   Ansage
 	{ TEXT("Erkundung"), 0.6f, 0.7f, 1800.f, 900.f,  1,    15,  15,    25000.f, 30000.f, 30000.f, true },
 	{ TEXT("Normal"),    1.0f, 1.0f, 1200.f, 600.f,  2,    10,  10,    20000.f, 25000.f, 20000.f, true },
-	{ TEXT("Hart"),      1.4f, 1.3f,  900.f, 480.f,  3,     8,   7,    15000.f, 25000.f, 15000.f, false },
-	{ TEXT("Albtraum"),  2.0f, 1.7f,  600.f, 360.f,  3,     5,   5,    15000.f, 20000.f, 10000.f, false },
+	{ TEXT("Hart"),      1.1f, 1.0f,  900.f, 480.f,  3,     8,   7,    15000.f, 25000.f, 15000.f, false },
+	{ TEXT("Albtraum"),  1.1f, 1.1f,  600.f, 360.f,  3,     5,   5,    15000.f, 20000.f, 15000.f, false },
 };
 static constexpr int32 KernMaxFronten = 4;
 
@@ -1541,18 +1541,20 @@ void UTDWaveSubsystem::KernGefallen(ATDDefenseCore* Kern)
 			{
 				Wertung = Einsatz->WerteEndlosAus(FMath::Max(0, Welle - 1), mStufe);
 			}
-			StoppeLauf(TDF(TEXT("ENDE: Der Abwehrkern ist in Welle %d gefallen. %s Im Kern-Menü (E am Kern): neu starten oder beenden."),
-				TEXT("GAME OVER: The Defense Core fell in wave %d. %s In the Core menu (E at the Core): restart or end."), Welle, *Wertung));
-		}
-		else if (mWellenGesamt > 0)
-		{
-			StoppeLauf(TDF(TEXT("NIEDERLAGE: Der Abwehrkern ist in Welle %d von %d gefallen. Im Kern-Menü (E am Kern): Welle wiederholen, neu starten oder Einsatz beenden."),
-				TEXT("DEFEAT: The Defense Core fell in wave %d of %d. In the Core menu (E at the Core): retry the wave, restart or end the operation."), mWelle, mWellenGesamt));
+			StoppeLauf(TDF(TEXT("ENDE: Der Abwehrkern ist in Welle %d gefallen. %s Im Kern-Menü (E am Kern): Lauf beenden - der nächste Lauf ist ein neues Spiel."),
+				TEXT("GAME OVER: The Defense Core fell in wave %d. %s In the Core menu (E at the Core): end the run - the next run is a new game."), Welle, *Wertung));
 		}
 		else
 		{
-			StoppeLauf(TDF(TEXT("NIEDERLAGE: Der Abwehrkern ist in Welle %d gefallen. Im Kern-Menü (E am Kern): Welle wiederholen, neu starten oder Einsatz beenden."),
-				TEXT("DEFEAT: The Defense Core fell in wave %d. In the Core menu (E at the Core): retry the wave, restart or end the operation."), mWelle));
+			// 0.11 (Gegencheck Einsatz, Marius 16.11.): "Neu starten" gibt es fuer Spieler nicht mehr; Abschlussbericht und Bestwert
+			FString Wertung;
+			if (UTDEinsatzSubsystem* Einsatz = GetWorld()->GetSubsystem<UTDEinsatzSubsystem>())
+			{
+				Wertung = Einsatz->WerteEinsatzAus(false, Welle, 0.f);
+			}
+			const FString Von = mWellenGesamt > 0 ? TDF(TEXT(" von %d"), TEXT(" of %d"), mWellenGesamt) : FString();
+			StoppeLauf(TDF(TEXT("NIEDERLAGE: Der Abwehrkern ist in Welle %d%s gefallen. %s Im Kern-Menü (E am Kern): Welle wiederholen oder Einsatz beenden."),
+				TEXT("DEFEAT: The Defense Core fell in wave %d%s. %s In the Core menu (E at the Core): retry the wave or end the operation."), mWelle, *Von, *Wertung));
 		}
 		Kern->mLaufEnde = 2;
 		Kern->mLaufEndWelle = Welle;
@@ -3062,8 +3064,14 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 			SiegKern->mLaufEndWelle = mWelle;
 		}
 		MarkiereFronten();
-		Ansage(TDF(TEXT("SIEG! Alle %d Wellen abgewehrt, Kern bei %.0f %%. Im Kern-Menü: neu starten oder Einsatz beenden."),
-			TEXT("VICTORY! All %d waves repelled, Core at %.0f %%. In the Core menu: restart or end the operation."), mWellenGesamt, Anteil));
+		// 0.11 (Gegencheck Einsatz, Marius 16.11.): Abschlussbericht und Bestwert je Kernplatz und Stufe
+		FString Wertung;
+		if (UTDEinsatzSubsystem* Einsatz = GetWorld()->GetSubsystem<UTDEinsatzSubsystem>())
+		{
+			Wertung = Einsatz->WerteEinsatzAus(true, mWelle, Anteil);
+		}
+		Ansage(TDF(TEXT("SIEG! Alle %d Wellen abgewehrt, Kern bei %.0f %%. %s Im Kern-Menü: Einsatz beenden."),
+			TEXT("VICTORY! All %d waves repelled, Core at %.0f %%. %s In the Core menu: end the operation."), mWellenGesamt, Anteil, *Wertung));
 		return;
 	}
 	mLauf = ETDLauf::Aufbau;
@@ -3084,6 +3092,14 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 		}
 		UE_LOG(LogFicsitTD, Log, TEXT("Endlos: Welle %d abgewehrt, naechste in %.0f s (Welle dauerte %.0f s, Abstand %.0f s%s)"), mWelle, mCountdown, mWellenZeit, EndlosAbstand(mWelle),
 			bUeberlauf ? TEXT(", Ueberlauf") : TEXT(""));
+	}
+	else if (!mBohrung && mWellenGesamt > 0 && mWelle % 10 == 0 && TDBalance::Ganz(TEXT("Einsatz.Phasenabschluss"), 1) > 0)
+	{
+		// 0.11 (Gegencheck Einsatz, Marius 16.11.): fuenf Kapitel statt einer langen Strecke - Kurzbericht und Bonuswahl
+		if (UTDEinsatzSubsystem* Einsatz = GetWorld()->GetSubsystem<UTDEinsatzSubsystem>())
+		{
+			Einsatz->Phasenabschluss(mWelle);
+		}
 	}
 	SpeichereLauf();
 	if (UTDLaufProtokoll* Lauf = UTDLaufProtokoll::Get(this))

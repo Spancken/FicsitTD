@@ -13,7 +13,7 @@
 > **Die Fabrik ernährt die Verteidigung, die Verteidigung schützt die Fabrik.**
 
 - Türme brauchen echte Munition aus echten Produktionsketten. Sie kommt über Band oder Rohr. Dazu brauchen die Türme Strom.
-- Gebäude kosten echte Ressourcen. FICSIT-Coupons (vom Abwehrkern, im Code und Log weiter „EP“) und Festplatten (Forschung, im Code weiter „FP“) sind die Währungen. **Seit 0.10.0 sind beide echte Items des Spiels:** Coupons = `Desc_ResourceSinkCoupon` im Inventar (ist es voll, warten sie am Kern und kommen beim Öffnen des Kern-Menüs nach), Festplatten = `Desc_HardDrive` statt der früheren FICSIT-Kampfdaten. Alte Spielstände werden beim Laden umgestellt. Die Festplatten-Forschung des Spiels (Alternativrezepte) ist im Einsatz gesperrt. Der AWESOME-Sink ist im Einsatz gesperrt (0.84.4).
+- Türme verbrauchen echte Munition. Das Baumaterial der Kontingent-Gebäude kommt im Einsatz beim Kauf mit (Startkit und jeder Kontingentkauf liefern es ins Inventar, Entscheidung 02.11., bestätigt 16.11. bis zur Messung mit dem Fabrik-Prüfstand); die Fabrik liefert vor allem Munition, Strom und Freies-Spiel-Material. FICSIT-Coupons (vom Abwehrkern, im Code und Log weiter „EP“) und Festplatten (Forschung, im Code weiter „FP“) sind die Währungen. **Seit 0.10.0 sind beide echte Items des Spiels:** Coupons = `Desc_ResourceSinkCoupon` im Inventar (ist es voll, warten sie am Kern und kommen beim Öffnen des Kern-Menüs nach), Festplatten = `Desc_HardDrive` statt der früheren FICSIT-Kampfdaten. Alte Spielstände werden beim Laden umgestellt. Die Festplatten-Forschung des Spiels (Alternativrezepte) ist im Einsatz gesperrt. Der AWESOME-Sink ist im Einsatz gesperrt (0.84.4).
 - Die Wellen werden mit der Wellennummer stärker, nicht mit der Größe der Fabrik.
 - Eine Niederlage löscht nie die Fabrik.
 
@@ -29,9 +29,9 @@
 | Belagerung, Säuberung, Munitionswellen, Fabrik-Störungen | *(abgelöst 15.11. – Bedrohung aus der Fabrik passt nicht ins gemütliche Freie Spiel; aufgehoben für einen späteren eigenen harten Modus)* |
 | Mehrspieler | nicht unterstützt |
 
-**Länge:** Ein Einsatz über den Spielmodus hat fest **50 Wellen**; im laufenden Einsatz ist der Längenknopf ausgeblendet. Startet man einen Einsatz von Hand im Kern-Menü („Einsatz starten“, ohne laufenden Einsatz), ist die Länge wählbar: Kurz 20, Mittel 30, Standard 50, Endlos. Der Singularitätswerfer (ab Welle 51) ist deshalb nur mit der Länge „Endlos“ oder im Spielmodus Endlos-Wellen erreichbar.
+**Länge:** Ein Einsatz über den Spielmodus hat fest **50 Wellen** (Marius 16.11.: ein Lauf darf bis ins Endgame dauern). Den Einsatz von Hand („Einsatz starten“ im Kern-Menü) mit wählbarer Länge (Kurz 20, Mittel 30, Standard 50, Endlos) gibt es nur im Entwicklermodus; ohne ihn nur einmal je Kern, wenn an ihm noch kein Einsatz lief. *(0.11-dev, Gegencheck Einsatz, Marius 16.11.)* Der Singularitätswerfer (ab Welle 51) ist deshalb nur mit der Länge „Endlos“ oder im Spielmodus Endlos-Wellen erreichbar.
 
-**Schwierigkeit:** Erkundung, Normal, Hart, Albtraum. Im Einsatz hängt die Stufe fest am Biom des Kernplatzes.
+**Schwierigkeit:** Erkundung, Normal, Hart, Albtraum. Sitzungseinstellung **„Stufe“** (`FicsitTD.StufeInt`, unter „Spielmodus“): 0 **nach Startort** (Standard: Grasfelder Erkundung, Felsenwüste Normal, Nordwald Hart, Dünen Albtraum), 1–4 feste Stufe an jedem Startort. Gilt für Einsatz und Endlos-Wellen. Hart und Albtraum sind **ungetestet** (nur Simulation, Auswahl und Startmeldung sagen es). *(0.11-dev, Gegencheck Einsatz, Marius 16.11.)*
 
 **Spielzeit:** Im Einsatz gibt es keinen Countdown, jede Welle startet erst auf Knopfdruck (Marius 12.11.). Die Spielzeit hängt also nur davon ab, wie lange man zwischen den Wellen baut. Gemessen ist sie nicht.
 
@@ -42,21 +42,24 @@
    - Dort baut er eine Plattform aus Spielfundamenten (6 × 6, 1 m erhöht, Rampenring mit Ecken) und räumt den Bewuchs in 60 m Umkreis.
    - Dann setzt er den Abwehrkern, startet den Einsatz und spielt die ADA-Begrüßung (Deutsch/Englisch).
    - *(0.12-dev, Marius 16.11.)* ADA meldet sich zu Beginn der Bauphase vor einer Welle mit neuer Gegnerart oder Boss mit einem kurzen Satz (Stimme + ADA-Zeile im Chat, je Lauf einmal, ab W60 ein kurzer Satz je Bosswelle; `TDAda.cpp`, abschaltbar `ADA.Ansagen 0`). Gilt in allen Modi mit Wellen, auch in der Bohrung.
-2. **Aufbauphase:** Ohne Zeitdruck. Die Welle startet mit dem Knopf „Welle starten“ im Kern-Menü (oder `/td kern weiter`); vorher prüft der Kern die Versorgung der Türme. Gebaut wird mit dem Startkontingent und mit gekauften Kontingenten. Meilensteine am HUB sind im Einsatz gesperrt, neue Technik gibt es nur im MAM. Blaupausen sind im Einsatz nicht erlaubt (Marius 12.11.).
+2. **Aufbauphase:** Ohne Zeitdruck. Die Welle startet mit dem Knopf „Welle starten“ im Kern-Menü (oder `/td kern weiter`); beim Start meldet der Kern im Chat Türme ohne Munition oder Strom (die Meldung hält die Welle nicht auf). Gebaut wird mit dem Startkontingent und mit gekauften Kontingenten. Meilensteine am HUB sind im Einsatz gesperrt, neue Technik gibt es nur im MAM. Blaupausen sind im Einsatz nicht erlaubt (Marius 12.11.).
 3. **Welle:**
    - Die Gegner kommen aus 1–3 Fronten und laufen auf Navigationswegen zum Kern.
    - Zu Beginn heilen alle Verteidigungsbauten auf 100 %.
-   - Im Verteidigungsfeld ist das Bauen von Kontingent-Gebäuden gesperrt. Logistik, Fundamente und Strom darf man weiter bauen (Marius 12.11.).
+   - Im Verteidigungsfeld (120 m um den Kern) ist das Bauen aller Gebäude mit Kontingent gesperrt, also auch Splitter, Verbinder, Lager, Puffer und Generatoren. Bänder, Rohre, Stromleitungen und Fundamente darf man weiter bauen (Marius 12.11.). Der Laden ist in der Welle zu, Turmlevel und Talente gehen.
    - Während der Welle kann nicht gespeichert werden, auch der Autosave ruht. Sonst ließe sich Beute durch Laden wiederholen.
    - Die Welle endet, wenn alle Gegner tot sind. Nachzügler werden versetzt oder entfernt.
-   - **Klippenprobe (ab 0.11-dev):** Vor jeder Welle fährt eine Gegner-Kapsel (Radius und Halbhöhe 70 cm) jeden vollen Frontweg in 2-m-Schritten ab. Klippen mit Flächen steiler als 45 Grad, an denen sie hängen bleibt, werden vorab aus dem Navigationsnetz genommen (`Gegner.KlippenProbe*`, höchstens `Gegner.KlippenSperrenMax` = 12). Nach dem Netzumbau planen marschierende Gegner ihren Weg neu.
+   - **Klippenprobe (ab 0.11-dev):** Vor jeder Welle fährt eine Gegner-Kapsel (Radius und Halbhöhe 70 cm) jeden vollen Frontweg in 2-m-Schritten ab. Klippen mit Flächen steiler als 45 Grad, an denen sie hängen bleibt, werden vorab aus dem Navigationsnetz genommen (`Gegner.KlippenProbe*`, höchstens `Gegner.KlippenSperrenMax` = 24). Nach dem Netzumbau planen marschierende Gegner ihren Weg neu.
 4. **Nach der Welle:**
    - Es gibt Coupons, Festplatten und Biomasse.
    - Der Kern repariert sich (Grundreparatur, mit Forschung mehr).
    - Beute liegt am Boden oder kommt nach 60 s an den Kern.
-   - Der Mod speichert einen Spielstand vor und nach jeder Welle (`FicsitTD_W<n>_Start/_Ende`).
-5. **Niederlage:** Der Kern fällt auf 0 LP, die Fabrik bleibt. Das Kern-Menü bietet dann drei Wege: **Welle wiederholen** (lädt `FicsitTD_W<n>_Start`), **Neu starten** (Welle 1 am selben Ort, Coupons und Käufe von vorn, Startkit nicht noch einmal) oder **Einsatz beenden** (keine Kontingente und Sperren mehr, Kern voll und abreißbar). *(0.9.6)*
-6. **Sieg:** Alle 50 Wellen sind überstanden (in der Kern-Verteidigung: alle Wellen der gewählten Länge). Danach im Kern-Menü: neu starten oder Einsatz beenden.
+   - Der Mod speichert einen Spielstand vor und nach jeder Welle (`FicsitTD_W<n>_Start/_Ende`), nach dem Sieg in Welle 50 vermutlich nicht.
+   - **Phasenabschluss** nach Welle 10, 20, 30, 40: *(0.11-dev, Gegencheck Einsatz, Marius 16.11.)* Kurzbericht im Chat (Gegner, tiefster Kernstand, Coupons, Festplatten, Schadensanteil je Turmart) und eine Bonuswahl im Kern-Menü wie im Endlos-Modus: +80 Coupons, Kern +30 % oder +5 Festplatten (`Endlos.Bonus.*`, Schalter `Einsatz.Phasenabschluss`). Ein Frühstart-Bonus kommt bewusst nicht in den Einsatz.
+5. **Niederlage:** Der Kern fällt auf 0 LP, die Fabrik bleibt. Das Kern-Menü bietet **Welle wiederholen** (lädt `FicsitTD_W<n>_Start`) oder **Einsatz beenden** (keine Kontingente und Sperren mehr, Kern voll und abreißbar). Die Kernreparatur im Laden ist dann gesperrt. **„Neu starten“ gibt es für Spieler nicht mehr**: Es behielt Coupons, Turmlevel und Forschung und zahlte alle Wellen noch einmal. Ein neuer Lauf ist ein neues Spiel. *(0.11-dev, Gegencheck Einsatz, Marius 16.11.)* (Im Entwicklermodus bleibt der Knopf für Selbsttests.)
+6. **Sieg:** Alle 50 Wellen sind überstanden (in der Kern-Verteidigung: alle Wellen der gewählten Länge). Danach im Kern-Menü: Einsatz beenden.
+7. **Abschlussbericht und Bestwert:** *(0.11-dev, Gegencheck Einsatz, Marius 16.11.)* Nach Sieg und Niederlage kommt ein Bericht über den ganzen Lauf (wie der Phasenbericht) und ein **Bestwert je Kernplatz und Stufe** in `Saved\FicsitTD\Bestwerte.json` (`Einsatz.<Platz>.Stufe<n>`: Welle × 1000, beim Sieg plus Kern-Rest in Prozent). Ein Lauf mit Eingriffen (Testsprung, `/gib`, `/td fuellen`, Freies Bauen …, gezählt am Kern `mLaufEingriffe`) bleibt ohne Wertung.
+8. **Nur im Entwicklermodus:** *(0.11-dev, Gegencheck Einsatz, Marius 16.11.)* Testsprung „zu Welle N“ in der Wellenleiste (jede übersprungene Welle wurde voll belohnt), **Freies Bauen** (Kontingente und Sperren aus; alte Stände schalten es beim Laden ab) und „Neu starten“. Das Startkit gibt es je Kern nur einmal, auch über „Einsatz beenden“ hinweg.
 
 ## 4. Kontingente und Laden
 
@@ -69,7 +72,7 @@
   - Kernreparatur: +25 % Kern-LP je Kauf, jeder Kauf 50 % teurer. Nur sichtbar, wenn der Kern beschädigt ist.
 - **Pionier** (Reiter im Kern-Menü; Umbau nach `Notizen\Analyse-Spieler-und-Pionier-2026-11-12.md`: P0/P1 seit 0.9.6, P2 seit 0.9.7, P3/P4 seit 0.9.8):
   - **XP je Welle (0.9.8 halbiert):** 20 + 3 × N, +10 bei vollem Kern, jede zehnte Welle doppelt (`Pionier.XPWelle`, `XPJeWelle`, `XPKernVoll`). Dazu Leistungs-XP: 2 je Prozent Anteil am Wellenschaden (`Pionier.XPJeProzent`) und 1 je 200 reparierte LP (`Pionier.XPJeReparatur`). Eigener Abschuss 3 XP, Elite 10, Boss 50, wenn der Spieler den Gegner in den letzten 5 s getroffen hat. Assist 1 XP.
-  - **Rang (0.9.8):** Schwelle je Rang 5 + 20 × Rang (`Pionier.XPGrund`, `XPSchritt`): Rang 2 bei 25 XP (also nach Welle 1), 3 bei 70, 4 bei 135, 5 bei 220, höchstens Rang 16 (`Pionier.MaxRang`) = 15 Talentpunkte. Alle 3 Ränge gibt es +10 LP und +3 % Lauftempo (`Pionier.RangBonusAlle`, `RangBonus.LP`, `RangBonus.Tempo`). Rang und Talente gelten für diesen Einsatz. Talente neu verteilen kostet 20 Coupons.
+  - **Rang (0.9.8):** Schwelle je Rang 5 + 20 × Rang (`Pionier.XPGrund`, `XPSchritt`): Rang 2 bei 25 XP (also nach Welle 1), 3 bei 70, 4 bei 135, 5 bei 220, höchstens Rang 16 (`Pionier.MaxRang`) = 15 Talentpunkte. Alle 3 Ränge gibt es +10 LP und +3 % Lauftempo (`Pionier.RangBonusAlle`, `RangBonus.LP`, `RangBonus.Tempo`). Rang und Talente hängen am Spielstand (seit 0.12-dev `ATDSpielstand`) und bleiben auch nach dem Einsatz. Talente neu verteilen kostet 20 Coupons.
   - **Vier Rollen-Zweige mit je 5 Stufen (0.9.8, P3/P4, Marius 12.11.):** zwei Zweige ganz oder drei zur Hälfte. Jede Stufe ist eine Fähigkeit, keine reine Prozentzahl. Der Reiter zeigt je Zweig die Wirkung der letzten Welle.
     - **Schütze** (Handwaffen): 1 Kopftreffer ×1,5 · 2 Schnellladen (Nachladen doppelt so schnell) · 3 Durchschlag (nächster Gegner dahinter bis 6 m, halber Schaden) · 4 Munition sparen (jeder vierte Treffer kostet nichts) · 5 Sprengmantel (jeder fünfte Treffer explodiert mit vollem Trefferschaden in 4 m).
     - **Kommandant** (Türme lenken): 1 Zielmarkierung · 2 markierte Gegner nehmen +15 % Turmschaden · 3 stirbt ein markierter Gegner, springt die Markierung auf den nächsten in 10 m · 4 Sammelbefehl (Türme in 30 m schießen 5 s auf dein Ziel) · 5 Übersteuern wirkt auf alle Türme in 20 m.
@@ -82,12 +85,12 @@
   - **Zielmarkierung (0.9.7, P2; seit 0.9.8 nur mit Kommandant 1, Bonus mit Kommandant 2):** Jeder Spielertreffer markiert den Gegner 6 s (`Pionier.Markierung.Dauer`), sichtbar als blaues Licht über ihm. Alle Türme machen an markierten Gegnern +15 % Schaden (`Pionier.Markierung.Bonus` 1,15). Zielwahl „Markierte zuerst“ (neu) nimmt sie vor allen anderen, „Elite und Boss zuerst“ direkt nach dem Boss. Erledigt ein Turm einen markierten Gegner, ist das ein Assist: 1 XP (`Pionier.XPAssist`), Zähler im Wellenbericht.
   - **Jäger (0.9.7, P2; seit 0.9.8 Talent Jäger 1 und 2):** Spielerschaden an Eliten und Bossen ×1,5 (`Pionier.Jaeger.Faktor`). Erlegt der Spieler eine Elite oder einen Boss (Treffer in den letzten 5 s), fallen Festplatten und Coupons sicher (`Pionier.Jaeger.SichereBeute`).
   - Wellengegner greifen den Spieler nie an (Marius 12.11.).
-- **Abreißen** gibt den Platz im Kontingent zurück. Wird ein Gebäude in der Welle zerstört, ist das Kontingent danach wieder frei, und das Baumaterial liegt am Kern.
+- **Abreißen** gibt den Platz im Kontingent zurück. Wird ein Gebäude in der Welle zerstört, ist das Kontingent danach wieder frei, und das Baumaterial kommt ins Inventar (bei vollem Inventar wartet es am Kern).
 
 ## 5. Wellen und Gegner
 
 - **Phasen zu je 10 Wellen**, Boss in Welle 10, 20, 30, 40, 50. Bosswellen haben 60 % des normalen Gegnerbudgets plus den Boss (`Wellen.BossBudget`):
-  1. Hogs, ab Welle 7 auch der Klippen-Hog (Marius 08.11.)
+  1. Hogs, ab Welle 7 auch der Klippen-Hog (Marius 08.11.; im Gegnerkatalog und im Phasentext des Spiels steht er bei Phase 4)
   2. Stinger (die ersten in Welle 13)
   3. Spucker Wald
   4. Wüsten- und Wasserspucker
@@ -95,7 +98,7 @@
 - Fliegende Krabben kommen erst mit der Luftabwehr *(geplant)*.
 - **Fronten:** Zu Beginn gibt es eine. Weitere kommen laut Stufentabelle dazu (Normal ab Welle 11 und 21).
 - **Elite:** 2,5-fache LP, größer, eingefärbt. **Boss:** groß, mit Lebensbalken.
-- **Zielwahl der Gegner:** Sie greifen an, was ihnen den Weg versperrt (Mauern). Gedränge am Kern (16 m, 3 s) führt zum Angriff auf den Kern.
+- **Zielwahl der Gegner:** Sie greifen an, was ihnen den Weg versperrt (Mauern). Gedränge am Kern (20 m, 3 s) führt zum Angriff auf den Kern.
 
 ## 6. Türme
 
@@ -136,7 +139,7 @@
 - **Elektrozaun:** seit 0.9.3 ohne Mauer, nur Pfosten, Schaltkästen und leuchtende Drähte. Für Gegner weiter ein Hindernis; wer angreift, bekommt einen Stromschlag.
 - **Radar (Funkmast):** Türme in 30 m +10 % Reichweite. **Seit 0.9.3:** Rohstoffvorkommen in 150 m werden wie beim Ressourcenscanner angezeigt (`Tuerme.Funkmast.RessourcenRadius`). 30 s vor jeder Welle bis zu ihrem Ende markiert er jede aktive Front auf Karte und Kompass mit Welle, Gegnerarten und Anzahl; blau mit „FLIEGER!“, wenn Flieger kommen (`Tuerme.Funkmast.Vorwarnung`). Nur mit Strom.
 - **Schildgenerator:** Kuppel mit 20 m Radius, schluckt Schaden an Bauten (nicht am Kern), 3000 Schild, gebrochen 20 s Ladezeit, sonst 5 %/s nach 5 s ohne Treffer.
-- **Störfeld-Projektor:** bremst alle Gegner in 15 m auf 60 % Tempo, solange er läuft (1 reanimiertes SAM je 60 s, 80 MW).
+- **Störfeld-Projektor** (Gabelung mit dem Schildgenerator, nur einer von beiden je Spiel): bremst alle Gegner in 15 m auf 60 % Tempo, solange er läuft (1 reanimiertes SAM je 60 s, 80 MW).
 - **Drohnenplatz (seit 0.9.3, ersetzt die Reparaturstation):** Gabelung in der Festung ab Welle 40, Reparaturdrohnen **oder** Kampfdrohnen. 2 Drohnen auf Level 1, 3 auf Level 2, 4 auf Level 3 (Level mit Coupons im Gebäudefenster wie bei den Türmen, 0.9.6). Ein Rezeptzyklus ist ein Einsatz: Die Drohne steigt auf, fliegt in 15 m Höhe zum Ziel in 40 m, arbeitet und landet wieder.
   - Reparaturdrohnen: 2 Eisenplatten = 840 LP, 1 verstärkte Platte = 3150 LP für den am stärksten beschädigten Bau.
   - Kampfdrohnen: 2 Gewehrmunition je Einsatz, 3 s lang alle 0,35 s 25 Schaden (`Tuerme.Drohnenplatz.*`).
@@ -147,7 +150,7 @@
 - **4 Bäume:** Industrie, Ballistik, Elementar, Festung, alle ab Start im MAM. Jeder Baum wächst aus 2–3 Wurzeln: Industrie aus Kohlekraftwerk, Assembler und Kupfer; Ballistik aus Durchschlagbolzen, Gewehrturm und Nobelisk-Werfer; Elementar aus Teslaspule und Flammenwerfer; Festung aus Kern-Panzerung, Verstärkten Mauern und Turmfertigung II. Alle anderen Knoten hängen mit einer Linie an einem Elternknoten.
 - **Sichtbarkeit:** Ein Knoten zeigt sein Icon erst, wenn sein Elternknoten erforscht ist; vorher ist er ein grauer Platzhalter. Knoten mit Voraussetzung aus einem anderen Baum (z. B. Ballistik braucht den Assembler, Elementar das Kohlekraftwerk) bleiben grau, bis sie erfüllt ist.
 - **Infokarten je Knoten:** „Herstellung“ (Zutaten, Maschine, Stück pro Minute, Zutaten der Zutaten, Ziel-Turm), „Bauen“ (Baukosten) und „Vorher“ (nötige Forschung und Freigabe-Welle).
-- **Bezahlt wird nur mit Festplatten** (seit 0.10.0, vorher FICSIT-Kampfdaten). Der Preis richtet sich nach der Phase, in der ein Knoten frei wird. Insgesamt gibt es bewusst mehr Knoten, als FP hereinkommen.
+- **Bezahlt wird nur mit Festplatten** (seit 0.10.0, vorher FICSIT-Kampfdaten). Der Preis richtet sich nach der Freigabe-Welle des Knotens (Preisstufen ab Welle 0, 5, 15, 25, 35). Insgesamt gibt es bewusst mehr Knoten, als FP hereinkommen.
 - **Freigabe-Welle:** Ein Knoten ist erst ab einer bestimmten Welle erforschbar. Er erbt die Welle von seinen Eltern und Voraussetzungen. Der Status steht im Knotentitel.
 - **Gabelungen:** Bei jedem Paar ist nur eine Seite je Einsatz erforschbar. Das ist endgültig.
 - **Doktrin:** Eine Turmlinie wird zur Hauptlinie. Sie bekommt mehr Schaden, billigere Level und Level 5 früher. **Heute** ist sie eine Gabelung mit fünf Seiten und endgültig. **Beschlossen:** wechselbar im Kern-Menü, einmal je Einsatz für 50 Coupons *(geplant, M1)*.
@@ -192,7 +195,7 @@ Stand 12.11.2026 (Mod 0.9.4). Die langen Läufe sind Selbsttests im Prüfstand: 
 | Bauten | Selbsttest: Ölschlick bremst und brennt, Störfeld bremst, Drohnenplatz (2 Drohnen, 30 Einsätze), Sink-Sperre (`Bausperre`). Elektrozaun gebaut, aber 0 Schläge. Tor mit Strom, Radar, Anschlüsse, Himmelsturm-Kanister *(ungetestet)* |
 | Englisch | Selbsttest Release090en bis W30; die 0.9.4-Texte im englischen Spiel nicht angesehen |
 | Statistik, Pionier, Spielerausrüstung, ADA-Anlässe außer Begrüßung | kein Nachweis gefunden |
-| Offen | Stufen außer Normal, 11 von 12 Kernplätzen, Laden mitten in der Welle, Flieger *(geplant)* |
+| Offen | Stufen außer Normal (Hart und Albtraum 16.11. nur per Simulation eingestellt, im Spiel als „ungetestet“ markiert), 11 von 12 Kernplätzen, Laden mitten in der Welle, Phasenabschluss und Bestwert im Einsatz, Flieger *(geplant)* |
 
 ---
 
@@ -212,9 +215,9 @@ Stand 12.11.2026 (Mod 0.9.4). Die langen Läufe sind Selbsttests im Prüfstand: 
 
 | Wert | Erkundung | Normal | Hart | Albtraum |
 |---|---|---|---|---|
-| Gegnerbudget × | 0,6 | 1 | 2 | 2 |
-| Gegner-LP × | 0,7 | 1 | 1,6 | 1,7 |
-| Kern-LP | 30000 | 20000 | 15000 | 10000 |
+| Gegnerbudget × | 0,6 | 1 | 1,1 | 1,1 |
+| Gegner-LP × | 0,7 | 1 | 1 | 1,1 |
+| Kern-LP | 30000 | 20000 | 15000 | 15000 |
 | Aufbau bis Welle 1 (s) | 1800 | 1200 | 900 | 600 |
 | Aufbau zwischen Wellen (s) | 900 | 600 | 480 | 360 |
 | Fronten zu Beginn | 1 | 1 | 1 | 1 |

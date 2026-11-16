@@ -314,7 +314,7 @@ static bool VoraussetzungFehlt(const AFGResearchManager* Forschung, UClass* Sche
  *  (eigene Funktion: die Kommas der Liste vertragen sich nicht mit dem Hook-Makro) */
 static void PruefeEingriff(const AChatCommandSubsystem* Self, const FString& Zeile)
 {
-	static const TCHAR* Eingriffe[] = { TEXT("gib "), TEXT("td fuellen"), TEXT("td füllen"), TEXT("td freischalten"), TEXT("td einsatz frei"), TEXT("td kern tempo") };
+	static const TCHAR* Eingriffe[] = { TEXT("gib "), TEXT("td fuellen"), TEXT("td füllen"), TEXT("td freischalten"), TEXT("td einsatz frei"), TEXT("td kern tempo"), TEXT("td kern springe") };
 	const FString Befehl = Zeile.TrimStartAndEnd().ToLower().Replace(TEXT("/"), TEXT(""));
 	for (const TCHAR* E : Eingriffe)
 	{

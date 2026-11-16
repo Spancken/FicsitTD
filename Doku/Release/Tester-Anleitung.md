@@ -19,7 +19,7 @@
 3. Start the game from SMM.
 
 ### Play
-1. **New Game**, any start location. In the session settings open the category **FICSIT Tower Defense** and set **Game Mode** to **Operation**. The help text next to it explains each mode.
+1. **New Game**, any start location. In the session settings open the category **FICSIT Tower Defense** and set **Game Mode** to **Operation**. The help text next to it explains each mode. **Difficulty** stays on “By start location” unless you want a fixed one (Hard and Nightmare are untested so far, reports welcome).
 2. ADA greets you; a platform and the **Defense Core** appear. Build in peace, nothing attacks before you start a wave.
 3. Press **E** at the Core: Core Menu with **Start wave**, shop (quotas, gear, core repair), research overview, statistics, **Pioneer** and **Report bug / idea**.
 4. Build miners, smelters, constructors and turrets. Feed ammo by conveyor belt (Flamethrower: pipe). Turrets need power.
@@ -68,7 +68,7 @@ Full list in the handbook: https://spancken.github.io/FicsitTD/#issues (section 
 3. Spiel aus SMM starten.
 
 ### Spielen
-1. **Neues Spiel**, beliebiger Startort. In den Sitzungseinstellungen die Kategorie **FICSIT Tower Defense** öffnen und **Spielmodus** auf **Einsatz** stellen. Der Hilfetext daneben erklärt jeden Modus.
+1. **Neues Spiel**, beliebiger Startort. In den Sitzungseinstellungen die Kategorie **FICSIT Tower Defense** öffnen und **Spielmodus** auf **Einsatz** stellen. Der Hilfetext daneben erklärt jeden Modus. **Stufe** bleibt auf „Nach Startort“, außer du willst eine feste (Hart und Albtraum sind noch ungetestet, Rückmeldungen erwünscht).
 2. ADA begrüßt dich, Plattform und **Abwehrkern** entstehen. In Ruhe bauen, vor dem ersten Wellenstart greift nichts an.
 3. **E** am Kern öffnet das Kern-Menü: **Welle starten**, Laden (Kontingente, Ausrüstung, Kernreparatur), Forschungsübersicht, Statistik, **Pionier** und **Fehler melden / Idee**.
 4. Miner, Schmelzöfen, Konstruktoren und Türme bauen. Munition per Förderband (Flammenwerfer per Rohr). Türme brauchen Strom.

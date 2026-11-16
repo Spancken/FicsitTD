@@ -492,6 +492,8 @@ void UTDKernTerminal::BaueOberflaeche()
 	mFreiText = Knopftext;
 	FreiKnopf->OnClicked.AddDynamic(this, &UTDKernTerminal::FreiUmschalten);
 	Aktion(FreiKnopf);
+	// 0.11 (Gegencheck Einsatz A3, Marius 16.11.): Freies Bauen nur im Entwicklermodus
+	FreiKnopf->SetVisibility(UTDKernplatz::Entwicklermodus() ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 
 	UButton* MeldenKnopf = NeuerKnopf(TDT(TEXT("Fehler melden / Idee"), TEXT("Report bug / idea")), Knopftext);
 	MeldenKnopf->OnClicked.AddDynamic(this, &UTDKernTerminal::ReiterMelden);
@@ -746,7 +748,8 @@ void UTDKernTerminal::Aktualisiere()
 	mWegeText->SetText(K && K->ZeigtWege() ? TDTX(TEXT("Wegvorschau aus"), TEXT("Path preview off")) : TDTX(TEXT("Wegvorschau an"), TEXT("Path preview on")));
 	mFreiText->SetText(Einsatz->IstFrei() ? TDTX(TEXT("Freies Bauen: AN"), TEXT("Free Build: ON")) : TDTX(TEXT("Freies Bauen: aus"), TEXT("Free Build: off")));
 	// 0.11 (Modus Aus): von Hand nur mit Spielmodus "Einsatz" oder im Entwicklermodus (Selbsttests)
-	mStartKnopf->SetVisibility(bEinsatz || !(UTDKernplatz::TowerDefenseAn(this) || UTDKernplatz::Entwicklermodus()) ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
+	// 0.11 (Gegencheck Einsatz A2/A5, Marius 16.11.): ohne Entwicklermodus nur ein Einsatz je Kern - ein neuer Lauf ist ein neues Spiel
+	mStartKnopf->SetVisibility(bEinsatz || !(UTDKernplatz::Entwicklermodus() || (UTDKernplatz::TowerDefenseAn(this) && !(K && K->mEinsatzStartkit))) ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
 	{
 		const int32 Ende = Einsatz->LaufEnde();
 		if (mWelleKnopf)
@@ -788,7 +791,9 @@ void UTDKernTerminal::Aktualisiere()
 		{
 			// 0.11 (Marius 15.11.): ein Endlos-Lauf endet mit Wertung - kein Wiederholen
 			mEndeWiederholen->SetVisibility(Ende == 2 && !bEndlosEnde ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
-			mEndeNeustart->SetVisibility(Ende ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+			// 0.11 (Gegencheck Einsatz A2, Marius 16.11.): "Neu starten" behielt Coupons, Turmlevel und Forschung und
+			// zahlte alle Wellen erneut - fuer Spieler raus, ein neuer Lauf ist ein neues Spiel. Bleibt fuer Selbsttests.
+			mEndeNeustart->SetVisibility(Ende && UTDKernplatz::Entwicklermodus() ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 			mEndeBeenden->SetVisibility(Ende ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 		}
 		if (Ende)
@@ -1664,10 +1669,11 @@ static FString AuswahlSchluessel(const FTDPlanGruppe& G)
 	return G.bBoss ? TEXT("BOSS|") + G.Pfad : G.Pfad;
 }
 
-/** Testphase: Wellen in der Zeitleiste waehlen und springen (spaeter Balance Test.WellenSprung = 0) */
+/** Testphase: Wellen in der Zeitleiste waehlen und springen.
+ *  0.11 (Gegencheck Einsatz A1, Marius 16.11.): nur im Entwicklermodus - sonst brachte 1 -> 50 rund 3400 Coupons ohne Kampf */
 static bool TestModus()
 {
-	return !UTDLaufProtokoll::bBalancing && TDBalance::Ganz(TEXT("Test.WellenSprung"), 1) > 0;
+	return UTDKernplatz::Entwicklermodus() && !UTDLaufProtokoll::bBalancing && TDBalance::Ganz(TEXT("Test.WellenSprung"), 1) > 0;
 }
 
 static FString RollenName(int32 Rolle)
@@ -2338,6 +2344,10 @@ void UTDKernTerminal::WaehleBonus(int32 Nr)
 
 void UTDKernTerminal::EndeNeustart()
 {
+	if (!UTDKernplatz::Entwicklermodus())
+	{
+		return;
+	}
 	if (UTDEinsatzSubsystem* Einsatz = GetWorld()->GetSubsystem<UTDEinsatzSubsystem>())
 	{
 		APlayerController* PC = GetOwningPlayer();
@@ -2383,6 +2393,10 @@ void UTDKernTerminal::WegeUmschalten()
 
 void UTDKernTerminal::FreiUmschalten()
 {
+	if (!UTDKernplatz::Entwicklermodus())
+	{
+		return;
+	}
 	UTDEinsatzSubsystem* Einsatz = GetWorld()->GetSubsystem<UTDEinsatzSubsystem>();
 	if (!Einsatz || !Einsatz->IstAktiv())
 	{
@@ -2414,6 +2428,11 @@ void UTDKernTerminal::EinsatzStarten()
 	APlayerController* PC = GetOwningPlayer();
 	if (!Einsatz)
 	{
+		return;
+	}
+	if (!UTDKernplatz::Entwicklermodus() && Kern() && Kern()->mEinsatzStartkit)
+	{
+		Melde(TDT(TEXT("An diesem Kern lief schon ein Einsatz. Ein neuer Lauf beginnt mit einem neuen Spiel."), TEXT("This Core already ran an operation. A new run starts with a new game.")));
 		return;
 	}
 	TArray<FString> Meldungen;

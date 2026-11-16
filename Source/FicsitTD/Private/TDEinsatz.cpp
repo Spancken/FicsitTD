@@ -1271,6 +1271,11 @@ FString UTDEinsatzSubsystem::Kaufe(const FString& Name, int32 Anzahl)
 	{
 		return TDF(TEXT("%s: schon %d von %d gekauft."), TEXT("%s: already bought %d of %d."), *TDAnzeige(E->Key), Bisher, SpielerMax(*SP));
 	}
+	// 0.11 (Gegencheck Einsatz A7): nach der Niederlage kostete die Reparatur Coupons und heilte nichts
+	if (SP && SP->Art == 3 && (Kern->mLaufEnde != 0 || Kern->GetTDHealth() <= 0.f))
+	{
+		return TDT(TEXT("Der Lauf ist vorbei - der Kern lässt sich nicht mehr reparieren."), TEXT("The run is over - the Core can no longer be repaired."));
+	}
 	if (SP && SP->Art == 3 && Kern->GetTDHealth() >= Kern->GetTDMaxHealth() - 1.f)
 	{
 		return TDT(TEXT("Der Kern ist unbeschädigt."), TEXT("The Core is undamaged."));
@@ -1778,6 +1783,7 @@ void UTDEinsatzSubsystem::Starte(ATDDefenseCore* Kern, int32 Stufe, int32 Wellen
 		Meldungen.Add(TDT(TEXT("Startkit: "), TEXT("Starter kit: ")) + GibMaterial(Kit));
 		// 0.84: Wellen je Einsatz verschieden (Option, Standard aus); einmal je Einsatz gewuerfelt und im Kern gespeichert
 		Kern->mLaufSaat = TDBalance::Wert(TEXT("Wellen.VariationJeEinsatz"), 0.f) > 0.f ? (FMath::Rand() | 1) : 0;
+		Kern->mLaufEingriffe = 0;   // 0.11: neuer Lauf, neue Wertung
 		UE_LOG(LogFicsitTD, Log, TEXT("Einsatz: Wellensaat %d (%s)"), Kern->mLaufSaat, Kern->mLaufSaat ? TEXT("Wellen je Einsatz verschieden") : TEXT("Wellen je Kernplatz fest"));
 	}
 	if (UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>())
@@ -1815,7 +1821,8 @@ void UTDEinsatzSubsystem::Beende()
 	{
 		Kern->mEinsatzAktiv = false;
 		Kern->mEinsatzFrei = false;
-		Kern->mEinsatzStartkit = false;
+		// 0.11 (Gegencheck Einsatz A5): Startkit-Merkmal bleibt - "beenden" und "starten" gab es sonst erneut.
+		// Zugleich das Zeichen "an diesem Kern lief schon ein Einsatz" fuer den Start von Hand (Kern-Menue).
 		Kern->mEinsatzPunkte = 0;
 		Kern->mKontingentGekauft.Reset();
 	}
@@ -1844,7 +1851,7 @@ FString UTDEinsatzSubsystem::WiederholeWelle(APlayerController* Spieler)
 	}
 	if (Kern->mLaufEndlos)
 	{
-		return TDT(TEXT("Ein Endlos-Lauf endet mit dem Kern - neu starten oder beenden."), TEXT("An endless run ends with the Core - restart or end."));
+		return TDT(TEXT("Ein Endlos-Lauf endet mit dem Kern - der nächste Lauf ist ein neues Spiel."), TEXT("An endless run ends with the Core - the next run is a new game."));
 	}
 	const FString Name = FString::Printf(TEXT("FicsitTD_W%02d_Start"), Kern->mLaufEndWelle);
 	UFGSaveSystem* Speicher = UFGSaveSystem::Get(GetWorld());
@@ -1900,6 +1907,12 @@ void UTDEinsatzSubsystem::Lade(ATDDefenseCore* Kern)
 	mKern = Kern;
 	mAktiv = Kern && Kern->mEinsatzAktiv;
 	mFrei = Kern && Kern->mEinsatzFrei;
+	// 0.11 (Gegencheck Einsatz A3, Marius 16.11.): Freies Bauen nur im Entwicklermodus - alte Staende schalten es ab
+	if (mFrei && !UTDKernplatz::Entwicklermodus())
+	{
+		SetzeFrei(false);
+		UE_LOG(LogFicsitTD, Log, TEXT("Einsatz geladen: Freies Bauen war an, ohne Entwicklermodus abgeschaltet"));
+	}
 	mBelegtZeit = -1.f;
 	if (mAktiv)
 	{
@@ -2042,9 +2055,14 @@ void UTDEinsatzSubsystem::BieteEndlosBonusAn(int32 Welle)
 		return;
 	}
 	Kern->mEndlosBonusOffen = true;
-	UE_LOG(LogFicsitTD, Log, TEXT("Endlos: Bonuswahl nach Bosswelle %d angeboten"), Welle);
-	Melde(TDF(TEXT("Bosswelle %d geschafft! Lange Pause - wähle im Kern-Menü (E am Kern) einen Bonus: %s, %s oder %s."),
+	const UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
+	const bool bEndlos = Waves && Waves->IstEndlos();
+	UE_LOG(LogFicsitTD, Log, TEXT("%s: Bonuswahl nach Bosswelle %d angeboten"), bEndlos ? TEXT("Endlos") : TEXT("Einsatz"), Welle);
+	Melde(bEndlos ? TDF(TEXT("Bosswelle %d geschafft! Lange Pause - wähle im Kern-Menü (E am Kern) einen Bonus: %s, %s oder %s."),
 		TEXT("Boss wave %d done! Long break - pick a bonus in the Core Menu (E at the Core): %s, %s or %s."), Welle,
+		*EndlosBonusName(0), *EndlosBonusName(1), *EndlosBonusName(2))
+		: TDF(TEXT("Phase geschafft! Wähle im Kern-Menü (E am Kern) einen Bonus: %s, %s oder %s."),
+		TEXT("Phase complete! Pick a bonus in the Core Menu (E at the Core): %s, %s or %s."),
 		*EndlosBonusName(0), *EndlosBonusName(1), *EndlosBonusName(2)));
 }
 
@@ -2092,7 +2110,7 @@ FString UTDEinsatzSubsystem::WaehleEndlosBonus(int32 Nr)
 		GibOffeneFP();
 		Text = TDF(TEXT("Bonus: +%d Festplatten, jetzt %d im Inventar."), TEXT("Bonus: +%d Hard Drives, now %d in your inventory."), N, FPImInventar());
 	}
-	UE_LOG(LogFicsitTD, Log, TEXT("Endlos: Bonus %d gewaehlt"), Nr);
+	UE_LOG(LogFicsitTD, Log, TEXT("Bonus %d gewaehlt"), Nr);
 	Melde(Text);
 	return Text;
 }
@@ -2134,4 +2152,135 @@ FString UTDEinsatzSubsystem::WerteEndlosAus(int32 ErreichteWelle, int32 Stufe)
 	UE_LOG(LogFicsitTD, Log, TEXT("Endlos: Lauf beendet, %d Wellen geschafft (Stufe %d, Bestwert vorher %d%s)"), ErreichteWelle, Stufe, Alt, bNeu ? TEXT(", neuer Bestwert") : TEXT(""));
 	return bNeu ? TDF(TEXT("%d Wellen geschafft - NEUER BESTWERT (vorher %d)!"), TEXT("%d waves done - NEW BEST (before %d)!"), ErreichteWelle, Alt)
 		: TDF(TEXT("%d Wellen geschafft, Bestwert %d."), TEXT("%d waves done, best %d."), ErreichteWelle, Alt);
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// 0.11 (Gegencheck Einsatz, Marius 16.11.): Phasenabschluss alle 10 Wellen, Abschlussbericht und Bestwert je Kernplatz und Stufe
+
+TArray<FString> UTDEinsatzSubsystem::PhasenBericht(int32 Von, int32 Bis) const
+{
+	TArray<FString> Zeilen;
+	const ATDDefenseCore* Kern = mKern.Get();
+	if (!Kern)
+	{
+		return Zeilen;
+	}
+	float Tief = 100.f;
+	int32 Gegner = 0, Coupons = 0, Platten = 0, Wellen = 0;
+	TMap<FString, float> Schaden;
+	for (const FTDWellenStat& W : Kern->mStatistik)
+	{
+		if (W.Welle < Von || W.Welle > Bis)
+		{
+			continue;
+		}
+		++Wellen;
+		Tief = FMath::Min(Tief, W.KernEnde);
+		Gegner += W.Gegner;
+		Coupons += W.EP;
+		Platten += W.FP;
+		for (const FTDTurmStat& T : W.Tuerme)
+		{
+			Schaden.FindOrAdd(T.Art) += T.Schaden;
+		}
+	}
+	if (Wellen == 0)
+	{
+		return Zeilen;
+	}
+	Zeilen.Add(TDF(TEXT("Wellen %d–%d: %d Gegner abgewehrt, tiefster Kernstand %.0f %%, %d Coupons, %d Festplatten."),
+		TEXT("Waves %d–%d: %d enemies repelled, lowest Core %.0f %%, %d Coupons, %d Hard Drives."), Von, Bis, Gegner, Tief, Coupons, Platten));
+	float Summe = 0.f;
+	for (const TPair<FString, float>& P : Schaden)
+	{
+		Summe += P.Value;
+	}
+	if (Summe > 0.f)
+	{
+		Schaden.ValueSort([](float A, float B) { return A > B; });
+		TArray<FString> Teile;
+		for (const TPair<FString, float>& P : Schaden)
+		{
+			if (Teile.Num() >= 4)
+			{
+				break;
+			}
+			Teile.Add(FString::Printf(TEXT("%s %.0f %%"), *TDAnzeige(P.Key), 100.f * P.Value / Summe));
+		}
+		Zeilen.Add(TDF(TEXT("Schaden je Turmart: %s."), TEXT("Damage by turret type: %s."), *FString::Join(Teile, TEXT(", "))));
+	}
+	return Zeilen;
+}
+
+void UTDEinsatzSubsystem::Phasenabschluss(int32 Welle)
+{
+	if (!mAktiv || !mKern.IsValid())
+	{
+		return;
+	}
+	const int32 Phase = Welle / 10;
+	Melde(TDF(TEXT("PHASE %d ABGESCHLOSSEN"), TEXT("PHASE %d COMPLETE"), Phase));
+	for (const FString& Z : PhasenBericht(Welle - 9, Welle))
+	{
+		Melde(Z);
+		UE_LOG(LogFicsitTD, Log, TEXT("Phasenabschluss %d: %s"), Phase, *Z);
+	}
+	BieteEndlosBonusAn(Welle);
+}
+
+FString UTDEinsatzSubsystem::WerteEinsatzAus(bool bSieg, int32 Welle, float KernAnteil)
+{
+	ATDDefenseCore* Kern = mKern.Get();
+	const UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
+	if (!Kern || !Waves)
+	{
+		return FString();
+	}
+	const int32 Stufe = FMath::Clamp(Waves->GetLaufStufe(), 0, 3);
+	const FString Platz = Kern->mLaufPlatz.IsEmpty() ? FString(TEXT("Platz")) : Kern->mLaufPlatz;
+	// Abschlussbericht: der ganze Lauf aus der Wellenstatistik
+	Melde(bSieg ? TDT(TEXT("ABSCHLUSSBERICHT – Sieg"), TEXT("FINAL REPORT – Victory")) : TDT(TEXT("ABSCHLUSSBERICHT – Niederlage"), TEXT("FINAL REPORT – Defeat")));
+	for (const FString& Z : PhasenBericht(1, Welle))
+	{
+		Melde(Z);
+		UE_LOG(LogFicsitTD, Log, TEXT("Abschlussbericht: %s"), *Z);
+	}
+	const int32 Erreicht = bSieg ? Welle : FMath::Max(0, Welle - 1);
+	const int32 Wertung = Erreicht * 1000 + (bSieg ? FMath::Clamp(FMath::RoundToInt(KernAnteil), 1, 100) : 0);
+	if (Kern->mLaufEingriffe > 0)
+	{
+		UE_LOG(LogFicsitTD, Log, TEXT("Einsatz: Lauf %s Stufe %d ohne Wertung (%d Eingriffe)"), *Platz, Stufe, Kern->mLaufEingriffe);
+		return TDF(TEXT("Ohne Wertung: %d Eingriffe in diesem Lauf."), TEXT("Not ranked: %d interventions in this run."), Kern->mLaufEingriffe);
+	}
+	const FString Schluessel = FString::Printf(TEXT("Einsatz.%s.Stufe%d"), *Platz, Stufe);
+	FString Inhalt;
+	TSharedPtr<FJsonObject> Obj;
+	if (!FFileHelper::LoadFileToString(Inhalt, *TDBestwertDatei()) || !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Inhalt), Obj) || !Obj.IsValid())
+	{
+		Obj = MakeShared<FJsonObject>();
+	}
+	double AltWert = 0.0;
+	Obj->TryGetNumberField(Schluessel, AltWert);
+	const int32 Alt = FMath::RoundToInt(AltWert);
+	// Sieg traegt den Kern-Rest (1..100) in den letzten drei Stellen, eine Niederlage 0
+	auto Text = [](int32 W) -> FString
+	{
+		return W % 1000 > 0 ? TDF(TEXT("Sieg mit Kern %d %%"), TEXT("victory with Core %d %%"), W % 1000)
+			: TDF(TEXT("%d Wellen"), TEXT("%d waves"), W / 1000);
+	};
+	const bool bNeu = Wertung > Alt;
+	if (bNeu)
+	{
+		Obj->SetNumberField(Schluessel, Wertung);
+		FString Neu;
+		FJsonSerializer::Serialize(Obj.ToSharedRef(), TJsonWriterFactory<>::Create(&Neu));
+		FFileHelper::SaveStringToFile(Neu, *TDBestwertDatei(), FFileHelper::EEncodingOptions::ForceUTF8);
+	}
+	UE_LOG(LogFicsitTD, Log, TEXT("Einsatz: Lauf %s Stufe %d gewertet %d (vorher %d%s)"), *Platz, Stufe, Wertung, Alt, bNeu ? TEXT(", neuer Bestwert") : TEXT(""));
+	if (bNeu && Alt > 0)
+	{
+		return TDF(TEXT("NEUER BESTWERT an diesem Kernplatz: %s (vorher %s)."), TEXT("NEW BEST at this core site: %s (before %s)."), *Text(Wertung), *Text(Alt));
+	}
+	return bNeu ? TDF(TEXT("Erster Bestwert an diesem Kernplatz: %s."), TEXT("First best at this core site: %s."), *Text(Wertung))
+		: TDF(TEXT("Bestwert an diesem Kernplatz: %s."), TEXT("Best at this core site: %s."), *Text(Alt));
 }

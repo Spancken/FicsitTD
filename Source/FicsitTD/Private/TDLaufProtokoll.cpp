@@ -137,6 +137,14 @@ void UTDLaufProtokoll::Kauf(const FString& Key, int32 EP)
 void UTDLaufProtokoll::Eingriff(const FString& Was)
 {
 	mEingriffe.Add(Was);
+	// 0.11 (Gegencheck Einsatz): Eingriffe am Kern zaehlen - ein Lauf mit Eingriffen bekommt keinen Bestwert
+	if (UTDEinsatzSubsystem* Einsatz = GetWorld() ? GetWorld()->GetSubsystem<UTDEinsatzSubsystem>() : nullptr)
+	{
+		if (ATDDefenseCore* Kern = Einsatz->GetKern())
+		{
+			++Kern->mLaufEingriffe;
+		}
+	}
 	UE_LOG(LogFicsitTD, Log, TEXT("Lauf: Eingriff in Welle %d: %s"), mLetzteWelle, *Was);
 	if (bBalancing)
 	{

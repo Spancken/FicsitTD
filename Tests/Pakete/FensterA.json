@@ -1,5 +1,10 @@
 {
   "Name": "FensterA",
-  "_Hinweis": "Testfenster A aus dem Fahrplan 0.11 (Satisfactory/Notizen/Fahrplan-0.11-2026-11-16.md): nach der Pipeline Schnell die Befunde B1 (Klippen BautenP2, W06) und B3 (Strahlenschutz). B2 (ADA-Warteschlange) prueft der Plan Endlos in Schnell.",
-  "Plaene": ["BautenP2", "Wege-Marius-W06", "Strahlenschutz"]
+  "_Hinweis": "Testfenster A aus dem Fahrplan 0.11 (Satisfactory/Notizen/Fahrplan-0.11-2026-11-16.md): nach der Pipeline Schnell die Befunde B1 (Klippen BautenP2, W06) und B3 (Strahlenschutz). B2 (ADA-Warteschlange) prueft der Plan Endlos in Schnell. 16.11.: dazu EinsatzPhase (Gegencheck Einsatz: Phasenabschluss, Abschlussbericht, ohne Wertung).",
+  "Plaene": [
+    "BautenP2",
+    "Wege-Marius-W06",
+    "Strahlenschutz",
+    "EinsatzPhase"
+  ]
 }

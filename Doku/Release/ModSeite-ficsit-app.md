@@ -54,7 +54,7 @@ Take two roles fully or three halfway. Your strongest role shows as a badge in t
 - **Quotas instead of free building:** production and defense buildings are limited per type; FICSIT Coupons from the Core (now the game's Coupon item in your inventory) buy more in the Core Menu shop, sorted by category. Belts, lifts, pipes, power lines and foundations stay free; splitters, mergers and storage count as buildings.
 - **MAM research** with four trees (Industry, Ballistics, Elemental, Fortress), branches where you choose one side per operation, paid with **Hard Drives** from waves (the game's own Hard Drive). HUB milestones and blueprints are locked during an operation.
 - **Your own share counts:** hand weapons use the turret ammo values and grow with the waves; the wave report shows your damage, share, assists and Pioneer XP.
-- **Losing never deletes your factory.** After a defeat you can retry the wave, restart from wave 1 or end the operation. The mod saves before and after every wave; saving during a wave is locked.
+- **Losing never deletes your factory.** After a defeat you can retry the wave or end the operation; every tenth wave closes a phase with a short report and a bonus pick, and the end of a run shows a final report and your best result per core site and difficulty. The mod saves before and after every wave; saving during a wave is locked.
 - **English and German**, following the game language.
 
 ## Screenshots

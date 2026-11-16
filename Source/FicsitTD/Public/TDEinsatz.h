@@ -215,6 +215,13 @@ public:
 	FString WerteEndlosAus(int32 ErreichteWelle, int32 Stufe);
 	/** Bestwert (erreichte Welle) je Stufe, 0 = noch keiner */
 	static int32 EndlosBestwert(int32 Stufe);
+	/** 0.11 (Gegencheck Einsatz, Marius 16.11.): nach jeder zehnten Welle Kurzbericht der Phase und Bonuswahl wie im Endlos-Modus */
+	void Phasenabschluss(int32 Welle);
+	/** Kurzbericht der Wellen Von..Bis aus der Wellenstatistik am Kern (Kern-Tief, Coupons, Festplatten, Schaden je Turmart) */
+	TArray<FString> PhasenBericht(int32 Von, int32 Bis) const;
+	/** Sieg oder Niederlage im Einsatz: Abschlussbericht und Bestwert je Kernplatz und Stufe (Saved/FicsitTD/Bestwerte.json).
+	 *  Wertung = Welle * 1000 + Kern-Rest in Prozent; ein Lauf mit Eingriffen zaehlt nicht. Rueckgabe: Satz fuer die Ansage */
+	FString WerteEinsatzAus(bool bSieg, int32 Welle, float KernAnteil);
 private:
 	FString SpielerWirkung(const FTDSpielerPosten& P, int32 Menge);
 	void Verbinde();

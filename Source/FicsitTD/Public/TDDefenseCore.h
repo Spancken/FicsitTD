@@ -88,6 +88,12 @@ public:
 	int32 mLaufEnde = 0;
 	UPROPERTY(SaveGame)
 	int32 mLaufEndWelle = 0;
+	/** 0.11 (Gegencheck Einsatz, Marius 16.11.: Bestwert je Kernplatz und Stufe): Kernplatz des Laufs ("" bei alten Staenden) */
+	UPROPERTY(SaveGame)
+	FString mLaufPlatz;
+	/** Eingriffe in diesem Lauf (Testsprung, /gib, Freies Bauen ...): ein Lauf mit Eingriffen bekommt keinen Bestwert */
+	UPROPERTY(SaveGame)
+	int32 mLaufEingriffe = 0;
 	/** Einsatz-Modus (TDEinsatz.h): aktiv, freies Bauen (Test), Startkit schon ausgegeben */
 	UPROPERTY(SaveGame)
 	bool mEinsatzAktiv = false;

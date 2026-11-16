@@ -1655,7 +1655,19 @@ void UTDKernplatz::WarteNetzFuerEinsatz()
 	}
 	TArray<FString> Meldungen;
 	// 0.77 Marius: 50 Wellen Standard; 0.11 Endlos-Wellen: 0 = ohne Ende (Countdown und eine Front setzt Starte)
-	Einsatz->Starte(Kern, mStufe, IstEndlos(this) ? 0 : TDBalance::Ganz(TEXT("Einsatz.WellenStandard"), 50), mSpieler.Get(), Meldungen);
+	// 0.11 (Gegencheck Einsatz, Marius 16.11.): Stufe aus der Auswahl "Stufe", Standard nach Startort
+	const int32 Stufe = GewaehlteStufe(this, mStufe);
+	if (Stufe != mStufe)
+	{
+		UE_LOG(LogFicsitTD, Log, TEXT("Kernplatz: Stufe %s gewaehlt (Startort waere %s)"), TDStufenNamen[Stufe], TDStufenNamen[FMath::Clamp(mStufe, 0, 3)]);
+	}
+	if (Stufe >= 2)
+	{
+		Meldungen.Add(TDF(TEXT("Stufe %s ist noch ungetestet: nur in der Simulation eingestellt, ein ganzer Lauf im Spiel steht aus. Rückmeldungen helfen!"),
+			TEXT("Difficulty %s is still untested: only tuned in the simulation, a full run in the game is still missing. Feedback helps!"), *TDStufeAnzeige(Stufe)));
+	}
+	Kern->mLaufPlatz = mId;
+	Einsatz->Starte(Kern, Stufe, IstEndlos(this) ? 0 : TDBalance::Ganz(TEXT("Einsatz.WellenStandard"), 50), mSpieler.Get(), Meldungen);
 	for (const FString& M : Meldungen)
 	{
 		Melde(M);
@@ -1780,6 +1792,14 @@ bool UTDKernplatz::Entwicklermodus()
 	static const bool bEntwickler = FParse::Param(FCommandLine::Get(), TEXT("TDEntwickler"))
 		|| FPaths::FileExists(FPaths::ProjectSavedDir() / TEXT("FicsitTD") / TEXT("Entwickler.txt"));
 	return bEntwickler;
+}
+
+int32 UTDKernplatz::GewaehlteStufe(const UObject* WorldContext, int32 OrtStufe)
+{
+	UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
+	const USessionSettingsManager* Einstellungen = World ? World->GetSubsystem<USessionSettingsManager>() : nullptr;
+	const int32 Wahl = Einstellungen ? Einstellungen->GetIntOptionValue(UTDGameInstanceModule::StufeId) : 0;
+	return Wahl >= 1 && Wahl <= 4 ? Wahl - 1 : FMath::Clamp(OrtStufe, 0, 3);
 }
 
 bool UTDKernplatz::ModAktiv(const UObject* WorldContext)
