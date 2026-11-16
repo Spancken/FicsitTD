@@ -1790,7 +1790,7 @@ void UTDEinsatzSubsystem::Starte(ATDDefenseCore* Kern, int32 Stufe, int32 Wellen
 		// Gegencheck 15.11. (Marius: Abstand je Stufe): Erkundung 600/240, Normal 480/180, Hart 420/165, Albtraum 360/150 s
 		static const TCHAR* EndlosStufen[] = { TEXT("Erkundung"), TEXT("Normal"), TEXT("Hart"), TEXT("Albtraum") };
 		static const float ErsteStandard[] = { 600.f, 480.f, 420.f, 360.f };
-		static const float AbstandStandard[] = { 240.f, 180.f, 165.f, 150.f };
+		static const float AbstandStandard[] = { 240.f, 220.f, 165.f, 150.f };   // 16.11. (P2): Normal 180 -> 220
 		const int32 Si = FMath::Clamp(Stufe, 0, 3);
 		const float Erster = bEndlos ? TDBalance::Wert(*FString::Printf(TEXT("Endlos.%s.ErsteWelle"), EndlosStufen[Si]), ErsteStandard[Si]) : -1.f;
 		const float Abstand = bEndlos ? TDBalance::Wert(*FString::Printf(TEXT("Endlos.%s.Abstand"), EndlosStufen[Si]), AbstandStandard[Si]) : -1.f;

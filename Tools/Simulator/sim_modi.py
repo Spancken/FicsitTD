@@ -29,7 +29,7 @@ import statistics
 import simulator as sim
 import strategien as st
 
-ENDLOS_WERTE = {"Erkundung": (600, 240), "Normal": (480, 180), "Hart": (420, 165), "Albtraum": (360, 150)}   # TDEinsatz.cpp Starte
+ENDLOS_WERTE = {"Erkundung": (600, 240), "Normal": (480, 220), "Hart": (420, 165), "Albtraum": (360, 150)}   # TDEinsatz.cpp Starte (16.11. P2: Normal 220)
 BOHR_STUFEN = ["Leicht", "Mittel", "Schwer"]
 GABEL_STANDARD = {"Bolzen": "Streubolzen", "Gewehr": "Panzerbrechend", "Nobelisk": "PulsNobelisk", "Tesla": "Kettenblitz", "Kern": "KernSchild"}
 
@@ -92,7 +92,11 @@ def spiele_endlos(s, wellen, B, Z, K, gabeln, tw, wi, stufe, max_wellen, rng, vo
         if ueberlauf:
             ueberlaeufe += 1
             anteil = min(1.0, (t_klar - A) / max(1.0, t_klar - anlauf))
-            rest = [(name, l * anteil) for name, l in alle]
+            # 16.11. (P2): uebrig bleibt ein ANTEIL DER GEGNER mit vollem Leben - nicht alle Gegner mit anteiligem Leben. Sonst
+            # wuchs die Liste mit jedem Ueberlauf, und die Streckung (Gegnerzahl / MaxGleichzeitig) loeste den Druck rechnerisch auf
+            # (Endlos W150: Q 188 bei Kern 100 %).
+            # Im Spiel leben hoechstens Wellen.MaxGleichzeitig Gegner zugleich - mehr kann nicht uebrig bleiben
+            rest = alle[:min(int(round(len(alle) * anteil)), int(B.get("Wellen.MaxGleichzeitig", 60)))]
             ende, pause = A, B.get("Endlos.UeberlaufPause", 5)
         else:
             rest = []
@@ -180,7 +184,7 @@ def kalibriere_bauzeit(daten, laeufe=1, seed=7):
 
 # ---------------------------------------------------------------- Bohrung
 def bohr_werte(B, stufe):
-    std = {"Leicht": (1, 4, 8000), "Mittel": (15, 19, 12000), "Schwer": (25, 30, 16000)}[stufe]   # TDBohrStufen[]
+    std = {"Leicht": (1, 4, 8000), "Mittel": (15, 19, 18000), "Schwer": (25, 30, 24000)}[stufe]   # TDBohrStufen[] (16.11. P3)
     return (int(B.get(f"Bohrung.{stufe}.VonWelle", std[0])), int(B.get(f"Bohrung.{stufe}.BisWelle", std[1])),
             B.get(f"Bohrung.{stufe}.LP", std[2]))
 
@@ -205,6 +209,8 @@ def bohr_aufbau_ok(daten, stufe, typ, level, mun_name, anzahl, wellen_liste, rng
         qmax = max(qmax, q)
         if L.kern <= 0:
             return False, 0.0, qmax
+        # 16.11. (Fahrplan P3): Reparatur zwischen den Bohrwellen (Bohrung.Reparatur, Anteil der Kern-LP), wie TDBohrung.cpp
+        L.kern = min(100.0, L.kern + 100 * B.get("Bohrung.Reparatur", 0.0))
     return True, L.kern, qmax
 
 

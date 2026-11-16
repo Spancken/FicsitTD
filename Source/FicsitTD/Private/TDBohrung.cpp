@@ -33,8 +33,8 @@ namespace
 	// Leicht: Phase 1 (Hogs, Spucker), eine Front. Mittel: Phase 2 mit Elite, zwei Fronten. Schwer: Phase 3 bis zum Boss der Welle 30.
 	const FTDBohrStufe TDBohrStufen[] = {
 		{ TEXT("Leicht"), 1, 4, 8000.f, 60, 2, 0, 60 },
-		{ TEXT("Mittel"), 15, 19, 12000.f, 120, 4, 0, 120 },
-		{ TEXT("Schwer"), 25, 30, 16000.f, 200, 6, 1, 200 },
+		{ TEXT("Mittel"), 15, 19, 18000.f, 120, 4, 0, 120 },   // 16.11. (P3): LP x1,5
+		{ TEXT("Schwer"), 25, 30, 24000.f, 200, 6, 1, 200 },
 	};
 
 	int32 BohrWert(int32 Stufe, const TCHAR* Feld, int32 Standard)
@@ -231,6 +231,12 @@ void UTDWaveSubsystem::BohrWelleBeendet(float KernAnteil)
 	mBohrErz += Erz;
 	const FString Text = Einsatz->GibMaterial({ { Knoten->GetResourceClass().Get(), Erz } });
 	UE_LOG(LogFicsitTD, Log, TEXT("Bohrung: Welle %d abgewehrt, +%d %s (gesamt %d), Kern %.0f %%"), mWelle, Erz, *mBohrRohstoff, mBohrErz, KernAnteil);
+	// 16.11. (Fahrplan P3, Simulation): der Bohrer repariert sich zwischen den Wellen (sonst summierte sich der Verlust, Mittel/Schwer
+	// brauchten 33/57 Bolzentuerme). Bohrung.Reparatur = Anteil der Kern-LP je abgewehrter Welle.
+	if (ATDDefenseCore* Kern = mKern.Get())
+	{
+		Kern->HealTD(Kern->GetTDMaxHealth() * TDBalance::Wert(TEXT("Bohrung.Reparatur"), 0.1f));
+	}
 	Ansage(TDF(TEXT("Bohrung: Welle %d abgewehrt - %s."), TEXT("Drilling: wave %d repelled - %s."), mWelle, *Text));
 }
 

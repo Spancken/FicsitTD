@@ -145,8 +145,14 @@ class Wellen:
 
     def lp_faktor(self, n):
         """LPFaktor in UTDWaveSubsystem (StarteWelle): bis W31 je Welle Wellen.LPJeWelle, danach Wellen.LPJeWelleAb31 (0.9.1)"""
-        return self.s("GegnerLP") * (1 + self.w("Wellen.LPJeWelle", 0.08) * min(n - 1, 30)
-                                     + self.w("Wellen.LPJeWelleAb31", 0.1) * max(n - 31, 0))
+        f = self.s("GegnerLP") * (1 + self.w("Wellen.LPJeWelle", 0.08) * min(n - 1, 30)
+                                  + self.w("Wellen.LPJeWelleAb31", 0.1) * max(n - 31, 0))
+        if self.endlos:
+            # 16.11. (P2): Endlos - ab Endlos.LPWachstumAbWelle wachsen die Gegnerleben je Welle um Endlos.LPWachstum (zinsartig),
+            # sonst gibt es nach W50 keinen Druck mehr (Gegnerzahl gedeckelt, Coupons wachsen weiter). Wie in TDWaveSubsystem.cpp.
+            ab = self.w("Endlos.LPWachstumAbWelle", 50)
+            f *= (1 + self.w("Endlos.LPWachstum", 0.0)) ** max(0, n - ab)
+        return f
 
     def fronten(self, n):
         if self.endlos:
@@ -162,6 +168,9 @@ class Wellen:
         if n % 10 == 0:
             # 0.84: Bosswellen mit weniger Begleitern (Wellen.BossBudget, 1 = volles Budget wie bis 0.83)
             budget = max(2, runde(budget * self.w("Wellen.BossBudget", 1.0)))
+        if self.endlos:
+            # 16.11. (P2): Endlos - eine Front ohne Bauphase nach Wunsch; Budget je Welle mit Endlos.BudgetFaktor (wie TDWaveSubsystem.cpp)
+            budget = max(2, runde(budget * self.w("Endlos.BudgetFaktor", 1.0)))
         lp_faktor = self.lp_faktor(n)
         max_gegner = int(self.w("Wellen.MaxGesamt", 120))
         art = n % 5

@@ -19,6 +19,7 @@ import hashlib
 import json
 import os
 import random
+import re
 import statistics
 import sys
 import time
@@ -69,7 +70,7 @@ def pruefe_modell(B, A, K, katalog, phasen):
     pflicht += [f"Endlos.{s}.{w}" for s in STUFEN for w in ("ErsteWelle", "Abstand")]
     pflicht += ["Endlos.MinPause", "Endlos.UeberlaufPause", "Endlos.BossPause", "Endlos.AbstandMin", "Endlos.AbstandJeWelle",
                 "Endlos.NachschubTakt", "Endlos.NachschubPaket", "Endlos.StromAnteil", "Endlos.VorziehSekundenJeCoupon",
-                "Endlos.Bonus.Coupons", "Endlos.Bonus.Kern", "Tuerme.Level.Preis2", "Tuerme.Level.Preis5",
+                "Endlos.Bonus.Coupons", "Endlos.Bonus.Kern", "Endlos.BudgetFaktor", "Endlos.LPWachstum", "Endlos.LPWachstumAbWelle", "Tuerme.Level.Preis2", "Tuerme.Level.Preis5",
                 "Einsatz.EP.Grund", "Einsatz.EP.JeWelle", "Einsatz.FP.JeWelle", "Wellen.LPJeWelle", "Wellen.LPJeWelleAb31"]
     pflicht += [f"Bohrung.{s}.{w}" for s in sm.BOHR_STUFEN for w in ("VonWelle", "BisWelle", "LP")]
     fehler += [f"Balance-Schluessel fehlt in TDBalance.cpp: {k}" for k in pflicht if k not in B]
@@ -83,8 +84,13 @@ def pruefe_modell(B, A, K, katalog, phasen):
     fehler += [f"Grund-LP fehlt in annahmen.json: {n}" for n in fehlend]
     # Endlos-Standardwerte im Modell = Standard in TDEinsatz.cpp Starte
     text = open(os.path.join(sim.QUELLE, "TDEinsatz.cpp"), encoding="utf-8-sig").read()
-    if "ErsteStandard[] = { 600.f, 480.f, 420.f, 360.f }" not in text or "AbstandStandard[] = { 240.f, 180.f, 165.f, 150.f }" not in text:
-        fehler.append("TDEinsatz.cpp Starte: Endlos-Standardwerte geaendert, sim_modi.ENDLOS_WERTE pruefen")
+    def feld(name):
+        m = re.search(name + r"\[\] = \{([^}]*)\}", text)
+        return [float(x.strip().rstrip("f")) for x in m.group(1).split(",")] if m else None
+    erste, abstand = feld("ErsteStandard"), feld("AbstandStandard")
+    modell = [sm.ENDLOS_WERTE[s] for s in STUFEN]
+    if erste != [e for e, _ in modell] or abstand != [a for _, a in modell]:
+        fehler.append(f"TDEinsatz.cpp Starte: Endlos-Standardwerte {erste}/{abstand} != sim_modi.ENDLOS_WERTE {modell}")
     if fehler:
         raise ModellFehler("; ".join(fehler))
 
@@ -223,7 +229,7 @@ def markdown(res, stand_datum):
 def main():
     ap = argparse.ArgumentParser(description="FicsitTD: alle Modi simulieren (Pipeline)")
     ap.add_argument("--aus", required=True, help="Ausgabeordner fuer sim_ergebnis.json/.md")
-    ap.add_argument("--endlos-max", type=int, default=100, help="Rechengrenze Endlos-Wellen (Standard 100)")
+    ap.add_argument("--endlos-max", type=int, default=150, help="Rechengrenze Endlos-Wellen (Standard 150; 16.11.: LP-Wachstum ab W50 braucht Platz)")
     a = ap.parse_args()
     try:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")   # Windows-Konsole (cp1252)

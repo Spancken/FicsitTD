@@ -2016,6 +2016,11 @@ TArray<FTDPlanGruppe> UTDWaveSubsystem::PlanFuer(int32 Nummer, int32& OutArt) co
 	{
 		Budget = FMath::Max(2, FMath::RoundToInt(Budget * TDBalance::Wert(TEXT("Wellen.BossBudget"), 1.f)));
 	}
+	// 16.11. (Fahrplan P2, Simulation): Endlos - eine Front, Bauen unter Zeitdruck: Budget je Welle mit Endlos.BudgetFaktor
+	if (mEndlos)
+	{
+		Budget = FMath::Max(2, FMath::RoundToInt(Budget * TDBalance::Wert(TEXT("Endlos.BudgetFaktor"), 0.9f)));
+	}
 	// T5: Gesamtzahl je Welle; gleichzeitig lebende begrenzt der Nachschub (Wellen.MaxGleichzeitig)
 	const int32 MaxGegner = TDBalance::Ganz(TEXT("Wellen.MaxGesamt"), 2 * KernMaxGegner);
 	// Wellenart: Ansturm, Panzer, Gemischt, Fernkampf, Schwarm im Wechsel
@@ -2431,7 +2436,14 @@ void UTDWaveSubsystem::SpawneKernWelle(int32 Nummer)
 	mElites = 0;
 	// 0.9.1 (Simulation 09.11.): ab W31 waechst das Leben schneller, Phase 4-5 hatte im Modell zu viel Luft. Im Spiel nachmessen.
 	const float JeWelle = TDBalance::Wert(TEXT("Wellen.LPJeWelle"), 0.08f);
-	const float LPFaktor = S.LP * (1.f + JeWelle * FMath::Min(Nummer - 1, 30) + TDBalance::Wert(TEXT("Wellen.LPJeWelleAb31"), 0.1f) * FMath::Max(Nummer - 31, 0));
+	float LPFaktor = S.LP * (1.f + JeWelle * FMath::Min(Nummer - 1, 30) + TDBalance::Wert(TEXT("Wellen.LPJeWelleAb31"), 0.1f) * FMath::Max(Nummer - 31, 0));
+	// 16.11. (Fahrplan P2, Simulation): Endlos - nach W50 waechst die Gegnerzahl nicht mehr (Wellen.MaxGesamt), die Coupons aber weiter;
+	// ohne Wachstum gab es keinen Bestwert. Ab Endlos.LPWachstumAbWelle je Welle Endlos.LPWachstum mehr Leben (zinsartig).
+	if (mEndlos)
+	{
+		LPFaktor *= FMath::Pow(1.f + TDBalance::Wert(TEXT("Endlos.LPWachstum"), 0.03f),
+			static_cast<float>(FMath::Max(0, Nummer - TDBalance::Ganz(TEXT("Endlos.LPWachstumAbWelle"), 50))));
+	}
 	mWellenWachstum = LPFaktor / FMath::Max(S.LP, 0.01f);
 	if (mPlanWelle != Nummer)
 	{
