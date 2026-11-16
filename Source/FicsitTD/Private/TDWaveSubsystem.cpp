@@ -2481,6 +2481,16 @@ void UTDWaveSubsystem::SpawneKernWelle(int32 Nummer)
 	// an der aeltesten Front, Bosse in der Mitte der Welle. LaufTick schickt sie nach und nach los, hoechstens Wellen.MaxGleichzeitig.
 	FString Boss;
 	EntferneBossBalken();
+	// 16.11. (Nachpruefung N1): im Endlos-Modus bleibt der noch nicht losgeschickte Nachschub der vorigen Welle erhalten
+	// (der Ueberlauf darf ihn nicht verfallen lassen) und kommt vor der neuen Welle
+	TArray<FTDNachschub> Rest;
+	if (mEndlos)
+	{
+		for (int32 i = mNachschubIndex; i < mNachschub.Num(); ++i)
+		{
+			Rest.Add(mNachschub[i]);
+		}
+	}
 	mNachschub.Reset();
 	mNachschubIndex = 0;
 	mNachschubTakt = 0.f;
@@ -2557,6 +2567,11 @@ void UTDWaveSubsystem::SpawneKernWelle(int32 Nummer)
 	for (int32 k = 0; k < Bosse.Num(); ++k)
 	{
 		Normal.Insert(Bosse[k], FMath::Min(Normal.Num(), BossStelle + k));
+	}
+	if (Rest.Num())
+	{
+		UE_LOG(LogFicsitTD, Log, TEXT("Endlos: %d Gegner Nachschub aus Welle %d kommen vor Welle %d"), Rest.Num(), mWelle - 1, mWelle);
+		Normal.Insert(Rest, 0);
 	}
 	mNachschub = MoveTemp(Normal);
 	ZeigeWellenLeiste();
@@ -2954,9 +2969,12 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 			{
 				PruefeVersorgung();
 			}
-			if (UTDLaufProtokoll* Lauf = UTDLaufProtokoll::Get(this))
+			SpeichereLauf();
+			// 16.11. (Nachpruefung N3, Marius): im Endlos-Modus keine Spielstaende je Welle - sonst liesse sich jede Welle
+			// (auch nach Kernverlust) ueber das Lademenue wiederholen, und es entstanden Hunderte Staende
+			UTDLaufProtokoll* Lauf = mEndlos ? nullptr : UTDLaufProtokoll::Get(this);
+			if (Lauf)
 			{
-				SpeichereLauf();
 				Lauf->SpeichereSpielstand(FString::Printf(TEXT("FicsitTD_W%02d_Start"), mWelle + 1));
 			}
 			++mWelle;
@@ -3023,10 +3041,15 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 				}
 			}
 		}
-		return;
+		// 16.11. (Nachpruefung N1): im Endlos-Modus laeuft die Uhr auch, solange Nachschub aussteht - sonst hielten
+		// MaxGleichzeitig lebende Gegner die naechste Welle auf
+		if (!mEndlos || mWellenZeit < EndlosAbstand(mWelle))
+		{
+			return;
+		}
 	}
 	bool bUeberlauf = false;
-	if (Lebend > 0)
+	if (Lebend > 0 || mNachschubIndex < mNachschub.Num())
 	{
 		// 0.11 (Gegencheck F3, Marius 15.11.): im Endlos-Modus zaehlt der Abstand ab Wellenbeginn - laeuft er ab, kommt die naechste
 		// Welle obendrauf (die Reste bleiben im Feld). So haelt auch ein ueberlebender Nachzuegler die Uhr nicht an.
@@ -3082,7 +3105,8 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 	{
 		mCountdown = bUeberlauf ? TDBalance::Wert(TEXT("Endlos.UeberlaufPause"), 5.f)
 			: FMath::Max(TDBalance::Wert(TEXT("Endlos.MinPause"), 30.f), EndlosAbstand(mWelle) - mWellenZeit);
-		if (mWelle % 10 == 0)
+		// 16.11. (Nachpruefung N2): eine Bosswelle im Ueberlauf (Boss lebt noch) ist nicht geschafft - keine Pause, kein Bonus
+		if (mWelle % 10 == 0 && !bUeberlauf)
 		{
 			mCountdown = FMath::Max(mCountdown, TDBalance::Wert(TEXT("Endlos.BossPause"), 300.f));
 			if (UTDEinsatzSubsystem* Einsatz = GetWorld()->GetSubsystem<UTDEinsatzSubsystem>())
@@ -3102,7 +3126,7 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 		}
 	}
 	SpeichereLauf();
-	if (UTDLaufProtokoll* Lauf = UTDLaufProtokoll::Get(this))
+	if (UTDLaufProtokoll* Lauf = mEndlos ? nullptr : UTDLaufProtokoll::Get(this))   // 16.11. (N3): nicht im Endlos-Modus
 	{
 		Lauf->SpeichereSpielstand(FString::Printf(TEXT("FicsitTD_W%02d_Ende"), mWelle));
 	}

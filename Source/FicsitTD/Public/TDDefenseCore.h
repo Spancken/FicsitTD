@@ -70,6 +70,12 @@ public:
 	/** 0.11 (Marius 15.11.): nach einer Endlos-Bosswelle wartet eine Bonuswahl (Coupons, Kernreparatur, Festplatten) */
 	UPROPERTY(SaveGame)
 	bool mEndlosBonusOffen = false;
+	/** 16.11. (Nachpruefung E5): Zahl der offenen Bonuswahlen - ein nicht abgeholter Bonus geht nicht mehr verloren */
+	UPROPERTY(SaveGame)
+	int32 mBonusOffen = 0;
+	/** 16.11. (Nachpruefung E4, Marius): gewaehlte Boni "Kern" - je Wahl dauerhaft +10 % Kern-LP fuer diesen Lauf */
+	UPROPERTY(SaveGame)
+	int32 mKernBonusStufen = 0;
 	/** 0.12-dev Freies Spiel mit Abwehr: laeuft am Kern gerade eine Bohrung (wird nach dem Laden ohne Strafe beendet) */
 	UPROPERTY(SaveGame)
 	bool mLaufBohrung = false;

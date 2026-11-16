@@ -1,4 +1,6 @@
 #include "TDEinsatz.h"
+#include "FGGameState.h"
+#include "TDSpielstand.h"
 #include "TDKernplatz.h"
 #include "Serialization/JsonSerializer.h"
 #include "Serialization/JsonReader.h"
@@ -773,7 +775,10 @@ int32 UTDEinsatzSubsystem::GibOffenesMaterial()
 void UTDEinsatzSubsystem::GebaeudeZerstoert(const UClass* BauKlasse)
 {
 	const FString Key = Schluessel(BauKlasse);
-	if (!mAktiv || Key.IsEmpty())
+	// 16.11. (Nachpruefung F2): auch in der Bohrung (Freies Spiel mit Abwehr) - wer verliert, verliert nur den Ertrag
+	const UTDWaveSubsystem* WavesZ = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
+	const bool bBohrung = WavesZ && WavesZ->IstBohrung();
+	if ((!mAktiv && !bBohrung) || Key.IsEmpty())
 	{
 		return;
 	}
@@ -925,7 +930,8 @@ FString UTDEinsatzSubsystem::ZahleEP(int32 Preis, const FString& Posten, bool bA
 		return TDT(TEXT("Nur im Einsatz."), TEXT("Only during an operation."));
 	}
 	const UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
-	if (!bAuchInWelle && Waves && Waves->LaeuftWelle())
+	// 16.11. (Nachpruefung, Marius): im Endlos-Modus gibt es keine Bausperre - Turmlevel auch in der Welle
+	if (!bAuchInWelle && Waves && Waves->LaeuftWelle() && !Waves->IstEndlos())
 	{
 		return TDT(TEXT("Nur in der Bauphase."), TEXT("Only in the build phase."));
 	}
@@ -1234,7 +1240,8 @@ FString UTDEinsatzSubsystem::Kaufe(const FString& Name, int32 Anzahl)
 		return TDT(TEXT("Kein Einsatz aktiv."), TEXT("No operation active."));
 	}
 	const UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
-	if (Waves && Waves->LaeuftWelle())
+	// 16.11. (Nachpruefung, Marius): im Endlos-Modus ist der Laden auch in der Welle offen
+	if (Waves && Waves->LaeuftWelle() && !Waves->IstEndlos())
 	{
 		return TDT(TEXT("Waehrend der Welle ist der Laden geschlossen."), TEXT("The shop is closed during a wave."));
 	}
@@ -1327,7 +1334,8 @@ FString UTDEinsatzSubsystem::KaufeKorb(const TMap<FString, int32>& Korb)
 		return TDT(TEXT("Kein Einsatz aktiv."), TEXT("No operation active."));
 	}
 	const UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
-	if (Waves && Waves->LaeuftWelle())
+	// 16.11. (Nachpruefung, Marius): im Endlos-Modus ist der Laden auch in der Welle offen
+	if (Waves && Waves->LaeuftWelle() && !Waves->IstEndlos())
 	{
 		return TDT(TEXT("Während der Welle ist der Laden geschlossen."), TEXT("The shop is closed during a wave."));
 	}
@@ -1784,6 +1792,9 @@ void UTDEinsatzSubsystem::Starte(ATDDefenseCore* Kern, int32 Stufe, int32 Wellen
 		// 0.84: Wellen je Einsatz verschieden (Option, Standard aus); einmal je Einsatz gewuerfelt und im Kern gespeichert
 		Kern->mLaufSaat = TDBalance::Wert(TEXT("Wellen.VariationJeEinsatz"), 0.f) > 0.f ? (FMath::Rand() | 1) : 0;
 		Kern->mLaufEingriffe = 0;   // 0.11: neuer Lauf, neue Wertung
+		Kern->mKernBonusStufen = 0;
+		Kern->mBonusOffen = 0;
+		Kern->mEndlosBonusOffen = false;
 		UE_LOG(LogFicsitTD, Log, TEXT("Einsatz: Wellensaat %d (%s)"), Kern->mLaufSaat, Kern->mLaufSaat ? TEXT("Wellen je Einsatz verschieden") : TEXT("Wellen je Kernplatz fest"));
 	}
 	if (UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>())
@@ -1893,13 +1904,18 @@ FString UTDEinsatzSubsystem::BeendeNachEnde()
 {
 	ATDDefenseCore* Kern = mKern.Get();
 	Beende();
+	if (ATDSpielstand* Stand = ATDSpielstand::Get(this))
+	{
+		Stand->mEinsatzBeendet = true;   // 16.11. (Nachpruefung E1): kein neuer Einsatz in diesem Spielstand
+		UE_LOG(LogFicsitTD, Log, TEXT("Einsatz beendet: Spielstand frei, kein neuer Einsatz"));
+	}
 	if (Kern)
 	{
 		Kern->Aufladen();
 		Kern->mLaufEnde = 0;
 	}
-	return TDT(TEXT("Einsatz beendet: keine Kontingente und Sperren mehr. Der Kern lässt sich jetzt abreißen."),
-		TEXT("Operation ended: no more quotas or locks. The Core can now be dismantled."));
+	return TDT(TEXT("Einsatz beendet: keine Kontingente und Sperren mehr, die Welt bleibt frei zum Weiterbauen. Der Kern lässt sich abreißen, ein neuer Einsatz beginnt mit einem neuen Spiel."),
+		TEXT("Operation ended: no more quotas or locks, the world stays free to keep building. The Core can be dismantled, a new operation starts with a new game."));
 }
 
 void UTDEinsatzSubsystem::Lade(ATDDefenseCore* Kern)
@@ -2008,7 +2024,9 @@ TArray<FString> UTDEinsatzSubsystem::StatusText()
 
 void UTDEinsatzSubsystem::HeileVerteidigung()
 {
-	if (!mAktiv)
+	// 16.11. (Nachpruefung F2): auch zu Beginn jeder Bohrwelle
+	const UTDWaveSubsystem* WavesH = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
+	if (!mAktiv && !(WavesH && WavesH->IstBohrung()))
 	{
 		return;
 	}
@@ -2054,7 +2072,8 @@ void UTDEinsatzSubsystem::BieteEndlosBonusAn(int32 Welle)
 	{
 		return;
 	}
-	Kern->mEndlosBonusOffen = true;
+	Kern->mEndlosBonusOffen = false;
+	Kern->mBonusOffen = FMath::Max(0, Kern->mBonusOffen) + 1;   // 16.11. (E5): offene Wahlen sammeln sich
 	const UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
 	const bool bEndlos = Waves && Waves->IstEndlos();
 	UE_LOG(LogFicsitTD, Log, TEXT("%s: Bonuswahl nach Bosswelle %d angeboten"), bEndlos ? TEXT("Endlos") : TEXT("Einsatz"), Welle);
@@ -2069,7 +2088,7 @@ void UTDEinsatzSubsystem::BieteEndlosBonusAn(int32 Welle)
 bool UTDEinsatzSubsystem::EndlosBonusOffen() const
 {
 	const ATDDefenseCore* Kern = mKern.Get();
-	return mAktiv && Kern && Kern->mEndlosBonusOffen;
+	return mAktiv && Kern && (Kern->mBonusOffen > 0 || Kern->mEndlosBonusOffen);
 }
 
 FString UTDEinsatzSubsystem::EndlosBonusName(int32 Nr)
@@ -2077,7 +2096,7 @@ FString UTDEinsatzSubsystem::EndlosBonusName(int32 Nr)
 	switch (Nr)
 	{
 	case 0: return TDF(TEXT("+%d Coupons"), TEXT("+%d Coupons"), TDBalance::Ganz(TEXT("Endlos.Bonus.Coupons"), 80));
-	case 1: return TDF(TEXT("Kern +%.0f %%"), TEXT("Core +%.0f %%"), 100.f * TDBalance::Wert(TEXT("Endlos.Bonus.Kern"), 0.3f));
+	case 1: return TDF(TEXT("Kern-LP dauerhaft +%.0f %%"), TEXT("Core HP permanently +%.0f %%"), 100.f * TDBalance::Wert(TEXT("Einsatz.Bonus.KernMax"), 0.1f));
 	default: return TDF(TEXT("+%d Festplatten"), TEXT("+%d Hard Drives"), TDBalance::Ganz(TEXT("Endlos.Bonus.Festplatten"), 5));
 	}
 }
@@ -2089,7 +2108,18 @@ FString UTDEinsatzSubsystem::WaehleEndlosBonus(int32 Nr)
 	{
 		return TDT(TEXT("Gerade ist kein Bonus offen."), TEXT("No bonus available right now."));
 	}
+	// 16.11. (Nachpruefung E4): nicht mitten in der Welle (sonst Notheilung, obwohl der Laden zu ist)
+	const UTDWaveSubsystem* WavesB = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
+	if (WavesB && WavesB->LaeuftWelle())
+	{
+		return TDT(TEXT("Den Bonus wählst du zwischen den Wellen - er bleibt offen."), TEXT("Pick the bonus between waves - it stays available."));
+	}
+	if (Kern->mEndlosBonusOffen && Kern->mBonusOffen <= 0)
+	{
+		Kern->mBonusOffen = 1;   // alter Stand mit Ja/Nein-Merkmal
+	}
 	Kern->mEndlosBonusOffen = false;
+	Kern->mBonusOffen = FMath::Max(0, Kern->mBonusOffen - 1);
 	FString Text;
 	if (Nr == 0)
 	{
@@ -2100,8 +2130,12 @@ FString UTDEinsatzSubsystem::WaehleEndlosBonus(int32 Nr)
 	}
 	else if (Nr == 1)
 	{
-		const float LP = Kern->HealTD(Kern->GetTDMaxHealth() * TDBalance::Wert(TEXT("Endlos.Bonus.Kern"), 0.3f));
-		Text = TDF(TEXT("Bonus: Kern +%.0f LP."), TEXT("Bonus: Core +%.0f HP."), LP);
+		// 16.11. (Nachpruefung E4, Marius): dauerhaft mehr Kern-LP statt Heilung (die liess sich fuer 15 Coupons kaufen)
+		const float Vorher = Kern->GetTDMaxHealth();
+		++Kern->mKernBonusStufen;
+		const float Mehr = Kern->GetTDMaxHealth() - Vorher;
+		Kern->HealTD(Mehr);
+		Text = TDF(TEXT("Bonus: Kern-LP dauerhaft +%.0f (jetzt %.0f)."), TEXT("Bonus: Core HP permanently +%.0f (now %.0f)."), Mehr, Kern->GetTDMaxHealth());
 	}
 	else
 	{
@@ -2134,6 +2168,14 @@ int32 UTDEinsatzSubsystem::EndlosBestwert(int32 Stufe)
 
 FString UTDEinsatzSubsystem::WerteEndlosAus(int32 ErreichteWelle, int32 Stufe)
 {
+	// 16.11. (Nachpruefung E8): wie im Einsatz - Eingriffe und erweiterte Spieleinstellungen: ohne Wertung
+	const ATDDefenseCore* KernW = mKern.Get();
+	const AFGGameState* SpielW = GetWorld()->GetGameState<AFGGameState>();
+	if ((KernW && KernW->mLaufEingriffe > 0) || (SpielW && SpielW->IsCreativeModeEnabled()))
+	{
+		UE_LOG(LogFicsitTD, Log, TEXT("Endlos: Lauf beendet, %d Wellen, ohne Wertung (Eingriffe oder erweiterte Spieleinstellungen)"), ErreichteWelle);
+		return TDF(TEXT("%d Wellen geschafft - ohne Wertung (Eingriffe oder erweiterte Spieleinstellungen)."), TEXT("%d waves done - not ranked (interventions or advanced game settings)."), ErreichteWelle);
+	}
 	const int32 Alt = EndlosBestwert(Stufe);
 	const bool bNeu = ErreichteWelle > Alt;
 	if (bNeu)
@@ -2247,6 +2289,15 @@ FString UTDEinsatzSubsystem::WerteEinsatzAus(bool bSieg, int32 Welle, float Kern
 	}
 	const int32 Erreicht = bSieg ? Welle : FMath::Max(0, Welle - 1);
 	const int32 Wertung = Erreicht * 1000 + (bSieg ? FMath::Clamp(FMath::RoundToInt(KernAnteil), 1, 100) : 0);
+	// 16.11. (Nachpruefung E3, Marius): erweiterte Spieleinstellungen des Spiels machen den Lauf zum Lauf ohne Wertung
+	if (const AFGGameState* Spiel = GetWorld()->GetGameState<AFGGameState>())
+	{
+		if (Spiel->IsCreativeModeEnabled())
+		{
+			UE_LOG(LogFicsitTD, Log, TEXT("Einsatz: Lauf %s Stufe %d ohne Wertung (erweiterte Spieleinstellungen)"), *Platz, Stufe);
+			return TDT(TEXT("Ohne Wertung: erweiterte Spieleinstellungen sind an."), TEXT("Not ranked: advanced game settings are on."));
+		}
+	}
 	if (Kern->mLaufEingriffe > 0)
 	{
 		UE_LOG(LogFicsitTD, Log, TEXT("Einsatz: Lauf %s Stufe %d ohne Wertung (%d Eingriffe)"), *Platz, Stufe, Kern->mLaufEingriffe);

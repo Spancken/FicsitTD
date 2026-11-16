@@ -1,4 +1,5 @@
 #include "TDKernTerminal.h"
+#include "TDSpielstand.h"
 #include "TDWellenStatistik.h"
 #include "TDLaufProtokoll.h"
 #include "FicsitTDModule.h"
@@ -649,6 +650,8 @@ void UTDKernTerminal::NativeConstruct()
 	// Forschungspunkte, die wegen vollem Inventar warten, beim Oeffnen nachreichen
 	if (UTDEinsatzSubsystem* Einsatz = GetWorld() ? GetWorld()->GetSubsystem<UTDEinsatzSubsystem>() : nullptr)
 	{
+		// 16.11. (Nachpruefung F4): ohne Einsatz (Freies Spiel mit Abwehr, nach dem Laden) holt das Menue ueber diesen Kern ab
+		Einsatz->SetzeAbwehrKern(Kern());
 		if (const int32 Nach = Einsatz->GibOffeneFP())
 		{
 			Melde(TDF(TEXT("%d Festplatten ins Inventar nachgereicht."), TEXT("%d Hard Drives added to your inventory."), Nach));
@@ -749,7 +752,9 @@ void UTDKernTerminal::Aktualisiere()
 	mFreiText->SetText(Einsatz->IstFrei() ? TDTX(TEXT("Freies Bauen: AN"), TEXT("Free Build: ON")) : TDTX(TEXT("Freies Bauen: aus"), TEXT("Free Build: off")));
 	// 0.11 (Modus Aus): von Hand nur mit Spielmodus "Einsatz" oder im Entwicklermodus (Selbsttests)
 	// 0.11 (Gegencheck Einsatz A2/A5, Marius 16.11.): ohne Entwicklermodus nur ein Einsatz je Kern - ein neuer Lauf ist ein neues Spiel
-	mStartKnopf->SetVisibility(bEinsatz || !(UTDKernplatz::Entwicklermodus() || (UTDKernplatz::TowerDefenseAn(this) && !(K && K->mEinsatzStartkit))) ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
+	const ATDSpielstand* StandE = ATDSpielstand::Get(this);
+	const bool bSchonBeendet = (K && K->mEinsatzStartkit) || (StandE && StandE->mEinsatzBeendet);
+	mStartKnopf->SetVisibility(bEinsatz || !(UTDKernplatz::Entwicklermodus() || (UTDKernplatz::TowerDefenseAn(this) && !bSchonBeendet)) ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
 	{
 		const int32 Ende = Einsatz->LaufEnde();
 		if (mWelleKnopf)
@@ -2430,7 +2435,8 @@ void UTDKernTerminal::EinsatzStarten()
 	{
 		return;
 	}
-	if (!UTDKernplatz::Entwicklermodus() && Kern() && Kern()->mEinsatzStartkit)
+	const ATDSpielstand* StandS = ATDSpielstand::Get(this);
+	if (!UTDKernplatz::Entwicklermodus() && ((Kern() && Kern()->mEinsatzStartkit) || (StandS && StandS->mEinsatzBeendet)))
 	{
 		Melde(TDT(TEXT("An diesem Kern lief schon ein Einsatz. Ein neuer Lauf beginnt mit einem neuen Spiel."), TEXT("This Core already ran an operation. A new run starts with a new game.")));
 		return;

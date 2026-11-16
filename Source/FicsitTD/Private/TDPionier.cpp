@@ -195,7 +195,9 @@ int32 UTDPionier::FreiePunkte() const
 		Vergeben += GetStufe(i);
 	}
 	const ATDDefenseCore* K = Kern();
-	return FMath::Max(0, GetRang() - 1 + (K ? K->mPionierBonusPunkte : 0) - Vergeben);
+	// 16.11. (Nachpruefung F8, Marius): Rang und Bohrung zusammen hoechstens 15 Punkte - die Bohrung bringt sie nur frueher
+	const int32 Gesamt = FMath::Min(GetRang() - 1 + (K ? K->mPionierBonusPunkte : 0), TDBalance::Ganz(TEXT("Pionier.MaxPunkte"), 15));
+	return FMath::Max(0, Gesamt - Vergeben);
 }
 
 FString UTDPionier::Lerne(int32 Zweig)

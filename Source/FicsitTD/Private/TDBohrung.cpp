@@ -12,6 +12,7 @@
 #include "TDSprache.h"
 #include "FicsitTDModule.h"
 #include "Resources/FGResourceNode.h"
+#include "Resources/FGResourceDeposit.h"
 #include "Resources/FGResourceDescriptor.h"
 #include "Resources/FGItemDescriptor.h"
 #include "EngineUtils.h"
@@ -104,7 +105,8 @@ FString UTDWaveSubsystem::BohrPruefung(ATDDefenseCore* Kern, AFGResourceNode** O
 	{
 		const float D = FVector::Dist(It->GetActorLocation(), Kern->GetActorLocation());
 		const TSubclassOf<UFGResourceDescriptor> Art = It->GetResourceClass();
-		if (D < BesterAbstand && Art && UFGItemDescriptor::GetForm(Art) == EResourceForm::RF_SOLID)
+		// 16.11. (Nachpruefung F5, Marius): nur echte Knoten, an denen ein Miner steht - keine Rohstoffbrocken (AFGResourceDeposit)
+		if (D < BesterAbstand && Art && UFGItemDescriptor::GetForm(Art) == EResourceForm::RF_SOLID && !It->IsA<AFGResourceDeposit>())
 		{
 			Bester = *It;
 			BesterAbstand = D;

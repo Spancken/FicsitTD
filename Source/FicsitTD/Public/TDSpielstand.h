@@ -42,4 +42,8 @@ public:
 	TMap<FString, int32> mTalente;
 	UPROPERTY(SaveGame)
 	int32 mBonusPunkte = 0;
+	/** 16.11. (Nachpruefung E1, Marius): nach "Einsatz beenden" bleibt die Welt frei - in diesem Spielstand startet nie
+	 *  wieder ein Einsatz (kein neuer Kernplatz nach Abriss des Kerns, kein Start von Hand ohne Entwicklermodus) */
+	UPROPERTY(SaveGame)
+	bool mEinsatzBeendet = false;
 };

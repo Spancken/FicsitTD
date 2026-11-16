@@ -1,4 +1,5 @@
 #include "TDKernplatz.h"
+#include "TDSpielstand.h"
 #include "TDAda.h"
 #include "FicsitTDModule.h"
 #include "TDDefenseCore.h"
@@ -1858,6 +1859,16 @@ void UTDKernplatz::PruefeTDStart()
 	if (mBauen || mNeuerKern.IsValid())
 	{
 		return;
+	}
+	// 16.11. (Nachpruefung E1, Marius): nach "Einsatz beenden" kein neuer Kernplatz, auch wenn der Kern abgerissen ist
+	if (const ATDSpielstand* Stand = ATDSpielstand::Get(this))
+	{
+		if (Stand->mEinsatzBeendet)
+		{
+			World->GetTimerManager().ClearTimer(mStartTimer);
+			UE_LOG(LogFicsitTD, Log, TEXT("Kernplatz: Einsatz in diesem Spielstand beendet - kein neuer Kernplatz"));
+			return;
+		}
 	}
 	const APlayerController* PC = World->GetFirstPlayerController();
 	APawn* Spieler = PC ? PC->GetPawn() : nullptr;
