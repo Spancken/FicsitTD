@@ -1,0 +1,76 @@
+{
+  "Name": "P12-K2-Bolzen-ohnePause",
+  "_Hinweis": "K2 (P12): voller Knoten, 4 Bolzentuerme L2, echter Strom, echte Kosten, bis W10, ohne Pause (Grenzfall Fabrikdurchsatz). Erzeugt von Tests\\erzeuge_p12k.py.",
+  "NeuesSpiel": {
+    "Startort": "Grass Fields",
+    "Modus": 1,
+    "Stufe": 2
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 40,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warteBis": "EinsatzAktiv",
+      "max": 120
+    },
+    {
+      "gib": "/Game/FactoryGame/Resource/Parts/ResourceSinkCoupon/Desc_ResourceSinkCoupon.Desc_ResourceSinkCoupon_C",
+      "anzahl": 2500
+    },
+    {
+      "gib": "/Game/FactoryGame/Resource/Parts/GenericBiomass/Desc_GenericBiomass.Desc_GenericBiomass_C",
+      "anzahl": 800
+    },
+    {
+      "kosten": "echt"
+    },
+    {
+      "fabrik": "Bolzen",
+      "tuerme": 4,
+      "level": 2,
+      "band": 1,
+      "ketten": 1,
+      "ausbau": 4
+    },
+    {
+      "strom": "Biomasse",
+      "anzahl": 4
+    },
+    {
+      "netz": true
+    },
+    {
+      "warte": 150
+    },
+    {
+      "fabrikbericht": true
+    },
+    {
+      "foto": "Fabrik_P10"
+    },
+    {
+      "wellenlauf": 10,
+      "zeitraffer": 4,
+      "max": 900
+    },
+    {
+      "fabrikbericht": true
+    },
+    {
+      "fabrikbericht": true
+    },
+    {
+      "fabrikbericht": true
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}

@@ -752,6 +752,9 @@ static FString Himmelsrichtung(float WinkelGrad, bool bDeutsch = false)
 }
 
 /** Anzeigename der Schwierigkeit; FTDStufe::Name bleibt deutsch (Balance-Schluessel Stufen.<Name>.*) */
+FString UTDWaveSubsystem::GTestPlan;
+int32 UTDWaveSubsystem::GTestLauf = 0;
+
 static FString StufenAnzeige(int32 Stufe)
 {
 	switch (FMath::Clamp(Stufe, 0, 3))
@@ -2842,6 +2845,7 @@ void UTDWaveSubsystem::MesseWellenStart()
 	mMessEP = EinsatzMess ? EinsatzMess->Konto() : Kern->mEinsatzPunkte;   // 0.10.0: Coupons als Items
 	mMessNaechste = BIG_NUMBER;
 	mMessGueltig = true;
+	mMessPause = mLetztesWellenEnde >= 0.f ? GetWorld()->GetTimeSeconds() - mLetztesWellenEnde : 0.f;
 	StarteBildMessung();
 	MeldeKreaturen(FString::Printf(TEXT("Welle %d Start"), mWelle));
 	UE_LOG(LogFicsitTD, Log, TEXT("Metrik Welle %d Start: Q %.2f (EHP %.0f, LP %.0f, K %.0f DPS aus %d Tuermen, Referenz %.0f s), %d Gegner, %d Elite, EP ungenutzt %d"),
@@ -2908,18 +2912,30 @@ void UTDWaveSubsystem::MeldeMetrik(float Anteil)
 	FString Zeile;
 	// 0.9.6/0.9.7: alte Datei ohne die neuesten Spielerspalten beiseitelegen, sonst passen Kopf und Zeilen nicht zusammen
 	FString Alt;
-	if (IFileManager::Get().FileExists(*Datei) && FFileHelper::LoadFileToString(Alt, *Datei) && !Alt.Left(700).Contains(TEXT("Spieler_Assists")))
+	if (IFileManager::Get().FileExists(*Datei) && FFileHelper::LoadFileToString(Alt, *Datei) && !Alt.Left(900).Contains(TEXT("FabrikTakt_Anteil")))
 	{
-		IFileManager::Get().Move(*FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("FicsitTD"), TEXT("Metriken_vor097.csv")), *Datei, true);
+		// 17.11. (P12): neue Spalten - alte Datei beiseitelegen
+		IFileManager::Get().Move(*FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("FicsitTD"), TEXT("Metriken_vor1117.csv")), *Datei, true);
 	}
+	float TaktSumme = 0.f;
+	int32 TaktTuerme = 0, Stueck = 0;
+	for (TActorIterator<ATDTurretBase> It(GetWorld()); It; ++It)
+	{
+		TaktSumme += It->FabrikTaktAnteil();
+		++TaktTuerme;
+		Stueck += It->MunitionStueck();
+	}
+	mLetztesWellenEnde = GetWorld()->GetTimeSeconds();
 	if (!IFileManager::Get().FileExists(*Datei))
 	{
-		Zeile = TEXT("Zeit;Stufe;Welle;Gegner;Elite;LP;EHP;K_DPS;Tuerme;Q;Dauer_s;Kernverlust_Proz;Kern_Proz;Naechste_m;Auslastung_Proz;Schaden;Overkill_Proz;Nebenziele_Proz;Uptime_Proz;Hungrig_s;OhneStrom_s;EP_ungenutzt;Bild_ms;Bild_p95_ms;Bild_max_ms;Ruckler_50ms;Hirn_ms;Turm_ms;Lebend_max;Spieler_Schaden;Spieler_Anteil_Proz;Spieler_Assists;Spieler_Markbonus\n");
+		Zeile = TEXT("Zeit;Stufe;Welle;Gegner;Elite;LP;EHP;K_DPS;Tuerme;Q;Dauer_s;Kernverlust_Proz;Kern_Proz;Naechste_m;Auslastung_Proz;Schaden;Overkill_Proz;Nebenziele_Proz;Uptime_Proz;Hungrig_s;OhneStrom_s;EP_ungenutzt;Bild_ms;Bild_p95_ms;Bild_max_ms;Ruckler_50ms;Hirn_ms;Turm_ms;Lebend_max;Spieler_Schaden;Spieler_Anteil_Proz;Spieler_Assists;Spieler_Markbonus;Plan;Lauf;Zeitraffer;FabrikTakt_Anteil;Munition_Stueck;Pause_s\n");
 	}
-	Zeile += FString::Printf(TEXT("%s;%d;%d;%d;%d;%.0f;%.0f;%.1f;%d;%.3f;%.1f;%.2f;%.1f;%.1f;%.1f;%.0f;%.1f;%.1f;%.1f;%.1f;%.1f;%d;%.2f;%.2f;%.1f;%d;%.3f;%.3f;%d;%.0f;%.1f;%d;%.0f\n"),
+	Zeile += FString::Printf(TEXT("%s;%d;%d;%d;%d;%.0f;%.0f;%.1f;%d;%.3f;%.1f;%.2f;%.1f;%.1f;%.1f;%.0f;%.1f;%.1f;%.1f;%.1f;%.1f;%d;%.2f;%.2f;%.1f;%d;%.3f;%.3f;%d;%.0f;%.1f;%d;%.0f;%s;%d;%.2f;%.3f;%d;%.0f\n"),
 		*FDateTime::Now().ToString(TEXT("%Y-%m-%d %H:%M:%S")), mStufe, mWelle, mWellenGroesse, mElites, mMessLP, mMessEHP, mMessK, mMessTuerme, mMessQ,
 		mWellenZeit, Verlust, Anteil, Naechste, 100.f * Auslastung, Schaden, OverkillAnteil, NebenAnteil, UptimeMittel, Hungrig, OhneStrom, mMessEP,
-		Bild.Mittel, Bild.P95, Bild.Max, Bild.Ruckler, Bild.HirnMs, Bild.TurmMs, Bild.MaxLebend, SpielerSchaden, SpielerAnteil, SpielerAssists, MarkBonus);
+		Bild.Mittel, Bild.P95, Bild.Max, Bild.Ruckler, Bild.HirnMs, Bild.TurmMs, Bild.MaxLebend, SpielerSchaden, SpielerAnteil, SpielerAssists, MarkBonus,
+		GTestPlan.IsEmpty() ? TEXT("-") : *GTestPlan, GTestLauf, UGameplayStatics::GetGlobalTimeDilation(GetWorld()),
+		TaktTuerme > 0 ? TaktSumme / TaktTuerme : 1.f, Stueck, mMessPause);
 	FFileHelper::SaveStringToFile(Zeile, *Datei, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM, &IFileManager::Get(), FILEWRITE_Append);
 }
 

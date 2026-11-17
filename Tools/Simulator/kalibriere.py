@@ -62,13 +62,25 @@ def main():
     katalog, phasen = sim.lade_katalog(B)
     datei = sys.argv[1] if len(sys.argv) > 1 else max(glob.glob(os.path.join(BERICHTE, "*Pruefstand_Metriken.csv")), key=os.path.getmtime)
     zeilen = list(csv.DictReader(open(datei, encoding="utf-8"), delimiter=";"))
-    namen = json.load(open(os.path.join(TESTS, "Pakete", "Pruefstand.json"), encoding="utf-8"))["Plaene"]
-    laeufe, vorher = [], 10 ** 6
-    for z in zeilen:
-        if int(z["Welle"]) <= vorher:
-            laeufe.append([])
-        laeufe[-1].append(z)
-        vorher = int(z["Welle"])
+    # 17.11. (P12): seit den Spalten Plan/Lauf ordnet die CSV selbst zu; aeltere Dateien wie bisher ueber das Paket Pruefstand
+    if zeilen and zeilen[0].get("Plan") not in (None, "", "-"):
+        namen, laeufe, kennung = [], [], None
+        for z in zeilen:
+            if (z.get("Plan"), z.get("Lauf")) != kennung:
+                kennung = (z.get("Plan"), z.get("Lauf"))
+                namen.append(z["Plan"])
+                laeufe.append([])
+            # ungueltige Wellen (B20: Fabrik-Takt unter 0,95) nicht kalibrieren
+            if z.get("FabrikTakt_Anteil") in (None, "") or float(z["FabrikTakt_Anteil"].replace(",", ".")) >= 0.95:
+                laeufe[-1].append(z)
+    else:
+        namen = json.load(open(os.path.join(TESTS, "Pakete", "Pruefstand.json"), encoding="utf-8"))["Plaene"]
+        laeufe, vorher = [], 10 ** 6
+        for z in zeilen:
+            if int(z["Welle"]) <= vorher:
+                laeufe.append([])
+            laeufe[-1].append(z)
+            vorher = int(z["Welle"])
     wellen = sim.Wellen(B, katalog, phasen, A["Gegner_GrundLP"], "Normal")
     aus = [f"# Kalibrierung Simulator gegen Prüfstand", "", f"Messung: `{os.path.basename(datei)}`; Balance: {quelle}", ""]
     alle_lp, alle_k, alle_q = [], [], []

@@ -113,6 +113,9 @@ public:
 
 	/** Munition im Eingang (Stueck bzw. bei Fluessigkeiten Liter) */
 	virtual int32 GetAmmo() const;
+	/** 17.11. (P12, Metriken): Anteil der Spielzeit, die der Fabrik-Takt seit Bilanzstart bekam (B20), und Munition im Eingang in Stueck */
+	float FabrikTaktAnteil() const;
+	int32 MunitionStueck() const;
 	int32 GetShotsFired() const { return mSchuesse; }
 	int32 GetKills() const { return mKills; }
 	/** Turmlevel 1-5 (0.63, Marius 04.11.2026): nur per Upgrade im Turmfenster, sichtbar an den Anbauteilen _S<n> */

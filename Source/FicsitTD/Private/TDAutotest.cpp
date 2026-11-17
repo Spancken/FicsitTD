@@ -221,6 +221,9 @@ void UTDAutotest::StartePlan()
 	// 17.11. (Test Fenster1117): Pruefstand je Plan neu - Bauten, Netzueberwachung, Zaehler und Kostenmodus
 	mFabrik.Reset();
 	mStromAktiv = false;
+	UTDWaveSubsystem::GTestPlan = mPlan.IsValid() && mPlan->HasField(TEXT("Name")) ? mPlan->GetStringField(TEXT("Name")) : FString();
+	++UTDWaveSubsystem::GTestLauf;
+	mPauseSpiel = 0.f;
 	TDFabrik::NeuerPlan();
 	mPlanZeit = 0.f;
 	mUhr = 0.f;

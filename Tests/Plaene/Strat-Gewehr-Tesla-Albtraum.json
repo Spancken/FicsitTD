@@ -1,6 +1,6 @@
 {
   "Name": "Strat-Gewehr-Tesla-Albtraum",
-  "_Hinweis": "16.11. (Fahrplan P6, Leiter neu): wie Strat-Gewehr-Tesla, aber Stufe Albtraum ueber die Auswahl Stufe (Simulation sagt 14 %). Beste Modellstrategie der Linie Gewehr+Tesla (Nr. 317, Doktrin Gewehrturm, Stil Tuerme, Kern ja, Gabel Schockbolzen/Panzerbrechend/GasNobelisk/Kettenblitz/KernSchild): Plan bei der Auswahl 70 % bis W30, Vorhersage 70 %, 15 Türme. Erzeugt von Werkzeuge\\FicsitTD-Simulator\\strategie_plaene.py.",
+  "_Hinweis": "16.11. (Fahrplan P6, Leiter neu): wie Strat-Gewehr-Tesla, aber Stufe Albtraum ueber die Auswahl Stufe (Simulation sagt 14 %). Beste Modellstrategie der Linie Gewehr+Tesla (Nr. 317, Doktrin Gewehrturm, Stil Tuerme, Kern ja, Gabel Schockbolzen/Panzerbrechend/GasNobelisk/Kettenblitz/KernSchild): Plan bei der Auswahl 70 % bis W30, Vorhersage 70 %, 15 Türme. Erzeugt von Werkzeuge\\FicsitTD-Simulator\\strategie_plaene.py. 17.11. (P12-Bericht): Startbefehl setzt jetzt die Stufe des Plans, Pruefung danach.",
   "NeuesSpiel": {
     "Startort": "Rocky Desert",
     "Stufe": 4
@@ -24,7 +24,13 @@
       "befehl": "td kern stop"
     },
     {
-      "befehl": "td einsatz start normal 50"
+      "befehl": "td einsatz start albtraum 50"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "gestartet (Albtraum",
+      "min": 1,
+      "text": "Stufe Albtraum wirklich gesetzt"
     },
     {
       "befehl": "td einsatz frei an"

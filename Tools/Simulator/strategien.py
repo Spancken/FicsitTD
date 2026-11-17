@@ -84,7 +84,8 @@ REZEPTE = {
     "Schraube": ("Konstruktor", 6, {"Eisenstange": 1}, 4), "Draht": ("Konstruktor", 4, {"Kupferbarren": 1}, 2),
     "Kabel": ("Konstruktor", 2, {"Draht": 2}, 1), "Kupferblech": ("Konstruktor", 6, {"Kupferbarren": 2}, 1),
     "Stahlbarren": ("Giesserei", 4, {"Eisenerz": 3, "Kohle": 3}, 3), "Stahlrohr": ("Konstruktor", 6, {"Stahlbarren": 3}, 2),
-    "Armierungsbolzen": ("Konstruktor", 4, {"Eisenbarren": 1}, 1),
+    # 17.11. (P12-Bericht F9): wie im Spiel (Recipe_SpikedRebar) ueber die Eisenstange - zwei Konstrukteure je 15 Bolzen/min
+    "Armierungsbolzen": ("Konstruktor", 4, {"Eisenstange": 1}, 1),
     "Durchschlagbolzen": ("Assembler", 8, {"Armierungsbolzen": 2, "Schraube": 4}, 2),
     # 0.82 Munitionsstufen: Nebenzutat aus dem Originalrezept (Quarz, Caterium, Schwefel), Stufe 3 mit rauchschwachem Pulver/Aluminium
     "Quarzkristall": ("Konstruktor", 8, {"Rohquarz": 5}, 3),

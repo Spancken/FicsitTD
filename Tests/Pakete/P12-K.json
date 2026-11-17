@@ -1,0 +1,18 @@
+{
+  "Name": "P12-K",
+  "_Hinweis": "Kalibrierfenster P12 (Bericht Abschnitt 5/8): K1 zweimal, K3, K4, K5, danach K2 und K6. Keine Balance-Aenderung im Fenster. Erzeugt von Tests\\erzeuge_p12k.py.",
+  "Plaene": [
+    "P12-K1-Bolzen",
+    "P12-K1-Bolzen",
+    "Strat-Gewehr-Tesla",
+    "P12-K4-Bolzen",
+    "P12-K4-Gewehr",
+    "P12-K4-Nobelisk",
+    "P12-K4-Tesla",
+    "P12-K4-Flamme",
+    "P12-K5-Misch-W31-50",
+    "P12-K2-Bolzen-ohnePause",
+    "P12-K6-Gewehr-Tesla-Hart",
+    "P12-K6-Gewehr-Tesla-Albtraum"
+  ]
+}

@@ -1112,6 +1112,26 @@ bool ATDTurretBase::CanProduce_Implementation() const
 	return mBereit.load() && Super::CanProduce_Implementation();
 }
 
+float ATDTurretBase::FabrikTaktAnteil() const
+{
+	return mBilanz.Messzeit > 0.5f ? FMath::Clamp(mDiagFabrikDt / mBilanz.Messzeit, 0.f, 2.f) : 1.f;
+}
+
+int32 ATDTurretBase::MunitionStueck() const
+{
+	int32 Summe = 0;
+	if (const UFGInventoryComponent* Eingang = GetInputInventory())
+	{
+		TArray<FInventoryStack> Stapel;
+		Eingang->GetInventoryStacks(Stapel);
+		for (const FInventoryStack& S : Stapel)
+		{
+			Summe += S.NumItems;
+		}
+	}
+	return Summe;
+}
+
 void ATDTurretBase::Factory_Tick(float dt)
 {
 	mDiagFabrikDt += dt;

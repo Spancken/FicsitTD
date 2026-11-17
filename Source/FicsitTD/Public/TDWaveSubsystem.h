@@ -591,6 +591,14 @@ private:
 	/** Messwerte der laufenden Welle (nicht gespeichert: nach dem Laden mitten in der Welle fehlen sie) */
 	bool mMessGueltig = false;
 	float mMessQ = 0.f;
+	/** 17.11. (P12): Spielzeit seit dem Ende der vorigen Welle (Pause des Spielers bzw. Pruefstands), Ende-Zeitpunkt */
+	float mMessPause = 0.f;
+	float mLetztesWellenEnde = -1.f;
+public:
+	/** 17.11. (P12): Name und laufende Nummer des Selbsttest-Plans fuer die Metriken-CSV (leer im normalen Spiel) */
+	static FString GTestPlan;
+	static int32 GTestLauf;
+private:
 	float mMessEHP = 0.f;
 	float mMessLP = 0.f;
 	float mMessK = 0.f;

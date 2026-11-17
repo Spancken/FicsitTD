@@ -148,10 +148,11 @@ def nachspielen(s, ausbau, forschung, B, Z, K, gabeln, listen):
     return ende
 
 
-def spielplan(name, hinweis, ausbau, forschung):
+def spielplan(name, hinweis, ausbau, forschung, stufe="normal"):
+    # 17.11. (P12-Bericht: Hart/Albtraum-Plaene starteten auf Normal): die Stufe des Plans auch im Startbefehl
     import erzeuge_referenzen as er
     s = [{"pruefe": "Version", "soll": "{VERSION}", "text": "richtige Mod-Version geladen"}, {"warte": 15},
-         {"befehl": "td einsatz stop"}, {"befehl": "td kern stop"}, {"befehl": "td einsatz start normal 50"}, {"befehl": "td einsatz frei an"},
+         {"befehl": "td einsatz stop"}, {"befehl": "td kern stop"}, {"befehl": "td einsatz start %s 50" % stufe}, {"befehl": "td einsatz frei an"},
          {"stromfrei": True}, {"versorgung": er.SATT}]
     for a in ABSCHNITTE + [BIS]:
         if a > 0:
