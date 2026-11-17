@@ -22,7 +22,7 @@
 | Modus | Inhalt |
 |---|---|
 | **Einsatz** (Hauptmodus) | fester Kernplatz je Biom, Kontingente, Coupons/Festplatten, Phasen mit Bossen |
-| **Endlos-Wellen** *(0.11-dev, Spielmodus 2, Marius 15.11., nach Gegencheck)* | wie Einsatz (Kernplatz, Kontingente, Coupons/Festplatten, MAM), aber Wellen **auf Zeit**, **ohne Ende**, immer aus **einer** Front. **Zeitplan je Stufe** (erste Welle / Abstand): Erkundung 10 min / 240 s, Normal 8 min / 220 s, Hart 7 min / 165 s, Albtraum 6 min / 150 s (`Endlos.<Stufe>.ErsteWelle`, `.Abstand`). Der Abstand zählt **ab Wellenbeginn** und sinkt je Welle um 1,5 s bis 90 s (`Endlos.AbstandJeWelle`, `Endlos.AbstandMin`). Budget je Welle × 0,9 (`Endlos.BudgetFaktor`), ab Welle 50 je Welle 3 % mehr Gegnerleben, zinsartig (`Endlos.LPWachstum`, `Endlos.LPWachstumAbWelle`) – sonst gibt es nach W50 keinen Druck mehr (16.11., Simulation, Fahrplan P2). Ist die Welle früher erledigt, bleibt die Restzeit als Pause, mindestens 30 s (`Endlos.MinPause`). Läuft die Zeit ab, kommt die nächste Welle **obendrauf** (Reste bleiben, 5 s `Endlos.UeberlaufPause`), anhalten geht nicht. **Gegnerstrom:** 2 Gegner je Sekunde statt Pakete von 5 alle 0,25 s, große Wellen schneller, damit der Nachschub nach der Hälfte des Abstands draußen ist (`Endlos.NachschubPaket`, `.NachschubTakt`, `.StromAnteil`). **Keine Bausperre** während der Welle. **Vorziehen** („Welle vorziehen“) gibt 1 Coupon je 10 s Restzeit (`Endlos.VorziehSekundenJeCoupon`). **Nach jeder Bosswelle** mindestens 5 min Pause (`Endlos.BossPause`) und eine Bonuswahl im Kern-Menü: +80 Coupons, Kern-LP dauerhaft +10 % oder +5 Festplatten (`Endlos.Bonus.*`, `Einsatz.Bonus.KernMax`); nicht abgeholte Boni bleiben offen, gewählt wird zwischen den Wellen. Eine **Bosswelle im Überlauf** (Boss lebt noch) bringt keine Pause und keinen Bonus; noch nicht losgeschickter Nachschub verfällt nicht, er kommt vor der nächsten Welle, und die Uhr läuft auch, solange Nachschub aussteht. *(Nachprüfung 16.11., Marius)* **Laden und Turmlevel** gehen auch in der Welle (keine Bausperre). **Keine Spielstände je Welle** (sonst ließe sich jede Welle über das Lademenü wiederholen). *(Nachprüfung 16.11., Marius)* **Kernverlust beendet den Lauf** mit Bestwert je Stufe (`Saved\FicsitTD\Bestwerte.json`; ohne Wertung bei Eingriffen oder erweiterten Spieleinstellungen), kein „Welle wiederholen“. Chat: eine Sammelzeile je Welle, Countdown-Marken nur 60 und 10 s. Der Modus wird am Kern gemerkt (`mLaufEndlos`); `/td modus einsatz` ändert ein Endlos-Spiel nicht. |
+| **Endlos-Wellen** *(0.11-dev, Spielmodus 2, Marius 15.11., nach Gegencheck)* | wie Einsatz (Kernplatz, Kontingente, Coupons/Festplatten, MAM), aber Wellen **auf Zeit**, **ohne Ende**, immer aus **einer** Front. **Zeitplan je Stufe** (erste Welle / Abstand): Erkundung 10 min / 240 s, Normal 8 min / 220 s, Hart 7 min / 165 s, Albtraum 6 min / 150 s (`Endlos.<Stufe>.ErsteWelle`, `.Abstand`). Der Abstand zählt **ab Wellenbeginn** und sinkt je Welle um 1,5 s bis 90 s (`Endlos.AbstandJeWelle`, `Endlos.AbstandMin`). Budget je Welle × 0,9 (`Endlos.BudgetFaktor`), ab Welle 50 je Welle 3 % mehr Gegnerleben, zinsartig (`Endlos.LPWachstum`, `Endlos.LPWachstumAbWelle`) – sonst gibt es nach W50 keinen Druck mehr (16.11., Simulation, Fahrplan P2). **Ab Welle 60** wächst zusätzlich die Gegnerzahl je Welle um 2 bis 240 (`Endlos.MehrGegnerJeWelle`, `Endlos.MaxGesamt`) und der Elite-Anteil um 1 Prozentpunkt je Welle bis 60 % (`Endlos.EliteMax`) *(17.11., Marius)*. Ist die Welle früher erledigt, bleibt die Restzeit als Pause, mindestens 30 s (`Endlos.MinPause`). Läuft die Zeit ab, kommt die nächste Welle **obendrauf** (Reste bleiben, 5 s `Endlos.UeberlaufPause`), anhalten geht nicht. **Gegnerstrom:** 2 Gegner je Sekunde statt Pakete von 5 alle 0,25 s, große Wellen schneller, damit der Nachschub nach der Hälfte des Abstands draußen ist (`Endlos.NachschubPaket`, `.NachschubTakt`, `.StromAnteil`). **Keine Bausperre** während der Welle. **Vorziehen** („Welle vorziehen“) gibt 1 Coupon je 10 s Restzeit (`Endlos.VorziehSekundenJeCoupon`). **Nach jeder Bosswelle** mindestens 5 min Pause (`Endlos.BossPause`) und eine Bonuswahl im Kern-Menü: +80 Coupons, Kern-LP dauerhaft +10 % oder +5 Festplatten (`Endlos.Bonus.*`, `Einsatz.Bonus.KernMax`); nicht abgeholte Boni bleiben offen, gewählt wird zwischen den Wellen. Eine **Bosswelle im Überlauf** (Boss lebt noch) bringt keine Pause und keinen Bonus; noch nicht losgeschickter Nachschub verfällt nicht, er kommt vor der nächsten Welle, und die Uhr läuft auch, solange Nachschub aussteht. *(Nachprüfung 16.11., Marius)* **Laden und Turmlevel** gehen auch in der Welle (keine Bausperre). **Keine Spielstände je Welle** (sonst ließe sich jede Welle über das Lademenü wiederholen). *(Nachprüfung 16.11., Marius)* **Kernverlust beendet den Lauf** mit Bestwert je Stufe (`Saved\FicsitTD\Bestwerte.json`; ohne Wertung bei Eingriffen oder erweiterten Spieleinstellungen), kein „Welle wiederholen“. Chat: eine Sammelzeile je Welle, Countdown-Marken nur 60 und 10 s. Der Modus wird am Kern gemerkt (`mLaufEndlos`); `/td modus einsatz` ändert ein Endlos-Spiel nicht. |
 | **Aus** *(Spielmodus 0, ab 0.11-dev)* | normales Satisfactory: keine TD-Rezepte, TD-Forschungsbäume gesperrt (`UTDModusAbhaengigkeit`), kein Kernplatz, kein Knopf „Einsatz starten“. Nur der Spielmodus zählt, ein gebauter Kern nicht (Marius 15.11.). Alte Stände, deren Einsatz ohne Spielmodus lief, stellen ihn mit `/td modus einsatz` um (bleibt beim Speichern erhalten, belegt im Plan `ModusAus`). |
 | **Kern-Verteidigung** | freies Feld, Kern beliebig, ohne Kontingente („Sandkasten“ nur noch hierfür, Tests; ab 0.11-dev nur im Entwicklermodus von Hand) |
 | **Freies Spiel mit Abwehr** *(0.12-dev, Spielmodus 3, Marius 15.11., Gegencheck Normalspiel)* | normales Satisfactory mit HUB und Meilensteinen, dazu Türme, Mauern und Abwehr-Forschung. **Leitsatz:** Die Fabrik ernährt die Verteidigung, die Verteidigung bringt Ertrag. Nichts greift an, was du nicht eingeschaltet hast. Wer verliert, verliert nur den Ertrag. **Forschung:** Ballistik, Elementar, Festung kosten Coupons statt Festplatten (10 je Festplatte, `Abwehr.CouponsJeFestplatte`); der Baum Industrie ist verborgen, seine Knoten gelten als erforscht, sobald der HUB ihre Spielrezepte freigeschaltet hat. Keine Freigabe „ab Welle“. Turmlevel mit Coupons. Kein Laden, keine Kontingente, kein Kernplatz. **Bohrung:** Abwehrkern als Tiefbohrer höchstens 30 m neben einem festen Rohstoffknoten (nur echte Knoten, keine Rohstoffbrocken *(Nachprüfung 16.11., Marius)*); vor dem Start Platzprüfung im Klartext (Knoten, begehbare Wege). Stufen Leicht (Wellen 1–4, 8000 LP, 60 Erz je Welle), Mittel (15–19, 18000 LP, 120 Erz) erst nach einem Erfolg auf Leicht, Schwer (25–30 mit Boss, 24000 LP, 200 Erz) nach Mittel. Erz × Reinheit (unrein 0,5, rein 2). Nach jeder abgewehrten Bohrwelle repariert sich der Kern um 10 % (`Bohrung.Reparatur`; 16.11., Simulation, Fahrplan P3). **Erstlohn** je Rohstoff und Stufe einmal: 2/4/6 Festplatten, auf Schwer +1 Talentpunkt; wiederholbar nur Erz und Pionier-XP (60/120/200). In der Bohrung zerstörte Bauten geben ihr Baumaterial zurück, und zu Beginn jeder Bohrwelle heilen alle Verteidigungsbauten auf 100 % wie im Einsatz *(Nachprüfung 16.11., Marius)*. Wildtiere greifen die Abwehrbauten nicht an, nur die Wellengegner der Bohrung; ein zweiter Kern ist kein Ziel. Kern-Schild und Notreparatur wirken auch in der Bohrung. Bänder rüsten hier nicht automatisch auf (das macht der HUB). Die Forschung kennt hier keine Freigabe „ab Welle“, auch nicht über die Bedingung im Knoten *(Nachprüfung 16.11., Marius)*. Abbruch jederzeit ohne Strafe, bei Kernverlust endet nur der Lauf (Kern repariert sich), nach dem Laden endet eine laufende Bohrung ohne Strafe. Speichern in der Bohrungswelle gesperrt wie im Einsatz. Alte Stände: `/td modus abwehr`. Schlüssel `Bohrung.<Stufe>.*`. |
@@ -55,6 +55,7 @@
    - Der Kern repariert sich (Grundreparatur, mit Forschung mehr).
    - Beute liegt am Boden oder kommt nach 60 s an den Kern.
    - Der Mod speichert einen Spielstand vor und nach jeder Welle (`FicsitTD_W<n>_Start/_Ende`), nach dem Sieg in Welle 50 vermutlich nicht.
+   - **Chat (17.11., Marius: nur das Wichtigste):** am Wellenende eine Sammelzeile (Coupons, Festplatten, Kern, zerstörte Bauten, beste Türme, dein Anteil), Details im Kern-Menü (Statistik). Der Bauhinweis kommt nur in den ersten drei Wellen. Wichtige Warnungen (Kern unter 50 %, neue Front, Boss) und ADA bleiben eigene Zeilen (`Chat.Sammelzeile`).
    - **Phasenabschluss** nach Welle 10, 20, 30, 40: *(0.11-dev, Gegencheck Einsatz, Marius 16.11.)* Kurzbericht im Chat (Gegner, tiefster Kernstand, Coupons, Festplatten, Schadensanteil je Turmart) und eine Bonuswahl im Kern-Menü wie im Endlos-Modus: +80 Coupons, Kern-LP dauerhaft +10 % für diesen Lauf oder +5 Festplatten (`Endlos.Bonus.*`, `Einsatz.Bonus.KernMax`; offene Boni sammeln sich, gewählt wird zwischen den Wellen, Schalter `Einsatz.Phasenabschluss`). Ein Frühstart-Bonus kommt bewusst nicht in den Einsatz.
 5. **Niederlage:** Der Kern fällt auf 0 LP, die Fabrik bleibt. Das Kern-Menü bietet **Welle wiederholen** (lädt `FicsitTD_W<n>_Start`) oder **Einsatz beenden** (keine Kontingente und Sperren mehr, Kern voll und abreißbar; die Welt bleibt frei zum Weiterbauen, in diesem Spielstand startet nie wieder ein Einsatz, auch nicht nach Abriss des Kerns – Merkmal `mEinsatzBeendet` im Spielstand *(Nachprüfung 16.11., Marius)*). Die Kernreparatur im Laden ist dann gesperrt. **„Neu starten“ gibt es für Spieler nicht mehr**: Es behielt Coupons, Turmlevel und Forschung und zahlte alle Wellen noch einmal. Ein neuer Lauf ist ein neues Spiel. *(0.11-dev, Gegencheck Einsatz, Marius 16.11.)* (Im Entwicklermodus bleibt der Knopf für Selbsttests.)
 6. **Sieg:** Alle 50 Wellen sind überstanden (in der Kern-Verteidigung: alle Wellen der gewählten Länge). Danach im Kern-Menü: Einsatz beenden.
@@ -153,7 +154,7 @@
 - **Bezahlt wird nur mit Festplatten** (seit 0.10.0, vorher FICSIT-Kampfdaten). Der Preis richtet sich nach der Freigabe-Welle des Knotens (Preisstufen ab Welle 0, 5, 15, 25, 35). Insgesamt gibt es bewusst mehr Knoten, als FP hereinkommen.
 - **Freigabe-Welle:** Ein Knoten ist erst ab einer bestimmten Welle erforschbar. Er erbt die Welle von seinen Eltern und Voraussetzungen. Der Status steht im Knotentitel.
 - **Gabelungen:** Bei jedem Paar ist nur eine Seite je Einsatz erforschbar. Das ist endgültig.
-- **Doktrin:** Eine Turmlinie wird zur Hauptlinie. Sie bekommt mehr Schaden, billigere Level und Level 5 früher. **Heute** ist sie eine Gabelung mit fünf Seiten und endgültig. **Beschlossen:** wechselbar im Kern-Menü, einmal je Einsatz für 50 Coupons *(geplant, M1)*.
+- **Doktrin:** Eine Turmlinie wird zur Hauptlinie. Sie bekommt mehr Schaden, billigere Level und Level 5 früher. **Heute** ist sie eine Gabelung mit fünf Seiten und endgültig. **Beschlossen:** wechselbar im Kern-Menü, einmal je Einsatz für 50 Coupons *(geplant, ohne Termin)*.
 - **Kern-Forschung (Festung):**
   - Kern-Panzerung: Kern-LP × 1,3.
   - Notreparatur: Nach jeder abgewehrten Welle repariert sich der Kern um 10 % seiner LP.
@@ -166,10 +167,10 @@
 - **Heute:**
   - Festplatten (bis 0.9.8 Kampfdaten), Coupons und Munition mit einer Chance je Gegnerstufe.
   - Energie-Splitter: 2 je Boss, Eliten mit 5 % Chance einen *(ungetestet)*.
-- **Beschlossen** *(geplant, M2)*:
+- **Beschlossen** *(geplant, ohne Termin)*:
   - Eliten lassen **Energieschnecken** fallen, der Spieler stellt die Splitter selbst her.
   - Phasen-Bosse lassen einen **Somersloop** fallen, für einen Turm mit Doppelschuss.
-  - Festplatten: nein.
+  - Festplatten als Beute sollen wegfallen (heute noch normal 2 %, Elite 15 %, Boss 100 %, `Loot.Kampfdaten.*`) – noch nicht umgesetzt.
 
 ## 9. Kennzahlen
 
@@ -177,12 +178,12 @@
   - EHP ist die Summe der Gegner-LP, geteilt durch die mittlere Schadenswirkung der aufgestellten Türme gegen den jeweiligen Gegner (Resistenzen).
   - K ist die Summe der Nenn-DPS aller Türme.
   - Q = 1 heißt: Die Türme bräuchten bei vollem Feuer 60 s für die ganze Welle.
-  - Zielbänder: Normal 0,55–0,75, Boss bis etwa 1,0. Die Bänder werden im Prüfstand (M1) neu festgelegt.
+  - Zielbänder: Normal 0,55–0,75, Boss bis etwa 1,0. Die Bänder werden im Prüfstand neu festgelegt; Methode offen (Fahrplan P12).
 - **Weitere Kennzahlen im Log** (`Metriken.csv`, `Wirtschaft.csv`): Kernverlust, knappste Annäherung, Uptime, Overkill, Munitionsmangel mit Ziel, Zeit ohne Strom, EP und FP je Welle.
 
 ## 10. Belegung je System
 
-Stand 12.11.2026 (Mod 0.9.4). Die langen Läufe sind Selbsttests im Prüfstand: Der Plan baut die Türme selbst, Strom und Munition werden gestellt, gebaut wird frei. Sie belegen Kampf und Balance, nicht die Fabrik dahinter. Berichte in `Testberichte\`, Zusammenfassung in `Mods\README.md`.
+Stand 16.11.2026 (Mod 0.11-dev; Berichte `Testberichte6-11-16_*`). Die langen Läufe sind Selbsttests im Prüfstand: Der Plan baut die Türme selbst, Strom und Munition werden gestellt, gebaut wird frei. Sie belegen Kampf und Balance, nicht die Fabrik dahinter. Berichte in `Testberichte\`, Zusammenfassung in `Mods\README.md`.
 
 | System | Stand |
 |---|---|
@@ -218,8 +219,8 @@ Stand 12.11.2026 (Mod 0.9.4). Die langen Läufe sind Selbsttests im Prüfstand: 
 | Gegnerbudget × | 0,6 | 1 | 1,1 | 1,1 |
 | Gegner-LP × | 0,7 | 1 | 1 | 1,1 |
 | Kern-LP | 30000 | 20000 | 15000 | 15000 |
-| Aufbau bis Welle 1 (s) | 1800 | 1200 | 900 | 600 |
-| Aufbau zwischen Wellen (s) | 900 | 600 | 480 | 360 |
+| Aufbau bis Welle 1 (s, nur Kern-Verteidigung; Einsatz ohne Uhr) | 1800 | 1200 | 900 | 600 |
+| Aufbau zwischen Wellen (s, nur Kern-Verteidigung) | 900 | 600 | 480 | 360 |
 | Fronten zu Beginn | 1 | 1 | 1 | 1 |
 | neue Front ab Welle | 16 | 11 | 8 | 6 |
 | Elite ab Welle | 15 | 13 | 7 | 5 |
@@ -227,7 +228,7 @@ Stand 12.11.2026 (Mod 0.9.4). Die langen Läufe sind Selbsttests im Prüfstand: 
 ### Wellen
 
 - Budget = Stufe × (12 + 5 × N + 0,15 × N²)
-- Gegner-LP × (1 + 0,25 × (N − 1)) bis Welle 30, danach + 0,1 je Welle; Elite-LP × 2,5
+- Gegner-LP × (1 + 0,25 × (N − 1)) bis Welle 31, danach + 0,1 je weitere Welle; Elite-LP × 2,5
 - Bosswellen: Gegnerbudget × 0,6 plus Boss
 - höchstens 60 gleichzeitig, 120 je Welle (Nachschub alle 0,25 s je 5)
 - Standardlänge eines Einsatzes: 50 Wellen

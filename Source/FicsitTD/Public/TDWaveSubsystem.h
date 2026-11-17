@@ -561,6 +561,13 @@ private:
 	int32 mStufe = 1;
 	/** 16.11. (Nachpruefung N4): die gerade ausgewertete Welle lief ueber (Endlos) - andere Chatzeile */
 	bool mLetzterUeberlauf = false;
+public:
+	/** 17.11. (Marius: Chatflut reduzieren): Bilanz der letzten Welle (beste Tuerme, Spieler) fuer die Sammelzeile des Einsatzes */
+	const FString& GetLetzteWellenZeile() const { return mLetzteWellenZeile; }
+	/** Sammelzeile statt Einzelzeilen am Wellenende (Einsatz und Endlos, nicht in der Bohrung) */
+	bool Sammelzeile() const;
+private:
+	FString mLetzteWellenZeile;
 	bool mManuell = false;
 	bool mEndlos = false;
 	bool mBohrung = false;

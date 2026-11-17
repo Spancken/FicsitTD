@@ -2,9 +2,9 @@
 
 A Satisfactory mod that turns the game into a factory-fed tower defense: defend a FICSIT Defense Core against waves of native fauna, with turrets that consume real ammunition produced by your factory.
 
-**Status:** Alpha (0.9.0), single-player, Windows (Steam and Epic). German and English.
+**Status:** Alpha (0.10.x, 0.11 in development), single-player, Windows (Steam and Epic). German and English.
 
-Install via the [Satisfactory Mod Manager](https://ficsit.app). Start a new game and enable the session setting **"FICSIT Tower Defense"**.
+Install via the [Satisfactory Mod Manager](https://ficsit.app). Start a new game, open the session settings category **FICSIT Tower Defense** and choose a **Game Mode** (Operation, Endless waves, Free play with defense) and optionally a **Difficulty**.
 
 ## Building
 

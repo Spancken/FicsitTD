@@ -173,6 +173,10 @@ class Wellen:
             budget = max(2, runde(budget * self.w("Endlos.BudgetFaktor", 1.0)))
         lp_faktor = self.lp_faktor(n)
         max_gegner = int(self.w("Wellen.MaxGesamt", 120))
+        mehr_ab = int(self.w("Endlos.MehrGegnerAbWelle", 60))
+        if self.endlos and n > mehr_ab:
+            # 17.11. (Marius: nach W60 mehr Gegner und Elite) wie TDWaveSubsystem.cpp PlanFuer
+            max_gegner = min(int(self.w("Endlos.MaxGesamt", 240)), max_gegner + runde(self.w("Endlos.MehrGegnerJeWelle", 2) * (n - mehr_ab)))
         art = n % 5
         rolle = {1: 0, 2: 1, 4: 2, 0: 3}.get(art, -1)
         phase = max(0, n - 1) // 10
@@ -205,6 +209,8 @@ class Wellen:
             anzahl += 1
         elite_ab = int(self.s("EliteAbWelle"))
         chance = min(0.3, 0.1 + 0.01 * (n - elite_ab)) if n >= elite_ab else 0.0
+        if self.endlos and n > mehr_ab:
+            chance = min(self.w("Endlos.EliteMax", 0.6), 0.3 + 0.01 * (n - mehr_ab))
         gegner, elite = [], 0
         for name, f, darf_elite in plan:
             e = darf_elite and rng.random() < chance

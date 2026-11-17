@@ -663,7 +663,7 @@ static FString PhasenName(int32 Ph)
 	{
 	case 0: return TDT(TEXT("Die Herde"), TEXT("The Herd"));
 	case 1: return TDT(TEXT("Der Schwarm"), TEXT("The Swarm"));
-	case 2: return TDT(TEXT("Saeure"), TEXT("Acid"));
+	case 2: return TDT(TEXT("Säure"), TEXT("Acid"));
 	case 3: return TDT(TEXT("Fremde Biome"), TEXT("Foreign Biomes"));
 	case 4: return TDT(TEXT("Strahlung"), TEXT("Radiation"));
 	default: return KernPhasen[FMath::Clamp(Ph, 0, KernPhasenAnzahl - 1)].Name;
@@ -1221,6 +1221,12 @@ void UTDWaveSubsystem::PruefeVersorgung() const
 	if (OhneStrom.Num())    Text += TDF(TEXT(" ohne Strom: %s;"), TEXT(" no power: %s;"), *FString::Join(OhneStrom, TEXT(", ")));
 	if (OhneRezept.Num())   Text += TDF(TEXT(" ohne Rezept: %s;"), TEXT(" no recipe: %s;"), *FString::Join(OhneRezept, TEXT(", ")));
 	Ansage(Text);
+}
+
+bool UTDWaveSubsystem::Sammelzeile() const
+{
+	const UTDEinsatzSubsystem* Einsatz = GetWorld() ? GetWorld()->GetSubsystem<UTDEinsatzSubsystem>() : nullptr;
+	return !mBohrung && Einsatz && Einsatz->IstAktiv() && TDBalance::Ganz(TEXT("Chat.Sammelzeile"), 1) > 0;
 }
 
 void UTDWaveSubsystem::Ansage(const FString& Text) const
@@ -2026,7 +2032,15 @@ TArray<FTDPlanGruppe> UTDWaveSubsystem::PlanFuer(int32 Nummer, int32& OutArt) co
 		Budget = FMath::Max(2, FMath::RoundToInt(Budget * TDBalance::Wert(TEXT("Endlos.BudgetFaktor"), 0.9f)));
 	}
 	// T5: Gesamtzahl je Welle; gleichzeitig lebende begrenzt der Nachschub (Wellen.MaxGleichzeitig)
-	const int32 MaxGegner = TDBalance::Ganz(TEXT("Wellen.MaxGesamt"), 2 * KernMaxGegner);
+	int32 MaxGegner = TDBalance::Ganz(TEXT("Wellen.MaxGesamt"), 2 * KernMaxGegner);
+	// 17.11. (Marius: Endlos nach W60 mehr Elite und mehr Gegner statt nur mehr Leben): die Obergrenze je Welle waechst
+	// (gleichzeitig lebend bleibt Wellen.MaxGleichzeitig, der Nachschub streckt die Welle)
+	const int32 EndlosMehrAb = TDBalance::Ganz(TEXT("Endlos.MehrGegnerAbWelle"), 60);
+	if (mEndlos && Nummer > EndlosMehrAb)
+	{
+		MaxGegner = FMath::Min(TDBalance::Ganz(TEXT("Endlos.MaxGesamt"), 240),
+			MaxGegner + FMath::RoundToInt(TDBalance::Wert(TEXT("Endlos.MehrGegnerJeWelle"), 2.f) * (Nummer - EndlosMehrAb)));
+	}
 	// Wellenart: Ansturm, Panzer, Gemischt, Fernkampf, Schwarm im Wechsel
 	const int32 Art = Nummer % 5;
 	const int32 Rolle = Art == 1 ? 0 : Art == 2 ? 1 : Art == 4 ? 2 : Art == 0 ? 3 : -1;
@@ -2111,7 +2125,12 @@ TArray<FTDPlanGruppe> UTDWaveSubsystem::PlanFuer(int32 Nummer, int32& OutArt) co
 	}
 	Plan.Append(Neue);
 	// Elite ab der Elite-Welle der Stufe (Anteil steigt bis 30 %); neue Arten bleiben ohne Elite
-	const float EliteChance = Nummer >= S.EliteAb ? FMath::Min(0.3f, 0.1f + 0.01f * (Nummer - S.EliteAb)) : 0.f;
+	float EliteChance = Nummer >= S.EliteAb ? FMath::Min(0.3f, 0.1f + 0.01f * (Nummer - S.EliteAb)) : 0.f;
+	if (mEndlos && Nummer > EndlosMehrAb)
+	{
+		// 17.11.: nach W60 steigt der Elite-Anteil weiter (1 Prozentpunkt je Welle bis Endlos.EliteMax)
+		EliteChance = FMath::Min(TDBalance::Wert(TEXT("Endlos.EliteMax"), 0.6f), 0.3f + 0.01f * (Nummer - EndlosMehrAb));
+	}
 	for (FTDPlanGruppe& G : Plan)
 	{
 		for (int32 i = 0; i < G.Anzahl && !G.bNeu; ++i)
@@ -2702,7 +2721,13 @@ void UTDWaveSubsystem::WelleAusgewertet(float Anteil, bool bVerloren)
 		SpielerText = Pionier->WellenZeile(TurmSchaden);
 	}
 	// 16.11. (Nachpruefung N4): ein Ueberlauf ist nicht "abgewehrt"
-	if (mLetzterUeberlauf)
+	mLetzteWellenZeile = (BesteText + SpielerText).TrimStart();
+	if (!mLetzterUeberlauf && Sammelzeile())
+	{
+		// 17.11. (Marius: Chatflut reduzieren): die Einsatz-Sammelzeile nennt Lohn, Kern und diese Bilanz in einer Zeile
+		UE_LOG(LogFicsitTD, Log, TEXT("Welle %d abgewehrt: %d Gegner in %.0f s, Kern bei %.0f %%.%s%s"), mWelle, mWellenGroesse, mWellenZeit, Anteil, *BesteText, *SpielerText);
+	}
+	else if (mLetzterUeberlauf)
 	{
 		Ansage(TDF(TEXT("Welle %d läuft über: Die Zeit ist um, die Reste bleiben im Feld, die nächste Welle kommt obendrauf. Kern bei %.0f %%.%s%s"),
 			TEXT("Wave %d overflows: time is up, the rest stays in the field and the next wave comes on top. Core at %.0f %%.%s%s"), mWelle, Anteil, *BesteText, *SpielerText));
@@ -3151,6 +3176,8 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 	{
 		Lauf->SpeichereSpielstand(FString::Printf(TEXT("FicsitTD_W%02d_Ende"), mWelle));
 	}
+	// 17.11. (Chatflut): der Bauhinweis nur in den ersten drei Wellen, danach weiss man es
+	if (!Sammelzeile() || mWelle <= 3)
 	Ansage(mManuell ? TDT(TEXT("Bauen, so lange du willst - naechste Welle am Kern (E) mit \"Welle starten\"."), TEXT("Build as long as you like - next wave at the Core (E) with \"Start wave\"."))
 		: TDF(TEXT("Naechste Welle in %d:%02d min (sofort: am Kern \"Welle starten\")."), TEXT("Next wave in %d:%02d min (now: \"Start wave\" at the Core)."),
 			FMath::FloorToInt(mCountdown / 60.f), FMath::FloorToInt(mCountdown) % 60));

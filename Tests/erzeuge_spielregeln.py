@@ -35,14 +35,14 @@ def tabellen(B, ns):
     w = lambda k, d="–": zahl(B[k]) if k in B else d
     # Stufen
     z += ["### Schwierigkeitsstufen", "", "| Wert | Erkundung | Normal | Hart | Albtraum |", "|---|---|---|---|---|"]
-    for wert, name in [("Budget", "Gegnerbudget ×"), ("GegnerLP", "Gegner-LP ×"), ("KernLP", "Kern-LP"), ("AufbauSekunden", "Aufbau bis Welle 1 (s)"),
-                       ("PauseSekunden", "Aufbau zwischen Wellen (s)"), ("FrontenStart", "Fronten zu Beginn"), ("NeueFrontAbWelle", "neue Front ab Welle"),
+    for wert, name in [("Budget", "Gegnerbudget ×"), ("GegnerLP", "Gegner-LP ×"), ("KernLP", "Kern-LP"), ("AufbauSekunden", "Aufbau bis Welle 1 (s, nur Kern-Verteidigung; Einsatz ohne Uhr)"),
+                       ("PauseSekunden", "Aufbau zwischen Wellen (s, nur Kern-Verteidigung)"), ("FrontenStart", "Fronten zu Beginn"), ("NeueFrontAbWelle", "neue Front ab Welle"),
                        ("EliteAbWelle", "Elite ab Welle")]:
         z.append(f"| {name} | " + " | ".join(w(f"Stufen.{s}.{wert}") for s in ("Erkundung", "Normal", "Hart", "Albtraum")) + " |")
     # Wellen
     z += ["", "### Wellen", "",
           f"- Budget = Stufe × ({w('Wellen.BudgetGrund')} + {w('Wellen.BudgetJeWelle')} × N + {w('Wellen.BudgetQuadrat')} × N²)",
-          f"- Gegner-LP × (1 + {w('Wellen.LPJeWelle')} × (N − 1)) bis Welle 30, danach + {w('Wellen.LPJeWelleAb31')} je Welle; Elite-LP × {w('Wellen.EliteLP')}",
+          f"- Gegner-LP × (1 + {w('Wellen.LPJeWelle')} × (N − 1)) bis Welle 31, danach + {w('Wellen.LPJeWelleAb31')} je weitere Welle; Elite-LP × {w('Wellen.EliteLP')}",
           f"- Bosswellen: Gegnerbudget × {w('Wellen.BossBudget')} plus Boss",
           f"- höchstens {w('Wellen.MaxGleichzeitig')} gleichzeitig, {w('Wellen.MaxGesamt')} je Welle (Nachschub alle {w('Wellen.NachschubTakt')} s je {w('Wellen.NachschubPaket')})",
           f"- Standardlänge eines Einsatzes: {w('Einsatz.WellenStandard', '50')} Wellen", ""]

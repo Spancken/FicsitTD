@@ -606,7 +606,13 @@ void UTDEinsatzSubsystem::WelleBeendet(int32 Welle, float KernAnteil)
 		return;
 	}
 	const UTDWaveSubsystem* AbrechnungWaves = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
-	const bool bSammelzeile = AbrechnungWaves && AbrechnungWaves->IstEndlos();
+	// 17.11. (Marius: Chatflut reduzieren - nur das Wichtigste + ADA, Details im Kern-Menue): Sammelzeile auch im Einsatz
+	const bool bSammelzeile = AbrechnungWaves && AbrechnungWaves->Sammelzeile();
+	int32 ZerstoertZahl = 0;
+	for (const TPair<FString, int32>& Z : mZerstoert)
+	{
+		ZerstoertZahl += Z.Value;
+	}
 	mStill = bSammelzeile;
 	// EP = Grundwert + Welle x Steigerung + Kernbonus; Bosswelle doppelt (Stellschrauben, spaeter Balance-Datei)
 	int32 Punkte = TDBalance::Ganz(TEXT("Einsatz.EP.Grund"), 8) + FMath::RoundToInt(TDBalance::Wert(TEXT("Einsatz.EP.JeWelle"), 2.f) * Welle)
@@ -677,8 +683,12 @@ void UTDEinsatzSubsystem::WelleBeendet(int32 Welle, float KernAnteil)
 	if (bSammelzeile)
 	{
 		mStill = false;
-		Melde(TDF(TEXT("Welle %d geschafft: +%d Coupons (Konto %d), +%d Festplatten, Kern %.0f %%."), TEXT("Wave %d done: +%d Coupons (balance %d), +%d Hard Drives, Core %.0f %%."),
-			Welle, Punkte, Konto(), FP, 100.f * Kern->GetTDHealth() / FMath::Max(Kern->GetTDMaxHealth(), 1.f)));
+		const FString Bilanz = AbrechnungWaves ? AbrechnungWaves->GetLetzteWellenZeile() : FString();
+		Melde(TDF(TEXT("Welle %d geschafft: +%d Coupons (Konto %d), +%d Festplatten, Kern %.0f %%.%s%s Details: Kern-Menü, Statistik."),
+			TEXT("Wave %d done: +%d Coupons (balance %d), +%d Hard Drives, Core %.0f %%.%s%s Details: Core Menu, Statistics."),
+			Welle, Punkte, Konto(), FP, 100.f * Kern->GetTDHealth() / FMath::Max(Kern->GetTDMaxHealth(), 1.f),
+			ZerstoertZahl > 0 ? *TDF(TEXT(" %d Bauten zerstört, Material im Inventar."), TEXT(" %d buildings destroyed, materials in your inventory."), ZerstoertZahl) : TEXT(""),
+			Bilanz.IsEmpty() ? TEXT("") : *(TEXT(" ") + Bilanz)));
 	}
 	// Warnung: der Kern ist knapp (Marius hat die Kernreparatur im Laden nicht gefunden)
 	if (KernAnteil < TDBalance::Wert(TEXT("Kern.Warnung"), 50.f))
