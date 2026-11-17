@@ -104,6 +104,7 @@
 ## 6. Türme
 
 - **Technik:** Türme sind Maschinen. Ein Produktionszyklus ist eine Aktion: Schuss, Magazin, Entladung oder 1 s Flamme. Maschinenfenster, Rezeptwahl, Strom und Übertakten kommen vom Spiel.
+- **Munition je Item *(17.11., Marius, P10)*:** Ein Stück Munition reicht für mehrere Aktionen (`Munition.SchussJeItem.<Rezept>`): Grundmunition 4 (Armierungsbolzen, Nobelisk), Stufe 2 3 (Durchschlag-, Schock-, Streubolzen, Gas-/Puls-/Streu-Nobelisk), Stufe 3 2 (Explosivbolzen, Flak-Kanister, Ficsonium); Gewehr in Magazinen je Stück 3 / 2 / 2 / 2 / 1 (Standard, Zielsuch, Panzerbrechend, Brand, Turbo); Kampfdrohne 4 Einsätze je Ladung; Treibstoff unverändert. Ein Produktionszyklus ist eine Ladung: Er dauert so lange wie die Aktionen daraus, die Aktionen verteilen sich über den Zyklus, beim Gewehr fließen die Schüsse laufend ins Magazin (Dauerfeuer, solange Munition kommt). So zeigt auch das Maschinenfenster den echten Verbrauch. Ziel: ein voller Mk1-Eisenknoten trägt 4–5 Bolzentürme mit Grundmunition, eine kleine Kette 1–2. Startmunition, Pionier-Nachschub zählen Schuss und werden durch die Aktionen je Stück geteilt. Das Turmfenster zeigt „1 Stück = N Schuss · Stück/min bei Dauerfeuer · ein Band Mk1 trägt X Türme“.
 - **Munitionsleitern:** Jede Stufe braucht eine Zutat mehr und kann mehr. Welche Munition ein Turm verschießt, wählt man über das Rezept im Maschinenfenster.
 - **Schadensarten:** Durchschlag (Bolzen), Kugel (Gewehr), Feuer (Flamme), Strom (Tesla, Schockbolzen), Explosion (Nobelisk, Flächenschaden des Explosivbolzens; sein Haupttreffer zählt als Durchschlag), Gift (Gas-Nobelisk). Nachbrennen des Flammenwerfers stapelt im Dauerstrahl: jede Flammensekunde plant den Nachbrand für BrennDauer × (1 + L4-Bonus) s, also bei Treibstoff und Raketentreibstoff 3-fach, Turbotreibstoff 4-fach, ionisiertem Treibstoff 5-fach, auf Level 4 jeweils × 1,5 (`TDFlameTurret.cpp`, Prüfung 12.11.). Wie gut sie gegen welche Gegner wirken, steht in der Resistenztabelle unten.
 - **Turmlevel 1–5:** Bezahlt wird mit Coupons im Turmfenster. Jedes Level ist am Modell sichtbar.
@@ -160,7 +161,7 @@
   - Notreparatur: Nach jeder abgewehrten Welle repariert sich der Kern um 10 % seiner LP.
   - Gabelung Kern-Schild oder Kern-Geschütz. Der Schild fängt in jeder Welle die ersten 2000 Schaden am Kern ab und lädt sich zum Start der nächsten Welle neu. Das Geschütz schießt alle 1,5 s einen Bolzen mit 60 Schaden auf den nächsten Gegner in 30 m.
 - **Belohnungen** im MAM zeigen nur echte Freischaltungen. Die Schuss-Rezepte der Türme kommen still mit dem Knoten.
-- **Bänder und Lifte** rüsten nach der Forschung Band Mk2/Mk3 automatisch auf.
+- **Bänder und Lifte** rüsten nach der Forschung Band Mk2/Mk3/Mk4/Mk5 automatisch auf (Mk4 ab W25 mit Schwerindustrie, Mk5 ab W30; Mk6 gibt es nicht, er braucht Ficsit). **Miner Mk2** (ab W25, nach Band Mk4) und **Miner Mk3** (ab W35, mit Mischtechnik) im Industrie-Baum; gekauft wird weiter das Kontingent Miner, das Baumaterial kommt passend zur höchsten Miner-Stufe mit *(17.11., Marius, P10)*.
 
 ## 8. Beute
 
@@ -411,6 +412,24 @@ Turmlevel kosten 8 / 15 / 25 / 40 Coupons (Level 2–5). Doktrin: Schaden +25 %,
 | Reparatur.Eisenplatte | 800 |
 | Reparatur.Stahltraeger | 2000 |
 | Reparatur.VerstaerktePlatte | 3000 |
+| SchussJeItem.Drohne_Kampf | 4 |
+| SchussJeItem.Flak_Shoot | 2 |
+| SchussJeItem.Gun_Brand | 2 |
+| SchussJeItem.Gun_Homing | 2 |
+| SchussJeItem.Gun_Panzer | 2 |
+| SchussJeItem.Gun_Standard | 3 |
+| SchussJeItem.Gun_Turbo | 1 |
+| SchussJeItem.Nobelisk_Cluster | 3 |
+| SchussJeItem.Nobelisk_Explosive | 4 |
+| SchussJeItem.Nobelisk_Gas | 3 |
+| SchussJeItem.Nobelisk_Nuke | 1 |
+| SchussJeItem.Nobelisk_Pulse | 3 |
+| SchussJeItem.Shoot_Durchschlag | 3 |
+| SchussJeItem.Shoot_Explosive | 2 |
+| SchussJeItem.Shoot_SpikedRebar | 4 |
+| SchussJeItem.Shoot_Spreadshot | 3 |
+| SchussJeItem.Shoot_Stunshot | 3 |
+| SchussJeItem.Singularitaet_Ficsonium | 2 |
 | Tesla.Schaden | 300 |
 | Tesla.Spruenge | 3 |
 | Tesla.SprungFaktor | 0,35 |
@@ -474,6 +493,10 @@ Preis aus der Phase der effektiven Freigabe-Welle (Eltern und Voraussetzungen ei
 | Industrie | Bauxit | Bauxit und Aluminium | 25 | 8 |  |
 | Industrie | Schwerindustrie | Schwerindustrie | 25 | 8 |  |
 | Industrie | Mischtechnik | Mischtechnik | 35 | 10 |  |
+| Industrie | BandMk4 | Förderband Mk4 | 25 | 8 |  |
+| Industrie | BandMk5 | Förderband Mk5 | 30 | 8 |  |
+| Industrie | MinerMk2 | Miner Mk2 | 25 | 8 |  |
+| Industrie | MinerMk3 | Miner Mk3 | 35 | 10 |  |
 | Ballistik | Durchschlagbolzen | Durchschlagbolzen | 5 | 4 |  |
 | Ballistik | Gewehrturm | Gewehrturm | 5 | 4 |  |
 | Ballistik | Explosivbolzen | Explosivbolzen | 25 | 8 |  |
@@ -522,6 +545,6 @@ Preis aus der Phase der effektiven Freigabe-Welle (Eltern und Voraussetzungen ei
 | Festung | Schildgenerator | Schildgenerator | 25 | 8 | Stoerfeld |
 | Festung | Stoerfeld | Störfeld-Projektor | 35 | 10 | Schildgenerator |
 
-Alle Knoten zusammen: 353 FP.
+Alle Knoten zusammen: 387 FP.
 
 <!-- ZAHLEN-ENDE -->

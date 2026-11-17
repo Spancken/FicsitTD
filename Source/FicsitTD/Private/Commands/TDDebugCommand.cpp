@@ -1,4 +1,4 @@
-#include "Commands/TDDebugCommand.h"
+﻿#include "Commands/TDDebugCommand.h"
 #include "Command/CommandSender.h"
 #include "Misc/CommandLine.h"
 #include "Misc/Paths.h"

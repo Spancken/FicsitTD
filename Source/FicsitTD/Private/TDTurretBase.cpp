@@ -556,7 +556,33 @@ float ATDTurretBase::GetTDMaxHealth() const
 float ATDTurretBase::GetProductionCycleTime() const
 {
 	// 0.9.6 (Gesamtreview 12.11., C): kann auf dem Fabrik-Thread laufen -> nur den vom Spielschritt gesetzten Wert lesen
-	return Super::GetProductionCycleTime() / FMath::Max(mTaktBonusCache.load(), 0.01f);
+	// 17.11. (P10): eine Ladung (ein Item) dauert N Aktionen - so zeigt auch das Maschinenfenster den echten Verbrauch
+	return Super::GetProductionCycleTime() * FMath::Max(mZyklusFaktorCache.load(), 0.01f) / FMath::Max(mTaktBonusCache.load(), 0.01f);
+}
+
+int32 ATDTurretBase::SchussJeItem() const
+{
+	const TSubclassOf<UFGRecipe> Rezept = GetCurrentRecipe();
+	if (!Rezept)
+	{
+		return 1;
+	}
+	FString Name = Rezept->GetName();
+	Name.RemoveFromStart(TEXT("Recipe_TD_"));
+	Name.RemoveFromEnd(TEXT("_C"));
+	return FMath::Max(1, TDBalance::Ganz(TEXT("Munition.SchussJeItem.") + Name, 1));
+}
+
+float ATDTurretBase::VerbrauchProMinute() const
+{
+	const TSubclassOf<UFGRecipe> Rezept = GetCurrentRecipe();
+	const float Zyklus = Rezept ? GetProductionCycleTime() : 0.f;
+	if (Zyklus <= 0.f)
+	{
+		return 0.f;
+	}
+	const TArray<FItemAmount> Zutaten = UFGRecipe::GetIngredients(this, Rezept);
+	return Zutaten.Num() > 0 ? Zutaten[0].Amount * 60.f / Zyklus : 0.f;
 }
 
 FText ATDTurretBase::GetLookAtDecription_Implementation(AFGCharacterPlayer* byCharacter, const FUseState& state) const
@@ -576,7 +602,8 @@ FText ATDTurretBase::GetLookAtDecription_Implementation(AFGCharacterPlayer* byCh
 
 float ATDTurretBase::Zykluszeit() const
 {
-	return GetCurrentRecipe() ? GetProductionCycleTime() : 0.f;
+	// 17.11. (P10): Sekunden je Aktion (ein Zyklus traegt jetzt mehrere Aktionen)
+	return GetCurrentRecipe() ? GetProductionCycleTime() / FMath::Max(1, mAktionenCache) : 0.f;
 }
 
 void ATDTurretBase::Kennwerte(TArray<FTDKennwert>& Out) const
@@ -598,6 +625,18 @@ void ATDTurretBase::Kennwerte(TArray<FTDKennwert>& Out) const
 		Out.Add({ TDT(TEXT("Levelbonus"), TEXT("Level bonus")), LevelSumme() });
 	}
 	Out.Add({ TDT(TEXT("Munition"), TEXT("Ammo")), MunitionsText() });
+	// 17.11. (P10, Marius: transparent machen): Schuss je Stueck, Verbrauch bei Dauerfeuer und wie viele Tuerme ein Band traegt
+	if (const float Verbrauch = VerbrauchProMinute(); Verbrauch > 0.f && GetCurrentRecipe())
+	{
+		const TArray<FItemAmount> Zutaten = UFGRecipe::GetIngredients(this, GetCurrentRecipe());
+		const bool bFest = Zutaten.Num() > 0 && Zutaten[0].ItemClass && UFGItemDescriptor::GetForm(Zutaten[0].ItemClass) == EResourceForm::RF_SOLID;
+		if (bFest)
+		{
+			Out.Add({ TDT(TEXT("Verbrauch"), TEXT("Consumption")), TDF(TEXT("1 Stück = %d Schuss · %.1f Stück/min bei Dauerfeuer · Band Mk1 (60/min) trägt %.1f Türme"),
+				TEXT("1 item = %d shots · %.1f items/min sustained fire · a Mk1 belt (60/min) feeds %.1f turrets"),
+				SchussJeItem(), Verbrauch, 60.f / Verbrauch), true });
+		}
+	}
 	const FString Zusatz = ZusatzImPanel() ? ZusatzInfo() : FString();
 	if (!Zusatz.IsEmpty())
 	{
@@ -735,7 +774,8 @@ void ATDTurretBase::BeginPlay()
 		{
 			SetRecipe(Rezept);
 			// Startmunition (Test 0.55: bis die Produktion die ersten Bolzen bringt, stand der Turm zu lange)
-			const int32 Start = TDBalance::Ganz(BalanceTurm() + TEXT("Startmunition"), 0);
+			// 17.11. (P10, Marius: auf gleiche Schusszahl kuerzen): der Wert zaehlt Schuss, eingelegt werden Items
+			const int32 Start = FMath::DivideAndRoundUp(TDBalance::Ganz(BalanceTurm() + TEXT("Startmunition"), 0), SchussJeItem());
 			const TArray<FItemAmount> Zutaten = UFGRecipe::GetIngredients(this, Rezept);
 			if (Start > 0 && Zutaten.Num() > 0 && Zutaten[0].ItemClass && GetInputInventory())
 			{
@@ -1280,6 +1320,9 @@ void ATDTurretBase::Spielschritt()
 	TDLeistung::FUhr Uhr(TDLeistung::TurmZyklen);
 	// 0.9.6 (Gesamtreview 12.11., C): Takt-Bonus hier auf dem Spiel-Thread lesen (folgt auch /td balance neu)
 	mTaktBonusCache.store(TaktBonus());
+	// 17.11. (P10): Ladung je Item fuer den Fabrik-Thread vorbereiten
+	mZyklusFaktorCache.store(FMath::Max(0.01f, ZyklusFaktor()));
+	mAktionenCache = FMath::Max(1, AktionenJeZyklus());
 	ZeigeStufenTeile();
 	// 16.11. (Marius: Singularitaetswerfer strahlt): das Munitionslager der Tuerme ist abgeschirmt - radioaktive Munition (Ficsonium,
 	// Uran) strahlt nur beim Transport. Das Inventar meldet sich bei jeder Aenderung neu als Strahlungsquelle, deshalb je Sekunde entfernen.
@@ -1327,11 +1370,26 @@ void ATDTurretBase::Spielschritt()
 	mBilanz.ZeitOhneStrom += GetPowerInfo() && !HasPower() ? TurmSchrittIntervall : 0.f;
 	AktualisiereLampe();
 
-	// Abgeschlossene Produktionszyklen umsetzen (Zutat wurde dafuer bereits verbraucht)
+	// Abgeschlossene Produktionszyklen umsetzen (Zutat wurde dafuer bereits verbraucht). 17.11. (P10): ein Zyklus = eine Ladung
+	// mit mAktionenCache Aktionen - fertige Zyklen geben den Rest frei, der laufende Zyklus anteilig nach Fortschritt
+	const int32 Aktionen = FMath::Max(1, mAktionenCache);
 	int32 Offen = mOffeneZyklen.exchange(0);
 	while (Offen-- > 0)
 	{
-		Feuern(Ziel);
+		for (int32 k = mAktionenFreigegeben; k < Aktionen; ++k)
+		{
+			Feuern(Ziel);
+		}
+		mAktionenFreigegeben = 0;
+	}
+	if (Aktionen > 1)
+	{
+		const int32 Faellig = FMath::Clamp(FMath::FloorToInt(GetProductionProgress() * Aktionen), 0, Aktionen - 1);
+		while (mAktionenFreigegeben < Faellig)
+		{
+			Feuern(Ziel);
+			++mAktionenFreigegeben;
+		}
 	}
 }
 

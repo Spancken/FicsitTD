@@ -711,7 +711,8 @@ void UTDPionier::Nachschub(AFGCharacterPlayer* Spieler)
 		{
 			continue;
 		}
-		const int32 Hat = FMath::Min(Inventar->GetNumItems(Sorte), Menge);
+		// 17.11. (P10): Menge zaehlt Schuss - bei Munition mit mehreren Schuss je Item entsprechend weniger Items
+		const int32 Hat = FMath::Min(Inventar->GetNumItems(Sorte), FMath::DivideAndRoundUp(Menge, Turm->SchussJeItem()));
 		if (Hat <= 0)
 		{
 			continue;

@@ -714,6 +714,22 @@ void UTDEinsatzSubsystem::SammleBaumaterial(const FString& Key, int32 Anzahl, TM
 {
 	const FTDLadenEintrag* E = LadenFuer(Key);
 	UClass* Rezept = E ? LoadClass<UFGRecipe>(nullptr, E->Rezept) : nullptr;
+	// 17.11. (P10, Marius: Miner-Stufen wie im Spiel): das Kontingent Miner liefert das Material der hoechsten freigeschalteten Stufe
+	if (Key == TEXT("Miner"))
+	{
+		if (AFGRecipeManager* Rezepte = AFGRecipeManager::Get(GetWorld()))
+		{
+			for (const TCHAR* Pfad : { TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_MinerMk3.Recipe_MinerMk3_C"), TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_MinerMk2.Recipe_MinerMk2_C") })
+			{
+				UClass* Hoeher = LoadClass<UFGRecipe>(nullptr, Pfad);
+				if (Hoeher && Rezepte->IsRecipeAvailable(Hoeher))
+				{
+					Rezept = Hoeher;
+					break;
+				}
+			}
+		}
+	}
 	if (!Rezept || Anzahl <= 0)
 	{
 		return;

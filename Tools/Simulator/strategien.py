@@ -67,6 +67,16 @@ MUNITION = {
                       ("Raketentreibstoff", "Treibstoff.Raketentreibstoff", "Raketentreibstoff", None, "Raketentreibstoff", 4),
                       ("Ionisiert", "Treibstoff.Ionisiert", "Plasmaflamme", None, "Ionisierter Treibstoff", 3)],
 }
+# 17.11. (P10 Munition je Item): Rezept je Munition fuer den Balance-Schluessel Munition.SchussJeItem.<Rezept> (Aktionen je Item,
+# Gewehr: Magazine je Item). Der Verbrauch oben gilt fuer 1 Aktion je Item und wird durch diesen Wert geteilt.
+SCHUSS_REZEPT = {
+    ("Bolzenturm", "Armierungsbolzen"): "Shoot_SpikedRebar", ("Bolzenturm", "Durchschlagbolzen"): "Shoot_Durchschlag",
+    ("Bolzenturm", "Schockbolzen"): "Shoot_Stunshot", ("Bolzenturm", "Streubolzen"): "Shoot_Spreadshot", ("Bolzenturm", "Explosivbolzen"): "Shoot_Explosive",
+    ("Gewehrturm", "Standard"): "Gun_Standard", ("Gewehrturm", "Zielsuch"): "Gun_Homing", ("Gewehrturm", "Panzerbrechend"): "Gun_Panzer",
+    ("Gewehrturm", "Brand"): "Gun_Brand", ("Gewehrturm", "Turbo"): "Gun_Turbo",
+    ("Nobelisk-Werfer", "Nobelisk"): "Nobelisk_Explosive", ("Nobelisk-Werfer", "Gas"): "Nobelisk_Gas",
+    ("Nobelisk-Werfer", "Puls"): "Nobelisk_Pulse", ("Nobelisk-Werfer", "Streu"): "Nobelisk_Cluster",
+}
 # Rezepte wie Werkbilanz: Gebäude, Dauer s, Zutaten, Produkt (Flüssigkeiten in m³)
 REZEPTE = {
     "Eisenbarren": ("Schmelzofen", 2, {"Eisenerz": 1}, 1), "Kupferbarren": ("Schmelzofen", 2, {"Kupfererz": 1}, 1),
@@ -560,7 +570,8 @@ class Lauf:
             m = self.beste_munition_fuer_wirtschaft(typ)
             if m and m[4]:
                 takt = 1 + self.tw.bonus(typ, lv, "Takt")
-                v = m[5] * takt * feuer * D / 60                       # Verbrauch je Welle und Turm
+                n_item = max(1.0, self.B.get("Munition.SchussJeItem." + SCHUSS_REZEPT.get((typ, m[0]), ""), 1))
+                v = m[5] / n_item * takt * feuer * D / 60              # Verbrauch je Welle und Turm (17.11.: Aktionen je Item)
                 s = STAPEL.get(m[4], self.Z["FlammePuffer"]) * (puffer if m[4] in STAPEL else 1)
                 # Vorrat aus der Bauphase höchstens bis zum vollen Slot, der Rest muss während der Welle nachkommen
                 bed[m[4]] += max(v / zyklus, (v - s) / (D / 60))

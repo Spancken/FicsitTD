@@ -224,8 +224,13 @@ protected:
 	virtual bool CanProduce_Implementation() const override;
 	virtual void Factory_ProductionCycleCompleted(float overProductionRate) override;
 
-	/** Ein Produktionszyklus ist fertig (Spiel-Thread). Ziel kann nullptr sein, wenn es inzwischen verschwunden ist. */
+	/** Eine Aktion (Schuss, Wurf, Drohneneinsatz …; Spiel-Thread). Ziel kann nullptr sein, wenn es inzwischen verschwunden ist.
+	 *  17.11. (P10 Munition je Item): ein Zyklus = eine Ladung = AktionenJeZyklus() Aktionen, verteilt ueber den Zyklus. */
 	virtual void Feuern(AFGCreature* Ziel) {}
+	/** Aktionen je Zyklus (= je verbrauchtem Item). Standard: SchussJeItem() der eingelegten Munition */
+	virtual int32 AktionenJeZyklus() const { return SchussJeItem(); }
+	/** Faktor auf die Rezeptdauer: so lange dauert eine Ladung. Standard: SchussJeItem() (Gewehr: Magazindauer) */
+	virtual float ZyklusFaktor() const { return static_cast<float>(SchussJeItem()); }
 	/** ~30 Mal pro Sekunde fuer Animationen und Dauereffekte */
 	virtual void Animieren(float DeltaSeconds, AFGCreature* Ziel) {}
 	/** Stufen-Optik (0.62): Komponente, an die die Anbauteile eines Teils gehaengt werden (Base, Yaw, Head; Unterklassen z. B. Barrels) */
@@ -235,6 +240,11 @@ protected:
 	/** Kommt die Kreatur als Ziel in Frage (zusaetzlich zu Reichweite und freier Sicht)? */
 	virtual bool ZielErlaubt(const AFGCreature* Ziel, float Abstand) const { return true; }
 public:
+	/** 17.11. (P10, Marius: Munition je Item): Aktionen je Item der eingelegten Munition, Balance `Munition.SchussJeItem.<Rezept>`
+	 *  (Rezeptname ohne „Recipe_TD_“), Standard 1 */
+	int32 SchussJeItem() const;
+	/** Verbrauch der eingelegten Munition in Items pro Minute bei Dauerfeuer (Takt, Level, Uebertakten), 0 ohne Rezept */
+	float VerbrauchProMinute() const;
 	/** Hat der Turm Munition fuer den naechsten Zyklus? (Teslaspule: immer) */
 	virtual bool HatMunition() const { return GetAmmo() > 0; }
 	/** 0.10.0 (Marius 14.11.: Rolle sichtbar machen): Pionier-Faehigkeit am Turm zeigen.
@@ -408,6 +418,11 @@ private:
 	/** 0.9.6 (Gesamtreview 12.11., Abschnitt C): TaktBonus vom Spiel-Thread (Spielschritt), GetProductionCycleTime liest nur das.
 	 *  Vorher lief TDBalance::Wert (ohne Sperre) auf dem Fabrik-Thread, parallel zu /td balance neu. */
 	std::atomic<float> mTaktBonusCache{ 1.f };
+	/** 17.11. (P10): Faktor auf die Rezeptdauer (Ladung = N Aktionen), vom Spiel-Thread gesetzt */
+	std::atomic<float> mZyklusFaktorCache{ 1.f };
+	/** Aktionen je Zyklus und davon im laufenden Zyklus schon ausgefuehrt (Spiel-Thread) */
+	int32 mAktionenCache = 1;
+	int32 mAktionenFreigegeben = 0;
 	/** 0.9.8 P4 Uebersteuern (Weltzeit; nicht gespeichert, gilt nur fuer die laufende Sitzung) */
 	float mUebersteuernBis = -1.f;
 	float mUebersteuernPauseBis = -1.f;

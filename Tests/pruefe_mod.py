@@ -93,6 +93,9 @@ def pruefe_balance_schluessel(standard, forschung_ns):
             for k in re.findall(r'TDBalance::(?:Wert|Ganz)\(\s*TEXT\("([^"%]+)"\)', text):
                 benutzt.setdefault(k, d)
     for k, d in sorted(benutzt.items()):
+        # 17.11.: zusammengesetzte Schluessel ("Munition.SchussJeItem." + Rezept) - der Praefix selbst ist kein Schluessel
+        if k.endswith("."):
+            continue
         if k not in standard:
             FEHLER(f"Balance: Schluessel {k} (in {d}) fehlt in der Standardtabelle")
     # Freigabe-Wellen: TDForschung fragt Forschung.<Knoten>.AbWelle fuer jeden Knoten mit Welle > 0

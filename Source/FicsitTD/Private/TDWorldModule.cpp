@@ -1,4 +1,4 @@
-#include "TDWorldModule.h"
+﻿#include "TDWorldModule.h"
 #include "TDBalance.h"
 #include "TDSpielstand.h"
 #include "TDSprache.h"

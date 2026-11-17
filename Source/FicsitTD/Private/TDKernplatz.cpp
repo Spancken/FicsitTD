@@ -1,4 +1,4 @@
-#include "TDKernplatz.h"
+﻿#include "TDKernplatz.h"
 #include "TDSpielstand.h"
 #include "TDAda.h"
 #include "FicsitTDModule.h"

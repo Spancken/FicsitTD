@@ -52,7 +52,7 @@ void UTDBandUpgrade::Verbinde()
 	// 0.78.4: alte Spielstaende - Schnellleiste auf die hoechste freigeschaltete Bandstufe (Mk2 oder Mk3)
 	if (AFGRecipeManager* Rezepte = AFGRecipeManager::Get(GetWorld()))
 	{
-		for (int32 Stufe = 3; Stufe >= 2; --Stufe)
+		for (int32 Stufe = 5; Stufe >= 2; --Stufe)
 		{
 			UClass* Rezept = LoadClass<UFGRecipe>(nullptr, *FString::Printf(TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_ConveyorBeltMk%d.Recipe_ConveyorBeltMk%d_C"), Stufe, Stufe));
 			if (Rezept && Rezepte->IsRecipeAvailable(Rezept))
@@ -71,7 +71,9 @@ void UTDBandUpgrade::Erforscht(TSubclassOf<UFGSchematic> Schematic)
 	{
 		TDForschung::GibStilleRezepte(this);
 	}
-	const int32 Stufe = Pfad.Contains(TEXT("Research_TD_BandMk3")) ? 3 : Pfad.Contains(TEXT("Research_TD_BandMk2")) ? 2 : 0;
+	// 17.11. (P10): auch Band Mk4 und Mk5 (Mk6 braucht Ficsit, gibt es in TD nicht)
+	const int32 Stufe = Pfad.Contains(TEXT("Research_TD_BandMk5")) ? 5 : Pfad.Contains(TEXT("Research_TD_BandMk4")) ? 4
+		: Pfad.Contains(TEXT("Research_TD_BandMk3")) ? 3 : Pfad.Contains(TEXT("Research_TD_BandMk2")) ? 2 : 0;
 	// 16.11. (Nachpruefung F6): im Freien Spiel mit Abwehr gibt es keinen Gratis-Umbau - dort kommen Baender ueber den HUB,
 	// der verborgene Industrie-Knoten wird nur nachgezogen
 	if (Stufe == 0 || UTDKernplatz::IstAbwehr(this))

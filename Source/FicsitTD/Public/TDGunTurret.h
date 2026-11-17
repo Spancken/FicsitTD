@@ -34,6 +34,10 @@ protected:
 	virtual void Animieren(float DeltaSeconds, AFGCreature* Ziel) override;
 	virtual USceneComponent* StufenZiel(const FString& Teil) const override;
 	virtual bool BereitZumProduzieren(AFGCreature* Ziel) const override;
+	/** 17.11. (P10, Marius: Rezeptdauer = Magazindauer): eine Ladung = SchussJeItem Magazine, jede Aktion ist ein Schuss */
+	virtual int32 AktionenJeZyklus() const override;
+	virtual float ZyklusFaktor() const override;
+	int32 MagazinGroesse() const;
 	virtual bool HatMunition() const override { return GetAmmo() > 0 || mMagazin > 0; }
 	virtual FString ZusatzInfo() const override;
 	virtual void Kampfwerte(TArray<FTDKennwert>& Out) const override;
