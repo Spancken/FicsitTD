@@ -1020,6 +1020,9 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		if (Waves->LaeuftWelle())
 		{
 			mPauseSpiel = 0.f;
+			// 17.11. (P12-K: K1 Lauf 2 brach mit "Welle 8 startet seit 900 s nicht" ab): die Start-Warteuhr unten wurde nur ausserhalb
+			// der Welle hochgezaehlt und nie zurueckgesetzt - sie summierte alle Pausen des Laufs. Hier, waehrend die Welle laeuft, nullen.
+			mStartWarteUhr = 0.f;
 			// 0.78.1 (Pruefstand: ein einzelner Gegner zerstoerte vor 14 feuernden Tuermen den Kern, Art unbekannt):
 			// leben 20 s lang hoechstens 3 Gegner, wird jeder mit LP, Abstand, Hirn und Zielstand der Tuerme gemeldet
 			const TArray<AFGCreature*> Lebende = Waves->GetLivingWaveCreatures();

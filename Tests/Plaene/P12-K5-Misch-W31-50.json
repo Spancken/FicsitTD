@@ -187,13 +187,15 @@
       "baue": "Nobelisk-Werfer",
       "anzahl": 1,
       "level": 4,
-      "rezept": "Recipe_TD_Nobelisk_Explosive"
+      "rezept": "Recipe_TD_Nobelisk_Explosive",
+      "ring": "innen"
     },
     {
       "baue": "Bolzenturm",
       "anzahl": 1,
       "level": 4,
-      "rezept": "Recipe_TD_Shoot_Durchschlag"
+      "rezept": "Recipe_TD_Shoot_Durchschlag",
+      "ring": "innen"
     },
     {
       "wellenlauf": 40,
@@ -211,7 +213,8 @@
       "baue": "Gewehrturm",
       "anzahl": 1,
       "level": 4,
-      "rezept": "Recipe_TD_Gun_Standard"
+      "rezept": "Recipe_TD_Gun_Standard",
+      "ring": "innen"
     },
     {
       "wellenlauf": 45,
@@ -222,13 +225,8 @@
       "baue": "Teslaspule",
       "anzahl": 1,
       "level": 4,
-      "rezept": "Recipe_TD_Tesla_Discharge"
-    },
-    {
-      "baue": "Nobelisk-Werfer",
-      "anzahl": 1,
-      "level": 4,
-      "rezept": "Recipe_TD_Nobelisk_Explosive"
+      "rezept": "Recipe_TD_Tesla_Discharge",
+      "ring": "innen"
     },
     {
       "wellenlauf": 50,

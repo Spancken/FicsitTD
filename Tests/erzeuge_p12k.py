@@ -25,12 +25,25 @@ LINIEN = {
 }
 
 # K5: Mischbasis wie Referenz-Misch, dazu Ausbau fuer Phase 4-5 (Vorschlag Hauptsession 17.11., Level 4 mit Turmfertigung III)
+# 17.11. (P12-K: "0 gebaut" ab W35): der Pruefstand hat aussen 16 und innen 8 Plaetze. Bis W30 sind aussen alle 16 belegt,
+# daher geht der Ausbau ab W35 auf den inneren Ring (ring_fuer); W45 nur noch eine Teslaspule (innen dann 8 von 8).
 MISCH_SPAET = {
     30: [("Gewehrturm", 2, 4, "Recipe_TD_Gun_Standard"), ("Teslaspule", 1, 4, "Recipe_TD_Tesla_Discharge")],
     35: [("Nobelisk-Werfer", 1, 4, "Recipe_TD_Nobelisk_Explosive"), ("Bolzenturm", 1, 4, "Recipe_TD_Shoot_Durchschlag")],
     40: [("Flammenwerfer", 1, 4, "Recipe_TD_Flame_Fuel", "innen"), ("Gewehrturm", 1, 4, "Recipe_TD_Gun_Standard")],
-    45: [("Teslaspule", 1, 4, "Recipe_TD_Tesla_Discharge"), ("Nobelisk-Werfer", 1, 4, "Recipe_TD_Nobelisk_Explosive")],
+    45: [("Teslaspule", 1, 4, "Recipe_TD_Tesla_Discharge")],
 }
+PLAETZE = {"aussen": 16, "innen": 8}   # wie TDAutotest.cpp (Aussen/Innen)
+
+
+def ring_fuer(belegt, gewuenscht, n):
+    """Ring fuer n Tuerme: gewuenschter Ring, sonst der innere, wenn aussen voll ist. Bricht ab, wenn der Pruefstand voll ist."""
+    ring = gewuenscht or "aussen"
+    if belegt[ring] + n > PLAETZE[ring]:
+        ring = "innen"
+    assert belegt[ring] + n <= PLAETZE[ring], f"Pruefstand voll ({belegt}, noch {n})"
+    belegt[ring] += n
+    return None if ring == "aussen" else ring
 
 
 def kopf(name, hinweis, minuten):
@@ -80,15 +93,20 @@ def k5():
     ausbau = dict(er.MISCH)
     ausbau.update(MISCH_SPAET)
     s = start_normal() + alle_forschung()
+    belegt = {"aussen": 0, "innen": 0}
+
+    def baue(t, n, lvl, rez, *ring):
+        r = ring_fuer(belegt, ring[0] if ring else None, n)
+        return {"baue": t, "anzahl": n, "level": lvl, "rezept": rez, **({"ring": r} if r else {})}
     for welle in sorted(ausbau):
         if welle <= 30:
-            for t, n, lvl, rez, *ring in ausbau[welle]:
-                s.append({"baue": t, "anzahl": n, "level": lvl, "rezept": rez, **({"ring": ring[0]} if ring else {})})
+            for eintrag in ausbau[welle]:
+                s.append(baue(*eintrag))
     s += [{"ueberblick": True}, {"foto": "P12-K5_W30"}, {"befehl": "td kern springe 31"}]
     for bis in (35, 40, 45, 50):
         s.append({"wellenlauf": bis, "zeitraffer": 4, "max": 900})
-        for t, n, lvl, rez, *ring in ausbau.get(bis, []):
-            s.append({"baue": t, "anzahl": n, "level": lvl, "rezept": rez, **({"ring": ring[0]} if ring else {})})
+        for eintrag in ausbau.get(bis, []):
+            s.append(baue(*eintrag))
     s += [{"ueberblick": True}, {"foto": "P12-K5_W50"},
           {"pruefe": "KeineWarnungen", "text": "keine Warnungen oder Fehler des Mods im Log"}]
     p = kopf("P12-K5-Misch-W31-50", "K5 (P12): Mischbasis wie Referenz-Misch mit Ausbau fuer Phase 4-5 (Level 4), Stand W30 sofort gebaut, "
