@@ -26,7 +26,7 @@ namespace TDBalanceIntern
 		{ TEXT("Stufen.Erkundung.EliteAbWelle"), 15.f }, { TEXT("Stufen.Erkundung.KernLP"), 30000.f },
 		{ TEXT("Stufen.Normal.Budget"), 1.0f }, { TEXT("Stufen.Normal.GegnerLP"), 1.0f }, { TEXT("Stufen.Normal.AufbauSekunden"), 1200.f },
 		{ TEXT("Stufen.Normal.PauseSekunden"), 600.f }, { TEXT("Stufen.Normal.FrontenStart"), 1.f }, { TEXT("Stufen.Normal.NeueFrontAbWelle"), 11.f },
-		{ TEXT("Stufen.Normal.EliteAbWelle"), 13.f }, { TEXT("Stufen.Normal.KernLP"), 20000.f },
+		{ TEXT("Stufen.Normal.EliteAbWelle"), 16.f },   /* P12 17.11.: 13 -> 16, Kandidat A (R2 besteht W50, kein Einbruch um W13) */ { TEXT("Stufen.Normal.KernLP"), 20000.f },
 		{ TEXT("Stufen.Hart.Budget"), 1.1f }, { TEXT("Stufen.Hart.GegnerLP"), 1.0f }, { TEXT("Stufen.Hart.AufbauSekunden"), 900.f },
 		{ TEXT("Stufen.Hart.PauseSekunden"), 480.f }, { TEXT("Stufen.Hart.FrontenStart"), 1.f }, { TEXT("Stufen.Hart.NeueFrontAbWelle"), 8.f },
 		{ TEXT("Stufen.Hart.EliteAbWelle"), 7.f }, { TEXT("Stufen.Hart.KernLP"), 15000.f },

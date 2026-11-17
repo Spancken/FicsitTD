@@ -224,7 +224,7 @@ Stand 16.11.2026 (Mod 0.11-dev; Berichte `Testberichte6-11-16_*`). Die langen 
 | Aufbau zwischen Wellen (s, nur Kern-Verteidigung) | 900 | 600 | 480 | 360 |
 | Fronten zu Beginn | 1 | 1 | 1 | 1 |
 | neue Front ab Welle | 16 | 11 | 8 | 6 |
-| Elite ab Welle | 15 | 13 | 7 | 5 |
+| Elite ab Welle | 15 | 16 | 7 | 5 |
 
 ### Wellen
 
