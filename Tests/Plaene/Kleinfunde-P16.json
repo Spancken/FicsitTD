@@ -1,0 +1,35 @@
+{
+  "Name": "Kleinfunde-P16",
+  "_Hinweis": "P16 (Konzept-Kernzugang-Kleinfunde-2026-11-17.md Teil B, Marius 17.11.): A12 kein Abriss waehrend der Welle (vor, in und nach der Welle), A13 Freigabe ab Welle (in Welle 2 gilt 2, danach 3), A9/A10 Stand vom Wellenstart mit Sitzungsnamen und Wiederhol-Welle im Log. Einsatz Grasfelder Normal.",
+  "NeuesSpiel": {
+    "Startort": "Grass Fields",
+    "Modus": 1,
+    "Stufe": 2
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 15,
+  "Schritte": [
+    { "pruefe": "Version", "soll": "{VERSION}", "text": "richtige Mod-Version geladen" },
+    { "warteBis": "EinsatzAktiv", "max": 120 },
+    { "befehl": "td einsatz frei an" },
+    { "stromfrei": true },
+    { "versorgung": { "Bolzenturm": 150 } },
+    { "baue": "Bolzenturm", "anzahl": 4, "level": 2, "rezept": "Recipe_TD_Shoot_SpikedRebar" },
+    { "befehl": "td einsatz frei aus" },
+    { "pruefe": "Abriss", "soll": true, "text": "A12: vor der Welle abreissbar" },
+    { "pruefe": "FreigabeWelle", "soll": 1, "text": "A13: Bauphase vor Welle 1 gibt Welle 1 frei" },
+    { "wellenlauf": 1 },
+    { "pruefe": "FreigabeWelle", "soll": 2, "text": "A13: Bauphase nach Welle 1 gibt Welle 2 frei" },
+    { "befehl": "td kern weiter" },
+    { "warteBis": "WelleLaeuft", "max": 60 },
+    { "pruefe": "Abriss", "soll": false, "text": "A12: in der Welle gesperrt" },
+    { "pruefe": "FreigabeWelle", "soll": 2, "text": "A13: in Welle 2 bleibt die Freigabe bei 2" },
+    { "warteBis": "WelleVorbei", "max": 300 },
+    { "pruefe": "Abriss", "soll": true, "text": "A12: nach der Welle wieder abreissbar" },
+    { "pruefe": "FreigabeWelle", "soll": 3, "text": "A13: nach Welle 2 gibt Welle 3 frei" },
+    { "pruefe": "LogEnthaelt", "suche": "_TD_W02_Start angelegt", "min": 1, "text": "A10: Stand vom Wellenstart mit Sitzungsnamen" },
+    { "pruefe": "LogEnthaelt", "suche": "Spielstand FicsitTD_W", "min": 0, "max": 0, "text": "A10: keine alten gemeinsamen Namen mehr" },
+    { "pruefe": "KeineWarnungen", "text": "keine Warnungen oder Fehler des Mods im Log" }
+  ]
+}

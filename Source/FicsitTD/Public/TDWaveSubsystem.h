@@ -240,6 +240,8 @@ public:
 	bool LaeuftWelle() const { return mLauf == ETDLauf::Welle; }
 	/** Zuletzt gestartete Welle (0 = noch keine) */
 	int32 GetWelle() const { return mWelle; }
+	/** 17.11. (P16/A13): Welle, fuer die "ab Welle" freigibt - in der Bauphase die naechste, waehrend der Welle die laufende */
+	int32 GetFreigabeWelle() const { return LaeuftWelle() ? mWelle : mWelle + 1; }
 	/** 0.9.6: Stufe des laufenden bzw. letzten Durchgangs (Neustart nach Sieg/Niederlage) */
 	int32 GetLaufStufe() const { return mStufe; }
 	/** 0.9.6 P1: LP-Zuwachs der laufenden Welle ohne Stufe (Welle 1 = 1,0); der Spielerschaden waechst anteilig mit */

@@ -115,7 +115,7 @@ namespace TDForschung
 		}
 		const UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
 		const UTDWaveSubsystem* Waves = World ? World->GetSubsystem<UTDWaveSubsystem>() : nullptr;
-		const int32 Naechste = Waves ? Waves->GetWelle() + 1 : 1;
+		const int32 Naechste = Waves ? Waves->GetFreigabeWelle() : 1;
 		return AbWelle(K) > Naechste ? ETDForschungZustand::ZuFrueh : ETDForschungZustand::Moeglich;
 	}
 
@@ -149,7 +149,7 @@ namespace TDForschung
 	{
 		const UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
 		const UTDWaveSubsystem* Waves = World ? World->GetSubsystem<UTDWaveSubsystem>() : nullptr;
-		const int32 Naechste = Waves ? Waves->GetWelle() + 1 : 1;
+		const int32 Naechste = Waves ? Waves->GetFreigabeWelle() : 1;
 		switch (Zustand(WorldContext, K))
 		{
 		case ETDForschungZustand::Erforscht:

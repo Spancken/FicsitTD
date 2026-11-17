@@ -310,6 +310,28 @@ UTDCDSinkGesperrt::UTDCDSinkGesperrt()
 	mDisqfualifyingText = TDTextSinkGesperrt();
 }
 
+static FText TDTextAbrissSperre() { return TDTX(TEXT("Während der Welle ist Abreißen am Kern gesperrt"), TEXT("Dismantling near the Core is locked during a wave")); }
+
+UTDCDAbrissSperre::UTDCDAbrissSperre()
+{
+	mDisqfualifyingText = TDTextAbrissSperre();
+}
+
+bool TDAbrissInWelleGesperrt(const AActor* Bau)
+{
+	UWorld* World = Bau ? Bau->GetWorld() : nullptr;
+	UTDEinsatzSubsystem* Einsatz = World ? World->GetSubsystem<UTDEinsatzSubsystem>() : nullptr;
+	return Einsatz && Einsatz->SperrGrund(Bau->GetClass(), Bau->GetActorLocation(), 0) == TEXT("Welle");
+}
+
+void TDAbrissSperreGruende(const AActor* Bau, TArray<TSubclassOf<UFGConstructDisqualifier>>& Out)
+{
+	if (TDAbrissInWelleGesperrt(Bau))
+	{
+		Out.AddUnique(UTDCDAbrissSperre::StaticClass());
+	}
+}
+
 UTDCDWellenSperre::UTDCDWellenSperre()
 {
 	mDisqfualifyingText = TDTextWellenSperre();
@@ -332,6 +354,7 @@ static void TDAktualisiereSperrTexte()
 	Feld->SetPropertyValue_InContainer(GetMutableDefault<UTDCDKontingent>(), TDTextKontingent());
 	Feld->SetPropertyValue_InContainer(GetMutableDefault<UTDCDSinkGesperrt>(), TDTextSinkGesperrt());
 	Feld->SetPropertyValue_InContainer(GetMutableDefault<UTDCDWellenSperre>(), TDTextWellenSperre());
+	Feld->SetPropertyValue_InContainer(GetMutableDefault<UTDCDAbrissSperre>(), TDTextAbrissSperre());
 	Feld->SetPropertyValue_InContainer(GetMutableDefault<UTDCDBlaupause>(), TDTextBlaupause());
 }
 
@@ -1894,12 +1917,14 @@ FString UTDEinsatzSubsystem::WiederholeWelle(APlayerController* Spieler)
 	{
 		return TDT(TEXT("Ein Endlos-Lauf endet mit dem Kern - der nächste Lauf ist ein neues Spiel."), TEXT("An endless run ends with the Core - the next run is a new game."));
 	}
-	const FString Name = FString::Printf(TEXT("FicsitTD_W%02d_Start"), Kern->mLaufEndWelle);
+	// 17.11. (P16/A10, Marius: Sitzungsname im Spielstandsnamen): nur Staende dieses Spiels, nie die eines anderen Spiels
+	const FString Name = UTDLaufProtokoll::StandName(this, Kern->mLaufEndWelle, true);
 	UFGSaveSystem* Speicher = UFGSaveSystem::Get(GetWorld());
 	FSaveHeader Kopf;
-	if (!Speicher || !Speicher->LoadSaveGameHeaderSync(Name, Kopf))
+	const AFGGameState* Zustand = GetWorld()->GetGameState<AFGGameState>();
+	if (!Speicher || !Speicher->LoadSaveGameHeaderSync(Name, Kopf) || (Zustand && Kopf.SessionName != Zustand->GetSessionName()))
 	{
-		return TDF(TEXT("Kein Spielstand vom Start der Welle %d gefunden (%s)."), TEXT("No save from the start of wave %d found (%s)."), Kern->mLaufEndWelle, *Name);
+		return TDF(TEXT("Kein Spielstand dieses Spiels vom Start der Welle %d gefunden (%s)."), TEXT("No save of this game from the start of wave %d found (%s)."), Kern->mLaufEndWelle, *Name);
 	}
 	UE_LOG(LogFicsitTD, Log, TEXT("Einsatz: Welle %d wiederholen, lade %s"), Kern->mLaufEndWelle, *Name);
 	FLoadSaveFileParameters Parameter;

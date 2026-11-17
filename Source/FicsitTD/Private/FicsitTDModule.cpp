@@ -272,7 +272,7 @@ static bool WelleZuFrueh(const AFGResearchManager* Forschung, UClass* Schematic)
 		}
 		const int32 Ab = TDBalance::Ganz(FString::Printf(TEXT("Forschung.%s.AbWelle"), E.Schluessel), E.Welle);
 		const UTDWaveSubsystem* Waves = Forschung->GetWorld() ? Forschung->GetWorld()->GetSubsystem<UTDWaveSubsystem>() : nullptr;
-		const int32 Naechste = Waves ? Waves->GetWelle() + 1 : 1;
+		const int32 Naechste = Waves ? Waves->GetFreigabeWelle() : 1;
 		if (Naechste < Ab)
 		{
 			MeldeForschungGesperrt(Forschung, Schematic, TDF(TEXT("%s ist erst ab Welle %d erforschbar (nächste Welle: %d)."),

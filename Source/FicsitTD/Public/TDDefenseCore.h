@@ -57,6 +57,10 @@ public:
 	int32 mLaufWellenGesamt = 30;
 	UPROPERTY(SaveGame)
 	float mLaufCountdown = 0.f;
+	/** 17.11. (P16/A9): Welle, die der Stand vom Wellenstart wiederholt - vor dem Speichern gesetzt, damit der Stand nicht von der
+	 *  Reihenfolge Speichern/Hochzaehlen abhaengt (0 = keine Angabe, alte Staende) */
+	UPROPERTY(SaveGame)
+	int32 mLaufWiederholWelle = 0;
 	UPROPERTY(SaveGame)
 	float mLaufZwischen = 600.f;
 	UPROPERTY(SaveGame)

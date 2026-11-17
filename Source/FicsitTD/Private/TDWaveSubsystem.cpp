@@ -1507,7 +1507,16 @@ void UTDWaveSubsystem::SetzeLaufFort(ATDDefenseCore* Kern)
 	}
 	// War gerade eine Welle unterwegs, wird sie nach kurzer Pause wiederholt (Kreaturen werden nicht mitgespeichert)
 	const bool bWarWelle = Kern->mLaufCountdown <= 0.f;
-	mWelle = bWarWelle ? FMath::Max(0, Kern->mLaufWelle - 1) : Kern->mLaufWelle;
+	// 17.11. (P16/A9): neue Staende sagen selbst, welche Welle sie wiederholen; alte rechnen wie bisher
+	if (bWarWelle && Kern->mLaufWiederholWelle > 0)
+	{
+		mWelle = FMath::Max(0, Kern->mLaufWiederholWelle - 1);
+	}
+	else
+	{
+		mWelle = bWarWelle ? FMath::Max(0, Kern->mLaufWelle - 1) : Kern->mLaufWelle;
+	}
+	Kern->mLaufWiederholWelle = 0;
 	mCountdown = bWarWelle ? 60.f : FMath::Max(30.f, Kern->mLaufCountdown);
 	mLauf = ETDLauf::Aufbau;
 	UE_LOG(LogFicsitTD, Log, TEXT("Kern-Verteidigung fortgesetzt: Welle %d/%d, Countdown %.0f s"), mWelle + 1, mWellenGesamt, mCountdown);
@@ -3008,10 +3017,16 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 			SpeichereLauf();
 			// 16.11. (Nachpruefung N3, Marius): im Endlos-Modus keine Spielstaende je Welle - sonst liesse sich jede Welle
 			// (auch nach Kernverlust) ueber das Lademenue wiederholen, und es entstanden Hunderte Staende
-			UTDLaufProtokoll* Lauf = mEndlos ? nullptr : UTDLaufProtokoll::Get(this);
+			// 17.11. (P16/A10): auch die Bohrung ohne Staende je Welle (Abbrechen ist straffrei); Name je Sitzung
+			UTDLaufProtokoll* Lauf = (mEndlos || mBohrung) ? nullptr : UTDLaufProtokoll::Get(this);
 			if (Lauf)
 			{
-				Lauf->SpeichereSpielstand(FString::Printf(TEXT("FicsitTD_W%02d_Start"), mWelle + 1));
+				// A9: der Stand sagt selbst, welche Welle er wiederholt
+				if (ATDDefenseCore* K = mKern.Get())
+				{
+					K->mLaufWiederholWelle = mWelle + 1;
+				}
+				Lauf->SpeichereSpielstand(UTDLaufProtokoll::StandName(this, mWelle + 1, true));
 			}
 			++mWelle;
 			mLauf = ETDLauf::Welle;
@@ -3171,10 +3186,14 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 			Einsatz->Phasenabschluss(mWelle);
 		}
 	}
-	SpeichereLauf();
-	if (UTDLaufProtokoll* Lauf = mEndlos ? nullptr : UTDLaufProtokoll::Get(this))   // 16.11. (N3): nicht im Endlos-Modus
+	if (ATDDefenseCore* K = mKern.Get())
 	{
-		Lauf->SpeichereSpielstand(FString::Printf(TEXT("FicsitTD_W%02d_Ende"), mWelle));
+		K->mLaufWiederholWelle = 0;   // A9: gilt nur fuer den Stand vom Wellenstart
+	}
+	SpeichereLauf();
+	if (UTDLaufProtokoll* Lauf = (mEndlos || mBohrung) ? nullptr : UTDLaufProtokoll::Get(this))   // 16.11. (N3), 17.11. (A10): nicht Endlos/Bohrung
+	{
+		Lauf->SpeichereSpielstand(UTDLaufProtokoll::StandName(this, mWelle, false));
 	}
 	// 17.11. (Chatflut): der Bauhinweis nur in den ersten drei Wellen, danach weiss man es
 	if (!Sammelzeile() || mWelle <= 3)

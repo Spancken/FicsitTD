@@ -4,6 +4,8 @@
 #include "TDTurretBase.h"
 #include "TDForschung.h"
 #include "TDWaveSubsystem.h"
+#include "FGDismantleInterface.h"
+#include "FGConstructDisqualifier.h"
 #include "TDWellenStatistik.h"
 #include "TDBalance.h"
 #include "Command/ChatCommandLibrary.h"
@@ -1484,6 +1486,29 @@ bool UTDAutotest::Pruefe(UWorld* World, const TSharedPtr<FJsonObject>& S, FStrin
 		}
 		OutIst = !bOffen ? FString(TEXT("Kern-Menue nicht offen")) : Ist.Num() ? FString::Join(Ist, TEXT(", ")) : FString(TEXT("keine"));
 		return bOffen && FString::Join(Ist, TEXT(", ")) == Soll;
+	}
+	// 17.11. (P16/A12): darf der erste Turm des Typs abgerissen werden? "turm" (Standard Bolzenturm), "soll" true/false
+	if (Name == TEXT("Abriss"))
+	{
+		ATDTurretBase* Turm = TDTestTurm(World, S->HasField(TEXT("turm")) ? S->GetStringField(TEXT("turm")) : TEXT("Bolzenturm"));
+		if (!Turm)
+		{
+			OutIst = TEXT("kein Turm");
+			return false;
+		}
+		const bool bDarf = IFGDismantleInterface::Execute_CanDismantle(Turm);
+		TArray<TSubclassOf<UFGConstructDisqualifier>> Gruende;
+		IFGDismantleInterface::Execute_GetDismantleDisqualifiers(Turm, Gruende, TArray<AActor*>());
+		OutIst = FString::Printf(TEXT("%s, %d Gruende"), bDarf ? TEXT("abreissbar") : TEXT("gesperrt"), Gruende.Num());
+		return !S->HasField(TEXT("soll")) || S->GetBoolField(TEXT("soll")) == bDarf;
+	}
+	// 17.11. (P16/A13): Welle, fuer die "ab Welle" freigibt; "soll" = erwartete Zahl
+	if (Name == TEXT("FreigabeWelle"))
+	{
+		const UTDWaveSubsystem* Waves = World->GetSubsystem<UTDWaveSubsystem>();
+		const int32 Ist = Waves ? Waves->GetFreigabeWelle() : -1;
+		OutIst = FString::Printf(TEXT("%d (Welle %d, laeuft %d)"), Ist, Waves ? Waves->GetWelle() : -1, Waves && Waves->LaeuftWelle() ? 1 : 0);
+		return !S->HasField(TEXT("soll")) || int32(S->GetNumberField(TEXT("soll"))) == Ist;
 	}
 	if (Name == TEXT("Version"))
 	{

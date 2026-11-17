@@ -22,7 +22,7 @@ bool UTDWellenAbhaengigkeit::AreDependenciesMet(UObject* worldContext) const
 		return true;
 	}
 	const int32 Ab = TDBalance::Ganz(FString::Printf(TEXT("Forschung.%s.AbWelle"), *mSchluessel), mWelle);
-	return Waves->GetWelle() + 1 >= Ab;
+	return Waves->GetFreigabeWelle() >= Ab;   // 17.11. (P16/A13)
 }
 
 bool UTDAbzweigungAbhaengigkeit::AreDependenciesMet(UObject* worldContext) const

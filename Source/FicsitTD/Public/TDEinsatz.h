@@ -69,6 +69,15 @@ public:
 	UTDCDSinkGesperrt();
 };
 
+/** 17.11. (P16/A12): Abriss abgelehnt - im Verteidigungsfeld waehrend einer Welle */
+UCLASS()
+class FICSITTD_API UTDCDAbrissSperre : public UFGConstructDisqualifier
+{
+	GENERATED_BODY()
+public:
+	UTDCDAbrissSperre();
+};
+
 /** Bau abgelehnt: im Verteidigungsfeld waehrend einer Welle (Einsatz-Konzept Abschnitt 2) */
 UCLASS()
 class FICSITTD_API UTDCDWellenSperre : public UFGConstructDisqualifier

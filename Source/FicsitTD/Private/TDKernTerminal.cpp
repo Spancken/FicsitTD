@@ -1277,7 +1277,7 @@ void UTDKernTerminal::BaueForschung()
 	};
 	UTDEinsatzSubsystem* Einsatz = GetWorld() ? GetWorld()->GetSubsystem<UTDEinsatzSubsystem>() : nullptr;
 	const UTDWaveSubsystem* Waves = GetWorld() ? GetWorld()->GetSubsystem<UTDWaveSubsystem>() : nullptr;
-	const int32 Naechste = Waves ? Waves->GetWelle() + 1 : 1;
+	const int32 Naechste = Waves ? Waves->GetFreigabeWelle() : 1;   // 17.11. (P16/A13)
 	int32 Anzahl[5] = { 0, 0, 0, 0, 0 };
 	for (const FTDForschungKnoten& Kn : TDForschung::Alle())
 	{

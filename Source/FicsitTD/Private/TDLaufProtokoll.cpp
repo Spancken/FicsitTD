@@ -17,6 +17,8 @@
 #include "FGRecipe.h"
 #include "FGRecipeManager.h"
 #include "FGSaveSession.h"
+#include "FGSaveSystem.h"
+#include "FGGameState.h"
 #include "FGSchematic.h"
 #include "FGSchematicManager.h"
 #include "Buildables/FGBuildableGenerator.h"
@@ -114,6 +116,18 @@ void UTDLaufProtokoll::WellenStart(int32 Welle)
 	mLetzteWelle = Welle;
 	SammleBeute();   // Rest der letzten Welle sofort an den Kern
 	UE_LOG(LogFicsitTD, Log, TEXT("Lauf: Welle %d startet, Bauphase %.0f s"), Welle, mBauphase);
+}
+
+FString UTDLaufProtokoll::StandName(const UObject* WorldContext, int32 Welle, bool bStart)
+{
+	const UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
+	const AFGGameState* Zustand = World ? World->GetGameState<AFGGameState>() : nullptr;
+	FString Sitzung = UFGSaveSystem::SanitizeSaveName(Zustand ? Zustand->GetSessionName() : FString());
+	if (Sitzung.IsEmpty())
+	{
+		Sitzung = TEXT("FicsitTD");
+	}
+	return FString::Printf(TEXT("%s_TD_W%02d_%s"), *Sitzung, Welle, bStart ? TEXT("Start") : TEXT("Ende"));
 }
 
 void UTDLaufProtokoll::SpeichereSpielstand(const FString& Name) const

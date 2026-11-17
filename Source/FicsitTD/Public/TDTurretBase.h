@@ -5,6 +5,7 @@
 #include "Buildables/FGBuildableManufacturer.h"
 #include "FGClearanceData.h"
 #include "TDDamageable.h"
+#include "TDAbrissSperre.h"
 #include "TDTurretBase.generated.h"
 
 class AFGCreature;
@@ -75,6 +76,12 @@ UCLASS(Abstract)
 class FICSITTD_API ATDTurretBase : public AFGBuildableManufacturer, public ITDDamageable
 {
 	GENERATED_BODY()
+public:
+	// 17.11. (P16/A12, Marius: kein Abriss waehrend der Welle) - TDAbrissSperre.h
+	virtual bool CanDismantle_Implementation() const override { return !TDAbrissInWelleGesperrt(this) && Super::CanDismantle_Implementation(); }
+	virtual bool SupportsDismantleDisqualifiers_Implementation() const override { return true; }
+	virtual void GetDismantleDisqualifiers_Implementation(TArray<TSubclassOf<UFGConstructDisqualifier>>& Out, const TArray<AActor*>& Alle) const override { TDAbrissSperreGruende(this, Out); }
+private:
 public:
 	ATDTurretBase();
 

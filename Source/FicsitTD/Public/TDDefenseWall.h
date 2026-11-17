@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Buildables/FGBuildableWall.h"
 #include "TDDamageable.h"
+#include "TDAbrissSperre.h"
 #include "TDDefenseWall.generated.h"
 
 class ATDDecoy;
@@ -16,6 +17,12 @@ UCLASS()
 class FICSITTD_API ATDDefenseWall : public AFGBuildableWall, public ITDDamageable
 {
 	GENERATED_BODY()
+public:
+	// 17.11. (P16/A12, Marius: kein Abriss waehrend der Welle) - TDAbrissSperre.h
+	virtual bool CanDismantle_Implementation() const override { return !TDAbrissInWelleGesperrt(this) && Super::CanDismantle_Implementation(); }
+	virtual bool SupportsDismantleDisqualifiers_Implementation() const override { return true; }
+	virtual void GetDismantleDisqualifiers_Implementation(TArray<TSubclassOf<UFGConstructDisqualifier>>& Out, const TArray<AActor*>& Alle) const override { TDAbrissSperreGruende(this, Out); }
+private:
 public:
 	ATDDefenseWall(const FObjectInitializer& ObjectInitializer);
 
