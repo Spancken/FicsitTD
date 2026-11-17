@@ -1,0 +1,66 @@
+{
+  "Name": "Fabrik-S0-Diagnose",
+  "_Hinweis": "Diagnose 17.11. (Fenster1117: Netz 0 MW, Brenner 0 %): wie S0 bis zum Netz, dann 60 s warten und Strom-Diagnose (Brennstoff, Lager, Netznummer je Bau), keine Wellen.",
+  "NeuesSpiel": {
+    "Startort": "Grass Fields",
+    "Modus": 1,
+    "Stufe": 2
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 10,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warteBis": "EinsatzAktiv",
+      "max": 120
+    },
+    {
+      "gib": "/Game/FactoryGame/Resource/Parts/ResourceSinkCoupon/Desc_ResourceSinkCoupon.Desc_ResourceSinkCoupon_C",
+      "anzahl": 1500
+    },
+    {
+      "gib": "/Game/FactoryGame/Resource/Parts/GenericBiomass/Desc_GenericBiomass.Desc_GenericBiomass_C",
+      "anzahl": 800
+    },
+    {
+      "kosten": "echt"
+    },
+    {
+      "fabrik": "Bolzen",
+      "tuerme": 4,
+      "level": 2,
+      "band": 1
+    },
+    {
+      "strom": "Biomasse",
+      "anzahl": 2
+    },
+    {
+      "netz": true
+    },
+    {
+      "fabrikbericht": true
+    },
+    {
+      "warte": 60
+    },
+    {
+      "fabrikbericht": true
+    },
+    {
+      "foto": "Fabrik_S0_Diagnose"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "not enough spline points",
+      "min": 0,
+      "max": 0,
+      "text": "alle Baender und Rohre mit echter Route (keine Ersatz-Splines)"
+    }
+  ]
+}

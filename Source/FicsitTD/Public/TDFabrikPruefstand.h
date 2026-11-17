@@ -35,4 +35,6 @@ namespace TDFabrik
 	TArray<FString> Ueberwache(UWorld* World, const TArray<TWeakObjectPtr<AFGBuildable>>& Bauten, float Dt);
 	/** Netzwerte fuer den Bericht */
 	TArray<FString> StromBericht();
+	/** 17.11.: Zaehler, Netz und Kostenmodus fuer einen neuen Testplan zuruecksetzen */
+	void NeuerPlan();
 }

@@ -1,0 +1,44 @@
+{
+  "Name": "Fabrik-F1-Diagnose",
+  "_Hinweis": "Diagnose 17.11.: foerdern Baender in diesem Build? F1 mit stromfrei bis zum Bau, 120 s warten, Bericht mit Bandteilen. Keine Wellen.",
+  "NeuesSpiel": {
+    "Startort": "Grass Fields",
+    "Modus": 1,
+    "Stufe": 2
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 10,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warteBis": "EinsatzAktiv",
+      "max": 120
+    },
+    {
+      "befehl": "td einsatz frei an"
+    },
+    {
+      "stromfrei": true
+    },
+    {
+      "fabrik": "Bolzen",
+      "tuerme": 4,
+      "level": 2,
+      "band": 1
+    },
+    {
+      "befehl": "td einsatz frei aus"
+    },
+    {
+      "warte": 120
+    },
+    {
+      "fabrikbericht": true
+    }
+  ]
+}

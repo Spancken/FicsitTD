@@ -1,0 +1,8 @@
+{
+  "Name": "Fenster1117b",
+  "_Hinweis": "Nachtest 17.11. nach den Fixes Spline-Route, Sicherungsueberwachung, Zaehler je Plan, Kohlesuche 1,5 km: Kohle- und Treibstoff-Strecke.",
+  "Plaene": [
+    "Fabrik-S1",
+    "Fabrik-S2"
+  ]
+}

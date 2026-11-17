@@ -217,6 +217,10 @@ void UTDAutotest::StartePlan()
 	mNachzueglerWelle = 0;
 	mVersorgung.Reset();
 	mVersorgtRest.Reset();
+	// 17.11. (Test Fenster1117): Pruefstand je Plan neu - Bauten, Netzueberwachung, Zaehler und Kostenmodus
+	mFabrik.Reset();
+	mStromAktiv = false;
+	TDFabrik::NeuerPlan();
 	mPlanZeit = 0.f;
 	mUhr = 0.f;
 	if (mLog)
@@ -499,7 +503,9 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		}
 		TArray<FString> Bericht;
 		const bool bOk = TDFabrik::BaueStrom(World, StromKern, Wort, S->HasField(TEXT("anzahl")) ? int32(S->GetNumberField(TEXT("anzahl"))) : 2, mFabrik, Bericht);
-		mStromAktiv = bOk;
+		// 17.11. (Test Fenster1117): ein fehlgeschlagener zweiter Stromschritt (Kohle ohne Forschung) schaltete die Ueberwachung
+		// des laufenden Biomasse-Netzes ab - die Sicherung blieb dann aus. Ueberwacht wird, sobald irgendein Kraftwerk steht.
+		mStromAktiv = mStromAktiv || bOk;
 		Ergebnis(TEXT("Fabrik"), TEXT("Strom ") + Wort, bOk, FString::Join(Bericht, TEXT(" | ")));
 		return true;
 	}

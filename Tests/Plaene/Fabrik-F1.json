@@ -10,20 +10,67 @@
   "WarteNachLaden": 60,
   "MaxMinuten": 45,
   "Schritte": [
-    { "pruefe": "Version", "soll": "{VERSION}", "text": "richtige Mod-Version geladen" },
-    { "warteBis": "EinsatzAktiv", "max": 120 },
-    { "befehl": "td einsatz frei an" },
-    { "stromfrei": true },
-    { "fabrik": "Bolzen", "tuerme": 4, "level": 2, "band": 1 },
-    { "befehl": "td einsatz frei aus" },
-    { "warte": 180 },
-    { "fabrikbericht": true },
-    { "foto": "Fabrik_F1" },
-    { "zeitraffer": 2 },
-    { "wellenlauf": 10 },
-    { "zeitraffer": 1 },
-    { "fabrikbericht": true },
-    { "pruefe": "LogEnthaelt", "suche": "Bandfehler", "min": 1, "text": "Linie gebaut (Bericht im Log)" },
-    { "pruefe": "KeineWarnungen", "text": "keine Warnungen oder Fehler des Mods im Log" }
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warteBis": "EinsatzAktiv",
+      "max": 120
+    },
+    {
+      "befehl": "td einsatz frei an"
+    },
+    {
+      "stromfrei": true
+    },
+    {
+      "fabrik": "Bolzen",
+      "tuerme": 4,
+      "level": 2,
+      "band": 1
+    },
+    {
+      "befehl": "td einsatz frei aus"
+    },
+    {
+      "warte": 180
+    },
+    {
+      "fabrikbericht": true
+    },
+    {
+      "foto": "Fabrik_F1"
+    },
+    {
+      "zeitraffer": 2
+    },
+    {
+      "wellenlauf": 10
+    },
+    {
+      "zeitraffer": 1
+    },
+    {
+      "fabrikbericht": true
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Bandfehler",
+      "min": 1,
+      "text": "Linie gebaut (Bericht im Log)"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "not enough spline points",
+      "min": 0,
+      "max": 0,
+      "text": "alle Baender und Rohre mit echter Route (keine Ersatz-Splines)"
+    }
   ]
 }

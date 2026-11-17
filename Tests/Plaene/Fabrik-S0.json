@@ -10,23 +10,83 @@
   "WarteNachLaden": 60,
   "MaxMinuten": 45,
   "Schritte": [
-    { "pruefe": "Version", "soll": "{VERSION}", "text": "richtige Mod-Version geladen" },
-    { "warteBis": "EinsatzAktiv", "max": 120 },
-    { "gib": "/Game/FactoryGame/Resource/Parts/ResourceSinkCoupon/Desc_ResourceSinkCoupon.Desc_ResourceSinkCoupon_C", "anzahl": 1500 },
-    { "gib": "/Game/FactoryGame/Resource/Parts/GenericBiomass/Desc_GenericBiomass.Desc_GenericBiomass_C", "anzahl": 800 },
-    { "kosten": "echt" },
-    { "fabrik": "Bolzen", "tuerme": 4, "level": 2, "band": 1 },
-    { "strom": "Biomasse", "anzahl": 2 },
-    { "netz": true },
-    { "warte": 180 },
-    { "fabrikbericht": true },
-    { "foto": "Fabrik_S0" },
-    { "zeitraffer": 2 },
-    { "wellenlauf": 10 },
-    { "zeitraffer": 1 },
-    { "fabrikbericht": true },
-    { "pruefe": "LogEnthaelt", "suche": "Strom Biomasse:", "min": 1, "text": "Kraftwerk gebaut (Bericht im Log)" },
-    { "pruefe": "LogEnthaelt", "suche": "nicht gebaut", "min": 0, "max": 0, "text": "alle Bauten bezahlt und gesetzt" },
-    { "pruefe": "KeineWarnungen", "text": "keine Warnungen oder Fehler des Mods im Log" }
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warteBis": "EinsatzAktiv",
+      "max": 120
+    },
+    {
+      "gib": "/Game/FactoryGame/Resource/Parts/ResourceSinkCoupon/Desc_ResourceSinkCoupon.Desc_ResourceSinkCoupon_C",
+      "anzahl": 1500
+    },
+    {
+      "gib": "/Game/FactoryGame/Resource/Parts/GenericBiomass/Desc_GenericBiomass.Desc_GenericBiomass_C",
+      "anzahl": 800
+    },
+    {
+      "kosten": "echt"
+    },
+    {
+      "fabrik": "Bolzen",
+      "tuerme": 4,
+      "level": 2,
+      "band": 1
+    },
+    {
+      "strom": "Biomasse",
+      "anzahl": 2
+    },
+    {
+      "netz": true
+    },
+    {
+      "warte": 180
+    },
+    {
+      "fabrikbericht": true
+    },
+    {
+      "foto": "Fabrik_S0"
+    },
+    {
+      "zeitraffer": 2
+    },
+    {
+      "wellenlauf": 10
+    },
+    {
+      "zeitraffer": 1
+    },
+    {
+      "fabrikbericht": true
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Strom Biomasse:",
+      "min": 1,
+      "text": "Kraftwerk gebaut (Bericht im Log)"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "nicht gebaut",
+      "min": 0,
+      "max": 0,
+      "text": "alle Bauten bezahlt und gesetzt"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "not enough spline points",
+      "min": 0,
+      "max": 0,
+      "text": "alle Baender und Rohre mit echter Route (keine Ersatz-Splines)"
+    }
   ]
 }

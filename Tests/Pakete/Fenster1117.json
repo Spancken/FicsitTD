@@ -1,0 +1,10 @@
+{
+  "Name": "Fenster1117",
+  "_Hinweis": "Testfenster 17.11. (Marius frei): P16 Kleinfunde zuerst (kurz), dann Fabrik-Pruefstand P11 mit Strom und Kosten in steigender Groesse (Biomasse, Kohle, Treibstoff).",
+  "Plaene": [
+    "Kleinfunde-P16",
+    "Fabrik-S0",
+    "Fabrik-S1",
+    "Fabrik-S2"
+  ]
+}

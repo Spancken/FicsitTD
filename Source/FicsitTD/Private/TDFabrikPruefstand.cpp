@@ -14,6 +14,7 @@
 #include "Resources/FGResourceDescriptor.h"
 #include "Resources/FGExtractableResourceInterface.h"
 #include "Tests/FGTestBlueprintFunctionLibrary.h"
+#include "Tests/FGBuildableSpawnStrategy_Spline.h"
 #include "TDEinsatz.h"
 #include "TDBalance.h"
 #include "FGGameState.h"
@@ -26,6 +27,8 @@
 #include "Buildables/FGBuildableWire.h"
 #include "Buildables/FGBuildablePowerPole.h"
 #include "Buildables/FGBuildableGenerator.h"
+#include "Buildables/FGBuildableGeneratorFuel.h"
+#include "Buildables/FGBuildableConveyorBase.h"
 #include "Buildables/FGBuildableStorage.h"
 #include "Resources/FGItemDescriptor.h"
 #include "FGPipeConnectionComponent.h"
@@ -72,6 +75,19 @@ namespace
 		}
 		Treffer.Sort([](const UFGFactoryConnectionComponent& A, const UFGFactoryConnectionComponent& B) { return A.GetName() < B.GetName(); });
 		return Treffer;
+	}
+
+	/**
+	 * 17.11. (Test Fenster1117: Lager, Splitter-Ketten und Brenner bekamen nichts): die Standardroute der Testbibliothek ("Auto",
+	 * gerade Strecke mit Boegen) liefert bei kurzen Abstaenden und quer stehenden Anschluessen keine Spline-Punkte - das Spiel
+	 * fuellt Ersatzwerte ein ("not enough spline points '0'") und das Band foerdert nicht. Die Tangenten-Route ergibt immer eine
+	 * Kurve wie ein vom Spieler gezogenes Band. Gilt fuer Baender und Rohre.
+	 */
+	AFGBuildable* SplineBau(UClass* Klasse, UFGConnectionComponent* Von, UFGConnectionComponent* Nach)
+	{
+		UFGBuildableSpawnStrategy_Spline* Weg = NewObject<UFGBuildableSpawnStrategy_Spline>(GetTransientPackage());
+		Weg->mSplineRouteStrategy = EFGSplineBuildableRouteStrategy::TangentBasedSpline3D;
+		return UFGTestBlueprintFunctionLibrary::SpawnSplineBuildable(Klasse, Von, Nach, Weg);
 	}
 
 	AFGBuildable* Setze(UWorld* World, UClass* Klasse, const FTransform& T, TFunctionRef<void(AFGBuildable*)> VorFertig)
@@ -143,7 +159,7 @@ bool TDFabrik::BaueLinie(UWorld* World, ATDDefenseCore* Kern, const FString& Lin
 			UE_LOG(LogFicsitTD, Warning, TEXT("Fabrik: kein freier Anschluss %s -> %s (Ausgaenge %d, Eingaenge %d)"), *GetNameSafe(Von), *GetNameSafe(Nach), Aus.Num(), Ein.Num());
 			return false;
 		}
-		AFGBuildable* B = UFGTestBlueprintFunctionLibrary::SpawnSplineBuildable(Band, Aus[AusIndex], Ein[0], nullptr);
+		AFGBuildable* B = SplineBau(Band, Aus[AusIndex], Ein[0]);
 		if (!B)
 		{
 			++BandFehler;
@@ -341,6 +357,121 @@ TArray<FString> TDFabrik::Bericht(const TArray<TWeakObjectPtr<AFGBuildable>>& Ba
 	}
 	Zeilen.Add(FString::Printf(TEXT("Maschinen: %s"), *FString::Join(Maschinen, TEXT(", "))));
 	Zeilen.Add(FString::Printf(TEXT("Munition je Turm: %s"), *FString::Join(Tuerme, TEXT(" / "))));
+	// 17.11. (Test Fenster1117: Netz 0 MW, Brenner 0 %): Brennstoff, Lagerinhalt und Netz-Nummer je Bau, damit die Ursache im Log steht
+	TArray<FString> Strom;
+	TMap<int32, int32> Netze;
+	for (const TWeakObjectPtr<AFGBuildable>& W : Bauten)
+	{
+		AFGBuildable* B = W.Get();
+		if (!B || B->IsA<AFGBuildableWire>())
+		{
+			continue;
+		}
+		const UFGPowerConnectionComponent* C = B->FindComponentByClass<UFGPowerConnectionComponent>();
+		const int32 Netz = C ? C->GetCircuitID() : -2;
+		if (C)
+		{
+			Netze.FindOrAdd(Netz)++;
+		}
+		if (const AFGBuildableGeneratorFuel* G = Cast<AFGBuildableGeneratorFuel>(B))
+		{
+			const UFGInventoryComponent* Brennstoff = G->GetFuelInventory();
+			int32 Menge = 0;
+			if (Brennstoff)
+			{
+				TArray<FInventoryStack> Stapel;
+				Brennstoff->GetInventoryStacks(Stapel);
+				for (const FInventoryStack& St : Stapel)
+				{
+					Menge += St.NumItems;
+				}
+			}
+			Strom.Add(FString::Printf(TEXT("%s: Brennstoff %d, HatBrennstoff %d, KannStarten %d, Netz %d, Verbindungen %d"),
+				*G->GetName(), Menge, G->HasFuel() ? 1 : 0, G->CanStartPowerProduction() ? 1 : 0, Netz, C ? C->GetNumConnections() : -1));
+		}
+		else if (AFGBuildableStorage* L = Cast<AFGBuildableStorage>(B))
+		{
+			int32 Menge = 0;
+			if (const UFGInventoryComponent* Inhalt = L->GetStorageInventory())
+			{
+				TArray<FInventoryStack> Stapel;
+				Inhalt->GetInventoryStacks(Stapel);
+				for (const FInventoryStack& St : Stapel)
+				{
+					Menge += St.NumItems;
+				}
+			}
+			Strom.Add(FString::Printf(TEXT("%s: %d Teile im Lager"), *L->GetName(), Menge));
+		}
+	}
+	UWorld* Welt = nullptr;
+	for (const TWeakObjectPtr<AFGBuildable>& W : Bauten)
+	{
+		if (W.IsValid())
+		{
+			Welt = W->GetWorld();
+			break;
+		}
+	}
+	if (Welt)
+	{
+		for (TActorIterator<ATDTurretBase> It(Welt); It; ++It)
+		{
+			const UFGPowerConnectionComponent* C = It->FindComponentByClass<UFGPowerConnectionComponent>();
+			Strom.Add(FString::Printf(TEXT("%s: Netz %d, Verbindungen %d"), *It->GetName(), C ? C->GetCircuitID() : -2, C ? C->GetNumConnections() : -1));
+		}
+	}
+	// Band-Weg der Strom-Bauten: Anschluesse von Lager, Splittern, Brennern und die Enden jedes Bandes
+	auto Ende = [](const UFGFactoryConnectionComponent* C) -> FString
+	{
+		if (!C)
+		{
+			return TEXT("-");
+		}
+		const UFGFactoryConnectionComponent* G = C->GetConnection();
+		TArray<FInventoryItem> Blick;
+		const bool bBlick = C->GetDirection() == EFactoryConnectionDirection::FCD_OUTPUT && C->Factory_PeekOutput(Blick);
+		return FString::Printf(TEXT("%s(%s)->%s [Inv %s, Index %d, Peek %d/%d]"), *C->GetName(), C->GetDirection() == EFactoryConnectionDirection::FCD_INPUT ? TEXT("ein") : TEXT("aus"),
+			G ? *GetNameSafe(G->GetOwner()) : TEXT("frei"), C->GetInventory() ? TEXT("ja") : TEXT("nein"), C->GetInventoryAccessIndex(), bBlick ? 1 : 0, Blick.Num());
+	};
+	for (const TWeakObjectPtr<AFGBuildable>& W : Bauten)
+	{
+		AFGBuildable* B = W.Get();
+		if (!B || !(B->IsA<AFGBuildableStorage>() || B->IsA<AFGBuildableGeneratorFuel>() || B->GetClass()->GetName().Contains(TEXT("Splitter"))))
+		{
+			if (AFGBuildableConveyorBase* Band = Cast<AFGBuildableConveyorBase>(B))
+			{
+				const AActor* Von = Band->GetConnection0() && Band->GetConnection0()->GetConnection() ? Band->GetConnection0()->GetConnection()->GetOwner() : nullptr;
+				const AActor* Nach = Band->GetConnection1() && Band->GetConnection1()->GetConnection() ? Band->GetConnection1()->GetConnection()->GetOwner() : nullptr;
+				if ((Von && (Von->IsA<AFGBuildableStorage>() || Von->GetClass()->GetName().Contains(TEXT("Splitter")))) || (Nach && Nach->IsA<AFGBuildableGeneratorFuel>()))
+				{
+					TArray<FConveyorBeltItem*> Teile;
+					Band->GetConveyorBeltItems(Teile);
+					Strom.Add(FString::Printf(TEXT("Band %s: %s -> %s, steht %d, Kette %s, Teile %d"), *Band->GetName(), *GetNameSafe(Von), *GetNameSafe(Nach),
+						Band->IsStalled() ? 1 : 0, Band->GetConveyorChainActor() ? TEXT("ja") : TEXT("nein"), Teile.Num()));
+				}
+			}
+			continue;
+		}
+		TArray<UFGFactoryConnectionComponent*> Alle;
+		B->GetComponents<UFGFactoryConnectionComponent>(Alle);
+		TArray<FString> Teile;
+		for (const UFGFactoryConnectionComponent* C : Alle)
+		{
+			Teile.Add(Ende(C));
+		}
+		Strom.Add(FString::Printf(TEXT("%s Anschluesse: %s"), *B->GetName(), *FString::Join(Teile, TEXT(", "))));
+	}
+	TArray<FString> NetzListe;
+	for (const TPair<int32, int32>& N : Netze)
+	{
+		NetzListe.Add(FString::Printf(TEXT("%d:%d"), N.Key, N.Value));
+	}
+	Strom.Add(FString::Printf(TEXT("Netze (Nummer:Bauten) %s"), *FString::Join(NetzListe, TEXT(" "))));
+	for (const FString& Z : Strom)
+	{
+		UE_LOG(LogFicsitTD, Log, TEXT("Fabrik-Strom: %s"), *Z);
+	}
 	for (const FString& Z : Zeilen)
 	{
 		UE_LOG(LogFicsitTD, Log, TEXT("Fabrik-Bericht: %s"), *Z);
@@ -410,6 +541,16 @@ namespace
 		UE_LOG(LogFicsitTD, Warning, TEXT("Fabrik: Kabel %s -> %s nur unsichtbar verbunden"), *GetNameSafe(A->GetOwner()), *GetNameSafe(B->GetOwner()));
 		return true;
 	}
+}
+
+void TDFabrik::NeuerPlan()
+{
+	GKosten = TEXT("frei");
+	GNetz.Reset();
+	GSicherungUhr = -1.f;
+	GSicherungen = 0;
+	GUnsichtbar = 0;
+	GSpitze = 0.f;
 }
 
 void TDFabrik::SetzeKosten(const FString& Modus)
@@ -514,7 +655,7 @@ namespace
 				}
 			}
 		}
-		return BestA ? UFGTestBlueprintFunctionLibrary::SpawnSplineBuildable(RohrKlasse, BestA, BestB, nullptr) : nullptr;
+		return BestA ? SplineBau(RohrKlasse, BestA, BestB) : nullptr;
 	}
 
 	/** Naechster freier fester Knoten einer Ressource (Name enthaelt Erz) bis MaxDist um Ort */
@@ -677,7 +818,7 @@ namespace
 		{
 			const TArray<UFGFactoryConnectionComponent*> Aus = Anschluesse(Von, EFactoryConnectionDirection::FCD_OUTPUT);
 			const TArray<UFGFactoryConnectionComponent*> Ein = Anschluesse(Nach, EFactoryConnectionDirection::FCD_INPUT);
-			AFGBuildable* B = (Aus.Num() > 0 && Ein.Num() > 0) ? UFGTestBlueprintFunctionLibrary::SpawnSplineBuildable(Band, Aus[0], Ein[0], nullptr) : nullptr;
+			AFGBuildable* B = (Aus.Num() > 0 && Ein.Num() > 0) ? SplineBau(Band, Aus[0], Ein[0]) : nullptr;
 			if (!B)
 			{
 				UE_LOG(LogFicsitTD, Warning, TEXT("Fabrik: Kohleband %s -> %s nicht gebaut"), *GetNameSafe(Von), *GetNameSafe(Nach));
@@ -689,7 +830,7 @@ namespace
 		};
 		float KohleWeg = 0.f;
 		const FVector Werk = Ufer - Richtung * 2500.f;
-		AFGResourceNode* Knoten = GenListe.Num() > 0 ? FreierKnoten(World, TEXT("Desc_Coal"), Werk, 50000.f, KohleWeg) : nullptr;
+		AFGResourceNode* Knoten = GenListe.Num() > 0 ? FreierKnoten(World, TEXT("Desc_Coal"), Werk, 150000.f, KohleWeg)   /* Test Fenster1117: Grass Fields keine Kohle bis 500 m */ : nullptr;
 		AFGBuildable* KohleMiner = nullptr;
 		if (Knoten)
 		{
@@ -745,7 +886,7 @@ namespace
 		}
 		else if (GenListe.Num() > 0)
 		{
-			OutBericht.Add(TEXT("Strom Kohle: kein freier Kohleknoten bis 500 m oder Miner nicht gebaut"));
+			OutBericht.Add(TEXT("Strom Kohle: kein freier Kohleknoten bis 1,5 km oder Miner nicht gebaut"));
 		}
 		const int32 Masten = TDFabrik::VerbindeNetz(World, InOutBauten, OutBericht);
 		float Kapazitaet = 0.f;
@@ -767,7 +908,7 @@ namespace
 {
 	/**
 	 * 17.11. (P11, Marius: Treibstoff-Strom mit einbauen, laengere Wege wie im echten Spiel). Wie ein Spieler am Oelfeld:
-	 * Oelpumpe auf dem naechsten freien Oelknoten (bis 2 km), Rohr ueber eine Kreuzung zu den Raffinerien (Rezept Treibstoff,
+	 * Oelpumpe auf dem naechsten freien Oelknoten (bis 5 km), Rohr ueber eine Kreuzung zu den Raffinerien (Rezept Treibstoff,
 	 * 60 Oel -> 40 Treibstoff + 30 Harz), Harz per Band in je ein Lager, Treibstoff ueber Kreuzungen zu den Kraftwerken
 	 * (20 m3/min je Kraftwerk), lange Leitung mit Zwischenmasten ans vorhandene Netz (Anlaufstrom fuer Pumpe und Raffinerie).
 	 */
@@ -788,10 +929,10 @@ namespace
 			return false;
 		}
 		float Weg = 0.f;
-		AFGResourceNode* Knoten = FreierKnoten(World, TEXT("Desc_LiquidOil"), KernOrt, 200000.f, Weg);
+		AFGResourceNode* Knoten = FreierKnoten(World, TEXT("Desc_LiquidOil"), KernOrt, 500000.f, Weg);   // Test Fenster1117: auf Grass Fields kein Oel bis 2 km
 		if (!Knoten)
 		{
-			OutBericht.Add(TEXT("Strom Treibstoff: kein freier Oelknoten bis 2 km"));
+			OutBericht.Add(TEXT("Strom Treibstoff: kein freier Oelknoten bis 5 km"));
 			return false;
 		}
 		const FVector Feld = Knoten->GetActorLocation();
@@ -870,7 +1011,7 @@ namespace
 				++LagerZahl;
 				const TArray<UFGFactoryConnectionComponent*> Aus = Anschluesse(R, EFactoryConnectionDirection::FCD_OUTPUT);
 				const TArray<UFGFactoryConnectionComponent*> Ein = Anschluesse(L, EFactoryConnectionDirection::FCD_INPUT);
-				if (AFGBuildable* B = (Aus.Num() > 0 && Ein.Num() > 0) ? UFGTestBlueprintFunctionLibrary::SpawnSplineBuildable(Band, Aus[0], Ein[0], nullptr) : nullptr)
+				if (AFGBuildable* B = (Aus.Num() > 0 && Ein.Num() > 0) ? SplineBau(Band, Aus[0], Ein[0]) : nullptr)
 				{
 					InOutBauten.Add(B);
 					++Baender;
@@ -1031,7 +1172,7 @@ bool TDFabrik::BaueStrom(UWorld* World, ATDDefenseCore* Kern, const FString& Art
 		{
 			return false;
 		}
-		if (AFGBuildable* B = UFGTestBlueprintFunctionLibrary::SpawnSplineBuildable(Band, Aus[0], Ein[0], nullptr))
+		if (AFGBuildable* B = SplineBau(Band, Aus[0], Ein[0]))
 		{
 			InOutBauten.Add(B);
 			++Baender;

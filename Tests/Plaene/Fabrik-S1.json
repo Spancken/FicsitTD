@@ -1,6 +1,6 @@
 {
   "Name": "Fabrik-S1",
-  "_Hinweis": "Fabrik-Pruefstand S1 (P11, Marius 17.11.: Kohlekraftwerk am Wasser, Kohle ueber Foerderband, laengere Wege wie im echten Spiel, Forschung mit echten Festplatten). Wie S0 bis Welle 6 (Biomasse liefert den Anlaufstrom), dann Kohlekraft mit den Festplatten aus den Wellen erforschen, 2 Kohlekraftwerke + Wasserpumpe am naechsten Gewaesser, Kohle-Miner mit Band, Netz an das Biomasse-Netz. Fragen: findet der Pruefstand Wasser und Kohle, reichen die Festplatten bis W6, wie lang werden Band und Leitung, fliegt die Sicherung?",
+  "_Hinweis": "Fabrik-Pruefstand S1 (P11, Marius 17.11.: Kohlekraftwerk am Wasser, Kohle ueber Foerderband, laengere Wege wie im echten Spiel, Forschung mit echten Festplatten). Wie S0 bis Welle 6 (Biomasse liefert den Anlaufstrom), dann Kohlekraft mit den Festplatten aus den Wellen erforschen, 2 Kohlekraftwerke + Wasserpumpe am naechsten Gewaesser, Kohle-Miner mit Band, Netz an das Biomasse-Netz. Fragen: findet der Pruefstand Wasser und Kohle, reichen die Festplatten bis W6, wie lang werden Band und Leitung, fliegt die Sicherung? 17.11. nach Fenster1117b: drei Ketten (45 Bolzen/min) - mit einer Kette fiel der Kern vor Welle 6 an Munitionsnot, die Strom-Strecke wurde nie erreicht.",
   "NeuesSpiel": {
     "Startort": "Grass Fields",
     "Modus": 1,
@@ -10,30 +10,107 @@
   "WarteNachLaden": 60,
   "MaxMinuten": 70,
   "Schritte": [
-    { "pruefe": "Version", "soll": "{VERSION}", "text": "richtige Mod-Version geladen" },
-    { "warteBis": "EinsatzAktiv", "max": 120 },
-    { "gib": "/Game/FactoryGame/Resource/Parts/ResourceSinkCoupon/Desc_ResourceSinkCoupon.Desc_ResourceSinkCoupon_C", "anzahl": 2500 },
-    { "gib": "/Game/FactoryGame/Resource/Parts/GenericBiomass/Desc_GenericBiomass.Desc_GenericBiomass_C", "anzahl": 800 },
-    { "kosten": "echt" },
-    { "fabrik": "Bolzen", "tuerme": 4, "level": 2, "band": 1 },
-    { "strom": "Biomasse", "anzahl": 2 },
-    { "netz": true },
-    { "warte": 120 },
-    { "fabrikbericht": true },
-    { "zeitraffer": 2 },
-    { "wellenlauf": 6 },
-    { "zeitraffer": 1 },
-    { "erforsche": "Kohlekraft", "echt": true },
-    { "strom": "Kohle", "anzahl": 2 },
-    { "warte": 120 },
-    { "fabrikbericht": true },
-    { "foto": "Fabrik_S1" },
-    { "zeitraffer": 2 },
-    { "wellenlauf": 10 },
-    { "zeitraffer": 1 },
-    { "fabrikbericht": true },
-    { "pruefe": "LogEnthaelt", "suche": "Strom Kohle:", "min": 1, "text": "Kohlekraftwerk gebaut (Bericht im Log)" },
-    { "pruefe": "LogEnthaelt", "suche": "nicht gebaut", "min": 0, "max": 0, "text": "alle Bauten bezahlt und gesetzt" },
-    { "pruefe": "KeineWarnungen", "text": "keine Warnungen oder Fehler des Mods im Log" }
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warteBis": "EinsatzAktiv",
+      "max": 120
+    },
+    {
+      "gib": "/Game/FactoryGame/Resource/Parts/ResourceSinkCoupon/Desc_ResourceSinkCoupon.Desc_ResourceSinkCoupon_C",
+      "anzahl": 2500
+    },
+    {
+      "gib": "/Game/FactoryGame/Resource/Parts/GenericBiomass/Desc_GenericBiomass.Desc_GenericBiomass_C",
+      "anzahl": 800
+    },
+    {
+      "kosten": "echt"
+    },
+    {
+      "fabrik": "Bolzen",
+      "tuerme": 4,
+      "level": 2,
+      "band": 1,
+      "ketten": 3
+    },
+    {
+      "strom": "Biomasse",
+      "anzahl": 2
+    },
+    {
+      "netz": true
+    },
+    {
+      "warte": 120
+    },
+    {
+      "fabrikbericht": true
+    },
+    {
+      "zeitraffer": 2
+    },
+    {
+      "wellenlauf": 6
+    },
+    {
+      "zeitraffer": 1
+    },
+    {
+      "erforsche": "Kohlekraft",
+      "echt": true
+    },
+    {
+      "strom": "Kohle",
+      "anzahl": 2
+    },
+    {
+      "warte": 120
+    },
+    {
+      "fabrikbericht": true
+    },
+    {
+      "foto": "Fabrik_S1"
+    },
+    {
+      "zeitraffer": 2
+    },
+    {
+      "wellenlauf": 10
+    },
+    {
+      "zeitraffer": 1
+    },
+    {
+      "fabrikbericht": true
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Strom Kohle:",
+      "min": 1,
+      "text": "Kohlekraftwerk gebaut (Bericht im Log)"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "nicht gebaut",
+      "min": 0,
+      "max": 0,
+      "text": "alle Bauten bezahlt und gesetzt"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "not enough spline points",
+      "min": 0,
+      "max": 0,
+      "text": "alle Baender und Rohre mit echter Route (keine Ersatz-Splines)"
+    }
   ]
 }

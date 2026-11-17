@@ -1,0 +1,62 @@
+{
+  "Name": "Fabrik-S0-Diagnose-Cheat",
+  "_Hinweis": "Gegenprobe 17.11.: wie S0-Diagnose, aber nach dem Strombau stromfrei an. Foerdert das Lager dann?",
+  "NeuesSpiel": {
+    "Startort": "Grass Fields",
+    "Modus": 1,
+    "Stufe": 2
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 10,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warteBis": "EinsatzAktiv",
+      "max": 120
+    },
+    {
+      "gib": "/Game/FactoryGame/Resource/Parts/ResourceSinkCoupon/Desc_ResourceSinkCoupon.Desc_ResourceSinkCoupon_C",
+      "anzahl": 1500
+    },
+    {
+      "gib": "/Game/FactoryGame/Resource/Parts/GenericBiomass/Desc_GenericBiomass.Desc_GenericBiomass_C",
+      "anzahl": 800
+    },
+    {
+      "kosten": "echt"
+    },
+    {
+      "fabrik": "Bolzen",
+      "tuerme": 4,
+      "level": 2,
+      "band": 1
+    },
+    {
+      "strom": "Biomasse",
+      "anzahl": 2
+    },
+    {
+      "netz": true
+    },
+    {
+      "stromfrei": true
+    },
+    {
+      "fabrikbericht": true
+    },
+    {
+      "warte": 60
+    },
+    {
+      "fabrikbericht": true
+    },
+    {
+      "foto": "Fabrik_S0_Diagnose"
+    }
+  ]
+}
