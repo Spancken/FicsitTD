@@ -300,35 +300,66 @@ bool TDFabrik::BaueLinie(UWorld* World, ATDDefenseCore* Kern, const FString& Lin
 			OutBauten.Add(T);
 		}
 	}
-	if (TurmListe.Num() == 1)
+	// 17.11. (Marius nach Test Fenster1117b: "will ich die Tuerme gleichmaessig bedienen, muss ich auch die Aufteilung gleichmaessig
+	// machen" - die alte Splitter-Kette gab 1/2, 1/4, 1/8, 1/8 und liess die letzten Tuerme hungern; das ist Spiellogik, kein
+	// Fehler). Verteilbaum wie ein guter Spieler: jeder Splitter teilt gleichmaessig auf 2 oder 3 Straenge (4 Tuerme: einer teilt
+	// in zwei, die naechsten zwei geben je 50 % an zwei Tuerme). Exakt gleich fuer 2^a * 3^b Tuerme, sonst annaehernd.
+	int32 Verteiler = 0;
+	bool bGleich = true;
+	TFunction<void(AActor*, const TArray<AActor*>&, int32)> Verteile;
+	Verteile = [&](AActor* Zufluss, const TArray<AActor*>& Gruppe, int32 Tiefe)
 	{
-		Verbinde(Vorher, TurmListe[0]);
-	}
-	else
-	{
-		// Splitter-Kette: Splitter k gibt links an Turm k, in der Mitte weiter; der letzte gibt links und rechts an die letzten zwei
-		AActor* Zufluss = Vorher;
-		const int32 Anzahl = TurmListe.Num() - 1;
-		for (int32 k = 0; k < Anzahl; ++k)
+		if (Gruppe.Num() == 1)
 		{
-			const FVector Ort = Boden(World, KernOrt + Richtung * 2600.f + Quer * ((k - (Anzahl - 1) * 0.5f) * 600.f)) + FVector(0.f, 0.f, 100.f);
-			AFGBuildable* S = Setze(World, SplitterKlasse, FTransform(FRotator(0.f, (Quer).Rotation().Yaw, 0.f), Ort), [](AFGBuildable*) {});
-			if (!S)
-			{
-				OutBericht.Add(TEXT("Splitter nicht gebaut"));
-				return false;
-			}
-			OutBauten.Add(S);
-			Verbinde(Zufluss, S, 0);   // vom Konstrukteur sein Ausgang, vom vorigen Splitter der erste freie (Output2, die Mitte)
-			Verbinde(S, TurmListe[k], 0);                       // links (Output1)
-			if (k == Anzahl - 1)
-			{
-				// letzter Splitter: die Mitte ist noch frei (Index 0 nach dem Verbinden von Output1), rechts bleibt Reserve
-				Verbinde(S, TurmListe[k + 1], 0);
-			}
-			Zufluss = S;
+			Verbinde(Zufluss, Gruppe[0], 0);
+			return;
 		}
+		const int32 Teile = Gruppe.Num() % 3 == 0 ? 3 : 2;
+		if (Gruppe.Num() % Teile != 0)
+		{
+			bGleich = false;
+		}
+		// Ort: Wurzel 26 m Richtung Fabrik, darunter je Ebene 5 m weiter aussen in Richtung der versorgten Tuerme
+		FVector R = Richtung;
+		if (Tiefe > 0)
+		{
+			FVector Mitte = FVector::ZeroVector;
+			for (const AActor* T : Gruppe)
+			{
+				Mitte += (T->GetActorLocation() - KernOrt).GetSafeNormal2D();
+			}
+			R = Mitte.IsNearlyZero() ? (Gruppe[0]->GetActorLocation() - KernOrt).GetSafeNormal2D() : Mitte.GetSafeNormal2D();
+		}
+		const FVector Ort = Boden(World, KernOrt + R * (2600.f + 500.f * Tiefe)) + FVector(0.f, 0.f, 100.f);
+		AFGBuildable* S = Setze(World, SplitterKlasse, FTransform(R.Rotation(), Ort), [](AFGBuildable*) {});
+		if (!S)
+		{
+			OutBericht.Add(TEXT("Splitter nicht gebaut"));
+			++BandFehler;
+			return;
+		}
+		OutBauten.Add(S);
+		++Verteiler;
+		Verbinde(Zufluss, S, 0);
+		int32 Start = 0;
+		for (int32 t = 0; t < Teile; ++t)
+		{
+			const int32 Groesse = Gruppe.Num() / Teile + (t < Gruppe.Num() % Teile ? 1 : 0);
+			TArray<AActor*> Teil;
+			for (int32 k = 0; k < Groesse; ++k)
+			{
+				Teil.Add(Gruppe[Start + k]);
+			}
+			Start += Groesse;
+			Verteile(S, Teil, Tiefe + 1);
+		}
+	};
+	if (TurmListe.Num() > 0)
+	{
+		Verteile(Vorher, TurmListe, 0);
 	}
+	OutBericht.Add(FString::Printf(TEXT("Verteilung: %d Splitter im Baum, %s"), Verteiler,
+		bGleich ? TEXT("gleichmaessig") : TEXT("annaehernd gleichmaessig (Turmzahl nicht 2^a*3^b)")));
 	OutBericht.Add(FString::Printf(TEXT("Linie Bolzen: %d Ketten (je Miner + %d Maschinen), %d Tuerme, %d Baender Mk%d, %d Bandfehler"),
 		Enden.Num(), UE_ARRAY_COUNT(Kette), TurmListe.Num(), Baender, BandMk, BandFehler));
 	for (const FString& Z : OutBericht)
@@ -1180,24 +1211,46 @@ bool TDFabrik::BaueStrom(UWorld* World, ATDDefenseCore* Kern, const FString& Art
 		}
 		return false;
 	};
-	AActor* Zufluss = LagerBau;
-	for (int32 k = 0; k < BrennerListe.Num(); ++k)
+	// 17.11. (Marius: gleichmaessig aufteilen wie ein guter Spieler): Verteilbaum statt Kette - jeder Splitter teilt auf 2 oder 3
+	// Straenge, Ort zwischen Lager (36 m) und Brennern (46 m) quer bei der Mitte der versorgten Brenner
+	TFunction<void(AActor*, const TArray<AActor*>&, int32)> Verteile;
+	Verteile = [&](AActor* Zufluss, const TArray<AActor*>& Gruppe, int32 Tiefe)
 	{
-		if (k == BrennerListe.Num() - 1)
+		if (Gruppe.Num() == 1)
 		{
-			VerbindeBand(Zufluss, BrennerListe[k]);
-			break;
+			VerbindeBand(Zufluss, Gruppe[0]);
+			return;
 		}
-		const FVector Ort = Boden(World, KernOrt + Richtung * 4100.f + Quer * ((k - (BrennerListe.Num() - 1) * 0.5f) * 900.f)) + FVector(0.f, 0.f, 100.f);
-		AFGBuildable* S = Setze(World, SplitterKlasse, FTransform(FRotator(0.f, Quer.Rotation().Yaw, 0.f), Ort), [](AFGBuildable*) {});
+		const int32 Teile = Gruppe.Num() % 3 == 0 ? 3 : 2;
+		float QuerMitte = 0.f;
+		for (const AActor* G : Gruppe)
+		{
+			QuerMitte += FVector::DotProduct(G->GetActorLocation() - KernOrt, Quer) / Gruppe.Num();
+		}
+		const FVector Ort = Boden(World, KernOrt + Richtung * (3900.f + 250.f * Tiefe) + Quer * QuerMitte) + FVector(0.f, 0.f, 100.f);
+		AFGBuildable* S = Setze(World, SplitterKlasse, FTransform(Dreh, Ort), [](AFGBuildable*) {});
 		if (!S)
 		{
-			break;
+			return;
 		}
 		InOutBauten.Add(S);
 		VerbindeBand(Zufluss, S);
-		VerbindeBand(S, BrennerListe[k]);
-		Zufluss = S;
+		int32 Start = 0;
+		for (int32 t = 0; t < Teile; ++t)
+		{
+			const int32 Groesse = Gruppe.Num() / Teile + (t < Gruppe.Num() % Teile ? 1 : 0);
+			TArray<AActor*> Teil;
+			for (int32 k = 0; k < Groesse; ++k)
+			{
+				Teil.Add(Gruppe[Start + k]);
+			}
+			Start += Groesse;
+			Verteile(S, Teil, Tiefe + 1);
+		}
+	};
+	if (BrennerListe.Num() > 0)
+	{
+		Verteile(LagerBau, BrennerListe, 0);
 	}
 	const int32 Masten = VerbindeNetz(World, InOutBauten, OutBericht);
 	float Kapazitaet = 0.f;

@@ -1,6 +1,6 @@
 {
   "Name": "Fabrik-S1",
-  "_Hinweis": "Fabrik-Pruefstand S1 (P11, Marius 17.11.: Kohlekraftwerk am Wasser, Kohle ueber Foerderband, laengere Wege wie im echten Spiel, Forschung mit echten Festplatten). Wie S0 bis Welle 6 (Biomasse liefert den Anlaufstrom), dann Kohlekraft mit den Festplatten aus den Wellen erforschen, 2 Kohlekraftwerke + Wasserpumpe am naechsten Gewaesser, Kohle-Miner mit Band, Netz an das Biomasse-Netz. Fragen: findet der Pruefstand Wasser und Kohle, reichen die Festplatten bis W6, wie lang werden Band und Leitung, fliegt die Sicherung? 17.11. nach Fenster1117b: drei Ketten (45 Bolzen/min) - mit einer Kette fiel der Kern vor Welle 6 an Munitionsnot, die Strom-Strecke wurde nie erreicht.",
+  "_Hinweis": "Fabrik-Pruefstand S1 (P11, Marius 17.11.: Kohlekraftwerk am Wasser, Kohle ueber Foerderband, laengere Wege wie im echten Spiel, Forschung mit echten Festplatten). Wie S0 bis Welle 6 (Biomasse liefert den Anlaufstrom), dann Kohlekraft mit den Festplatten aus den Wellen erforschen, 2 Kohlekraftwerke + Wasserpumpe am naechsten Gewaesser, Kohle-Miner mit Band, Netz an das Biomasse-Netz. Fragen: findet der Pruefstand Wasser und Kohle, reichen die Festplatten bis W6, wie lang werden Band und Leitung, fliegt die Sicherung? 17.11. nach Fenster1117b: drei Ketten (45 Bolzen/min) - mit einer Kette fiel der Kern vor Welle 6 an Munitionsnot, die Strom-Strecke wurde nie erreicht. 4 Biomassebrenner (120 MW): zwei reichten fuer drei Ketten + 4 Tuerme nicht.",
   "NeuesSpiel": {
     "Startort": "Grass Fields",
     "Modus": 1,
@@ -39,7 +39,7 @@
     },
     {
       "strom": "Biomasse",
-      "anzahl": 2
+      "anzahl": 4
     },
     {
       "netz": true
