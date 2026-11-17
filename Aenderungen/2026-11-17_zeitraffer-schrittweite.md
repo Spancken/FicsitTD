@@ -16,4 +16,4 @@ tests: Fabrik-S1-Gegenprobe, Fabrik-S1-Gegenprobe-x1
 
 **Folgen:** Selbsttests mit Zeitraffer bei niedriger Bildrate dauern etwas laenger, messen aber richtig. Fruehere ×4-Laeufe mit langsamen Bildern haben die Abwehr unterschaetzt (Simulator-Kalibrierung, P12).
 
-**Offen (Spiel, Entscheidung Marius):** Auch Spieler unter 30 Bildern/s haben den Effekt (Spielverhalten von Satisfactory): bei 20 Bildern/s laden Tuerme etwa ein Drittel langsamer, Gegner laufen normal.
+**Spieler unter 30 Bildern/s:** haben den Effekt auch (Spielverhalten von Satisfactory, alle Maschinen gleich). Marius 17.11.: so lassen, kein Ausgleich.
