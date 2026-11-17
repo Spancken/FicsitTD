@@ -119,4 +119,6 @@ private:
 	TArray<TWeakObjectPtr<class AFGBuildable>> mFabrik;
 	/** 16.11. (B19): Sekunden, die der Wellenlauf schon auf den Start der naechsten Welle wartet */
 	float mStartWarteUhr = 0.f;
+	/** 17.11. (P11): Pruefstand-Netz wird ueberwacht (Sicherung zuruecksetzen) */
+	bool mStromAktiv = false;
 };

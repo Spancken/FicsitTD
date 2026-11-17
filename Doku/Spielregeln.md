@@ -115,7 +115,7 @@
 - **Zielwahl je Turm:** nächster zum Turm, nächster zum Kern, wenigste LP, meiste LP, Elite/Boss zuerst, markierte zuerst (0.9.7), dazu eine bevorzugte Gegnerfamilie.
 - **Sichtlinie:** Fundamente, Rampen, Träger und Treppen nehmen keine Sicht. Mauern und alle Maschinen des Spiels (Fabrik vor den Türmen) nehmen Sicht. Eigene Verteidigung, Kreaturen und Logistik nehmen keine Sicht. *(seit 0.77, Maschinen bestätigt 12.11.)*
 - **Übertakten:** Energie-Splitter im Maschinenfenster, bis 250 % Takt. Die Munition reicht dann kürzer, der Strom steigt. Im TD-Spiel ist das immer freigeschaltet.
-- **Strom:** Ohne Netz lädt kein Turm nach. Der Gewehrturm verschießt bei Stromausfall noch sein geladenes Magazin. Die Teslaspule braucht 15 MW Grundlast und 125 MW beim Aufladen (seit 0.80, `Tuerme.Teslaspule.Ladeverbrauch`, vorher 75), mit Akkubank die Hälfte.
+- **Strom:** Ohne Netz lädt kein Turm nach. Der Gewehrturm verschießt bei Stromausfall noch sein geladenes Magazin. Die Teslaspule braucht 15 MW Grundlast und 125 MW beim Aufladen (seit 0.80, `Tuerme.Teslaspule.Ladeverbrauch`, vorher 75), mit Akkubank die Hälfte. Gegen Lastspitzen gibt es den Akku im Laden (ab der Forschung Kohlekraft).
 - **Kombos (Standard seit 0.84, Schalter `Kombo.Aktiv`):** sieben Wechselwirkungen, je mit Ansage beim ersten Mal und Zähler im Turmfenster. Im MAM steht jede Kombo als Karte an ihrem Knoten.
   - Blitzableiter: Tesla springt bevorzugt auf Gegner mit steckendem Bolzen.
   - Hitzeriss: brennende Gegner verlieren die Panzerung gegen Kugel und Durchschlag.
@@ -281,6 +281,7 @@ Preis = Grundpreis × (1 + Aufschlag × bisher gekauft); Paket = Gebäude je Kau
 | Eintrag | Grundpreis | Aufschlag | Paket | Start |
 |---|---|---|---|---|
 | Abfueller | 8 | 0,4 | 1 | 0 |
+| Akku | 10 | 0,4 | 1 | 0 |
 | Armierpistole | 6 | 0 | 1 | 0 |
 | Assembler | 8 | 0,4 | 1 | 0 |
 | Biomassegenerator | 6 | 0,4 | 1 | 1 |

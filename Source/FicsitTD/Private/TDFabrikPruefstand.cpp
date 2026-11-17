@@ -14,6 +14,22 @@
 #include "Resources/FGResourceDescriptor.h"
 #include "Resources/FGExtractableResourceInterface.h"
 #include "Tests/FGTestBlueprintFunctionLibrary.h"
+#include "TDEinsatz.h"
+#include "TDBalance.h"
+#include "FGGameState.h"
+#include "FGCharacterPlayer.h"
+#include "FGPlayerController.h"
+#include "FGInventoryComponent.h"
+#include "FGPowerConnectionComponent.h"
+#include "FGPowerInfoComponent.h"
+#include "FGPowerCircuit.h"
+#include "Buildables/FGBuildableWire.h"
+#include "Buildables/FGBuildablePowerPole.h"
+#include "Buildables/FGBuildableGenerator.h"
+#include "Buildables/FGBuildableStorage.h"
+#include "Resources/FGItemDescriptor.h"
+#include "FGPipeConnectionComponent.h"
+#include "FGWaterVolume.h"
 #include "EngineUtils.h"
 #include "Engine/World.h"
 
@@ -62,6 +78,13 @@ namespace
 		AFGBuildableSubsystem* Bau = AFGBuildableSubsystem::Get(World);
 		if (!Bau || !Klasse)
 		{
+			return nullptr;
+		}
+		// 17.11. (P11/B6): Kosten wie beim Spieler (Modus aus dem Plan, Standard "frei")
+		FString Grund;
+		if (!TDFabrik::KostenPruefen(World, Klasse, T.GetLocation(), Grund))
+		{
+			UE_LOG(LogFicsitTD, Warning, TEXT("Fabrik: %s nicht gebaut - %s"), *GetNameSafe(Klasse), *Grund);
 			return nullptr;
 		}
 		AFGBuildable* Neu = Bau->BeginSpawnBuildable(Klasse, T);
@@ -320,6 +343,722 @@ TArray<FString> TDFabrik::Bericht(const TArray<TWeakObjectPtr<AFGBuildable>>& Ba
 	for (const FString& Z : Zeilen)
 	{
 		UE_LOG(LogFicsitTD, Log, TEXT("Fabrik-Bericht: %s"), *Z);
+	}
+	return Zeilen;
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// 17.11. (P11, Konzept-Fabrik-Strom-2026-11-17.md, Entscheidungen Marius): echter Strom und Kosten wie beim Spieler
+
+namespace
+{
+	FString GKosten = TEXT("frei");
+	TWeakObjectPtr<UFGPowerCircuit> GNetz;
+	float GSicherungUhr = -1.f;
+	int32 GSicherungen = 0;
+	int32 GUnsichtbar = 0;
+	float GSpitze = 0.f;
+
+	const TCHAR* Brenner = TEXT("/Game/FactoryGame/Buildable/Factory/GeneratorBiomass/Build_GeneratorBiomass_Automated.Build_GeneratorBiomass_Automated_C");
+	const TCHAR* Lager = TEXT("/Game/FactoryGame/Buildable/Factory/StorageContainerMk1/Build_StorageContainerMk1.Build_StorageContainerMk1_C");
+	const TCHAR* Mast = TEXT("/Game/FactoryGame/Buildable/Factory/PowerPoleMk1/Build_PowerPoleMk1.Build_PowerPoleMk1_C");
+	const TCHAR* Kabel = TEXT("/Game/FactoryGame/Buildable/Factory/PowerLine/Build_PowerLine.Build_PowerLine_C");
+	const TCHAR* Biomasse = TEXT("/Game/FactoryGame/Resource/Parts/GenericBiomass/Desc_GenericBiomass.Desc_GenericBiomass_C");
+
+	UFGInventoryComponent* SpielerLager(UWorld* World)
+	{
+		const APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
+		const AFGCharacterPlayer* Figur = PC ? Cast<AFGCharacterPlayer>(PC->GetPawn()) : nullptr;
+		return Figur ? Figur->GetInventory() : nullptr;
+	}
+
+	UFGPowerConnectionComponent* Stromanschluss(AActor* Bau)
+	{
+		if (AFGBuildablePowerPole* Pfahl = Cast<AFGBuildablePowerPole>(Bau))
+		{
+			return Pfahl->GetPowerConnections().Num() > 0 ? Pfahl->GetPowerConnections()[0] : nullptr;
+		}
+		return Bau ? Bau->FindComponentByClass<UFGPowerConnectionComponent>() : nullptr;
+	}
+
+	/** Kabel zwischen zwei Anschluessen: echtes Kabel, sonst die versteckte Verbindung der Testbibliothek (gezaehlt, Ziel 0) */
+	bool Verkable(UWorld* World, UFGPowerConnectionComponent* A, UFGPowerConnectionComponent* B, TArray<TWeakObjectPtr<AFGBuildable>>& OutBauten)
+	{
+		if (!A || !B)
+		{
+			return false;
+		}
+		AFGBuildableSubsystem* Bau = AFGBuildableSubsystem::Get(World);
+		UClass* KabelKlasse = LoadClass<AFGBuildable>(nullptr, Kabel);
+		if (Bau && KabelKlasse)
+		{
+			const FTransform T(A->GetComponentLocation());
+			if (AFGBuildableWire* Draht = Cast<AFGBuildableWire>(Bau->BeginSpawnBuildable(KabelKlasse, T)))
+			{
+				Draht->FinishSpawning(T);
+				if (Draht->Connect(A, B))
+				{
+					OutBauten.Add(Draht);
+					return true;
+				}
+				Draht->Destroy();
+			}
+		}
+		UFGTestBlueprintFunctionLibrary::MakeConnectionBetweenComponents(A, B);
+		++GUnsichtbar;
+		UE_LOG(LogFicsitTD, Warning, TEXT("Fabrik: Kabel %s -> %s nur unsichtbar verbunden"), *GetNameSafe(A->GetOwner()), *GetNameSafe(B->GetOwner()));
+		return true;
+	}
+}
+
+void TDFabrik::SetzeKosten(const FString& Modus)
+{
+	GKosten = Modus;
+	UE_LOG(LogFicsitTD, Log, TEXT("Fabrik: Kostenmodus %s"), *Modus);
+}
+
+bool TDFabrik::KostenPruefen(UWorld* World, UClass* Klasse, const FVector& Ort, FString& OutGrund)
+{
+	if (GKosten == TEXT("frei"))
+	{
+		return true;
+	}
+	UTDEinsatzSubsystem* Einsatz = World ? World->GetSubsystem<UTDEinsatzSubsystem>() : nullptr;
+	const FString Key = UTDEinsatzSubsystem::Schluessel(Klasse);
+	if (!Einsatz || Key.IsEmpty())
+	{
+		return true;   // Logistik (Masten, Kabel, Baender, Fundamente) wie beim Spieler ohne Kontingent
+	}
+	FString Grund = Einsatz->SperrGrund(Klasse, Ort, 1);
+	if (Grund == TEXT("Kontingent"))
+	{
+		const int32 Vorher = Einsatz->Konto();
+		const FString Antwort = Einsatz->Kaufe(Key, 1);
+		Grund = Einsatz->SperrGrund(Klasse, Ort, 1);
+		UE_LOG(LogFicsitTD, Log, TEXT("Fabrik: Kauf %s fuer den Bau - %s (Konto %d -> %d)"), *Key, *Antwort, Vorher, Einsatz->Konto());
+		if (!Grund.IsEmpty())
+		{
+			OutGrund = FString::Printf(TEXT("fehlt: %s - %s"), *Key, *Antwort);
+			return false;
+		}
+	}
+	if (!Grund.IsEmpty())
+	{
+		OutGrund = FString::Printf(TEXT("gesperrt: %s (%s)"), *Key, *Grund);
+		return false;
+	}
+	// "echt" (Marius 17.11.: wie in echt): das Baumaterial wird aus dem Inventar genommen - der Kauf hat es dorthin gelegt
+	if (GKosten == TEXT("echt"))
+	{
+		TMap<UClass*, int32> Material;
+		Einsatz->SammleBaumaterial(Key, 1, Material);
+		UFGInventoryComponent* Inventar = SpielerLager(World);
+		for (const TPair<UClass*, int32>& M : Material)
+		{
+			if (!Inventar || Inventar->GetNumItems(M.Key) < M.Value)
+			{
+				OutGrund = FString::Printf(TEXT("Material fehlt: %s"), *GetNameSafe(M.Key));
+				return false;
+			}
+		}
+		for (const TPair<UClass*, int32>& M : Material)
+		{
+			Inventar->Remove(M.Key, M.Value);
+		}
+	}
+	return true;
+}
+
+namespace
+{
+	/** Freie Rohranschluesse eines Baus */
+	TArray<UFGPipeConnectionComponent*> Rohranschluesse(AActor* Bau)
+	{
+		TArray<UFGPipeConnectionComponent*> Alle, Frei;
+		if (Bau)
+		{
+			Bau->GetComponents<UFGPipeConnectionComponent>(Alle);
+		}
+		for (UFGPipeConnectionComponent* C : Alle)
+		{
+			if (C && !C->IsConnected())
+			{
+				Frei.Add(C);
+			}
+		}
+		return Frei;
+	}
+
+	/** Naechster freier fester Knoten einer Ressource (Name enthaelt Erz) bis MaxDist um Ort */
+	AFGResourceNode* FreierKnoten(UWorld* World, const FString& Erz, const FVector& Ort, float MaxDist, float& OutDist)
+	{
+		AFGResourceNode* Knoten = nullptr;
+		OutDist = MaxDist;
+		for (TActorIterator<AFGResourceNode> It(World); It; ++It)
+		{
+			const TSubclassOf<UFGResourceDescriptor> Art = It->GetResourceClass();
+			if (!Art || It->IsA<AFGResourceDeposit>() || It->IsOccupied() || !Art->GetName().Contains(Erz))
+			{
+				continue;
+			}
+			const float D = FVector::Dist2D(It->GetActorLocation(), Ort);
+			if (D < OutDist)
+			{
+				OutDist = D;
+				Knoten = *It;
+			}
+		}
+		return Knoten;
+	}
+
+	/**
+	 * 17.11. (P11, Marius: Kohlekraftwerk am Wasser, Kohle ueber Foerderband, laengere Wege wie im echten Spiel).
+	 * Naechstes Gewaesser bis 400 m: Wasserpumpen am Ufer, Rohr ueber Kreuzungen zu den Kraftwerken an Land, Kohle-Miner
+	 * auf dem naechsten Kohleknoten, Band (mit Zwischenstuecken alle 45 m) ueber eine Splitter-Kette. Anlaufstrom muss wie
+	 * im Spiel aus einem vorhandenen Netz kommen (erst "strom": "Biomasse") - die Pumpen brauchen Strom.
+	 */
+	bool BaueKohle(UWorld* World, ATDDefenseCore* Kern, int32 Anzahl, TArray<TWeakObjectPtr<AFGBuildable>>& InOutBauten, TArray<FString>& OutBericht)
+	{
+		const FVector KernOrt = Kern->GetActorLocation();
+		UClass* GenKlasse = LoadClass<AFGBuildable>(nullptr, TEXT("/Game/FactoryGame/Buildable/Factory/GeneratorCoal/Build_GeneratorCoal.Build_GeneratorCoal_C"));
+		UClass* PumpKlasse = LoadClass<AFGBuildable>(nullptr, TEXT("/Game/FactoryGame/Buildable/Factory/WaterPump/Build_WaterPump.Build_WaterPump_C"));
+		UClass* RohrKlasse = LoadClass<AFGBuildable>(nullptr, TEXT("/Game/FactoryGame/Buildable/Factory/Pipeline/Build_Pipeline.Build_Pipeline_C"));
+		UClass* KreuzKlasse = LoadClass<AFGBuildable>(nullptr, TEXT("/Game/FactoryGame/Buildable/Factory/PipeJunction/Build_PipelineJunction_Cross.Build_PipelineJunction_Cross_C"));
+		UClass* MinerKlasse = LoadClass<AFGBuildable>(nullptr, Miner);
+		UClass* SplitterKlasse = LoadClass<AFGBuildable>(nullptr, Splitter);
+		UClass* VerbinderKlasse = LoadClass<AFGBuildable>(nullptr, TEXT("/Game/FactoryGame/Buildable/Factory/CA_Merger/Build_ConveyorAttachmentMerger.Build_ConveyorAttachmentMerger_C"));
+		UClass* Band = LoadClass<AFGBuildable>(nullptr, TEXT("/Game/FactoryGame/Buildable/Factory/ConveyorBeltMk1/Build_ConveyorBeltMk1.Build_ConveyorBeltMk1_C"));
+		if (!GenKlasse || !PumpKlasse || !RohrKlasse || !KreuzKlasse || !MinerKlasse || !SplitterKlasse || !VerbinderKlasse || !Band)
+		{
+			OutBericht.Add(TEXT("Strom Kohle: Klassen fehlen"));
+			return false;
+		}
+		// Gewaesser: entlang Kern -> Mitte jedes Wasservolumens den ersten Wasserpunkt suchen, das naechste gewinnt
+		AFGWaterVolume* Wasser = nullptr;
+		FVector Ufer = FVector::ZeroVector, Richtung = FVector::ForwardVector;
+		float Oben = 0.f, Bester = 40000.f;
+		for (TActorIterator<AFGWaterVolume> It(World); It; ++It)
+		{
+			FVector Mitte, Ausdehnung;
+			It->GetActorBounds(false, Mitte, Ausdehnung);
+			const float Flaeche = Mitte.Z + Ausdehnung.Z;
+			const FVector R = (FVector(Mitte.X, Mitte.Y, 0.f) - FVector(KernOrt.X, KernOrt.Y, 0.f)).GetSafeNormal2D();
+			const float Laenge = FMath::Min(FVector::Dist2D(Mitte, KernOrt), Bester);
+			for (float Weg = 0.f; Weg <= Laenge; Weg += 500.f)
+			{
+				const FVector P(KernOrt.X + R.X * Weg, KernOrt.Y + R.Y * Weg, Flaeche - 100.f);
+				if (It->EncompassesPoint(P))
+				{
+					if (Weg < Bester)
+					{
+						Bester = Weg;
+						Wasser = *It;
+						Ufer = FVector(P.X, P.Y, Flaeche);
+						Richtung = R;
+						Oben = Flaeche;
+					}
+					break;
+				}
+			}
+		}
+		if (!Wasser)
+		{
+			OutBericht.Add(TEXT("Strom Kohle: kein Gewaesser bis 400 m vom Kern"));
+			return false;
+		}
+		const FVector Quer(-Richtung.Y, Richtung.X, 0.f);
+		const FRotator Dreh = Richtung.Rotation();
+		const int32 Kraftwerke = FMath::Clamp(Anzahl, 1, 8);
+		// Wasser wie im Spiel: 45 m3/min je Kraftwerk, 120 m3/min je Pumpe
+		const int32 Pumpen = FMath::DivideAndRoundUp(Kraftwerke * 45, 120);
+		TArray<AActor*> PumpListe, GenListe, Kreuze;
+		for (int32 k = 0; k < Pumpen; ++k)
+		{
+			const FVector Ort = Ufer + Richtung * 1500.f + Quer * ((k - (Pumpen - 1) * 0.5f) * 2200.f);
+			if (!Wasser->EncompassesPoint(FVector(Ort.X, Ort.Y, Oben - 100.f)))
+			{
+				OutBericht.Add(FString::Printf(TEXT("Pumpe %d: kein Wasser am Platz"), k + 1));
+				continue;
+			}
+			AFGBuildable* P = Setze(World, PumpKlasse, FTransform(Dreh, FVector(Ort.X, Ort.Y, Oben)), [Wasser](AFGBuildable* B)
+			{
+				if (AFGBuildableResourceExtractorBase* X = Cast<AFGBuildableResourceExtractorBase>(B))
+				{
+					X->SetExtractableResource(TScriptInterface<IFGExtractableResourceInterface>(Wasser));
+				}
+			});
+			if (P)
+			{
+				PumpListe.Add(P);
+				InOutBauten.Add(P);
+			}
+		}
+		// Kraftwerke an Land, 25 m vor dem Ufer, quer nebeneinander; je eine Rohrkreuzung davor
+		for (int32 k = 0; k < Kraftwerke; ++k)
+		{
+			const FVector Seite = Quer * ((k - (Kraftwerke - 1) * 0.5f) * 1300.f);
+			AFGBuildable* G = Setze(World, GenKlasse, FTransform(Dreh, Boden(World, Ufer - Richtung * 2500.f + Seite)), [](AFGBuildable*) {});
+			if (!G)
+			{
+				OutBericht.Add(FString::Printf(TEXT("Kohlekraftwerk %d nicht gebaut (Kosten/Sperre, siehe Log)"), k + 1));
+				break;
+			}
+			GenListe.Add(G);
+			InOutBauten.Add(G);
+			AFGBuildable* K = Setze(World, KreuzKlasse, FTransform(Dreh, Boden(World, Ufer - Richtung * 800.f + Seite) + FVector(0.f, 0.f, 150.f)), [](AFGBuildable*) {});
+			if (K)
+			{
+				Kreuze.Add(K);
+				InOutBauten.Add(K);
+			}
+		}
+		// Rohre: naechstes freies Anschlusspaar zweier Bauten
+		int32 Rohre = 0, RohrFehler = 0;
+		auto Rohr = [&](AActor* A, AActor* B)
+		{
+			UFGPipeConnectionComponent* BestA = nullptr;
+			UFGPipeConnectionComponent* BestB = nullptr;
+			for (UFGPipeConnectionComponent* CA : Rohranschluesse(A))
+			{
+				for (UFGPipeConnectionComponent* CB : Rohranschluesse(B))
+				{
+					if (!BestA || FVector::DistSquared(CA->GetComponentLocation(), CB->GetComponentLocation()) < FVector::DistSquared(BestA->GetComponentLocation(), BestB->GetComponentLocation()))
+					{
+						BestA = CA;
+						BestB = CB;
+					}
+				}
+			}
+			AFGBuildable* Neu = BestA ? UFGTestBlueprintFunctionLibrary::SpawnSplineBuildable(RohrKlasse, BestA, BestB, nullptr) : nullptr;
+			if (Neu)
+			{
+				InOutBauten.Add(Neu);
+				++Rohre;
+			}
+			else
+			{
+				++RohrFehler;
+				UE_LOG(LogFicsitTD, Warning, TEXT("Fabrik: Rohr %s -> %s nicht gebaut"), *GetNameSafe(A), *GetNameSafe(B));
+			}
+		};
+		for (int32 k = 0; k < Kreuze.Num(); ++k)
+		{
+			if (GenListe.IsValidIndex(k))
+			{
+				Rohr(Kreuze[k], GenListe[k]);
+			}
+			if (k + 1 < Kreuze.Num())
+			{
+				Rohr(Kreuze[k], Kreuze[k + 1]);
+			}
+		}
+		for (int32 k = 0; k < PumpListe.Num() && Kreuze.Num() > 0; ++k)
+		{
+			Rohr(PumpListe[k], Kreuze[FMath::Min(Kreuze.Num() - 1, k * Kreuze.Num() / FMath::Max(1, PumpListe.Num()))]);
+		}
+		// Kohle: Miner auf dem naechsten Kohleknoten (vom Kraftwerk aus), Band mit Zwischenstuecken, Splitter-Kette
+		int32 Baender = 0, Zwischen = 0;
+		auto Band1 = [&](AActor* Von, AActor* Nach) -> bool
+		{
+			const TArray<UFGFactoryConnectionComponent*> Aus = Anschluesse(Von, EFactoryConnectionDirection::FCD_OUTPUT);
+			const TArray<UFGFactoryConnectionComponent*> Ein = Anschluesse(Nach, EFactoryConnectionDirection::FCD_INPUT);
+			AFGBuildable* B = (Aus.Num() > 0 && Ein.Num() > 0) ? UFGTestBlueprintFunctionLibrary::SpawnSplineBuildable(Band, Aus[0], Ein[0], nullptr) : nullptr;
+			if (!B)
+			{
+				UE_LOG(LogFicsitTD, Warning, TEXT("Fabrik: Kohleband %s -> %s nicht gebaut"), *GetNameSafe(Von), *GetNameSafe(Nach));
+				return false;
+			}
+			InOutBauten.Add(B);
+			++Baender;
+			return true;
+		};
+		float KohleWeg = 0.f;
+		const FVector Werk = Ufer - Richtung * 2500.f;
+		AFGResourceNode* Knoten = GenListe.Num() > 0 ? FreierKnoten(World, TEXT("Desc_Coal"), Werk, 50000.f, KohleWeg) : nullptr;
+		AFGBuildable* KohleMiner = nullptr;
+		if (Knoten)
+		{
+			const FRotator DrehM = (Werk - Knoten->GetActorLocation()).GetSafeNormal2D().Rotation();
+			KohleMiner = Setze(World, MinerKlasse, FTransform(DrehM, Knoten->GetActorLocation()), [Knoten](AFGBuildable* B)
+			{
+				if (AFGBuildableResourceExtractorBase* X = Cast<AFGBuildableResourceExtractorBase>(B))
+				{
+					X->SetExtractableResource(TScriptInterface<IFGExtractableResourceInterface>(Knoten));
+				}
+			});
+		}
+		if (KohleMiner)
+		{
+			InOutBauten.Add(KohleMiner);
+			// Splitter-Kette 12 m hinter den Kraftwerken (vom Wasser weg)
+			TArray<AActor*> Verteiler;
+			for (int32 k = 0; k + 1 < GenListe.Num(); ++k)
+			{
+				const FVector Ort = Boden(World, Werk - Richtung * 1600.f + Quer * ((k - (GenListe.Num() - 1) * 0.5f) * 1300.f)) + FVector(0.f, 0.f, 100.f);
+				if (AFGBuildable* S = Setze(World, SplitterKlasse, FTransform(FRotator(0.f, Quer.Rotation().Yaw, 0.f), Ort), [](AFGBuildable*) {}))
+				{
+					Verteiler.Add(S);
+					InOutBauten.Add(S);
+				}
+			}
+			// Weg vom Miner zum ersten Verteiler (oder Kraftwerk): alle 45 m ein Zwischenstueck (Verbinder) wie ein Spieler mit Bandstuetzen
+			AActor* Ziel = Verteiler.Num() > 0 ? Verteiler[0] : GenListe[0];
+			AActor* Zufluss = KohleMiner;
+			const FVector Start = KohleMiner->GetActorLocation();
+			const float Weg = FVector::Dist2D(Start, Ziel->GetActorLocation());
+			const int32 Stuecke = FMath::Max(0, FMath::CeilToInt(Weg / 4500.f) - 1);
+			for (int32 i = 1; i <= Stuecke; ++i)
+			{
+				const FVector Ort = Boden(World, FMath::Lerp(Start, Ziel->GetActorLocation(), float(i) / (Stuecke + 1))) + FVector(0.f, 0.f, 100.f);
+				const FRotator DrehZ = (Ziel->GetActorLocation() - Start).GetSafeNormal2D().Rotation();
+				AFGBuildable* V = Setze(World, VerbinderKlasse, FTransform(DrehZ, Ort), [](AFGBuildable*) {});
+				if (!V)
+				{
+					break;
+				}
+				InOutBauten.Add(V);
+				++Zwischen;
+				Band1(Zufluss, V);
+				Zufluss = V;
+			}
+			Band1(Zufluss, Ziel);
+			for (int32 k = 0; k < Verteiler.Num(); ++k)
+			{
+				Band1(Verteiler[k], GenListe[k]);
+				Band1(Verteiler[k], k + 1 < Verteiler.Num() ? Verteiler[k + 1] : GenListe.Last());
+			}
+		}
+		else if (GenListe.Num() > 0)
+		{
+			OutBericht.Add(TEXT("Strom Kohle: kein freier Kohleknoten bis 500 m oder Miner nicht gebaut"));
+		}
+		const int32 Masten = TDFabrik::VerbindeNetz(World, InOutBauten, OutBericht);
+		float Kapazitaet = 0.f;
+		for (AActor* G : GenListe)
+		{
+			Kapazitaet += Cast<AFGBuildableGenerator>(G)->GetPowerProductionCapacity();
+		}
+		OutBericht.Add(FString::Printf(TEXT("Strom Kohle: %d Kraftwerke, %d Pumpen, Gewaesser %.0f m vom Kern, %d Rohre (%d Fehler), Kohleknoten %.0f m vom Werk, %d Baender, %d Zwischenstuecke, %d Masten, %d unsichtbare Kabel, Kapazitaet beim Bau %.0f MW"),
+			GenListe.Num(), PumpListe.Num(), Bester / 100.f, Rohre, RohrFehler, KohleWeg / 100.f, Baender, Zwischen, Masten, GUnsichtbar, Kapazitaet));
+		for (const FString& Z : OutBericht)
+		{
+			UE_LOG(LogFicsitTD, Log, TEXT("Fabrik: %s"), *Z);
+		}
+		return GenListe.Num() > 0 && PumpListe.Num() > 0 && KohleMiner && RohrFehler == 0;
+	}
+}
+
+bool TDFabrik::BaueStrom(UWorld* World, ATDDefenseCore* Kern, const FString& Art, int32 Anzahl,
+	TArray<TWeakObjectPtr<AFGBuildable>>& InOutBauten, TArray<FString>& OutBericht)
+{
+	if (!World || !Kern)
+	{
+		return false;
+	}
+	if (Art == TEXT("Kohle"))
+	{
+		if (AFGGameState* Zustand = World->GetGameState<AFGGameState>())
+		{
+			Zustand->SetCheatNoPower(false);
+		}
+		return BaueKohle(World, Kern, Anzahl, InOutBauten, OutBericht);
+	}
+	if (Art != TEXT("Biomasse"))
+	{
+		OutBericht.Add(FString::Printf(TEXT("Strom %s gibt es noch nicht (Biomasse, Kohle)"), *Art));
+		return false;
+	}
+	// Cheat aus: ein vergessener Schritt "stromfrei" verfaelschte sonst still alles
+	if (AFGGameState* Zustand = World->GetGameState<AFGGameState>())
+	{
+		Zustand->SetCheatNoPower(false);
+	}
+	const FVector KernOrt = Kern->GetActorLocation();
+	// Kraftwerksplatz 30 m vom Kern, gegenueber der Fabrik (die laeuft zum Eisenknoten)
+	FVector Richtung = FVector::ForwardVector;
+	for (const TWeakObjectPtr<AFGBuildable>& W : InOutBauten)
+	{
+		if (W.IsValid() && W->IsA<AFGBuildableResourceExtractorBase>())
+		{
+			Richtung = -(W->GetActorLocation() - KernOrt).GetSafeNormal2D();
+			break;
+		}
+	}
+	const FVector Quer(-Richtung.Y, Richtung.X, 0.f);
+	const FRotator Dreh = Richtung.Rotation();
+	FString Grund;
+	UClass* LagerKlasse = LoadClass<AFGBuildable>(nullptr, Lager);
+	UClass* BrennerKlasse = LoadClass<AFGBuildable>(nullptr, Brenner);
+	UClass* SplitterKlasse = LoadClass<AFGBuildable>(nullptr, Splitter);
+	UClass* Band = LoadClass<AFGBuildable>(nullptr, TEXT("/Game/FactoryGame/Buildable/Factory/ConveyorBeltMk1/Build_ConveyorBeltMk1.Build_ConveyorBeltMk1_C"));
+	UClass* MastKlasse = LoadClass<AFGBuildable>(nullptr, Mast);
+	if (!LagerKlasse || !BrennerKlasse || !SplitterKlasse || !Band || !MastKlasse)
+	{
+		OutBericht.Add(TEXT("Strom: Klassen fehlen"));
+		return false;
+	}
+	// Lager mit der Biomasse aus dem Inventar (Marius: Lager mit Band)
+	const FVector LagerOrt = Boden(World, KernOrt + Richtung * 3600.f);
+	AFGBuildable* LagerBau = Setze(World, LagerKlasse, FTransform(Dreh, LagerOrt), [](AFGBuildable*) {});
+	if (!LagerBau)
+	{
+		OutBericht.Add(TEXT("Lager nicht gebaut (Kosten, siehe Log)"));
+		return false;
+	}
+	InOutBauten.Add(LagerBau);
+	int32 Eingelagert = 0;
+	if (AFGBuildableStorage* Speicher = Cast<AFGBuildableStorage>(LagerBau))
+	{
+		UClass* Bio = LoadClass<UFGItemDescriptor>(nullptr, Biomasse);
+		UFGInventoryComponent* Inventar = SpielerLager(World);
+		if (Bio && Inventar && Speicher->GetStorageInventory())
+		{
+			const int32 Hat = Inventar->GetNumItems(Bio);
+			Eingelagert = Hat > 0 ? Speicher->GetStorageInventory()->AddStack(FInventoryStack(Hat, Bio), true) : 0;
+			if (Eingelagert > 0)
+			{
+				Inventar->Remove(Bio, Eingelagert);
+			}
+		}
+	}
+	// Brenner in einer Reihe, Splitter-Kette davor (wie bei den Tuermen)
+	TArray<AActor*> BrennerListe;
+	for (int32 k = 0; k < FMath::Max(1, Anzahl); ++k)
+	{
+		const FVector Ort = Boden(World, KernOrt + Richtung * 4600.f + Quer * ((k - (Anzahl - 1) * 0.5f) * 900.f));
+		AFGBuildable* B = Setze(World, BrennerKlasse, FTransform(Dreh, Ort), [](AFGBuildable*) {});
+		if (!B)
+		{
+			OutBericht.Add(FString::Printf(TEXT("Brenner %d nicht gebaut (Kosten, siehe Log)"), k + 1));
+			break;
+		}
+		BrennerListe.Add(B);
+		InOutBauten.Add(B);
+	}
+	int32 Baender = 0;
+	auto VerbindeBand = [&](AActor* Von, AActor* Nach) -> bool
+	{
+		const TArray<UFGFactoryConnectionComponent*> Aus = Anschluesse(Von, EFactoryConnectionDirection::FCD_OUTPUT);
+		const TArray<UFGFactoryConnectionComponent*> Ein = Anschluesse(Nach, EFactoryConnectionDirection::FCD_INPUT);
+		if (Aus.Num() == 0 || Ein.Num() == 0)
+		{
+			return false;
+		}
+		if (AFGBuildable* B = UFGTestBlueprintFunctionLibrary::SpawnSplineBuildable(Band, Aus[0], Ein[0], nullptr))
+		{
+			InOutBauten.Add(B);
+			++Baender;
+			return true;
+		}
+		return false;
+	};
+	AActor* Zufluss = LagerBau;
+	for (int32 k = 0; k < BrennerListe.Num(); ++k)
+	{
+		if (k == BrennerListe.Num() - 1)
+		{
+			VerbindeBand(Zufluss, BrennerListe[k]);
+			break;
+		}
+		const FVector Ort = Boden(World, KernOrt + Richtung * 4100.f + Quer * ((k - (BrennerListe.Num() - 1) * 0.5f) * 900.f)) + FVector(0.f, 0.f, 100.f);
+		AFGBuildable* S = Setze(World, SplitterKlasse, FTransform(FRotator(0.f, Quer.Rotation().Yaw, 0.f), Ort), [](AFGBuildable*) {});
+		if (!S)
+		{
+			break;
+		}
+		InOutBauten.Add(S);
+		VerbindeBand(Zufluss, S);
+		VerbindeBand(S, BrennerListe[k]);
+		Zufluss = S;
+	}
+	const int32 Masten = VerbindeNetz(World, InOutBauten, OutBericht);
+	float Kapazitaet = 0.f;
+	for (AActor* B : BrennerListe)
+	{
+		if (const AFGBuildableGenerator* G = Cast<AFGBuildableGenerator>(B))
+		{
+			Kapazitaet += G->GetPowerProductionCapacity();
+		}
+	}
+	OutBericht.Add(FString::Printf(TEXT("Strom Biomasse: %d Brenner, Lager mit %d Biomasse, %d Baender, %d Masten, %d unsichtbare Kabel, Kapazitaet beim Bau %.0f MW"),
+		BrennerListe.Num(), Eingelagert, Baender, Masten, GUnsichtbar, Kapazitaet));
+	for (const FString& Z : OutBericht)
+	{
+		UE_LOG(LogFicsitTD, Log, TEXT("Fabrik: %s"), *Z);
+	}
+	return BrennerListe.Num() > 0;
+}
+
+int32 TDFabrik::VerbindeNetz(UWorld* World, TArray<TWeakObjectPtr<AFGBuildable>>& InOutBauten, TArray<FString>& OutBericht)
+{
+	UClass* MastKlasse = LoadClass<AFGBuildable>(nullptr, Mast);
+	if (!World || !MastKlasse)
+	{
+		return 0;
+	}
+	// alle Pruefstand-Bauten mit Stromanschluss, die noch kein Netz mit Erzeuger haben (Generatoren zuerst)
+	TArray<AFGBuildable*> Offen;
+	TArray<AFGBuildable*> Erzeuger;
+	for (const TWeakObjectPtr<AFGBuildable>& W : InOutBauten)
+	{
+		AFGBuildable* B = W.Get();
+		UFGPowerConnectionComponent* C = Stromanschluss(B);
+		if (!B || !C || B->IsA<AFGBuildablePowerPole>() || B->IsA<AFGBuildableWire>() || C->GetNumConnections() > 0)
+		{
+			continue;
+		}
+		(B->IsA<AFGBuildableGenerator>() ? Erzeuger : Offen).Add(B);
+	}
+	// Turmgruppen: auch Tuerme ausserhalb der Fabrik-Liste (Schritt "baue"), die noch an keinem Netz haengen
+	for (TActorIterator<ATDTurretBase> It(World); It; ++It)
+	{
+		UFGPowerConnectionComponent* C = Stromanschluss(*It);
+		if (C && C->GetNumConnections() == 0 && !Offen.Contains(*It))
+		{
+			Offen.Add(*It);
+		}
+	}
+	const float Reichweite = FMath::Max(1000.f, GetDefault<AFGBuildableWire>(LoadClass<AFGBuildable>(nullptr, Kabel))->mMaxLength * 0.9f);
+	TArray<AFGBuildablePowerPole*> Masten;
+	for (const TWeakObjectPtr<AFGBuildable>& W : InOutBauten)
+	{
+		if (AFGBuildablePowerPole* P = Cast<AFGBuildablePowerPole>(W.Get()))
+		{
+			Masten.Add(P);
+		}
+	}
+	const int32 MastenVorher = Masten.Num();
+	auto NeuerMast = [&](const FVector& Ort) -> AFGBuildablePowerPole*
+	{
+		AFGBuildablePowerPole* P = Cast<AFGBuildablePowerPole>(Setze(World, MastKlasse, FTransform(Boden(World, Ort)), [](AFGBuildable*) {}));
+		if (P)
+		{
+			Masten.Add(P);
+			InOutBauten.Add(P);
+		}
+		return P;
+	};
+	auto Naechster = [&](const FVector& Ort) -> AFGBuildablePowerPole*
+	{
+		AFGBuildablePowerPole* Best = nullptr;
+		for (AFGBuildablePowerPole* P : Masten)
+		{
+			if (!Best || FVector::DistSquared(P->GetActorLocation(), Ort) < FVector::DistSquared(Best->GetActorLocation(), Ort))
+			{
+				Best = P;
+			}
+		}
+		return Best;
+	};
+	// Stammleitung: jeder neue Mast an den naechsten vorhandenen, bei zu grosser Entfernung Zwischenmasten
+	auto AnsNetz = [&](AFGBuildablePowerPole* Neu)
+	{
+		AFGBuildablePowerPole* Ziel = nullptr;
+		for (AFGBuildablePowerPole* P : Masten)
+		{
+			if (P != Neu && (!Ziel || FVector::DistSquared(P->GetActorLocation(), Neu->GetActorLocation()) < FVector::DistSquared(Ziel->GetActorLocation(), Neu->GetActorLocation())))
+			{
+				Ziel = P;
+			}
+		}
+		AFGBuildablePowerPole* Von = Neu;
+		while (Ziel && FVector::Dist(Von->GetActorLocation(), Ziel->GetActorLocation()) > Reichweite)
+		{
+			const FVector Schritt = Von->GetActorLocation() + (Ziel->GetActorLocation() - Von->GetActorLocation()).GetSafeNormal() * Reichweite * 0.95f;
+			AFGBuildablePowerPole* Zwischen = NeuerMast(Schritt);
+			if (!Zwischen)
+			{
+				break;
+			}
+			Verkable(World, Stromanschluss(Von), Stromanschluss(Zwischen), InOutBauten);
+			Von = Zwischen;
+		}
+		if (Ziel)
+		{
+			Verkable(World, Stromanschluss(Von), Stromanschluss(Ziel), InOutBauten);
+		}
+	};
+	auto Haenge = [&](AFGBuildable* B)
+	{
+		AFGBuildablePowerPole* P = Naechster(B->GetActorLocation());
+		UFGPowerConnectionComponent* PC = P ? Stromanschluss(P) : nullptr;
+		if (!P || FVector::Dist(P->GetActorLocation(), B->GetActorLocation()) > 2500.f || !PC || PC->GetNumFreeConnections() <= 1)
+		{
+			P = NeuerMast(B->GetActorLocation() + FVector(400.f, 400.f, 0.f));
+			if (!P)
+			{
+				return;
+			}
+			AnsNetz(P);
+		}
+		Verkable(World, Stromanschluss(B), Stromanschluss(P), InOutBauten);
+	};
+	for (AFGBuildable* B : Erzeuger)
+	{
+		Haenge(B);
+	}
+	for (AFGBuildable* B : Offen)
+	{
+		Haenge(B);
+	}
+	return Masten.Num() - MastenVorher;
+}
+
+TArray<FString> TDFabrik::Ueberwache(UWorld* World, const TArray<TWeakObjectPtr<AFGBuildable>>& Bauten, float Dt)
+{
+	TArray<FString> Meldungen;
+	UFGPowerCircuit* Netz = GNetz.Get();
+	if (!Netz)
+	{
+		for (const TWeakObjectPtr<AFGBuildable>& W : Bauten)
+		{
+			const AFGBuildableGenerator* G = Cast<AFGBuildableGenerator>(W.Get());
+			if (G && G->GetPowerInfo() && G->GetPowerInfo()->GetPowerCircuit())
+			{
+				Netz = G->GetPowerInfo()->GetPowerCircuit();
+				GNetz = Netz;
+				break;
+			}
+		}
+	}
+	if (!Netz)
+	{
+		return Meldungen;
+	}
+	FPowerCircuitStats Stand;
+	Netz->GetStats(Stand);
+	GSpitze = FMath::Max(GSpitze, Stand.PowerConsumed);
+	if (Netz->IsFuseTriggered())
+	{
+		if (GSicherungUhr < 0.f)
+		{
+			GSicherungUhr = 0.f;
+			++GSicherungen;
+			Meldungen.Add(FString::Printf(TEXT("Sicherung ausgeloest (%d.), Verbrauch %.0f / Kapazitaet %.0f MW"), GSicherungen, Stand.PowerConsumed, Stand.PowerProductionCapacity));
+			UE_LOG(LogFicsitTD, Warning, TEXT("Fabrik: %s"), *Meldungen.Last());
+		}
+		GSicherungUhr += Dt;
+		// Marius 17.11.: nach 20 s zuruecksetzen wie ein Spieler, der zum Schalter laeuft
+		if (GSicherungUhr >= TDBalance::Wert(TEXT("Test.SicherungZurueck"), 20.f))
+		{
+			APlayerController* PC = World->GetFirstPlayerController();
+			Netz->ResetFuse(Cast<AFGPlayerController>(PC));
+			GSicherungUhr = -1.f;
+			UE_LOG(LogFicsitTD, Log, TEXT("Fabrik: Sicherung zurueckgesetzt"));
+		}
+	}
+	return Meldungen;
+}
+
+TArray<FString> TDFabrik::StromBericht()
+{
+	TArray<FString> Zeilen;
+	if (UFGPowerCircuit* Netz = GNetz.Get())
+	{
+		FPowerCircuitStats Stand;
+		Netz->GetStats(Stand);
+		Zeilen.Add(FString::Printf(TEXT("Netz: Kapazitaet %.0f MW, Verbrauch %.0f MW, Spitze %.0f MW, Sicherung %d-mal, unsichtbare Kabel %d"),
+			Stand.PowerProductionCapacity, Stand.PowerConsumed, GSpitze, GSicherungen, GUnsichtbar));
 	}
 	return Zeilen;
 }

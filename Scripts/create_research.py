@@ -63,7 +63,7 @@ BAEUME = [
     ("Industrie", "FICSIT-Abwehr: Industrie", "Was deine Fabrik herstellen kann: Teile, Stahl, Öl, Strom und schnellere Bänder. Hier wird nichts ausgeschlossen.", f"{P}/IronPlateReinforced/Desc_IronPlateReinforced", [
         ("Kohlekraft", "Kohlekraftwerk", "Kohlekraftwerk (75 MW statt 30 MW), Wasserextraktor und Rohre. Voraussetzung für Teslaspule und Flammenwerfer.",
          (0, 0), [], [], ZEIT,
-         [f"{R}/Buildings/Recipe_GeneratorCoal", f"{R}/Buildings/Recipe_WaterPump", f"{R}/Buildings/Recipe_Pipeline", f"{R}/Buildings/Recipe_PipeSupport", f"{R}/Buildings/Recipe_PipelineJunction_Cross"], KOHLE),
+         [f"{R}/Buildings/Recipe_GeneratorCoal", f"{R}/Buildings/Recipe_WaterPump", f"{R}/Buildings/Recipe_Pipeline", f"{R}/Buildings/Recipe_PipeSupport", f"{R}/Buildings/Recipe_PipelineJunction_Cross", f"{R}/Buildings/Recipe_PowerStorageMk1"], KOHLE),
         ("Assembler", "Assembler und Eisenteile", "Assembler, Eisenplatten, Schrauben, verstärkte Eisenplatten und Rotoren. Grundlage für fast jede bessere Munition.",
          (1, 0), [], [], ZEIT, EISEN2, f"{P}/IronPlateReinforced/Desc_IronPlateReinforced"),
         ("Kupfer", "Kupferverarbeitung", "Kupferbarren, Draht, Kabel und Kupferblech: der zweite Rohstoff. Für Gewehrmunition, Schockbolzen und Stromtechnik.",
@@ -293,7 +293,7 @@ KURZ = {
 # Gegen = wofuer der Knoten gut ist. "Ab Welle" und "Braucht" ergaenzt das Skript selbst.
 LADEN = {
     "Assembler": "Assembler", "Giesserei": "Gießerei", "Raffinerie": "Ölpumpe, Raffinerie, Flüssigkeitspuffer", "Schwerindustrie": "Fertiger", "Mischtechnik": "Mischer, Abfüller, Ressourcenbrunnen", "Gewehrturm": "Gewehrturm",
-    "Kohlekraft": "Kohlekraftwerk, Wasserpumpe", "Teslaspule": "Teslaspule", "Treibstoffkraft": "Treibstoffkraftwerk",
+    "Kohlekraft": "Kohlekraftwerk, Wasserpumpe, Akku", "Teslaspule": "Teslaspule", "Treibstoffkraft": "Treibstoffkraftwerk",
     "Reparaturdrohnen": "Drohnenplatz", "Kampfdrohnen": "Drohnenplatz", "Flammenwerfer": "Flammenwerfer", "NobeliskWerfer": "Nobelisk-Werfer",
     "Tor": "Tor", "Lockfeuer": "Lockfeuer", "Oelschlick": "Ölschlick-Feld",
     "Elektrozaun": "Elektrozaun", "Funkmast": "Funkmast", "Schildgenerator": "Schildgenerator", "Stoerfeld": "Störfeld-Projektor",

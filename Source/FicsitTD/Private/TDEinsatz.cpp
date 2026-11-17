@@ -58,6 +58,7 @@
 #include "FGChatManager.h"
 #include "FGRecipe.h"
 #include "FGRecipeManager.h"
+#include "Buildables/FGBuildablePowerStorage.h"
 #include "FGResearchManager.h"
 #include "FGResearchTree.h"
 #include "FGSchematicManager.h"
@@ -107,6 +108,8 @@ static const FTDLadenEintrag LadenListe[] = {
 	{ TEXT("Biomassegenerator"), 6, 0.4f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_GeneratorBiomass_Automated.Recipe_GeneratorBiomass_Automated_C") },
 	{ TEXT("Kohlekraftwerk"), 14, 0.6f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_GeneratorCoal.Recipe_GeneratorCoal_C") },
 	{ TEXT("Wasserpumpe"), 4, 0.3f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_WaterPump.Recipe_WaterPump_C") },
+	// 17.11. (P11, Marius: Akku ins Laden-Sortiment): Stromspeicher gegen Lastspitzen, mit der Forschung Kohlekraft
+	{ TEXT("Akku"), 10, 0.4f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_PowerStorageMk1.Recipe_PowerStorageMk1_C") },
 	{ TEXT("Lager"), 4, 0.5f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_StorageContainerMk1.Recipe_StorageContainerMk1_C") },
 	{ TEXT("Bolzenturm"), 5, 0.3f, 1, TEXT("/FicsitTD/Buildings/BoltTurret/Recipe_TD_BoltTurret.Recipe_TD_BoltTurret_C") },
 	{ TEXT("Gewehrturm"), 8, 0.3f, 1, TEXT("/FicsitTD/Buildings/GunTurret/Recipe_TD_GunTurret.Recipe_TD_GunTurret_C") },
@@ -272,7 +275,7 @@ static FString TDAnzeige(const FString& Key)
 		{ TEXT("Fertiger"), TEXT("Manufacturer") }, { TEXT("Mischer"), TEXT("Blender") }, { TEXT("Abfueller"), TEXT("Packager") },
 		{ TEXT("Foerderanlage"), TEXT("Resource Well") }, { TEXT("Fluessigkeitspuffer"), TEXT("Fluid Buffer") },
 		{ TEXT("Teslaspule"), TEXT("Tesla Coil") }, { TEXT("Nobelisk-Werfer"), TEXT("Nobelisk Launcher") }, { TEXT("Reparaturstation"), TEXT("Repair Station") }, { TEXT("Drohnenplatz"), TEXT("Drone Pad") },
-		{ TEXT("Lockfeuer"), TEXT("Lure Fire") }, { TEXT("Oelschlick"), TEXT("Oil Slick Field") }, { TEXT("Wasserpumpe"), TEXT("Water Extractor") },
+		{ TEXT("Lockfeuer"), TEXT("Lure Fire") }, { TEXT("Oelschlick"), TEXT("Oil Slick Field") }, { TEXT("Wasserpumpe"), TEXT("Water Extractor") }, { TEXT("Akku"), TEXT("Power Storage") },
 		{ TEXT("Oelpumpe"), TEXT("Oil Extractor") }, { TEXT("Foerderanlage"), TEXT("Extractor") }, { TEXT("Kohlekraftwerk"), TEXT("Coal-Powered Generator") },
 		{ TEXT("Treibstoffkraftwerk"), TEXT("Fuel-Powered Generator") }, { TEXT("Atomkraftwerk"), TEXT("Nuclear Power Plant") }, { TEXT("Kraftwerk"), TEXT("Power Generator") },
 		{ TEXT("Giesserei"), TEXT("Foundry") }, { TEXT("Assembler"), TEXT("Assembler") }, { TEXT("Fertiger"), TEXT("Manufacturer") },
@@ -573,6 +576,7 @@ FString UTDEinsatzSubsystem::Schluessel(const UClass* BauKlasse)
 	}
 	if (BauKlasse->IsChildOf(AFGBuildableStorage::StaticClass())) return TEXT("Lager");
 	if (BauKlasse->IsChildOf(AFGBuildablePipeReservoir::StaticClass())) return TEXT("Fluessigkeitspuffer");
+	if (BauKlasse->IsChildOf(AFGBuildablePowerStorage::StaticClass())) return TEXT("Akku");
 	return FString();   // Logistik, Fundamente, Mauern des Spiels, MAM ...: frei
 }
 

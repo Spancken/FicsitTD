@@ -293,6 +293,14 @@ bool UTDAutotest::Tick(float /*BildDt*/)
 		}
 		return true;
 	}
+	// 17.11. (P11): Pruefstand-Netz ueberwachen - Sicherung nach Test.SicherungZurueck zuruecksetzen, Spitze merken
+	if (mStromAktiv && World)
+	{
+		for (const FString& Meldung : TDFabrik::Ueberwache(World, mFabrik, Dt))
+		{
+			UE_LOG(LogFicsitTD, Warning, TEXT("Autotest Strom: %s"), *Meldung);
+		}
+	}
 	// 0.77 (Test Neustart: Spielfigur starb in den Duenen, der Test wartete endlos): im Selbsttest ist die Figur unverwundbar
 	if (World && World->GetFirstPlayerController())
 	{
@@ -474,9 +482,36 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		Ergebnis(TEXT("Fabrik"), Wort, bOk, FString::Join(Bericht, TEXT(" | ")));
 		return true;
 	}
+	if (S->TryGetStringField(TEXT("kosten"), Wort))
+	{
+		TDFabrik::SetzeKosten(Wort);   // 17.11. (P11/B6): "frei", "kontingent" oder "echt"
+		Ergebnis(TEXT("Fabrik"), TEXT("Kosten ") + Wort, true);
+		return true;
+	}
+	if (S->TryGetStringField(TEXT("strom"), Wort))
+	{
+		ATDDefenseCore* StromKern = nullptr;
+		for (TActorIterator<ATDDefenseCore> It(World); It && !StromKern; ++It)
+		{
+			StromKern = *It;
+		}
+		TArray<FString> Bericht;
+		const bool bOk = TDFabrik::BaueStrom(World, StromKern, Wort, S->HasField(TEXT("anzahl")) ? int32(S->GetNumberField(TEXT("anzahl"))) : 2, mFabrik, Bericht);
+		mStromAktiv = bOk;
+		Ergebnis(TEXT("Fabrik"), TEXT("Strom ") + Wort, bOk, FString::Join(Bericht, TEXT(" | ")));
+		return true;
+	}
+	if (S->HasField(TEXT("netz")))
+	{
+		TArray<FString> Bericht;
+		const int32 Masten = TDFabrik::VerbindeNetz(World, mFabrik, Bericht);
+		Ergebnis(TEXT("Fabrik"), TEXT("Netz verbinden"), true, FString::Printf(TEXT("%d neue Masten"), Masten));
+		return true;
+	}
 	if (S->HasField(TEXT("fabrikbericht")))
 	{
-		const TArray<FString> Zeilen = TDFabrik::Bericht(mFabrik);
+		TArray<FString> Zeilen = TDFabrik::Bericht(mFabrik);
+		Zeilen.Append(TDFabrik::StromBericht());
 		Ergebnis(TEXT("Fabrik-Bericht"), TEXT("Stand der Linie"), mFabrik.Num() > 0, FString::Join(Zeilen, TEXT(" | ")));
 		return true;
 	}
@@ -1276,6 +1311,30 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		UClass* Klasse = K ? LoadClass<UFGSchematic>(nullptr, *K->Pfad) : nullptr;
 		AFGSchematicManager* Schemata = AFGSchematicManager::Get(World);
 		APlayerController* PC = World->GetFirstPlayerController();
+		// 17.11. (P11, Marius: Forschung im Pruefstand mit echten Festplatten): "echt": true bezahlt wie das MAM aus dem Inventar
+		// und beachtet Welle, Voraussetzungen und Gabelungen; ohne "echt" wie bisher direkt geschenkt
+		if (K && Klasse && Schemata && S->HasField(TEXT("echt")) && S->GetBoolField(TEXT("echt")))
+		{
+			FString Status;
+			const ETDForschungZustand Zustand = TDForschung::Zustand(World, *K);
+			TDForschung::StatusTitel(World, *K, Status);
+			AFGCharacterPlayer* Figur = PC ? Cast<AFGCharacterPlayer>(PC->GetPawn()) : nullptr;
+			UFGInventoryComponent* Inventar = Figur ? Figur->GetInventory() : nullptr;
+			UClass* Platte = LoadClass<UFGItemDescriptor>(nullptr, TEXT("/Game/FactoryGame/Resource/Environment/CrashSites/Desc_HardDrive.Desc_HardDrive_C"));
+			const int32 Hat = (Inventar && Platte) ? Inventar->GetNumItems(Platte) : 0;
+			if (Zustand != ETDForschungZustand::Moeglich || Hat < K->FP)
+			{
+				Ergebnis(TEXT("Forschung"), Wort + TEXT(" (echt)"), false, FString::Printf(TEXT("%s, Festplatten %d / %d"), *Status, Hat, K->FP));
+				return true;
+			}
+			if (K->FP > 0)
+			{
+				Inventar->Remove(Platte, K->FP);
+			}
+			Schemata->GiveAccessToSchematic(Klasse, Figur);
+			Ergebnis(TEXT("Forschung"), Wort + TEXT(" (echt)"), Schemata->IsSchematicPurchased(Klasse), FString::Printf(TEXT("%d Festplatten bezahlt, %d uebrig"), K->FP, Hat - K->FP));
+			return true;
+		}
 		if (Klasse && Schemata)
 		{
 			Schemata->GiveAccessToSchematic(Klasse, PC ? Cast<AFGCharacterPlayer>(PC->GetPawn()) : nullptr);

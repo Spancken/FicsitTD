@@ -20,4 +20,19 @@ namespace TDFabrik
 
 	/** Zustand der gebauten Linie: Produktivitaet je Maschine, Munition je Turm (Log und Rueckgabe fuer den Bericht) */
 	TArray<FString> Bericht(const TArray<TWeakObjectPtr<AFGBuildable>>& Bauten);
+
+	// 17.11. (P11, Konzept-Fabrik-Strom-2026-11-17.md): echter Strom und Kosten wie beim Spieler
+	/** Kostenmodus: "frei" (wie bisher), "kontingent" (kauft wie ein Spieler), "echt" (dazu Baumaterial aus dem Inventar) */
+	void SetzeKosten(const FString& Modus);
+	/** Vor jedem Bau: Kontingent pruefen und notfalls kaufen, im Modus "echt" Material abziehen. false = nicht bauen (Grund) */
+	bool KostenPruefen(UWorld* World, UClass* Klasse, const FVector& Ort, FString& OutGrund);
+	/** Stromquelle bauen (S0: "Biomasse": Lager mit Biomasse aus dem Inventar, Band zu den Brennern) und alle Verbraucher verkabeln */
+	bool BaueStrom(UWorld* World, ATDDefenseCore* Kern, const FString& Art, int32 Anzahl,
+		TArray<TWeakObjectPtr<AFGBuildable>>& InOutBauten, TArray<FString>& OutBericht);
+	/** Masten und Kabel: haengt alle Pruefstand-Bauten und Tuerme ohne Netz an das Netz. Rueckgabe: neue Masten */
+	int32 VerbindeNetz(UWorld* World, TArray<TWeakObjectPtr<AFGBuildable>>& InOutBauten, TArray<FString>& OutBericht);
+	/** Je Takt: Sicherung pruefen und nach Test.SicherungZurueck (20 s) zuruecksetzen; Spitzenverbrauch merken */
+	TArray<FString> Ueberwache(UWorld* World, const TArray<TWeakObjectPtr<AFGBuildable>>& Bauten, float Dt);
+	/** Netzwerte fuer den Bericht */
+	TArray<FString> StromBericht();
 }
