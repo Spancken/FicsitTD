@@ -13,12 +13,12 @@
     "Quelle": "Anteil der Pause, die der Spieler wartet (Frühstart verkürzt)"
   },
   "WellenGrund": {
-    "Wert": 50,
-    "Quelle": "Wellendauer W1 in s, Prüfstand"
+    "Wert": 50.0,
+    "Quelle": "P12-Fit 2026-11-17 (p12_fit.py, P12-K + Nachlauf): Wellendauer K3 W1-30, linear"
   },
   "WellenJe": {
-    "Wert": 2.5,
-    "Quelle": "Wellendauer + je Welle in s, Prüfstand"
+    "Wert": 1.34,
+    "Quelle": "P12-Fit 2026-11-17 (p12_fit.py, P12-K + Nachlauf): Wellendauer K3 W1-30, linear"
   },
   "MinerRate": {
     "Wert": 60,
@@ -53,8 +53,8 @@
     "Quelle": "Kalibrierung 2026-11-07 (verlust_fit.py): 1075 Wellen aus Streuung, Kreislauf, Vormittag, Gesamt082; Kurve geht durch 0"
   },
   "VerlustQ": {
-    "Wert": 47.61,
-    "Quelle": "Kalibrierung 2026-11-07 (verlust_fit.py): 1075 Wellen aus Streuung, Kreislauf, Vormittag, Gesamt082, R² 0.46 (vorher 0.43)"
+    "Wert": 48.62,
+    "Quelle": "P12-Fit 2026-11-17 (p12_fit.py, P12-K + Nachlauf): K1 W1-8 + K3 W1-30, 61 Wellen, Exponent und Streckung fest, K5-Pruefung erreicht"
   },
   "QKritisch": {
     "Wert": 1.1,
@@ -199,18 +199,18 @@
     "Wert": [
       [
         4,
-        0.31
+        0.61
       ],
       [
         9,
-        0.4
+        0.76
       ],
       [
         99,
-        0.54
+        0.49
       ]
     ],
-    "Quelle": "Uptime der Türme (Zeit mit Ziel), Kreislauf-Messung 06.11.2026: W1-4 31 %, W5-9 40 %, ab W10 54 %"
+    "Quelle": "P12-Fit 2026-11-17 (p12_fit.py, P12-K + Nachlauf): Median Uptime K1+K3 je Wellenbereich"
   },
   "FlammePuffer": {
     "Wert": 1.0,
@@ -237,20 +237,20 @@
     "Quelle": "Kalibrierung 2026-11-07 (verlust_fit.py): 1075 Wellen aus Streuung, Kreislauf, Vormittag, Gesamt082: Exponent der Verlustkurve, Verlust wächst schneller als Q"
   },
   "Mehrziel_Bolzenturm": {
-    "Wert": 0.72,
-    "Quelle": "Kalibrierung 2026-11-07 (verlust_fit.py): 1075 Wellen aus Streuung, Kreislauf, Vormittag, Gesamt082: Faktor auf das wirksame DPS der Formel (Turmwerte.dps), Gewehr = 1"
+    "Wert": 1.08,
+    "Quelle": "P12-Fit 2026-11-17 (p12_fit.py, P12-K + Nachlauf): K4 W15-19, Wirkung je Nenn-DPS / Formel, Gewehr = 1"
   },
   "Mehrziel_Nobelisk-Werfer": {
-    "Wert": 1.79,
-    "Quelle": "Kalibrierung 2026-11-07 (verlust_fit.py): 1075 Wellen aus Streuung, Kreislauf, Vormittag, Gesamt082: Faktor auf das wirksame DPS der Formel (Turmwerte.dps), Gewehr = 1"
+    "Wert": 0.86,
+    "Quelle": "P12-Fit 2026-11-17 (p12_fit.py, P12-K + Nachlauf): K4 W15-19, Wirkung je Nenn-DPS / Formel, Gewehr = 1"
   },
   "Mehrziel_Teslaspule": {
-    "Wert": 0.5,
-    "Quelle": "Kalibrierung 2026-11-07 (verlust_fit.py): 1075 Wellen aus Streuung, Kreislauf, Vormittag, Gesamt082: Faktor auf das wirksame DPS der Formel (Turmwerte.dps), Gewehr = 1"
+    "Wert": 1.04,
+    "Quelle": "P12-Fit 2026-11-17 (p12_fit.py, P12-K + Nachlauf): K4 W15-19, Wirkung je Nenn-DPS / Formel, Gewehr = 1"
   },
   "Mehrziel_Flammenwerfer": {
-    "Wert": 2.7,
-    "Quelle": "Kalibrierung 2026-11-07 (verlust_fit.py): 1075 Wellen aus Streuung, Kreislauf, Vormittag, Gesamt082: Faktor auf das wirksame DPS der Formel (Turmwerte.dps), Gewehr = 1"
+    "Wert": 1.02,
+    "Quelle": "P12-Fit 2026-11-17 (p12_fit.py, P12-K + Nachlauf): K4 W15-19, Wirkung je Nenn-DPS / Formel, Gewehr = 1"
   },
   "StreuungAbQ": {
     "Wert": 0.3,

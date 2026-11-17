@@ -1,0 +1,10 @@
+{
+  "Name": "P12-E",
+  "_Hinweis": "Fenster 2 (P12): R2 mit Kandidat A und B bis W50, R3 und R6 bis W30 mit A. Erwartung: R2 besteht W50 mit Kern-Tiefpunkt 30-60 %, R3 tiefer als R2, R6 scheitert vor W35. Erzeugt von Tests\\erzeuge_p12e.py.",
+  "Plaene": [
+    "P12-E-R2-Misch-A",
+    "P12-E-R2-Misch-B",
+    "P12-E-R3-Gewehr-A",
+    "P12-E-R6-Faul-A"
+  ]
+}
