@@ -16,7 +16,7 @@ namespace TDFabrik
 {
 	/** Linie "Bolzen": Eisenerz -> Barren -> Stangen -> Armierungsbolzen -> Tuerme. Rueckgabe true, wenn alles gebaut und verbunden ist. */
 	bool BaueLinie(UWorld* World, ATDDefenseCore* Kern, const FString& Linie, int32 Tuerme, int32 Level, int32 BandMk,
-		TArray<TWeakObjectPtr<AFGBuildable>>& OutBauten, TArray<FString>& OutBericht, int32 Ketten = 1);
+		TArray<TWeakObjectPtr<AFGBuildable>>& OutBauten, TArray<FString>& OutBericht, int32 Ketten = 1, int32 Ausbau = 1);
 
 	/** Zustand der gebauten Linie: Produktivitaet je Maschine, Munition je Turm (Log und Rueckgabe fuer den Bericht) */
 	TArray<FString> Bericht(const TArray<TWeakObjectPtr<AFGBuildable>>& Bauten);

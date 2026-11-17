@@ -31,9 +31,11 @@
 - **Endless waves:** like Operation, but waves come on a timer and never end, always from one direction. The timer counts from the start of a wave; if you are too slow, the next wave comes on top. You can build at any time. After every boss wave: 5-minute break and a bonus at the Core. When the Core falls, the run ends with your best wave.
 - **Free play with defense:** regular Satisfactory with HUB and milestones, plus turrets and defense research in the MAM (paid with Coupons from the AWESOME Sink). Nothing attacks unless you start it: place a Defense Core next to an ore node and start a **drilling** in its menu (Easy, Medium, Hard). Every wave you hold gives ore; the first success per resource and level gives Hard Drives. Abort any time without penalty.
 - Existing saves: `/td modus abwehr` in the chat switches to Free play with defense.
+- **Also new in 0.11:** one ammo item lasts for several shots (basic 4, advanced 3, special 2); the turret window shows consumption per minute. Power Storage in the shop (Coal Power research), Miner Mk.2/Mk.3 and belts up to Mk.5 in the MAM. Turrets and defenses cannot be dismantled near the Core during a wave. Wave saves carry the session name.
 
 ### What we want to know
 - How far did you get (wave), how long did it take, which turrets did you use?
+- Ammo per item: how many turrets does one miner, chain or belt feed for you? Did you run out of ammo, and in which wave?
 - Endless waves: is the timer too hectic or too relaxed? At which wave did it break, and why (turrets, ammo, enemy type)?
 - Free play with defense: did the drilling feel worth it? Was it clear where to place the Core?
 - Fun (1–5), difficulty per section (waves 1–10, 11–20, 21–30, 31+), was it clear what to do?
@@ -80,9 +82,11 @@ Full list in the handbook: https://spancken.github.io/FicsitTD/#issues (section 
 - **Endlos-Wellen:** wie Einsatz, aber die Wellen kommen auf Zeit, enden nie und kommen immer aus einer Richtung. Die Uhr zählt ab Wellenbeginn; bist du zu langsam, kommt die nächste Welle obendrauf. Bauen geht jederzeit. Nach jeder Bosswelle: 5 Minuten Pause und ein Bonus am Kern. Fällt der Kern, endet der Lauf mit deinem Bestwert.
 - **Freies Spiel mit Abwehr:** normales Satisfactory mit HUB und Meilensteinen, dazu Türme und Abwehr-Forschung im MAM (bezahlt mit Coupons aus dem AWESOME-Sink). Nichts greift an, was du nicht startest: Stell einen Abwehrkern neben einen Erzknoten und starte in seinem Menü eine **Bohrung** (Leicht, Mittel, Schwer). Jede gehaltene Welle bringt Erz, der erste Erfolg je Rohstoff und Stufe Festplatten. Abbrechen geht jederzeit ohne Strafe.
 - Bestehende Spielstände: `/td modus abwehr` im Chat stellt auf Freies Spiel mit Abwehr um.
+- **Außerdem neu in 0.11:** Ein Stück Munition reicht für mehrere Schuss (Grund 4, Stufe 2 drei, Spezial 2); das Turmfenster zeigt den Verbrauch pro Minute. Akku im Laden (Forschung Kohlekraft), Miner Mk2/Mk3 und Bänder bis Mk5 im MAM. Türme und Abwehrbauten lassen sich während der Welle am Kern nicht abreißen. Wellen-Spielstände tragen den Namen des Spiels.
 
 ### Was wir wissen wollen
 - Bis zu welcher Welle, wie lange, welche Türme?
+- Munition je Stück: Wie viele Türme versorgt bei dir ein Miner, eine Kette, ein Band? Ging die Munition aus, und in welcher Welle?
 - Endlos-Wellen: Ist die Uhr zu hektisch oder zu ruhig? In welcher Welle kippte es, und woran lag es (Türme, Munition, Gegnerart)?
 - Freies Spiel mit Abwehr: Hat sich die Bohrung gelohnt? War klar, wo der Kern hin muss?
 - Spaß (1–5), Schwierigkeit je Abschnitt (W1–10, 11–20, 21–30, ab 31), war klar, was zu tun ist?

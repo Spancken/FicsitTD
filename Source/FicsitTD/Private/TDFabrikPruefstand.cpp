@@ -115,7 +115,7 @@ namespace
 }
 
 bool TDFabrik::BaueLinie(UWorld* World, ATDDefenseCore* Kern, const FString& Linie, int32 Tuerme, int32 Level, int32 BandMk,
-	TArray<TWeakObjectPtr<AFGBuildable>>& OutBauten, TArray<FString>& OutBericht, int32 Ketten)
+	TArray<TWeakObjectPtr<AFGBuildable>>& OutBauten, TArray<FString>& OutBericht, int32 Ketten, int32 Ausbau)
 {
 	if (!World || !Kern)
 	{
@@ -198,8 +198,10 @@ bool TDFabrik::BaueLinie(UWorld* World, ATDDefenseCore* Kern, const FString& Lin
 			break;
 		}
 		const FVector R = (FVector(Knoten->GetActorLocation().X, Knoten->GetActorLocation().Y, KernOrt.Z) - KernOrt).GetSafeNormal2D();
-		// Ketten zum selben Knoten-Gebiet nebeneinander (je 12 m seitlich), damit sich die Maschinen nicht ueberlagern
-		const FVector Seite = FVector(-R.Y, R.X, 0.f) * (1200.f * c);
+		// Ketten zum selben Knoten-Gebiet nebeneinander (je 12 m seitlich je Maschine einer Stufe), damit sich nichts ueberlagert
+		const int32 Voll = FMath::Clamp(Ausbau, 1, 4);
+		const FVector QuerK(-R.Y, R.X, 0.f);
+		const FVector Seite = QuerK * (1200.f * Voll * c);
 		if (c == 0)
 		{
 			Richtung = R;
@@ -220,27 +222,147 @@ bool TDFabrik::BaueLinie(UWorld* World, ATDDefenseCore* Kern, const FString& Lin
 			return false;
 		}
 		OutBauten.Add(MinerBau);
-		// B3: Maschinen auf einer Linie zwischen Kern und Knoten, 30 m vom Kern an, je 14 m
+		// B3: Maschinen auf einer Linie zwischen Kern und Knoten.
+		// 17.11. (P10-Abnahme "voller Knoten", Marius: bauen wie ein guter Spieler): "ausbau" N (1-4) nutzt den Miner aus -
+		// N Stangen- und N Bolzen-Konstrukteure, ceil(N/2) Schmelzoefen, gleichmaessig aufgeteilt (Splitter je 2) und am Ende
+		// verbunden. N = 4: 60 Erz/min (Miner Mk1, normaler Knoten) -> 60 Armierungsbolzen/min. N = 1 wie bisher (15/min).
 		AActor* VorherK = MinerBau;
-		const float Abstand = FMath::Min(Bester - 2500.f, 3000.f + 1400.f * UE_ARRAY_COUNT(Kette));
-		for (int32 i = 0; i < UE_ARRAY_COUNT(Kette); ++i)
+		if (Voll == 1)
 		{
-			const FVector Ort = Boden(World, KernOrt + R * (Abstand - 1400.f * i) + Seite);
-			UClass* Klasse = LoadClass<AFGBuildable>(nullptr, Kette[i].Maschine);
-			UClass* Rezept = LoadClass<UFGRecipe>(nullptr, Kette[i].Rezept);
-			AFGBuildable* M = Setze(World, Klasse, FTransform(DrehK + FRotator(0.f, 180.f, 0.f), Ort), [](AFGBuildable*) {});
-			if (!M || !Rezept)
+			const float Abstand = FMath::Min(Bester - 2500.f, 3000.f + 1400.f * UE_ARRAY_COUNT(Kette));
+			for (int32 i = 0; i < UE_ARRAY_COUNT(Kette); ++i)
 			{
-				OutBericht.Add(FString::Printf(TEXT("Stufe %d nicht gebaut (Maschine %d, Rezept %d)"), i + 1, M != nullptr, Rezept != nullptr));
+				const FVector Ort = Boden(World, KernOrt + R * (Abstand - 1400.f * i) + Seite);
+				UClass* Klasse = LoadClass<AFGBuildable>(nullptr, Kette[i].Maschine);
+				UClass* Rezept = LoadClass<UFGRecipe>(nullptr, Kette[i].Rezept);
+				AFGBuildable* M = Setze(World, Klasse, FTransform(DrehK + FRotator(0.f, 180.f, 0.f), Ort), [](AFGBuildable*) {});
+				if (!M || !Rezept)
+				{
+					OutBericht.Add(FString::Printf(TEXT("Stufe %d nicht gebaut (Maschine %d, Rezept %d)"), i + 1, M != nullptr, Rezept != nullptr));
+					return false;
+				}
+				if (AFGBuildableManufacturer* Fab = Cast<AFGBuildableManufacturer>(M))
+				{
+					Fab->SetRecipe(Rezept);
+				}
+				OutBauten.Add(M);
+				Verbinde(VorherK, M);
+				VorherK = M;
+			}
+		}
+		else
+		{
+			UClass* VerbKlasse = LoadClass<AFGBuildable>(nullptr, TEXT("/Game/FactoryGame/Buildable/Factory/CA_Merger/Build_ConveyorAttachmentMerger.Build_ConveyorAttachmentMerger_C"));
+			// Stufen vom Miner nach innen je 13 m, Bolzen-Konstrukteure nicht naeher als 33 m am Kern (Tuerme 20 m, Verteilbaum 26 m)
+			const float DBolzen = FMath::Max(3300.f, Bester - 3900.f);
+			const float DStangen = DBolzen + 1300.f;
+			const float DSchmelze = DStangen + 1300.f;
+			auto Platz = [&](float D, float Quer) { return Boden(World, KernOrt + R * D + Seite + QuerK * Quer); };
+			auto Maschine = [&](int32 Stufe, const FVector& Ort) -> AFGBuildable*
+			{
+				UClass* Klasse = LoadClass<AFGBuildable>(nullptr, Kette[Stufe].Maschine);
+				UClass* Rezept = LoadClass<UFGRecipe>(nullptr, Kette[Stufe].Rezept);
+				AFGBuildable* M = Setze(World, Klasse, FTransform(DrehK + FRotator(0.f, 180.f, 0.f), Ort), [](AFGBuildable*) {});
+				if (M && Rezept)
+				{
+					if (AFGBuildableManufacturer* Fab = Cast<AFGBuildableManufacturer>(M))
+					{
+						Fab->SetRecipe(Rezept);
+					}
+					OutBauten.Add(M);
+				}
+				return M && Rezept ? M : nullptr;
+			};
+			auto Teiler = [&](UClass* Klasse, const FVector& Ort) -> AFGBuildable*
+			{
+				AFGBuildable* T = Setze(World, Klasse, FTransform(DrehK + FRotator(0.f, 180.f, 0.f), Ort + FVector(0.f, 0.f, 100.f)), [](AFGBuildable*) {});
+				if (T)
+				{
+					OutBauten.Add(T);
+				}
+				return T;
+			};
+			const int32 Oefen = (Voll + 1) / 2;
+			auto QuerVon = [](int32 k, int32 n) { return (k - (n - 1) * 0.5f) * 1200.f; };
+			// Erz: Miner -> (Splitter) -> Schmelzoefen
+			TArray<AActor*> OfenListe;
+			for (int32 o = 0; o < Oefen; ++o)
+			{
+				AFGBuildable* Ofen = Maschine(0, Platz(DSchmelze, QuerVon(o, Oefen) * 2.f));
+				if (!Ofen)
+				{
+					OutBericht.Add(TEXT("Schmelzofen nicht gebaut"));
+					return false;
+				}
+				OfenListe.Add(Ofen);
+			}
+			if (Oefen == 1)
+			{
+				Verbinde(MinerBau, OfenListe[0]);
+			}
+			else if (AFGBuildable* T = Teiler(SplitterKlasse, Platz(DSchmelze + 700.f, 0.f)))
+			{
+				Verbinde(MinerBau, T);
+				for (AActor* Ofen : OfenListe)
+				{
+					Verbinde(T, Ofen);
+				}
+			}
+			// Barren: Ofen o -> (Splitter) -> Stangen 2o, 2o+1 ; Stange i -> Bolzen i
+			TArray<AActor*> BolzenListe;
+			for (int32 o = 0; o < Oefen; ++o)
+			{
+				const int32 Erste = 2 * o;
+				const int32 Zahl = FMath::Min(2, Voll - Erste);
+				TArray<AActor*> Stangen;
+				for (int32 k = 0; k < Zahl; ++k)
+				{
+					AFGBuildable* St = Maschine(1, Platz(DStangen, QuerVon(Erste + k, Voll)));
+					AFGBuildable* Bo = St ? Maschine(2, Platz(DBolzen, QuerVon(Erste + k, Voll))) : nullptr;
+					if (!St || !Bo)
+					{
+						OutBericht.Add(TEXT("Konstrukteur nicht gebaut"));
+						return false;
+					}
+					Verbinde(St, Bo);
+					Stangen.Add(St);
+					BolzenListe.Add(Bo);
+				}
+				if (Zahl == 1)
+				{
+					Verbinde(OfenListe[o], Stangen[0]);
+				}
+				else if (AFGBuildable* T = Teiler(SplitterKlasse, Platz(DStangen + 650.f, (QuerVon(Erste, Voll) + QuerVon(Erste + 1, Voll)) * 0.5f)))
+				{
+					Verbinde(OfenListe[o], T);
+					Verbinde(T, Stangen[0]);
+					Verbinde(T, Stangen[1]);
+				}
+			}
+			// Bolzen zusammenfuehren: bis 3 je Verbinder, ein vierter ueber einen zweiten Verbinder
+			AFGBuildable* V1 = Teiler(VerbKlasse, Platz(DBolzen - 600.f, -600.f));
+			if (!V1)
+			{
+				OutBericht.Add(TEXT("Verbinder nicht gebaut"));
 				return false;
 			}
-			if (AFGBuildableManufacturer* Fab = Cast<AFGBuildableManufacturer>(M))
+			for (int32 k = 0; k < FMath::Min(3, BolzenListe.Num()); ++k)
 			{
-				Fab->SetRecipe(Rezept);
+				Verbinde(BolzenListe[k], V1);
 			}
-			OutBauten.Add(M);
-			Verbinde(VorherK, M);
-			VorherK = M;
+			VorherK = V1;
+			if (BolzenListe.Num() == 4)
+			{
+				AFGBuildable* V2 = Teiler(VerbKlasse, Platz(DBolzen - 600.f, 800.f));
+				if (V2)
+				{
+					Verbinde(V1, V2);
+					Verbinde(BolzenListe[3], V2);
+					VorherK = V2;
+				}
+			}
+			OutBericht.Add(FString::Printf(TEXT("Kette %d: Ausbau %d (%d Schmelzoefen, %d + %d Konstrukteure) = %d Bolzen/min"),
+				c + 1, Voll, Oefen, Voll, Voll, 15 * Voll));
 		}
 		Enden.Add(VorherK);
 	}

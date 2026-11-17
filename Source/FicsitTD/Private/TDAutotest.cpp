@@ -522,7 +522,8 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		TArray<FString> Bericht;
 		const bool bOk = TDFabrik::BaueLinie(World, FabrikKern, Wort, S->HasField(TEXT("tuerme")) ? int32(S->GetNumberField(TEXT("tuerme"))) : 4,
 			S->HasField(TEXT("level")) ? int32(S->GetNumberField(TEXT("level"))) : 2, S->HasField(TEXT("band")) ? int32(S->GetNumberField(TEXT("band"))) : 1, mFabrik, Bericht,
-			S->HasField(TEXT("ketten")) ? int32(S->GetNumberField(TEXT("ketten"))) : 1);
+			S->HasField(TEXT("ketten")) ? int32(S->GetNumberField(TEXT("ketten"))) : 1,
+			S->HasField(TEXT("ausbau")) ? int32(S->GetNumberField(TEXT("ausbau"))) : 1);
 		Ergebnis(TEXT("Fabrik"), Wort, bOk, FString::Join(Bericht, TEXT(" | ")));
 		return true;
 	}

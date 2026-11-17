@@ -1,0 +1,102 @@
+{
+  "Name": "Fabrik-P10-Abnahme",
+  "_Hinweis": "P10-Abnahme (Marius 17.11.: voller Knoten / 4 Bolzentuerme L2 bis W5 ohne Munitionsloch). Ein Miner Mk1 auf normalem Eisenknoten, voll ausgebaut (2 Schmelzoefen, 4 + 4 Konstrukteure = 60 Bolzen/min), Verteilbaum zu 4 Bolzentuermen L2, echter Strom (4 Biomassebrenner), Kosten wie beim Spieler. Wellen in Echtzeit bis W5, danach weiter bis W8 zur Einordnung.",
+  "NeuesSpiel": {
+    "Startort": "Grass Fields",
+    "Modus": 1,
+    "Stufe": 2
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 40,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warteBis": "EinsatzAktiv",
+      "max": 120
+    },
+    {
+      "gib": "/Game/FactoryGame/Resource/Parts/ResourceSinkCoupon/Desc_ResourceSinkCoupon.Desc_ResourceSinkCoupon_C",
+      "anzahl": 2500
+    },
+    {
+      "gib": "/Game/FactoryGame/Resource/Parts/GenericBiomass/Desc_GenericBiomass.Desc_GenericBiomass_C",
+      "anzahl": 800
+    },
+    {
+      "kosten": "echt"
+    },
+    {
+      "fabrik": "Bolzen",
+      "tuerme": 4,
+      "level": 2,
+      "band": 1,
+      "ketten": 1,
+      "ausbau": 4
+    },
+    {
+      "strom": "Biomasse",
+      "anzahl": 4
+    },
+    {
+      "netz": true
+    },
+    {
+      "warte": 150
+    },
+    {
+      "fabrikbericht": true
+    },
+    {
+      "foto": "Fabrik_P10"
+    },
+    {
+      "wellenlauf": 5,
+      "zeitraffer": 1
+    },
+    {
+      "fabrikbericht": true
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Munitionsmangel mit Ziel 0 s",
+      "min": 5,
+      "text": "P10-Abnahme: W1-W5 ohne Munitionsloch"
+    },
+    {
+      "wellenlauf": 8,
+      "zeitraffer": 2
+    },
+    {
+      "fabrikbericht": true
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "= 60 Bolzen/min",
+      "min": 1,
+      "text": "voller Knoten ausgebaut (60 Bolzen/min)"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "nicht gebaut",
+      "min": 0,
+      "max": 0,
+      "text": "alle Bauten bezahlt und gesetzt"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "not enough spline points",
+      "min": 0,
+      "max": 0,
+      "text": "alle Baender mit echter Route"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}
