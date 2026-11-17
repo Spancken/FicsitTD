@@ -202,13 +202,20 @@ public:
 		/** Ziel da, aber keine Munition: die Fabrik kommt nicht nach */
 		float ZeitHungrig = 0.f;
 		float ZeitOhneStrom = 0.f;
+		/** 17.11. (B20 Schrittweite): Ziel da, aber nicht ausgerichtet / freigegeben, aber das Spiel produziert nicht;
+		 *  Aktionen ohne Ziel (verfallen); Bilder mit Turm-Takt und Spielzeit je Bild */
+		float ZeitNichtAusgerichtet = 0.f;
+		float ZeitBereitOhneProduktion = 0.f;
+		int32 Fehlschuesse = 0;
+		int32 Bilder = 0;
+		uint64 LetztesBild = 0;
 	};
 	const FBilanz& GetBilanz() const { return mBilanz; }
 	ETDSchadensart GetSchadensart() const { return mSchadensart; }
 	/** Nenn-Schaden pro Sekunde gegen ein Einzelziel mit der eingelegten Munition (wie "Schaden/s" im Werte-Panel),
 	 *  Grundlage der Abwehrkapazitaet K in der Druckquote Q */
 	virtual float NennDPS() const { return 0.f; }
-	void StarteBilanz() { mBilanz = FBilanz(); mBilanz.Schuesse = -mSchuesse; }
+	void StarteBilanz() { mBilanz = FBilanz(); mBilanz.Schuesse = -mSchuesse; mDiagFabrikDt = 0.f; mDiagProduktionDt = 0.f; mDiagFabrikTicks = 0; mDiagZyklen = 0; }
 	/** Eine Logzeile: Schuesse, Treffer, Schaden, Schaden/s, je Gegnerart mit wirksamem Faktor */
 	FString BilanzText(float Sekunden) const;
 
@@ -230,6 +237,13 @@ protected:
 
 	virtual bool CanProduce_Implementation() const override;
 	virtual void Factory_ProductionCycleCompleted(float overProductionRate) override;
+	/** 17.11. (B20 Schrittweite, Messung): Zeit, die der Fabrik-Takt dem Turm gibt, und Produktionszeit (Fabrik-Thread) */
+	virtual void Factory_Tick(float dt) override;
+	virtual void Factory_TickProducing(float dt) override;
+	float mDiagFabrikDt = 0.f;
+	float mDiagProduktionDt = 0.f;
+	int32 mDiagFabrikTicks = 0;
+	int32 mDiagZyklen = 0;
 
 	/** Eine Aktion (Schuss, Wurf, Drohneneinsatz …; Spiel-Thread). Ziel kann nullptr sein, wenn es inzwischen verschwunden ist.
 	 *  17.11. (P10 Munition je Item): ein Zyklus = eine Ladung = AktionenJeZyklus() Aktionen, verteilt ueber den Zyklus. */

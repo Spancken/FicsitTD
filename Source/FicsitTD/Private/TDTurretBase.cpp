@@ -1110,8 +1110,22 @@ bool ATDTurretBase::CanProduce_Implementation() const
 	return mBereit.load() && Super::CanProduce_Implementation();
 }
 
+void ATDTurretBase::Factory_Tick(float dt)
+{
+	mDiagFabrikDt += dt;
+	++mDiagFabrikTicks;
+	Super::Factory_Tick(dt);
+}
+
+void ATDTurretBase::Factory_TickProducing(float dt)
+{
+	mDiagProduktionDt += dt;
+	Super::Factory_TickProducing(dt);
+}
+
 void ATDTurretBase::Factory_ProductionCycleCompleted(float overProductionRate)
 {
+	++mDiagZyklen;
 	Super::Factory_ProductionCycleCompleted(overProductionRate);
 	// Das Produkt "Bolzenschuss" gibt es nur, damit die Rezeptauswahl die Rezepte zeigt - gleich wieder wegwerfen
 	if (UFGInventoryComponent* Ausgabe = GetOutputInventory())
@@ -1368,6 +1382,13 @@ void ATDTurretBase::Spielschritt()
 	mBilanz.ZeitOhneMunition += bMunition ? 0.f : TurmSchrittIntervall;
 	mBilanz.ZeitHungrig += Ziel && !bMunition ? TurmSchrittIntervall : 0.f;
 	mBilanz.ZeitOhneStrom += GetPowerInfo() && !HasPower() ? TurmSchrittIntervall : 0.f;
+	mBilanz.ZeitNichtAusgerichtet += Ziel && !mBereit.load() ? TurmSchrittIntervall : 0.f;
+	mBilanz.ZeitBereitOhneProduktion += mBereit.load() && bMunition && !IsProducing() ? TurmSchrittIntervall : 0.f;
+	if (mBilanz.LetztesBild != GFrameCounter)
+	{
+		mBilanz.LetztesBild = GFrameCounter;
+		++mBilanz.Bilder;
+	}
 	AktualisiereLampe();
 
 	// Abgeschlossene Produktionszyklen umsetzen (Zutat wurde dafuer bereits verbraucht). 17.11. (P10): ein Zyklus = eine Ladung
@@ -1378,6 +1399,7 @@ void ATDTurretBase::Spielschritt()
 	{
 		for (int32 k = mAktionenFreigegeben; k < Aktionen; ++k)
 		{
+			mBilanz.Fehlschuesse += Ziel ? 0 : 1;
 			Feuern(Ziel);
 		}
 		mAktionenFreigegeben = 0;
@@ -1387,6 +1409,7 @@ void ATDTurretBase::Spielschritt()
 		const int32 Faellig = FMath::Clamp(FMath::FloorToInt(GetProductionProgress() * Aktionen), 0, Aktionen - 1);
 		while (mAktionenFreigegeben < Faellig)
 		{
+			mBilanz.Fehlschuesse += Ziel ? 0 : 1;
 			Feuern(Ziel);
 			++mAktionenFreigegeben;
 		}
@@ -1620,11 +1643,15 @@ FString ATDTurretBase::BilanzText(float Sekunden) const
 	}
 	const float Mess = FMath::Max(mBilanz.Messzeit, 0.1f);
 	return FString::Printf(TEXT("%s [%s] Level %d, Munition %s: %d Schuss, %d Treffer, %.0f Schaden, %.1f Schaden/s ueber %.0f s, %d Abschuesse gesamt; je Gegner: %s; ")
-		TEXT("Nenn %.0f DPS, Uptime %.0f %%, Overkill %.0f %%, Nebenziele %d, ohne Munition %.0f s (davon mit Ziel %.0f s), ohne Strom %.0f s"),
+		TEXT("Nenn %.0f DPS, Uptime %.0f %%, Overkill %.0f %%, Nebenziele %d, ohne Munition %.0f s (davon mit Ziel %.0f s), ohne Strom %.0f s, ")
+		TEXT("nicht ausgerichtet %.1f s, bereit ohne Produktion %.1f s, Fehlschuesse %d, %d Bilder (%.0f ms Spielzeit je Bild), ")
+		TEXT("Fabrik-Takt %.1f s in %d Takten, Produktion %.1f s, %d Zyklen, Zykluszeit %.2f s"),
 		*mTurmName, *GetName(), GetLevel(), *GetMunitionsName(), mBilanz.Schuesse + mSchuesse, mBilanz.Treffer, mBilanz.Schaden,
 		Sekunden > 0.f ? mBilanz.Schaden / Sekunden : 0.f, Sekunden, mKills, Arten.Num() ? *FString::Join(Arten, TEXT(", ")) : TEXT("-"),
 		NennDPS(), 100.f * mBilanz.ZeitMitZiel / Mess, mBilanz.Schaden > 0.f ? 100.f * mBilanz.Overkill / mBilanz.Schaden : 0.f, mBilanz.Nebentreffer,
-		mBilanz.ZeitOhneMunition, mBilanz.ZeitHungrig, mBilanz.ZeitOhneStrom);
+		mBilanz.ZeitOhneMunition, mBilanz.ZeitHungrig, mBilanz.ZeitOhneStrom, mBilanz.ZeitNichtAusgerichtet, mBilanz.ZeitBereitOhneProduktion,
+		mBilanz.Fehlschuesse, mBilanz.Bilder, mBilanz.Bilder > 0 ? 1000.f * mBilanz.Messzeit / mBilanz.Bilder : 0.f,
+		mDiagFabrikDt, mDiagFabrikTicks, mDiagProduktionDt, mDiagZyklen, GetCurrentRecipe() ? GetProductionCycleTime() : 0.f);
 }
 
 void ATDTurretBase::Treffer(AFGCreature* Ziel, float Schaden, const FVector& Richtung, float Betaeubung, float Verzoegerung)

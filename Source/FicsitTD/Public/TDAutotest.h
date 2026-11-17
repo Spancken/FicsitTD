@@ -121,4 +121,12 @@ private:
 	float mStartWarteUhr = 0.f;
 	/** 17.11. (P11): Pruefstand-Netz wird ueberwacht (Sicherung zuruecksetzen) */
 	bool mStromAktiv = false;
+	/** 17.11. (B20): gewuenschter Zeitraffer, gleitende Bildzeit (echt) und wie oft gedeckelt wurde */
+	float mZeitrafferWunsch = 1.f;
+	float mZeitrafferIst = 1.f;
+	float mBildMittel = 0.016f;
+	int32 mRafferGedeckelt = 0;
+	/** Zeitraffer setzen; tatsaechlich hoechstens so viel, dass ein Rechenschritt Test.MaxSchritt (1/30 s) nicht uebersteigt */
+	void SetzeZeitraffer(class UWorld* World, float Wunsch);
+	void PasseZeitrafferAn(class UWorld* World);
 };

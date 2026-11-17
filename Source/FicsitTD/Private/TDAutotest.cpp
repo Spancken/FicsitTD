@@ -4,6 +4,7 @@
 #include "TDTurretBase.h"
 #include "TDForschung.h"
 #include "TDWaveSubsystem.h"
+#include "Misc/App.h"
 #include "FGDismantleInterface.h"
 #include "FGConstructDisqualifier.h"
 #include "TDWellenStatistik.h"
@@ -272,6 +273,39 @@ static bool TDIstSpielwelt(const UWorld* World)
 	return World && World->IsGameWorld() && World->GetMapName().Contains(TEXT("Persistent_Level"));
 }
 
+void UTDAutotest::SetzeZeitraffer(UWorld* World, float Wunsch)
+{
+	mZeitrafferWunsch = FMath::Max(0.1f, Wunsch);
+	mZeitrafferIst = -1.f;
+	PasseZeitrafferAn(World);
+}
+
+void UTDAutotest::PasseZeitrafferAn(UWorld* World)
+{
+	// 17.11. (B20, Messung Paket B20): das Spiel gibt dem Fabrik-Takt je Bild hoechstens ~1/30 s. Ist ein Rechenschritt
+	// (echte Bildzeit x Zeitraffer) laenger, laufen Baender, Maschinen und das Nachladen der Tuerme langsamer als die Gegner -
+	// bei x4 und 32 ms je Bild nur 52 % (Welle 5: Kern 36 % statt 91 %). Deshalb den Zeitraffer so deckeln, dass ein Schritt
+	// Test.MaxSchritt nicht uebersteigt. Unter 1 wird nie gebremst.
+	if (!World)
+	{
+		return;
+	}
+	mBildMittel = 0.8f * mBildMittel + 0.2f * FMath::Clamp(static_cast<float>(FApp::GetDeltaTime()), 0.001f, 0.5f);
+	const float MaxSchritt = TDBalance::Wert(TEXT("Test.MaxSchritt"), 1.f / 30.f);
+	const float Erlaubt = mZeitrafferWunsch <= 1.f ? mZeitrafferWunsch : FMath::Clamp(MaxSchritt / mBildMittel, 1.f, mZeitrafferWunsch);
+	if (mZeitrafferIst < 0.f || FMath::Abs(Erlaubt - mZeitrafferIst) > 0.05f * mZeitrafferIst)
+	{
+		if (Erlaubt < mZeitrafferWunsch - 0.01f && (mZeitrafferIst < 0.f || mZeitrafferIst >= mZeitrafferWunsch - 0.01f))
+		{
+			++mRafferGedeckelt;
+			UE_LOG(LogFicsitTD, Log, TEXT("Autotest: Zeitraffer x%.1f gedeckelt auf x%.2f (Bild %.0f ms, Schritt hoechstens %.0f ms)"),
+				mZeitrafferWunsch, Erlaubt, 1000.f * mBildMittel, 1000.f * MaxSchritt);
+		}
+		mZeitrafferIst = Erlaubt;
+		UGameplayStatics::SetGlobalTimeDilation(World, Erlaubt);
+	}
+}
+
 bool UTDAutotest::Tick(float /*BildDt*/)
 {
 	// Test 0.74.0: der Ticker uebergibt nur die Zeit eines Bildes, nicht die seit dem letzten Aufruf (alles lief ~30x zu langsam) -> selbst messen
@@ -282,6 +316,10 @@ bool UTDAutotest::Tick(float /*BildDt*/)
 	mGesamt += Dt;
 	mUhr += Dt;
 	mPlanZeit += Dt;
+	if (mZeitrafferWunsch > 1.f)
+	{
+		PasseZeitrafferAn(World);   // 17.11. (B20)
+	}
 	if (mPhase == EPhase::Bereit)
 	{
 		// 0.76 Bereitschaft: auf die naechste Autotest.json warten; Balance neu lesen (Aenderungen ohne Build)
@@ -428,7 +466,7 @@ void UTDAutotest::StarteNeuesSpiel(UWorld* World)
 	UTDKernplatz::sVorgabePlatz = Platz.Equals(TEXT("zufall"), ESearchCase::IgnoreCase) ? FString() : Platz;
 	UE_LOG(LogFicsitTD, Log, TEXT("Autotest: neues Spiel %s, Kernplatz %s"), *Optionen, *Platz);
 	mAlteWelt = TDIstSpielwelt(World) ? World : nullptr;
-	UGameplayStatics::SetGlobalTimeDilation(World, 1.f);
+	SetzeZeitraffer(World, 1.f);
 	UGameplayStatics::OpenLevel(World, FName(TEXT("/Game/FactoryGame/Map/GameLevel01/Persistent_Level")), true, Optionen);
 	mPhase = EPhase::Laedt;
 	mUhr = 0.f;
@@ -449,7 +487,7 @@ void UTDAutotest::LadeSpielstand(UWorld* World, const FString& NameVorgabe)
 	Parameter.bEnableAdvancedGameSettings = !mPlan->HasField(TEXT("ErweiterteEinstellungen")) || mPlan->GetBoolField(TEXT("ErweiterteEinstellungen"));
 	UE_LOG(LogFicsitTD, Log, TEXT("Autotest: lade Spielstand %s"), *Name);
 	mAlteWelt = TDIstSpielwelt(World) ? World : nullptr;
-	UGameplayStatics::SetGlobalTimeDilation(World, 1.f);
+	SetzeZeitraffer(World, 1.f);
 	Speicher->LoadSaveFile(Kopf, Parameter, World->GetFirstPlayerController());
 	mPhase = EPhase::Laedt;
 	mUhr = 0.f;
@@ -469,7 +507,7 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 	}
 	if (!S->HasField(TEXT("wellenlauf")) && S->TryGetNumberField(TEXT("zeitraffer"), Zahl))   // 0.78: "zeitraffer" ist auch Feld des Wellenlaufs
 	{
-		UGameplayStatics::SetGlobalTimeDilation(World, FMath::Clamp(static_cast<float>(Zahl), 0.25f, 8.f));
+		SetzeZeitraffer(World, FMath::Clamp(static_cast<float>(Zahl), 0.25f, 8.f));
 		Ergebnis(TEXT("Zeitraffer"), FString::Printf(TEXT("x%.1f"), Zahl), true);
 		return true;
 	}
@@ -928,7 +966,7 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		}
 		if (mSchrittUhr <= Dt + 0.01f)
 		{
-			UGameplayStatics::SetGlobalTimeDilation(World, S->HasField(TEXT("zeitraffer")) ? FMath::Clamp(static_cast<float>(S->GetNumberField(TEXT("zeitraffer"))), 1.f, 8.f) : 4.f);
+			SetzeZeitraffer(World, S->HasField(TEXT("zeitraffer")) ? FMath::Clamp(static_cast<float>(S->GetNumberField(TEXT("zeitraffer"))), 1.f, 8.f) : 4.f);
 			mUhr = 0.f;
 		}
 		bool bKern = false;
@@ -939,7 +977,7 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		const double Max = S->HasField(TEXT("max")) ? S->GetNumberField(TEXT("max")) : 400.0;
 		if (!Waves || !bKern || mUhr > Max)
 		{
-			UGameplayStatics::SetGlobalTimeDilation(World, 1.f);
+			SetzeZeitraffer(World, 1.f);
 			// 0.78 (Pruefstand: Mischbasis fiel in W21, Ursache unsichtbar): Schaden und Munitionsmangel je Turmart, lebende Gegner
 			TMap<FString, FVector2D> JeArt;
 			for (TActorIterator<ATDTurretBase> It(World); It; ++It)
@@ -990,7 +1028,7 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		}
 		if (Waves->GetWelle() >= Ziel)
 		{
-			UGameplayStatics::SetGlobalTimeDilation(World, 1.f);
+			SetzeZeitraffer(World, 1.f);
 			Ergebnis(TEXT("Wellenlauf"), FString::Printf(TEXT("bis Welle %d"), Ziel), true, FString::Printf(TEXT("%.0f s"), mSchrittUhr));
 			return true;
 		}
@@ -1001,7 +1039,7 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 			// Ohne Countdown (manueller Einsatz) kaeme nie eine Welle: sofort als Fehler melden statt endlos zu warten
 			if (Waves->IstManuell())
 			{
-				UGameplayStatics::SetGlobalTimeDilation(World, 1.f);
+				SetzeZeitraffer(World, 1.f);
 				Ergebnis(TEXT("Wellenlauf"), FString::Printf(TEXT("bis Welle %d"), Ziel), false,
 					TEXT("aufZeit, aber der Lauf ist manuell (kein Countdown) - Spielmodus nicht Endlos?"));
 				return true;
@@ -1019,7 +1057,7 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		if (mStartWarteUhr > Max)
 		{
 			mStartWarteUhr = 0.f;
-			UGameplayStatics::SetGlobalTimeDilation(World, 1.f);
+			SetzeZeitraffer(World, 1.f);
 			UE_LOG(LogFicsitTD, Warning, TEXT("Autotest: Welle %d startet seit %.0f s nicht (Lauf %d, Countdown %.0f s)"), Waves->GetWelle() + 1, Max,
 				static_cast<int32>(Waves->LaeuftWelle()), Waves->GetCountdown());
 			Ergebnis(TEXT("Wellenlauf"), FString::Printf(TEXT("bis Welle %d"), Ziel), false, FString::Printf(TEXT("Welle %d startet nicht"), Waves->GetWelle() + 1));
