@@ -1,0 +1,116 @@
+{
+  "Name": "P12-E-Leiste",
+  "_Hinweis": "Wellenleiste (17.11.): Sprung auf W42, zwei Fotos mitten in der Welle (Leiste darf nicht aus dem Bild laufen, besiegte Arten ausgeblendet).",
+  "NeuesSpiel": {
+    "Startort": "Rocky Desert",
+    "Modus": 1,
+    "Stufe": 2
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 15,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warte": 15
+    },
+    {
+      "befehl": "td einsatz stop"
+    },
+    {
+      "befehl": "td kern stop"
+    },
+    {
+      "befehl": "td einsatz start normal 50"
+    },
+    {
+      "befehl": "td einsatz frei an"
+    },
+    {
+      "stromfrei": true
+    },
+    {
+      "versorgung": {
+        "Bolzenturm": 50,
+        "Gewehrturm": 25,
+        "Nobelisk-Werfer": 15,
+        "Flammenwerfer": 6000
+      }
+    },
+    {
+      "erforsche": "Assembler"
+    },
+    {
+      "erforsche": "Kupfer"
+    },
+    {
+      "erforsche": "Durchschlagbolzen"
+    },
+    {
+      "erforsche": "Gewehrturm"
+    },
+    {
+      "erforsche": "Kohlekraft"
+    },
+    {
+      "erforsche": "Teslaspule"
+    },
+    {
+      "erforsche": "Giesserei"
+    },
+    {
+      "erforsche": "NobeliskWerfer"
+    },
+    {
+      "erforsche": "Turmfertigung2"
+    },
+    {
+      "erforsche": "Raffinerie"
+    },
+    {
+      "erforsche": "Flammenwerfer"
+    },
+    {
+      "erforsche": "Turmfertigung3"
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 8,
+      "level": 3,
+      "rezept": "Recipe_TD_Gun_Standard"
+    },
+    {
+      "befehl": "td kern springe 42"
+    },
+    {
+      "befehl": "td kern weiter"
+    },
+    {
+      "warteBis": "WelleLaeuft",
+      "max": 60
+    },
+    {
+      "warte": 25
+    },
+    {
+      "foto": "P12-E-Leiste_W42_frueh"
+    },
+    {
+      "warte": 60
+    },
+    {
+      "foto": "P12-E-Leiste_W42_spaet"
+    },
+    {
+      "befehl": "td einsatz stop"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}

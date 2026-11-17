@@ -3307,13 +3307,23 @@ TSharedRef<SWidget> UTDWellenLeiste::RebuildWidget()
 		UBorder* Rahmen = WidgetTree->ConstructWidget<UBorder>();
 		Rahmen->SetBrush(FSlateRoundedBoxBrush(TDUI::C(20, 20, 20, 200), 4.f));
 		Rahmen->SetPadding(FMargin(12.f, 10.f));
-		if (UCanvasPanelSlot* S = Flaeche->AddChildToCanvas(Rahmen))
+		// links: rechts lag sie ueber der ToDo-Liste (Test 0.53), unten links sitzt der Chat.
+		// 0.11 (Marius 17.11., W42 mit 10 Gegnerarten): mittig verankert wuchs sie nach oben unter die Statuszeile und nach
+		// unten aus dem Bild. Jetzt ein fester Bereich von 9 % bis 74 % der Hoehe; die Leiste waechst von oben nach unten,
+		// und was dann noch nicht passt, wird unten abgeschnitten statt aus dem Bild zu laufen.
+		UVerticalBox* Bereich = WidgetTree->ConstructWidget<UVerticalBox>();
+		Bereich->SetClipping(EWidgetClipping::ClipToBounds);
+		if (UCanvasPanelSlot* S = Flaeche->AddChildToCanvas(Bereich))
 		{
-			// links, etwas ueber der Mitte: rechts lag sie ueber der ToDo-Liste (Test 0.53), unten links sitzt der Chat
-			S->SetAnchors(FAnchors(0.f, 0.4f));
-			S->SetAlignment(FVector2D(0.f, 0.5f));
-			S->SetPosition(FVector2D(20.f, 0.f));
-			S->SetAutoSize(true);
+			S->SetAnchors(FAnchors(0.f, 0.09f, 0.f, 0.74f));
+			S->SetAlignment(FVector2D(0.f, 0.f));
+			S->SetOffsets(FMargin(20.f, 0.f, 274.f, 0.f));   // links, oben, Breite, unten
+		}
+		if (UVerticalBoxSlot* S = Bereich->AddChildToVerticalBox(Rahmen))
+		{
+			S->SetSize(FSlateChildSize(ESlateSizeRule::Automatic));
+			S->SetHorizontalAlignment(HAlign_Fill);
+			S->SetVerticalAlignment(VAlign_Top);
 		}
 		USizeBox* Breite = WidgetTree->ConstructWidget<USizeBox>();
 		Breite->SetWidthOverride(250.f);
@@ -3416,7 +3426,8 @@ void UTDWellenLeiste::FuelleSchaden()
 	for (int32 i = 0; i < Liste.Num() && i < mSchadenTexte.Num(); ++i)
 	{
 		const FTDTurmStat& T = Liste[i];
-		mSchadenTexte[i]->SetText(TDFX(TEXT("%s (%d): %s Schaden · %.0f %% · %d Abschüsse"), TEXT("%s (%d): %s damage · %.0f %% · %d kills"), *T.Art, T.Anzahl,
+		// 0.11: ohne "Schaden" (steht in der Ueberschrift), damit die Zeile meist einzeilig bleibt
+		mSchadenTexte[i]->SetText(TDFX(TEXT("%s (%d): %s · %.0f %% · %d Abschüsse"), TEXT("%s (%d): %s · %.0f %% · %d kills"), *T.Art, T.Anzahl,
 			*FText::AsNumber(FMath::RoundToInt(T.Schaden)).ToString(), Summe > 0.f ? 100.f * T.Schaden / Summe : 0.f, T.Kills));
 		mSchadenBalken[i]->SetPercent(T.Schaden / Hoechst);
 	}
@@ -3434,29 +3445,41 @@ void UTDWellenLeiste::Fuelle()
 		: TDF(TEXT("Welle %d · %s"), TEXT("Wave %d · %s"), S.Welle, *S.Art)));
 	mBalken->SetPercent(S.Groesse > 0 ? float(S.Besiegt) / S.Groesse : 0.f);
 	mZahlen->SetText(TDFX(TEXT("%d von %d besiegt\n%d unterwegs · %d kommen noch"), TEXT("%d of %d defeated\n%d on the way · %d still coming"), S.Besiegt, S.Groesse, S.Lebend, S.Offen));
-	// Zeilen neu bauen, wenn sich die Arten aendern (neue Welle), sonst nur die Zahlen
+	// Zeilen neu bauen, wenn sich die sichtbaren Arten aendern (neue Welle, Art besiegt), sonst nur die Zahlen.
+	// 0.11 (Marius 17.11.): ab 8 Arten werden ganz besiegte Arten ausgeblendet und die Symbole kleiner, damit die Leiste ins Bild passt
+	const bool bLang = S.Arten.Num() >= 8;
+	const float Symbolgroesse = bLang ? 24.f : 32.f;
 	TArray<FString> Arten;
-	for (const FTDArtStatus& A : S.Arten)
+	TArray<int32> Sichtbar;
+	for (int32 i = 0; i < S.Arten.Num(); ++i)
 	{
+		const FTDArtStatus& A = S.Arten[i];
+		if (bLang && !A.bBoss && A.Lebend + A.Offen == 0)
+		{
+			continue;
+		}
+		Sichtbar.Add(i);
 		Arten.Add((A.bBoss ? TEXT("BOSS|") : TEXT("")) + A.Pfad);
 	}
 	if (Arten != mArten)
 	{
 		mArten = Arten;
+		mSichtbar = Sichtbar;
 		mListe->ClearChildren();
 		mZeilen.Reset();
-		for (const FTDArtStatus& A : S.Arten)
+		for (const int32 Index : mSichtbar)
 		{
+			const FTDArtStatus& A = S.Arten[Index];
 			const FTDKreaturSteckbrief B = UTDWaveSubsystem::Steckbrief(A.Pfad);
 			UHorizontalBox* Reihe = WidgetTree->ConstructWidget<UHorizontalBox>();
 			USizeBox* Rahmen = WidgetTree->ConstructWidget<USizeBox>();
-			Rahmen->SetWidthOverride(32.f);
-			Rahmen->SetHeightOverride(32.f);
+			Rahmen->SetWidthOverride(Symbolgroesse);
+			Rahmen->SetHeightOverride(Symbolgroesse);
 			if (UTexture2D* Bild = KreaturTextur(B.Deskriptor))
 			{
 				UImage* Symbol = WidgetTree->ConstructWidget<UImage>();
 				Symbol->SetBrushFromTexture(Bild, false);
-				Symbol->SetDesiredSizeOverride(FVector2D(32.f, 32.f));
+				Symbol->SetDesiredSizeOverride(FVector2D(Symbolgroesse, Symbolgroesse));
 				Rahmen->AddChild(Symbol);
 			}
 			if (UHorizontalBoxSlot* Sl = Reihe->AddChildToHorizontalBox(Rahmen))
@@ -3477,16 +3500,22 @@ void UTDWellenLeiste::Fuelle()
 			}
 			if (UVerticalBoxSlot* Sl = mListe->AddChildToVerticalBox(Reihe))
 			{
-				Sl->SetPadding(FMargin(0.f, 0.f, 0.f, 6.f));
+				Sl->SetPadding(FMargin(0.f, 0.f, 0.f, bLang ? 3.f : 6.f));
 			}
 		}
 	}
-	for (int32 i = 0; i < S.Arten.Num() && i < mZeilen.Num(); ++i)
+	for (int32 z = 0; z < mSichtbar.Num() && z < mZeilen.Num(); ++z)
 	{
-		const FTDArtStatus& A = S.Arten[i];
+		if (!S.Arten.IsValidIndex(mSichtbar[z]))
+		{
+			continue;
+		}
+		const FTDArtStatus& A = S.Arten[mSichtbar[z]];
 		const int32 Weg = A.Gesamt - A.Lebend - A.Offen;
+		const int32 i = z;
+		// 0.11: kurz und einzeilig ("8 + 5 offen" = unterwegs + kommen noch); Kopfzeile erklaert die Zahlen ausfuehrlich
 		mZeilen[i]->SetText(FText::FromString(A.Lebend + A.Offen == 0 ? TDF(TEXT("alle %d besiegt"), TEXT("all %d defeated"), A.Gesamt)
-			: TDF(TEXT("%d unterwegs · %d kommen · %d / %d besiegt"), TEXT("%d on the way · %d coming · %d / %d defeated"), A.Lebend, A.Offen, Weg, A.Gesamt)));
+			: TDF(TEXT("%d + %d offen · %d / %d besiegt"), TEXT("%d + %d left · %d / %d defeated"), A.Lebend, A.Offen, Weg, A.Gesamt)));
 		mZeilen[i]->SetColorAndOpacity(FSlateColor(A.Lebend + A.Offen == 0 ? TDUI::Gut : TDUI::Grau));
 	}
 }

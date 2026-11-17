@@ -500,6 +500,8 @@ private:
 	UPROPERTY()
 	TArray<TObjectPtr<UTextBlock>> mZeilen;
 	TArray<FString> mArten;
+	/** 0.11 (Marius 17.11.: Leiste lief bei grossen Wellen aus dem Bild): Index in FTDWellenStatus::Arten je Zeile */
+	TArray<int32> mSichtbar;
 	float mTakt = 0.f;
 	/** 0.66 (Marius: welche Tuerme machen in der Welle welchen Schaden): Schaden je Turmart live */
 	void FuelleSchaden();
