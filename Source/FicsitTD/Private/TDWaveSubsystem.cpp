@@ -1078,7 +1078,17 @@ void UTDWaveSubsystem::SucheFronten(const FVector& Mitte)
 		}
 	};
 	Waehle(Gueltig);
-	Waehle(Ersatz);
+	// 17.11. (B17, Marius: "entsprechend mehr Gegner auf den verbleibenden Wegen"): in der Bohrung keine ungeprueften
+	// Ersatzpunkte, sobald es einen geprueften Weg gibt. Die Gegner einer Welle verteilen sich reihum auf die aktiven Fronten,
+	// weniger Fronten heisst also mehr Gegner je Weg bei gleicher Wellengroesse.
+	if (!(mBohrung && Gueltig.Num() > 0))
+	{
+		Waehle(Ersatz);
+	}
+	else if (Ersatz.Num() > 0)
+	{
+		UE_LOG(LogFicsitTD, Log, TEXT("Bohrung: %d Ersatzpunkte ohne geprueften Weg ausgelassen, Gegner kommen ueber %d gepruefte Wege"), Ersatz.Num(), mFronten.Num());
+	}
 
 	UE_LOG(LogFicsitTD, Log, TEXT("Fronten (%s): %d von 16 Richtungen geprueft gueltig, %d Fronten gewaehlt"), S.Name, mGueltigeRichtungen, mFronten.Num());
 	UE_LOG(LogFicsitTD, Log, TEXT("Fronten verworfen: ohne Boden %d, Wasser %d, Hoehe %d, ohne Netz %d (Kern auf Netz: %s), kein Pfad %d, teilweise %d, Umweg %d, Turm in 60 m %d, Weg durch Wasser %d"),

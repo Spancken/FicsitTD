@@ -125,6 +125,8 @@ private:
 	float mZeitrafferWunsch = 1.f;
 	float mZeitrafferIst = 1.f;
 	float mBildMittel = 0.016f;
+	/** 17.11. (P12, Marius: Referenzpause 195 s): Spielzeit seit Wellenende im Wellenlauf */
+	float mPauseSpiel = 0.f;
 	int32 mRafferGedeckelt = 0;
 	/** Zeitraffer setzen; tatsaechlich hoechstens so viel, dass ein Rechenschritt Test.MaxSchritt (1/30 s) nicht uebersteigt */
 	void SetzeZeitraffer(class UWorld* World, float Wunsch);

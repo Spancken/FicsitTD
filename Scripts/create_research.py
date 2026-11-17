@@ -227,7 +227,7 @@ BAEUME = [
          (3, 5), ["Turmfertigung2"], [], ZEIT, [], DRAHT),
         ("DoktrinFlamme", "Doktrin: Flammenwerfer", DOKTRIN + "Flammenwerfer machen 25 % mehr Schaden, ihre Level kosten 25 % weniger Coupons und Level 5 gibt es schon mit Turmfertigung III.",
          (4, 5), ["Turmfertigung2"], [], ZEIT, [], f"{P}/BioFuel/Desc_LiquidBiofuel"),
-        ("Turmfertigung4", "Turmfertigung IV: Meisterstufe", "Alle Türme können auf Level 5 gebracht werden (40 Coupons je Turm). Jeder bekommt eine eigene Fähigkeit: Bolzenturm Doppellauf, Gewehrturm Gurttrommel (Dauerfeuer ohne Nachladen), Nobelisk-Werfer Salvenkopf (drei Nobelisken je Salve), Teslaspule Spannungsfeld, Flammenwerfer Feuerteppich, Himmelsturm Sperrfeuer, Singularitätswerfer Ereignishorizont.",
+        ("Turmfertigung4", "Turmfertigung IV: Meisterstufe", "Alle Türme können auf Level 5 gebracht werden (40 Coupons je Turm). Jeder bekommt eine eigene Fähigkeit: Bolzenturm Doppellauf, Gewehrturm Gurttrommel (+25 % Feuerrate), Nobelisk-Werfer Salvenkopf (drei Nobelisken je Salve), Teslaspule Spannungsfeld, Flammenwerfer Feuerteppich, Himmelsturm Sperrfeuer, Singularitätswerfer Ereignishorizont.",
          (5, 6), ["Turmfertigung3"], [], ZEIT, [], f"{P}/ModularFrame/Desc_ModularFrame"),
         # 0.81 passive Bauten P1 (Konzept-Rohstoffe-Tuerme-Bauten-2026-11-07)
         ("Tor", "Tor", "Neues Gebäude: Tor für die Mauerlinie (8 m breit, Öffnung 4 x 4 m). Öffnet sich für dich und Fahrzeuge, Gegner kommen nie durch und greifen es wie eine Mauer an. Ein Förderband passt unten durch. Kombination Engstelle: am Tor laufen Gegner in einer Reihe, Bolzen durchschlagen dort einen Gegner mehr.",

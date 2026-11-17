@@ -373,7 +373,10 @@ bool TDFabrik::BaueLinie(UWorld* World, ATDDefenseCore* Kern, const FString& Lin
 	const FVector Quer = FVector(-Richtung.Y, Richtung.X, 0.f);
 	const FRotator Dreh = Richtung.Rotation();
 	AActor* Vorher = Enden[0];
-	if (Enden.Num() > 1)
+	// 17.11. (Test Fenster1117d: zwei volle Knoten auf einem Band Mk1 = hoechstens 60/min): bei vollem Ausbau versorgt jeder
+	// Knoten seine eigene Turmgruppe (wie ein Spieler mit Band Mk1); sonst wie bisher ueber einen Verbinder zusammen
+	const bool bGruppen = Ausbau > 1 && Enden.Num() > 1;
+	if (Enden.Num() > 1 && !bGruppen)
 	{
 		UClass* VerbinderKlasse = LoadClass<AFGBuildable>(nullptr, TEXT("/Game/FactoryGame/Buildable/Factory/CA_Merger/Build_ConveyorAttachmentMerger.Build_ConveyorAttachmentMerger_C"));
 		AFGBuildable* V = Setze(World, VerbinderKlasse, FTransform(Dreh + FRotator(0.f, 180.f, 0.f), Boden(World, KernOrt + Richtung * 2900.f) + FVector(0.f, 0.f, 100.f)), [](AFGBuildable*) {});
@@ -476,7 +479,25 @@ bool TDFabrik::BaueLinie(UWorld* World, ATDDefenseCore* Kern, const FString& Lin
 			Verteile(S, Teil, Tiefe + 1);
 		}
 	};
-	if (TurmListe.Num() > 0)
+	if (bGruppen)
+	{
+		int32 Start = 0;
+		for (int32 g = 0; g < Enden.Num(); ++g)
+		{
+			const int32 Groesse = TurmListe.Num() / Enden.Num() + (g < TurmListe.Num() % Enden.Num() ? 1 : 0);
+			TArray<AActor*> Gruppe;
+			for (int32 k = 0; k < Groesse; ++k)
+			{
+				Gruppe.Add(TurmListe[Start + k]);
+			}
+			Start += Groesse;
+			if (Gruppe.Num() > 0)
+			{
+				Verteile(Enden[g], Gruppe, 1);   // ab Ebene 1: Wurzel in Richtung der eigenen Gruppe, nicht alle am selben Platz
+			}
+		}
+	}
+	else if (TurmListe.Num() > 0)
 	{
 		Verteile(Vorher, TurmListe, 0);
 	}

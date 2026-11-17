@@ -201,6 +201,8 @@ bool UTDWaveSubsystem::StarteBohrung(ATDDefenseCore* Kern, int32 Stufe, FString&
 	{
 		Einsatz->SetzeAbwehrKern(Kern);
 	}
+	// 17.11. (B17): Fronten frisch und ohne Ersatzpunkte bestimmen (die Platzpruefung hatte sie vor dem Start zwischengespeichert)
+	mFronten.Reset();
 	if (!StarteKernVerteidigung(Kern, mBohrEndWelle, TDBalance::Wert(TEXT("Bohrung.Countdown"), 60.f), TDBalance::Wert(TEXT("Bohrung.Abstand"), 75.f), 1))
 	{
 		mBohrung = false;

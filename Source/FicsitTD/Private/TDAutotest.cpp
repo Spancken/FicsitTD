@@ -1016,6 +1016,7 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		}
 		if (Waves->LaeuftWelle())
 		{
+			mPauseSpiel = 0.f;
 			// 0.78.1 (Pruefstand: ein einzelner Gegner zerstoerte vor 14 feuernden Tuermen den Kern, Art unbekannt):
 			// leben 20 s lang hoechstens 3 Gegner, wird jeder mit LP, Abstand, Hirn und Zielstand der Tuerme gemeldet
 			const TArray<AFGCreature*> Lebende = Waves->GetLivingWaveCreatures();
@@ -1048,14 +1049,18 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 			mUhr = 0.f;
 			return false;
 		}
-		if (mUhr > 2.f && Waves->NaechsteWelleJetzt())
+		// 17.11. (P12, Marius: Referenzpause 195 s wie im Handspiel): "pause" (Spielsekunden, Standard Test.Pause = 0) zwischen
+		// den Wellen - in der Zeit baut die Fabrik Munition auf wie bei einem Spieler, der zwischen den Wellen baut
+		const float Pause = S->HasField(TEXT("pause")) ? static_cast<float>(S->GetNumberField(TEXT("pause"))) : TDBalance::Wert(TEXT("Test.Pause"), 0.f);
+		mPauseSpiel += Dt * FMath::Max(1.f, mZeitrafferIst);
+		if (mUhr > 2.f && mPauseSpiel >= Pause && Waves->NaechsteWelleJetzt())
 		{
 			mUhr = 0.f;
 		}
 		// 16.11. (B19: Fabrik-F1-3K4T stand 12 min vor Welle 1): die Uhr oben wird bei jedem Startversuch zurueckgesetzt -
 		// startet die Welle gar nicht, hier nach "max" abbrechen statt bis zum Stillstand des Testskripts zu warten
 		mStartWarteUhr = Waves->LaeuftWelle() ? 0.f : mStartWarteUhr + Dt;
-		if (mStartWarteUhr > Max)
+		if (mStartWarteUhr > Max + Pause)
 		{
 			mStartWarteUhr = 0.f;
 			SetzeZeitraffer(World, 1.f);

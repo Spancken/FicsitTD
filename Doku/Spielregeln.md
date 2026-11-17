@@ -111,7 +111,7 @@
   - Level 2 gibt es mit dem Turm.
   - Level 3 und 4 kommen mit Turmfertigung II und III.
   - Level 5 (Meisterfähigkeit) kommt mit Turmfertigung IV, bei der Doktrin-Linie schon mit Turmfertigung III.
-  - Meisterfähigkeiten (laut MAM-Text Turmfertigung IV): Bolzenturm Doppellauf, Gewehrturm Gurttrommel (Dauerfeuer ohne Nachladen), Nobelisk-Werfer Salvenkopf (drei Nobelisken je Salve), Teslaspule Spannungsfeld, Flammenwerfer Feuerteppich, Himmelsturm Sperrfeuer, Singularitätswerfer Ereignishorizont.
+  - Meisterfähigkeiten (laut MAM-Text Turmfertigung IV): Bolzenturm Doppellauf, Gewehrturm Gurttrommel (+25 % Feuerrate, seit 17.11.; vorher Dauerfeuer, das seit P10 Standard ist), Nobelisk-Werfer Salvenkopf (drei Nobelisken je Salve), Teslaspule Spannungsfeld, Flammenwerfer Feuerteppich, Himmelsturm Sperrfeuer, Singularitätswerfer Ereignishorizont.
 - **Zielwahl je Turm:** nächster zum Turm, nächster zum Kern, wenigste LP, meiste LP, Elite/Boss zuerst, markierte zuerst (0.9.7), dazu eine bevorzugte Gegnerfamilie.
 - **Sichtlinie:** Fundamente, Rampen, Träger und Treppen nehmen keine Sicht. Mauern und alle Maschinen des Spiels (Fabrik vor den Türmen) nehmen Sicht. Eigene Verteidigung, Kreaturen und Logistik nehmen keine Sicht. *(seit 0.77, Maschinen bestätigt 12.11.)*
 - **Übertakten:** Energie-Splitter im Maschinenfenster, bis 250 % Takt. Die Munition reicht dann kürzer, der Strom steigt. Im TD-Spiel ist das immer freigeschaltet.

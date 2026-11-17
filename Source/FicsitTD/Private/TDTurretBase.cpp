@@ -302,6 +302,8 @@ struct FTDLevelStandard { const TCHAR* Turm; int32 Level; const TCHAR* Wert; flo
 static const FTDLevelStandard TDLevelStandards[] = {
 	{ TEXT("Gewehrturm"), 2, TEXT("Schaden"), 0.2f }, { TEXT("Gewehrturm"), 3, TEXT("Takt"), 0.3f },
 	{ TEXT("Gewehrturm"), 4, TEXT("Magazin"), 1.f }, { TEXT("Gewehrturm"), 4, TEXT("Reichweite"), 0.15f },
+	// 17.11. (Marius, P12-Entscheidung 5): Gurttrommel wirkte seit P10 nicht mehr zusaetzlich (Dauerfeuer ist Standard) -> +25 % Feuerrate
+	{ TEXT("Gewehrturm"), 5, TEXT("Takt"), 0.25f },
 	{ TEXT("Bolzenturm"), 2, TEXT("Schaden"), 0.2f }, { TEXT("Bolzenturm"), 3, TEXT("Takt"), 0.25f },
 	{ TEXT("Bolzenturm"), 4, TEXT("Reichweite"), 0.15f }, { TEXT("Bolzenturm"), 4, TEXT("Durchschlag"), 1.f },
 	{ TEXT("Nobelisk-Werfer"), 2, TEXT("Schaden"), 0.2f }, { TEXT("Nobelisk-Werfer"), 3, TEXT("Takt"), 0.25f },
@@ -397,7 +399,7 @@ FString ATDTurretBase::LevelDiffText(int32 Von, int32 Bis) const
 	// Level 5 = Meisterstufe mit eigener Faehigkeit je Turm (0.64, Marius: nicht ueberall ein zweiter Lauf)
 	if (Von < TurmMaxLevel && Bis >= TurmMaxLevel)
 	{
-		Teile.Add(mTurmName == TEXT("Gewehrturm") ? TDT(TEXT("Meisterstufe Gurttrommel: Dauerfeuer ohne Nachladen"), TEXT("Master Tier Belt Drum: continuous fire without reloading"))
+		Teile.Add(mTurmName == TEXT("Gewehrturm") ? TDT(TEXT("Meisterstufe Gurttrommel: schnellere Zuführung"), TEXT("Master Tier Ammo Drum: faster feed"))
 			: mTurmName == TEXT("Bolzenturm") ? TDT(TEXT("Meisterstufe Doppellauf: zwei Bolzen je Schuss"), TEXT("Master Tier Double Barrel: two bolts per shot"))
 			: mTurmName == TEXT("Nobelisk-Werfer") ? TDT(TEXT("Meisterstufe Salvenkopf: drei Nobelisken je Salve"), TEXT("Master Tier Salvo Head: three Nobelisks per salvo"))
 			: mTurmName == TEXT("Teslaspule") ? TDT(TEXT("Meisterstufe Spannungsfeld: bremst Gegner bis 10 m"), TEXT("Master Tier Voltage Field: slows enemies within 10 m"))
