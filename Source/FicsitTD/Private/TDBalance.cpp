@@ -23,7 +23,7 @@ namespace TDBalanceIntern
 		// Fronten (Marius 02.11.): eine Richtung zu Beginn; zweite ab NeueFrontAbWelle, dritte ab 2 x NeueFrontAbWelle - 1 (Normal: 11 / 21)
 		{ TEXT("Stufen.Erkundung.Budget"), 0.6f }, { TEXT("Stufen.Erkundung.GegnerLP"), 0.7f }, { TEXT("Stufen.Erkundung.AufbauSekunden"), 1800.f },
 		{ TEXT("Stufen.Erkundung.PauseSekunden"), 900.f }, { TEXT("Stufen.Erkundung.FrontenStart"), 1.f }, { TEXT("Stufen.Erkundung.NeueFrontAbWelle"), 16.f },
-		{ TEXT("Stufen.Erkundung.EliteAbWelle"), 15.f }, { TEXT("Stufen.Erkundung.KernLP"), 30000.f },
+		{ TEXT("Stufen.Erkundung.EliteAbWelle"), 18.f },   /* P12 17.11.: 15 -> 18, bleibt hinter Normal (16) */ { TEXT("Stufen.Erkundung.KernLP"), 30000.f },
 		{ TEXT("Stufen.Normal.Budget"), 1.0f }, { TEXT("Stufen.Normal.GegnerLP"), 1.0f }, { TEXT("Stufen.Normal.AufbauSekunden"), 1200.f },
 		{ TEXT("Stufen.Normal.PauseSekunden"), 600.f }, { TEXT("Stufen.Normal.FrontenStart"), 1.f }, { TEXT("Stufen.Normal.NeueFrontAbWelle"), 11.f },
 		{ TEXT("Stufen.Normal.EliteAbWelle"), 16.f },   /* P12 17.11.: 13 -> 16, Kandidat A (R2 besteht W50, kein Einbruch um W13) */ { TEXT("Stufen.Normal.KernLP"), 20000.f },
