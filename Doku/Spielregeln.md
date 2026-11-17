@@ -350,6 +350,7 @@ Turmlevel kosten 8 / 15 / 25 / 40 Coupons (Level 2–5). Doktrin: Schaden +25 %,
 | Gewehrturm.L3.Takt | 0,3 |
 | Gewehrturm.L4.Magazin | 1 |
 | Gewehrturm.L4.Reichweite | 0,15 |
+| Gewehrturm.L5.Takt | 0,25 |
 | Nobelisk-Werfer.L2.Schaden | 0,2 |
 | Nobelisk-Werfer.L3.Takt | 0,25 |
 | Nobelisk-Werfer.L4.Radius | 0,2 |
@@ -415,6 +416,7 @@ Turmlevel kosten 8 / 15 / 25 / 40 Coupons (Level 2–5). Doktrin: Schaden +25 %,
 | Reparatur.VerstaerktePlatte | 3000 |
 | SchussJeItem.Drohne_Kampf | 4 |
 | SchussJeItem.Flak_Shoot | 2 |
+| SchussJeItem.Flame_Fuel | 1 |
 | SchussJeItem.Gun_Brand | 2 |
 | SchussJeItem.Gun_Homing | 2 |
 | SchussJeItem.Gun_Panzer | 2 |
@@ -431,6 +433,7 @@ Turmlevel kosten 8 / 15 / 25 / 40 Coupons (Level 2–5). Doktrin: Schaden +25 %,
 | SchussJeItem.Shoot_Spreadshot | 3 |
 | SchussJeItem.Shoot_Stunshot | 3 |
 | SchussJeItem.Singularitaet_Ficsonium | 2 |
+| SchussJeItem.Tesla_Discharge | 1 |
 | Tesla.Schaden | 300 |
 | Tesla.Spruenge | 3 |
 | Tesla.SprungFaktor | 0,35 |
