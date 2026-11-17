@@ -1,6 +1,6 @@
 {
   "Name": "Fabrik-S1",
-  "_Hinweis": "Fabrik-Pruefstand S1 (P11, Marius 17.11.: Kohlekraftwerk am Wasser, Kohle ueber Foerderband, laengere Wege wie im echten Spiel, Forschung mit echten Festplatten). Wie S0 bis Welle 6 (Biomasse liefert den Anlaufstrom), dann Kohlekraft mit den Festplatten aus den Wellen erforschen, 2 Kohlekraftwerke + Wasserpumpe am naechsten Gewaesser, Kohle-Miner mit Band, Netz an das Biomasse-Netz. Fragen: findet der Pruefstand Wasser und Kohle, reichen die Festplatten bis W6, wie lang werden Band und Leitung, fliegt die Sicherung? 17.11. nach Fenster1117b: drei Ketten (45 Bolzen/min) - mit einer Kette fiel der Kern vor Welle 6 an Munitionsnot, die Strom-Strecke wurde nie erreicht. 4 Biomassebrenner (120 MW): zwei reichten fuer drei Ketten + 4 Tuerme nicht.",
+  "_Hinweis": "Fabrik-Pruefstand S1 (P11, Marius 17.11.: Kohlekraftwerk am Wasser, Kohle ueber Foerderband, laengere Wege wie im echten Spiel, Forschung mit echten Festplatten). Wie S0 bis Welle 6 (Biomasse liefert den Anlaufstrom), dann Kohlekraft mit den Festplatten aus den Wellen erforschen, 2 Kohlekraftwerke + Wasserpumpe am naechsten Gewaesser, Kohle-Miner mit Band, Netz an das Biomasse-Netz. Fragen: findet der Pruefstand Wasser und Kohle, reichen die Festplatten bis W6, wie lang werden Band und Leitung, fliegt die Sicherung? 17.11. nach Fenster1117b: drei Ketten (45 Bolzen/min) - mit einer Kette fiel der Kern vor Welle 6 an Munitionsnot, die Strom-Strecke wurde nie erreicht. 4 Biomassebrenner (120 MW): zwei reichten fuer drei Ketten + 4 Tuerme nicht. 17.11. (Befund Schrittweite): Wellen in Echtzeit - bei Zeitraffer x4 und niedriger Bildrate verlieren die Tuerme messbar Wirkung.",
   "NeuesSpiel": {
     "Startort": "Grass Fields",
     "Modus": 1,
@@ -8,7 +8,7 @@
   },
   "ErweiterteEinstellungen": false,
   "WarteNachLaden": 60,
-  "MaxMinuten": 70,
+  "MaxMinuten": 140,
   "Schritte": [
     {
       "pruefe": "Version",
@@ -51,12 +51,7 @@
       "fabrikbericht": true
     },
     {
-      "zeitraffer": 2
-    },
-    {
-      "wellenlauf": 6
-    },
-    {
+      "wellenlauf": 6,
       "zeitraffer": 1
     },
     {
@@ -77,12 +72,7 @@
       "foto": "Fabrik_S1"
     },
     {
-      "zeitraffer": 2
-    },
-    {
-      "wellenlauf": 10
-    },
-    {
+      "wellenlauf": 10,
       "zeitraffer": 1
     },
     {

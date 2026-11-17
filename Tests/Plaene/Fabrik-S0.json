@@ -1,6 +1,6 @@
 {
   "Name": "Fabrik-S0",
-  "_Hinweis": "Fabrik-Pruefstand S0 (P11, Konzept-Fabrik-Strom-2026-11-17.md, Marius 17.11.: Strom essenziell, Kosten wie in echt). Wie F1, aber ohne 'stromfrei' und ohne 'td einsatz frei': jeder Bau kauft Kontingent mit Coupons und nimmt das Baumaterial aus dem Inventar. Strom aus 2 Biomassebrennern, Lager mit Band (Biomasse aus dem Inventar), Masten und echte Kabel. Sicherung wird nach Test.SicherungZurueck (20 s) zurueckgesetzt und gezaehlt. Fragen: reicht der Strom fuer Linie + 4 Tuerme, wie oft fliegt die Sicherung, wie viele Kabel nur unsichtbar (Ziel 0)?",
+  "_Hinweis": "Fabrik-Pruefstand S0 (P11, Konzept-Fabrik-Strom-2026-11-17.md, Marius 17.11.: Strom essenziell, Kosten wie in echt). Wie F1, aber ohne 'stromfrei' und ohne 'td einsatz frei': jeder Bau kauft Kontingent mit Coupons und nimmt das Baumaterial aus dem Inventar. Strom aus 2 Biomassebrennern, Lager mit Band (Biomasse aus dem Inventar), Masten und echte Kabel. Sicherung wird nach Test.SicherungZurueck (20 s) zurueckgesetzt und gezaehlt. Fragen: reicht der Strom fuer Linie + 4 Tuerme, wie oft fliegt die Sicherung, wie viele Kabel nur unsichtbar (Ziel 0)? 17.11. (Befund Schrittweite): Wellen in Echtzeit - bei Zeitraffer x4 und niedriger Bildrate verlieren die Tuerme messbar Wirkung.",
   "NeuesSpiel": {
     "Startort": "Grass Fields",
     "Modus": 1,
@@ -8,7 +8,7 @@
   },
   "ErweiterteEinstellungen": false,
   "WarteNachLaden": 60,
-  "MaxMinuten": 45,
+  "MaxMinuten": 90,
   "Schritte": [
     {
       "pruefe": "Version",
@@ -53,12 +53,7 @@
       "foto": "Fabrik_S0"
     },
     {
-      "zeitraffer": 2
-    },
-    {
-      "wellenlauf": 10
-    },
-    {
+      "wellenlauf": 10,
       "zeitraffer": 1
     },
     {

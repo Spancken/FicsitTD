@@ -1,6 +1,6 @@
 {
   "Name": "Fabrik-S2",
-  "_Hinweis": "Fabrik-Pruefstand S2 (P11, Marius 17.11.: Treibstoff-Strom mit einbauen, laengere Wege wie im echten Spiel). Wie S1 (Biomasse, ab W6 Kohle), dazu mit echten Festplatten Assembler und Giesserei frueh, ab W15 Raffinerie und Treibstoffkraft; dann am naechsten Oelknoten (bis 2 km) Oelpumpe, 1 Raffinerie mit Harzlager, 2 Treibstoffkraftwerke und lange Leitung ans Netz. Fragen: Oelknoten-Entfernung und Leitungslaenge, reichen die Festplatten (22 fuer die Kette), baut das Spiel Rohre und Kabel im entfernten Gebiet, fliegt die Sicherung? 17.11. nach Fenster1117b: drei Ketten (45 Bolzen/min) - mit einer Kette fiel der Kern vor Welle 6 an Munitionsnot, die Strom-Strecke wurde nie erreicht. 4 Biomassebrenner (120 MW): zwei reichten fuer drei Ketten + 4 Tuerme nicht.",
+  "_Hinweis": "Fabrik-Pruefstand S2 (P11, Marius 17.11.: Treibstoff-Strom mit einbauen, laengere Wege wie im echten Spiel). Wie S1 (Biomasse, ab W6 Kohle), dazu mit echten Festplatten Assembler und Giesserei frueh, ab W15 Raffinerie und Treibstoffkraft; dann am naechsten Oelknoten (bis 2 km) Oelpumpe, 1 Raffinerie mit Harzlager, 2 Treibstoffkraftwerke und lange Leitung ans Netz. Fragen: Oelknoten-Entfernung und Leitungslaenge, reichen die Festplatten (22 fuer die Kette), baut das Spiel Rohre und Kabel im entfernten Gebiet, fliegt die Sicherung? 17.11. nach Fenster1117b: drei Ketten (45 Bolzen/min) - mit einer Kette fiel der Kern vor Welle 6 an Munitionsnot, die Strom-Strecke wurde nie erreicht. 4 Biomassebrenner (120 MW): zwei reichten fuer drei Ketten + 4 Tuerme nicht. 17.11. (Befund Schrittweite): Wellen in Echtzeit - bei Zeitraffer x4 und niedriger Bildrate verlieren die Tuerme messbar Wirkung.",
   "NeuesSpiel": {
     "Startort": "Grass Fields",
     "Modus": 1,
@@ -8,7 +8,7 @@
   },
   "ErweiterteEinstellungen": false,
   "WarteNachLaden": 60,
-  "MaxMinuten": 120,
+  "MaxMinuten": 240,
   "Schritte": [
     {
       "pruefe": "Version",
@@ -45,12 +45,7 @@
       "netz": true
     },
     {
-      "zeitraffer": 2
-    },
-    {
-      "wellenlauf": 6
-    },
-    {
+      "wellenlauf": 6,
       "zeitraffer": 1
     },
     {
@@ -65,12 +60,7 @@
       "fabrikbericht": true
     },
     {
-      "zeitraffer": 2
-    },
-    {
-      "wellenlauf": 10
-    },
-    {
+      "wellenlauf": 10,
       "zeitraffer": 1
     },
     {
@@ -82,12 +72,7 @@
       "echt": true
     },
     {
-      "zeitraffer": 2
-    },
-    {
-      "wellenlauf": 15
-    },
-    {
+      "wellenlauf": 15,
       "zeitraffer": 1
     },
     {
@@ -112,12 +97,7 @@
       "foto": "Fabrik_S2"
     },
     {
-      "zeitraffer": 2
-    },
-    {
-      "wellenlauf": 20
-    },
-    {
+      "wellenlauf": 20,
       "zeitraffer": 1
     },
     {
