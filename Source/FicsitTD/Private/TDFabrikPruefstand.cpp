@@ -30,6 +30,7 @@
 #include "Resources/FGItemDescriptor.h"
 #include "FGPipeConnectionComponent.h"
 #include "FGWaterVolume.h"
+#include "Resources/FGResourceNodeFrackingSatellite.h"
 #include "EngineUtils.h"
 #include "Engine/World.h"
 
@@ -489,6 +490,33 @@ namespace
 		return Frei;
 	}
 
+	/** Rohr zwischen zwei Bauten: naechstes freies Paar, Fluss A -> B (kein Verbraucher-Anschluss an A, kein Erzeuger an B) */
+	AFGBuildable* Rohrverbindung(UClass* RohrKlasse, AActor* A, AActor* B)
+	{
+		UFGPipeConnectionComponent* BestA = nullptr;
+		UFGPipeConnectionComponent* BestB = nullptr;
+		for (UFGPipeConnectionComponent* CA : Rohranschluesse(A))
+		{
+			if (CA->GetPipeConnectionType() == EPipeConnectionType::PCT_CONSUMER || CA->GetPipeConnectionType() == EPipeConnectionType::PCT_SNAP_ONLY)
+			{
+				continue;
+			}
+			for (UFGPipeConnectionComponent* CB : Rohranschluesse(B))
+			{
+				if (CB->GetPipeConnectionType() == EPipeConnectionType::PCT_PRODUCER || CB->GetPipeConnectionType() == EPipeConnectionType::PCT_SNAP_ONLY)
+				{
+					continue;
+				}
+				if (!BestA || FVector::DistSquared(CA->GetComponentLocation(), CB->GetComponentLocation()) < FVector::DistSquared(BestA->GetComponentLocation(), BestB->GetComponentLocation()))
+				{
+					BestA = CA;
+					BestB = CB;
+				}
+			}
+		}
+		return BestA ? UFGTestBlueprintFunctionLibrary::SpawnSplineBuildable(RohrKlasse, BestA, BestB, nullptr) : nullptr;
+	}
+
 	/** Naechster freier fester Knoten einer Ressource (Name enthaelt Erz) bis MaxDist um Ort */
 	AFGResourceNode* FreierKnoten(UWorld* World, const FString& Erz, const FVector& Ort, float MaxDist, float& OutDist)
 	{
@@ -497,7 +525,7 @@ namespace
 		for (TActorIterator<AFGResourceNode> It(World); It; ++It)
 		{
 			const TSubclassOf<UFGResourceDescriptor> Art = It->GetResourceClass();
-			if (!Art || It->IsA<AFGResourceDeposit>() || It->IsOccupied() || !Art->GetName().Contains(Erz))
+			if (!Art || It->IsA<AFGResourceDeposit>() || It->IsA<AFGResourceNodeFrackingSatellite>() || It->IsOccupied() || !Art->GetName().Contains(Erz))
 			{
 				continue;
 			}
@@ -616,20 +644,7 @@ namespace
 		int32 Rohre = 0, RohrFehler = 0;
 		auto Rohr = [&](AActor* A, AActor* B)
 		{
-			UFGPipeConnectionComponent* BestA = nullptr;
-			UFGPipeConnectionComponent* BestB = nullptr;
-			for (UFGPipeConnectionComponent* CA : Rohranschluesse(A))
-			{
-				for (UFGPipeConnectionComponent* CB : Rohranschluesse(B))
-				{
-					if (!BestA || FVector::DistSquared(CA->GetComponentLocation(), CB->GetComponentLocation()) < FVector::DistSquared(BestA->GetComponentLocation(), BestB->GetComponentLocation()))
-					{
-						BestA = CA;
-						BestB = CB;
-					}
-				}
-			}
-			AFGBuildable* Neu = BestA ? UFGTestBlueprintFunctionLibrary::SpawnSplineBuildable(RohrKlasse, BestA, BestB, nullptr) : nullptr;
+			AFGBuildable* Neu = Rohrverbindung(RohrKlasse, A, B);
 			if (Neu)
 			{
 				InOutBauten.Add(Neu);
@@ -748,6 +763,170 @@ namespace
 	}
 }
 
+namespace
+{
+	/**
+	 * 17.11. (P11, Marius: Treibstoff-Strom mit einbauen, laengere Wege wie im echten Spiel). Wie ein Spieler am Oelfeld:
+	 * Oelpumpe auf dem naechsten freien Oelknoten (bis 2 km), Rohr ueber eine Kreuzung zu den Raffinerien (Rezept Treibstoff,
+	 * 60 Oel -> 40 Treibstoff + 30 Harz), Harz per Band in je ein Lager, Treibstoff ueber Kreuzungen zu den Kraftwerken
+	 * (20 m3/min je Kraftwerk), lange Leitung mit Zwischenmasten ans vorhandene Netz (Anlaufstrom fuer Pumpe und Raffinerie).
+	 */
+	bool BaueTreibstoff(UWorld* World, ATDDefenseCore* Kern, int32 Anzahl, TArray<TWeakObjectPtr<AFGBuildable>>& InOutBauten, TArray<FString>& OutBericht)
+	{
+		const FVector KernOrt = Kern->GetActorLocation();
+		UClass* PumpKlasse = LoadClass<AFGBuildable>(nullptr, TEXT("/Game/FactoryGame/Buildable/Factory/OilPump/Build_OilPump.Build_OilPump_C"));
+		UClass* RaffKlasse = LoadClass<AFGBuildable>(nullptr, TEXT("/Game/FactoryGame/Buildable/Factory/OilRefinery/Build_OilRefinery.Build_OilRefinery_C"));
+		UClass* GenKlasse = LoadClass<AFGBuildable>(nullptr, TEXT("/Game/FactoryGame/Buildable/Factory/GeneratorFuel/Build_GeneratorFuel.Build_GeneratorFuel_C"));
+		UClass* RohrKlasse = LoadClass<AFGBuildable>(nullptr, TEXT("/Game/FactoryGame/Buildable/Factory/Pipeline/Build_Pipeline.Build_Pipeline_C"));
+		UClass* KreuzKlasse = LoadClass<AFGBuildable>(nullptr, TEXT("/Game/FactoryGame/Buildable/Factory/PipeJunction/Build_PipelineJunction_Cross.Build_PipelineJunction_Cross_C"));
+		UClass* LagerKlasse = LoadClass<AFGBuildable>(nullptr, Lager);
+		UClass* Band = LoadClass<AFGBuildable>(nullptr, TEXT("/Game/FactoryGame/Buildable/Factory/ConveyorBeltMk1/Build_ConveyorBeltMk1.Build_ConveyorBeltMk1_C"));
+		UClass* Rezept = LoadClass<UFGRecipe>(nullptr, TEXT("/Game/FactoryGame/Recipes/OilRefinery/Recipe_LiquidFuel.Recipe_LiquidFuel_C"));
+		if (!PumpKlasse || !RaffKlasse || !GenKlasse || !RohrKlasse || !KreuzKlasse || !LagerKlasse || !Band || !Rezept)
+		{
+			OutBericht.Add(TEXT("Strom Treibstoff: Klassen fehlen"));
+			return false;
+		}
+		float Weg = 0.f;
+		AFGResourceNode* Knoten = FreierKnoten(World, TEXT("Desc_LiquidOil"), KernOrt, 200000.f, Weg);
+		if (!Knoten)
+		{
+			OutBericht.Add(TEXT("Strom Treibstoff: kein freier Oelknoten bis 2 km"));
+			return false;
+		}
+		const FVector Feld = Knoten->GetActorLocation();
+		const FVector Richtung = (FVector(KernOrt.X, KernOrt.Y, 0.f) - FVector(Feld.X, Feld.Y, 0.f)).GetSafeNormal2D();
+		const FVector Quer(-Richtung.Y, Richtung.X, 0.f);
+		const FRotator Dreh = Richtung.Rotation();
+		const int32 Kraftwerke = FMath::Clamp(Anzahl, 1, 8);
+		// eine Oelpumpe Mk1 auf normalem Knoten = 120 Oel/min = 2 Raffinerien = 80 Treibstoff/min = 4 Kraftwerke
+		const int32 Raffinerien = FMath::Min(2, FMath::DivideAndRoundUp(Kraftwerke, 2));
+		if (Kraftwerke > 4)
+		{
+			OutBericht.Add(FString::Printf(TEXT("Strom Treibstoff: ein Oelknoten reicht fuer 4 Kraftwerke, %d bestellt"), Kraftwerke));
+		}
+		auto Reihe = [&](float Vor, int32 k, int32 n, float Abstand)
+		{
+			return Boden(World, Feld + Richtung * Vor + Quer * ((k - (n - 1) * 0.5f) * Abstand));
+		};
+		AFGBuildable* Pumpe = Setze(World, PumpKlasse, FTransform(Dreh, Feld), [Knoten](AFGBuildable* B)
+		{
+			if (AFGBuildableResourceExtractorBase* X = Cast<AFGBuildableResourceExtractorBase>(B))
+			{
+				X->SetExtractableResource(TScriptInterface<IFGExtractableResourceInterface>(Knoten));
+			}
+		});
+		if (!Pumpe)
+		{
+			OutBericht.Add(TEXT("Strom Treibstoff: Oelpumpe nicht gebaut (Kosten/Sperre, siehe Log)"));
+			return false;
+		}
+		InOutBauten.Add(Pumpe);
+		int32 Rohre = 0, RohrFehler = 0, Baender = 0;
+		auto Rohr = [&](AActor* A, AActor* B)
+		{
+			if (AFGBuildable* Neu = (A && B) ? Rohrverbindung(RohrKlasse, A, B) : nullptr)
+			{
+				InOutBauten.Add(Neu);
+				++Rohre;
+				return;
+			}
+			++RohrFehler;
+			UE_LOG(LogFicsitTD, Warning, TEXT("Fabrik: Rohr %s -> %s nicht gebaut"), *GetNameSafe(A), *GetNameSafe(B));
+		};
+		auto Kreuz = [&](const FVector& Ort) -> AActor*
+		{
+			AFGBuildable* K = Setze(World, KreuzKlasse, FTransform(Dreh, Ort + FVector(0.f, 0.f, 150.f)), [](AFGBuildable*) {});
+			if (K)
+			{
+				InOutBauten.Add(K);
+			}
+			return K;
+		};
+		// Reihen vom Knoten zum Kern: Pumpe 0, Oelkreuzung 14 m, Raffinerien 26 m, Harzlager 40 m, Treibstoffkreuzungen 50 m, Kraftwerke 64 m
+		AActor* OelKreuz = Kreuz(Reihe(1400.f, 0, 1, 0.f));
+		Rohr(Pumpe, OelKreuz);
+		TArray<AActor*> RaffListe, GenListe, Kreuze;
+		int32 LagerZahl = 0;
+		for (int32 k = 0; k < Raffinerien; ++k)
+		{
+			AFGBuildable* R = Setze(World, RaffKlasse, FTransform(Dreh, Reihe(2600.f, k, Raffinerien, 1400.f)), [](AFGBuildable*) {});
+			if (!R)
+			{
+				OutBericht.Add(FString::Printf(TEXT("Raffinerie %d nicht gebaut (Kosten/Sperre, siehe Log)"), k + 1));
+				break;
+			}
+			if (AFGBuildableManufacturer* Fab = Cast<AFGBuildableManufacturer>(R))
+			{
+				Fab->SetRecipe(Rezept);
+			}
+			RaffListe.Add(R);
+			InOutBauten.Add(R);
+			Rohr(OelKreuz, R);
+			// Harz wie beim Spieler ins Lager (sonst laeuft die Raffinerie voll und steht)
+			if (AFGBuildable* L = Setze(World, LagerKlasse, FTransform(Dreh, Reihe(4000.f, k, Raffinerien, 1400.f)), [](AFGBuildable*) {}))
+			{
+				InOutBauten.Add(L);
+				++LagerZahl;
+				const TArray<UFGFactoryConnectionComponent*> Aus = Anschluesse(R, EFactoryConnectionDirection::FCD_OUTPUT);
+				const TArray<UFGFactoryConnectionComponent*> Ein = Anschluesse(L, EFactoryConnectionDirection::FCD_INPUT);
+				if (AFGBuildable* B = (Aus.Num() > 0 && Ein.Num() > 0) ? UFGTestBlueprintFunctionLibrary::SpawnSplineBuildable(Band, Aus[0], Ein[0], nullptr) : nullptr)
+				{
+					InOutBauten.Add(B);
+					++Baender;
+				}
+				else
+				{
+					UE_LOG(LogFicsitTD, Warning, TEXT("Fabrik: Harzband %s -> %s nicht gebaut"), *GetNameSafe(R), *GetNameSafe(L));
+				}
+			}
+		}
+		for (int32 k = 0; k < Kraftwerke && RaffListe.Num() > 0; ++k)
+		{
+			AFGBuildable* G = Setze(World, GenKlasse, FTransform(Dreh, Reihe(6400.f, k, Kraftwerke, 2200.f)), [](AFGBuildable*) {});
+			if (!G)
+			{
+				OutBericht.Add(FString::Printf(TEXT("Treibstoffkraftwerk %d nicht gebaut (Kosten/Sperre, siehe Log)"), k + 1));
+				break;
+			}
+			GenListe.Add(G);
+			InOutBauten.Add(G);
+			if (AActor* K = Kreuz(Reihe(5000.f, k, Kraftwerke, 2200.f)))
+			{
+				Kreuze.Add(K);
+			}
+		}
+		for (int32 k = 0; k < Kreuze.Num(); ++k)
+		{
+			if (GenListe.IsValidIndex(k))
+			{
+				Rohr(Kreuze[k], GenListe[k]);
+			}
+			if (k + 1 < Kreuze.Num())
+			{
+				Rohr(Kreuze[k], Kreuze[k + 1]);
+			}
+		}
+		for (int32 k = 0; k < RaffListe.Num() && Kreuze.Num() > 0; ++k)
+		{
+			Rohr(RaffListe[k], Kreuze[FMath::Min(Kreuze.Num() - 1, k * Kreuze.Num() / RaffListe.Num())]);
+		}
+		const int32 Masten = TDFabrik::VerbindeNetz(World, InOutBauten, OutBericht);
+		float Kapazitaet = 0.f;
+		for (AActor* G : GenListe)
+		{
+			Kapazitaet += Cast<AFGBuildableGenerator>(G)->GetPowerProductionCapacity();
+		}
+		OutBericht.Add(FString::Printf(TEXT("Strom Treibstoff: Oelknoten %.0f m vom Kern, 1 Oelpumpe, %d Raffinerien, %d Harzlager, %d Kraftwerke, %d Rohre (%d Fehler), %d Baender, %d Masten, %d unsichtbare Kabel, Kapazitaet beim Bau %.0f MW"),
+			Weg / 100.f, RaffListe.Num(), LagerZahl, GenListe.Num(), Rohre, RohrFehler, Baender, Masten, GUnsichtbar, Kapazitaet));
+		for (const FString& Z : OutBericht)
+		{
+			UE_LOG(LogFicsitTD, Log, TEXT("Fabrik: %s"), *Z);
+		}
+		return RaffListe.Num() > 0 && GenListe.Num() > 0 && RohrFehler == 0;
+	}
+}
+
 bool TDFabrik::BaueStrom(UWorld* World, ATDDefenseCore* Kern, const FString& Art, int32 Anzahl,
 	TArray<TWeakObjectPtr<AFGBuildable>>& InOutBauten, TArray<FString>& OutBericht)
 {
@@ -763,9 +942,17 @@ bool TDFabrik::BaueStrom(UWorld* World, ATDDefenseCore* Kern, const FString& Art
 		}
 		return BaueKohle(World, Kern, Anzahl, InOutBauten, OutBericht);
 	}
+	if (Art == TEXT("Treibstoff"))
+	{
+		if (AFGGameState* Zustand = World->GetGameState<AFGGameState>())
+		{
+			Zustand->SetCheatNoPower(false);
+		}
+		return BaueTreibstoff(World, Kern, Anzahl, InOutBauten, OutBericht);
+	}
 	if (Art != TEXT("Biomasse"))
 	{
-		OutBericht.Add(FString::Printf(TEXT("Strom %s gibt es noch nicht (Biomasse, Kohle)"), *Art));
+		OutBericht.Add(FString::Printf(TEXT("Strom %s gibt es noch nicht (Biomasse, Kohle, Treibstoff)"), *Art));
 		return false;
 	}
 	// Cheat aus: ein vergessener Schritt "stromfrei" verfaelschte sonst still alles
