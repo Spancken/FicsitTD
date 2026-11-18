@@ -398,6 +398,10 @@ private:
 	/** so lange wartet der Wellenstart schon auf den Netzumbau; wie oft gewartet wurde (Log) */
 	float mKlippenWarte = 0.f;
 	int32 mStartGewartet = 0;
+	/** 18.11. (P12-E2 R3: Welle 1 startete 12 s nach dem Einsatzstart mit 0 von 16 gepruefen Richtungen): Start halten, bis die
+	 *  Fronten geprueft sind (hoechstens Gegner.FrontenWarteMax s), dabei alle 2 s neu suchen */
+	float mFrontenWarte = 0.f;
+	float mFrontenSuchUhr = 0.f;
 	/** Weg der aktiven Fronten pruefen (Klippenprobe, Teilweg -> Fronten neu); vor dem Start und beim Spawnen */
 	void PruefeFrontenVorWelle(int32 Nummer);
 	/** Beim Start war das Navigationsnetz noch nicht fertig (0 Richtungen geprueft): alle 15 s neu suchen, bis es klappt */

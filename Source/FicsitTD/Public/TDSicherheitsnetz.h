@@ -16,6 +16,7 @@ namespace TDNetz
 		Absturz,               // Gegnerhirn: im freien Fall unter dem Kern, zurueck auf den Weg
 		AbsturzEntfernt,       // Gegnerhirn: dritter Absturz, getoetet
 		OhneLeben,             // Gegnerhirn: lebte mit 0 LP weiter, getoetet
+		FrontenUngeprueft,     // Wellensystem: Welle startete mit ungeprueften Fronten (Netz nicht fertig, 18.11.)
 		Anzahl
 	};
 	FICSITTD_API void Melde(EArt Art);

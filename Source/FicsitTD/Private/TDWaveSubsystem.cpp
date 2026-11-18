@@ -2414,9 +2414,18 @@ void UTDWaveSubsystem::PruefeFrontenVorWelle(int32 Nummer)
 		return;
 	}
 	const FVector Mitte = Kern->GetActorLocation();
-	if (mFronten.Num() == 0)
+	// 18.11. (P12-E2 R3): ungepruefte Fronten zuerst neu suchen - sonst sperrt die Klippenprobe unten Klippen am Ersatzweg, und die
+	// spaetere Neuwahl sieht andere Weglaengen als ein Lauf, dessen Netz rechtzeitig fertig war (andere Fronten, Norden 118 m statt Nordwesten 343 m)
+	if (mFronten.Num() == 0 || mGueltigeRichtungen == 0)
 	{
 		SucheFronten(Mitte);
+		if (mGueltigeRichtungen > 0)
+		{
+			UE_LOG(LogFicsitTD, Log, TEXT("Frontpruefung Welle %d: Fronten jetzt geprueft (%d Richtungen), erste aus %s"), Nummer, mGueltigeRichtungen, *FrontName(0));
+			GetWorld()->GetTimerManager().ClearTimer(mFrontenNachTimer);
+			SpeichereLauf();
+			MarkiereFronten();
+		}
 	}
 	// 0.9.0 (Pruefung0846: alle 52 versperrten Nachzuegler 30 m hinter Front 2, deren Weg bei der Wahl voll war): das Netz aendert
 	// sich nach der Wahl (Gelaende und Bauten werden nachgeladen). Vor jeder Welle den Weg der aktiven Fronten neu pruefen und
@@ -2502,6 +2511,11 @@ void UTDWaveSubsystem::SpawneKernWelle(int32 Nummer)
 		SucheFronten(Mitte);
 	}
 	PruefeFrontenVorWelle(Nummer);
+	if (mGueltigeRichtungen == 0 && !mBohrung)
+	{
+		UE_LOG(LogFicsitTD, Warning, TEXT("Welle %d startet mit ungeprueften Fronten (Netz nach %.0f s nicht fertig)"), Nummer, TDBalance::Wert(TEXT("Gegner.FrontenWarteMax"), 30.f));
+		TDNetz::Melde(TDNetz::EArt::FrontenUngeprueft);
+	}
 	TArray<FVector> Orte;
 	mRichtungen.Reset();
 	float Abstand = 0.f;
@@ -3015,6 +3029,30 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 					PruefeVersorgung();
 				}
 			}
+		}
+		// 18.11.: ohne gepruefte Fronten nicht starten - alle 2 s neu suchen, hoechstens Gegner.FrontenWarteMax s (Standard 30)
+		if (mCountdown <= 0.f && mGueltigeRichtungen == 0 && !mBohrung && mFrontenWarte < TDBalance::Wert(TEXT("Gegner.FrontenWarteMax"), 30.f))
+		{
+			if (mFrontenWarte <= 0.f)
+			{
+				UE_LOG(LogFicsitTD, Log, TEXT("Wellenstart %d wartet auf gepruefte Fronten (0 von 16, Netz nicht fertig)"), mWelle + 1);
+			}
+			mFrontenWarte += DeltaTime;
+			mFrontenSuchUhr -= DeltaTime;
+			if (mFrontenSuchUhr <= 0.f)
+			{
+				mFrontenSuchUhr = 2.f;
+				mFrontCheckWelle = mWelle + 1;
+				PruefeFrontenVorWelle(mWelle + 1);
+			}
+			mCountdown = 0.f;
+			return;
+		}
+		if (mCountdown <= 0.f && mFrontenWarte > 0.f)
+		{
+			UE_LOG(LogFicsitTD, Log, TEXT("Wellenstart %d nach %.1f s Warten auf gepruefte Fronten (%d Richtungen)"), mWelle + 1, mFrontenWarte, mGueltigeRichtungen);
+			mFrontenWarte = 0.f;
+			mFrontenSuchUhr = 0.f;
 		}
 		if (mCountdown <= 0.f && mKlippenOffen > 0 && mKlippenWarte < TDBalance::Wert(TEXT("Gegner.KlippenWarteMax"), 20.f))
 		{

@@ -17,7 +17,8 @@ namespace TDNetz
 	const TCHAR* Name(EArt Art)
 	{
 		static const TCHAR* Namen[] = { TEXT("Festgefahren versetzt"), TEXT("Festgefahren ohne Boden"), TEXT("Nachzuegler versetzt"),
-			TEXT("Nachzuegler entfernt"), TEXT("Absturz zurueckgesetzt"), TEXT("Absturz entfernt"), TEXT("0 LP getoetet") };
+			TEXT("Nachzuegler entfernt"), TEXT("Absturz zurueckgesetzt"), TEXT("Absturz entfernt"), TEXT("0 LP getoetet"),
+			TEXT("Fronten ungeprueft") };
 		static_assert(UE_ARRAY_COUNT(Namen) == static_cast<int32>(EArt::Anzahl), "Namen der Sicherheitsnetze");
 		return Namen[static_cast<int32>(Art)];
 	}
