@@ -27,7 +27,7 @@
 
 ### Fixed
 - Wave enemies no longer get stuck on ore deposits, rock nodes, crab nests and nut or berry bushes next to their path, and less often at cliff overhangs.
-- Each core site now has fixed enemy fronts, so a site always plays the same, no matter how fast the game loads.
+- Each core site now has fixed enemy fronts, so a site always plays the same, no matter how fast the game loads. While the navigation mesh is still building after landing, the chat says the paths are still being checked instead of "No path checked".
 - The wave panel on the left fits on screen in large waves.
 - Xeno-Zapper and Xeno-Basher now count as hand weapons (self-defense: electric damage at about a third of a rebar bolt, growing with the waves).
 - German texts now use proper umlauts.
@@ -68,7 +68,7 @@
 
 **Behoben**
 - Wellengegner bleiben nicht mehr an Erzvorkommen, Steinknoten, Krabbennestern und Büschen am Weg hängen, seltener an Felsüberhängen.
-- Jeder Kernplatz hat feste Gegnerfronten – ein Platz spielt sich immer gleich, egal wie schnell das Spiel lädt.
+- Jeder Kernplatz hat feste Gegnerfronten – ein Platz spielt sich immer gleich, egal wie schnell das Spiel lädt. Solange das Navigationsnetz nach der Landung noch entsteht, meldet der Chat „Die Wege werden noch geprüft“ statt „Kein Weg geprüft“.
 - Die Wellenleiste passt auch in großen Wellen ins Bild.
 - Xeno-Zapper und Xeno-Basher zählen jetzt als Handwaffen (Notwehr: Stromschaden etwa ein Drittel eines Armierungsbolzens, wächst mit den Wellen).
 - Deutsche Texte schreiben Umlaute jetzt richtig.

@@ -1234,7 +1234,18 @@ TArray<FString> UTDWaveSubsystem::GetFrontenText(ATDDefenseCore* Kern)
 	{
 		FrontenFuer(Kern);
 	}
-	Zeilen.Add(TDF(TEXT("Fronten (%s): %d von 16 Richtungen begehbar."), TEXT("Fronts (%s): %d of 16 directions passable."), *StufenAnzeige(mStufe), mGueltigeRichtungen));
+	// 18.11. (B24, Handspiel Gras-S2): beim Einsatzstart ist das Netz oft noch im Aufbau (erste Suche 3 von 4, Nachpruefung nach 2 min
+	// 4 von 4). In der Bauphase ist "0" kein Fehler, sondern "noch nicht geprueft": das Ergebnis meldet PruefeFrontenNach im Chat
+	const bool bNochOffen = mGueltigeRichtungen == 0 && mLauf == ETDLauf::Aufbau;
+	if (bNochOffen)
+	{
+		Zeilen.Add(TDF(TEXT("Fronten (%s): Die Wege werden noch geprüft, das Navigationsnetz baut sich auf. Das Ergebnis kommt gleich im Chat."),
+			TEXT("Fronts (%s): Paths are still being checked while the navigation mesh builds. The result follows shortly in chat."), *StufenAnzeige(mStufe)));
+	}
+	else
+	{
+		Zeilen.Add(TDF(TEXT("Fronten (%s): %d von 16 Richtungen begehbar."), TEXT("Fronts (%s): %d of 16 directions passable."), *StufenAnzeige(mStufe), mGueltigeRichtungen));
+	}
 	const int32 Aktiv = mLauf == ETDLauf::Aus ? AktiveFrontenFuer(1) : AktiveFrontenFuer(FMath::Max(1, mWelle));
 	for (int32 i = 0; i < mFronten.Num(); ++i)
 	{
@@ -1257,7 +1268,7 @@ TArray<FString> UTDWaveSubsystem::GetFrontenText(ATDDefenseCore* Kern)
 		}
 		Zeilen.Add(FString::Printf(TEXT("%d. %s%s"), i + 1, *FrontName(i), *Ab));
 	}
-	if (mGueltigeRichtungen == 0)
+	if (mGueltigeRichtungen == 0 && !bNochOffen)
 	{
 		Zeilen.Add(TDT(TEXT("Kein Weg geprüft (Navigationsnetz fehlt dort?) - Gegner kommen aus ungeprüften Richtungen."), TEXT("No path checked (navigation mesh missing there?) - enemies come from unchecked directions.")));
 		Zeilen.Add(NavDiagnose(GetWorld(), Kern->GetActorLocation()));

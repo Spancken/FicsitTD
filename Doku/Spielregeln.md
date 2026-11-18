@@ -300,7 +300,9 @@ Preis = Grundpreis × (1 + Aufschlag × bisher gekauft); Paket = Gebäude je Kau
 | Giesserei | 8 | 0,4 | 1 | 0 |
 | Handplatz | 8 | 0,5 | 1 | 0 |
 | Himmelsturm | 10 | 0,4 | 1 | 0 |
+| Hover-Pack | 24 | 0 | 1 | 0 |
 | Inventarplätze | 6 | 0,5 | 5 | 0 |
+| Jetpack | 16 | 0 | 1 | 0 |
 | Kernreparatur | 15 | 0,5 | 25 | 0 |
 | Klingenläufer | 8 | 0 | 1 | 0 |
 | Kohlekraftwerk | 14 | 0,6 | 1 | 0 |
