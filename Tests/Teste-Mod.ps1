@@ -43,6 +43,15 @@ $ordner = Get-ChildItem (Join-Path $saved "SaveGames") -Directory | Where-Object
     Select-Object -First 1
 foreach ($p in $plaene) { if ($p.Quelle) { Copy-Item (Join-Path $Testspielstaende $p.Quelle) (Join-Path $ordner.FullName ($p.Spielstand + ".sav")) -Force } }
 
+# 18.11. (Marius: "Ja, einbauen"): ein offenes Absturzfenster eines frueheren Laufs blockiert den Steam-Start (Spiel gilt als laufend).
+# Das Fenster gehoert zu einem schon beendeten Spiel; der Absturzbericht liegt in Saved\Crashes und bleibt erhalten.
+$absturzFenster = Get-Process CrashReportClient -ErrorAction SilentlyContinue
+if ($absturzFenster -and -not (Get-Process $spielProzess -ErrorAction SilentlyContinue)) {
+    Write-Host "== Absturzfenster eines frueheren Laufs offen - wird geschlossen (Bericht bleibt in Saved\Crashes)"
+    $absturzFenster | Stop-Process -Force -ErrorAction SilentlyContinue
+    Start-Sleep 3
+}
+
 $laeuft = Get-Process $spielProzess -ErrorAction SilentlyContinue | Select-Object -First 1
 if ($laeuft -and -not $Weiter) { throw "Das Spiel laeuft schon - schliessen oder mit -Weiter an die Bereitschaft schicken." }
 if (-not $laeuft -and $Weiter) { throw "Kein Spiel in Bereitschaft - ohne -Weiter starten." }

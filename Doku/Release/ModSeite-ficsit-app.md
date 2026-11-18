@@ -20,11 +20,13 @@ Factory-fed tower defense: real ammo chains feed your turrets. 50-wave operation
 FICSIT Tower Defense turns Satisfactory into a tower defense that lives off your factory. A FICSIT Defense Core stands in your start biome, and waves of native fauna attack it from up to three fronts. Every turret fires **real ammunition from your own production lines**, delivered by conveyor belt or pipe. Fifty waves lead you from simple iron rebar to plasma flames.
 
 ## 🆕 What's new in 0.11
-- **Three ways to play:** in the session settings category **FICSIT Tower Defense**, pick **Operation** (50 waves), **Endless waves** (timed waves from one direction that never stop – how far can you get?) or **Free play with defense** (regular Satisfactory with turrets; drill at resource nodes when *you* want a fight).
+- **Three ways to play:** right after landing, a start window asks how you want to play – **Operation** (50 waves), **Endless waves** (timed waves from one direction that never stop – how far can you get?), **Free play with defense** (regular Satisfactory with turrets; drill at resource nodes when *you* want a fight) or **Off** – and on which difficulty.
 - **Operation phases:** a short report and a bonus pick after every tenth wave, a final report and a best result per core site and difficulty.
 - **Ammo lasts longer:** one item fires several shots (basic 4, advanced 3, special 2). The turret window shows consumption per minute and how many turrets a Mk.1 belt feeds. Belts Mk.4/Mk.5 and Miners Mk.2/Mk.3 in the MAM.
-- **Balance:** elites from wave 16 on Normal, Rifle Turret master tier +25 % fire rate, difficulty in the session settings.
-- **Fixes:** enemies no longer get stuck on ore deposits, crab nests and bushes, the wave panel fits large waves, cleaner turret models, one chat line per wave.
+- **Fixed fronts:** every core site has its own fixed enemy fronts, so a site always plays the same.
+- **Pioneer gear:** Blade Runners from the start, Jetpack and Hover Pack in the Core shop.
+- **Balance:** elites from wave 16 on Normal, Rifle Turret master tier +25 % fire rate.
+- **Fixes:** enemies no longer get stuck on ore deposits, crab nests and bushes, the wave panel fits large waves, cleaner turret models, proper German umlauts, one chat line per wave.
 
 ### The Pioneer
 
@@ -41,7 +43,7 @@ Take two roles fully or three halfway. Your strongest role shows as a badge in t
 ☕ **Support the mod:** https://ko-fi.com/mariusspancken
 
 ## Quick start
-1. Back up your saves. Start a **new game** and, in the session settings category **FICSIT Tower Defense**, Right after landing, a window asks how you want to play: **Operation**, **Endless waves**, **Free play with defense** or **Off**, plus the difficulty. Existing worlds without a Defense Core stay regular Satisfactory.
+1. Back up your saves. Start a **new game**. Right after landing, a window asks how you want to play: **Operation**, **Endless waves**, **Free play with defense** or **Off**, plus the difficulty. Existing worlds without a Defense Core stay regular Satisfactory.
 2. After landing, the mod builds a platform with the **Defense Core** near your start, and ADA briefs you.
 3. Build miners, smelters and constructors, then a **Bolt Turret**. Feed it rebar by conveyor and connect power.
 4. Press **E** at the Core and hit **Start wave** when you are ready. There is no timer.

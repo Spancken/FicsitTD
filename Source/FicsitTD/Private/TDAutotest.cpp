@@ -1243,7 +1243,7 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		if (PC && Wort == TEXT("frei"))
 		{
 			// 18.11. (Marius: Bilder fuer Posts, Basis und anrollende Wellen): freie Kamera wie ein Fotomodus, ohne Figur im Bild.
-			// Punkte: "kern", "front1".."front4", "gegner" (Mitte der lebenden Wellengegner), "spieler".
+			// Punkte: "kern", "front1".."front4", "gegner" (Mitte der lebenden Wellengegner), "spieler", "fabrik"/"tuerme" (Pruefstand-Bauten).
 			// "ort" (Standard kern) + "richtung" (Grad, Welt) oder "richtungZu" (Punkt) * "abstand" m + "seite" m quer + "hoehe" m;
 			// Blick auf "blick" (Standard ort) + "blickhoehe" m (3), "fov" (70). Bodenschutz: Kamera mind. 2 m ueber dem Gelaende.
 			const UTDWaveSubsystem* Waves = World->GetSubsystem<UTDWaveSubsystem>();
@@ -1300,6 +1300,30 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 				{
 					Out = GegnerMitte;
 					return true;
+				}
+				if (Name == TEXT("fabrik") || Name == TEXT("tuerme"))
+				{
+					// 18.11. (Marius: Bilder einer echten Partie mit Baendern): Mitte der vom Pruefstand gebauten Maschinen bzw. Tuerme
+					const bool bTuerme = Name == TEXT("tuerme");
+					FVector Summe = FVector::ZeroVector;
+					int32 Zahl = 0;
+					for (const TWeakObjectPtr<AFGBuildable>& B : mFabrik)
+					{
+						const FString Klasse = B.IsValid() ? B->GetClass()->GetName() : FString();
+						const bool bTurm = Klasse.Contains(TEXT("Turret"));
+						const bool bMaschine = Klasse.Contains(TEXT("Miner")) || Klasse.Contains(TEXT("Smelter")) || Klasse.Contains(TEXT("Constructor"));
+						if (bTuerme ? bTurm : bMaschine)
+						{
+							Summe += B->GetActorLocation();
+							++Zahl;
+						}
+					}
+					if (Zahl > 0)
+					{
+						Out = Summe / Zahl;
+						return true;
+					}
+					return false;
 				}
 				return false;
 			};
