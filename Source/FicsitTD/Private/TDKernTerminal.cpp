@@ -3811,22 +3811,38 @@ static FString AuswahlBeschreibung(const FString& Id, int32 Wert)
 
 TSharedRef<SWidget> UTDAuswahlKarten::RebuildWidget()
 {
+	// 18.11. (Marius, Screenshot): die Zeile im Menue hat eine feste Hoehe - eine Liste untereinander wurde abgeschnitten.
+	// Deshalb alle Moeglichkeiten nebeneinander in einer Zeile; der Beschreibungssatz steht im Tooltip.
 	if (WidgetTree && !WidgetTree->RootWidget)
 	{
-		USizeBox* Breite = WidgetTree->ConstructWidget<USizeBox>();
-		Breite->SetMinDesiredWidth(560.f);
-		Breite->SetMaxDesiredWidth(760.f);
-		WidgetTree->RootWidget = Breite;
-		mListe = WidgetTree->ConstructWidget<UVerticalBox>();
-		Breite->AddChild(mListe);
+		UHorizontalBox* Reihe = WidgetTree->ConstructWidget<UHorizontalBox>();
+		WidgetTree->RootWidget = Reihe;
+		mReihe = Reihe;
 	}
 	return Super::RebuildWidget();
+}
+
+/** Kurzname fuer die Schaltflaeche: "Einsatz – Abwehrkern, 50 Wellen" -> "Einsatz", "Hart (ungetestet)" -> "Hart" */
+static FString AuswahlKurzname(const FString& Name)
+{
+	FString Kurz = Name;
+	int32 Pos = INDEX_NONE;
+	if (Kurz.FindChar(TEXT('('), Pos))
+	{
+		Kurz = Kurz.Left(Pos);
+	}
+	Pos = Kurz.Find(TEXT(" –"));
+	if (Pos != INDEX_NONE)
+	{
+		Kurz = Kurz.Left(Pos);
+	}
+	return Kurz.TrimStartAndEnd();
 }
 
 void UTDAuswahlKarten::Fuelle()
 {
 	const UFGUserSetting_IntSelector* Wahl = mUserSetting ? Cast<UFGUserSetting_IntSelector>(mUserSetting->ValueSelector) : nullptr;
-	if (!mListe || !Wahl || mWerte.Num() > 0)
+	if (!mReihe || !Wahl || mWerte.Num() > 0)
 	{
 		return;
 	}
@@ -3836,29 +3852,25 @@ void UTDAuswahlKarten::Fuelle()
 		UButton* Knopf = WidgetTree->ConstructWidget<UButton>();
 		FButtonStyle Stil;
 		Stil.SetNormal(FSlateNoResource());
-		Stil.SetHovered(FSlateRoundedBoxBrush(TDUI::C(255, 255, 255, 24), 3.f));
-		Stil.SetPressed(FSlateRoundedBoxBrush(TDUI::C(255, 255, 255, 40), 3.f));
+		Stil.SetHovered(FSlateRoundedBoxBrush(TDUI::C(255, 255, 255, 30), 3.f));
+		Stil.SetPressed(FSlateRoundedBoxBrush(TDUI::C(255, 255, 255, 50), 3.f));
 		Stil.SetNormalPadding(FMargin(0.f));
-		Stil.SetPressedPadding(FMargin(0.f, 1.f, 0.f, -1.f));
+		Stil.SetPressedPadding(FMargin(0.f));
 		Knopf->SetStyle(Stil);
-		UBorder* Feld = WidgetTree->ConstructWidget<UBorder>();
-		Feld->SetBrush(FSlateRoundedBoxBrush(TDUI::C(31, 31, 31, 220), 3.f));
-		Feld->SetPadding(FMargin(12.f, 6.f));
-		UVerticalBox* Inhalt = WidgetTree->ConstructWidget<UVerticalBox>();
-		UTextBlock* Name = TDUI::Text(WidgetTree, W.Name.ToString(), 17, TDUI::Hell, true);
-		Inhalt->AddChildToVerticalBox(Name);
 		const FString Satz = AuswahlBeschreibung(Id, W.Value);
-		if (!Satz.IsEmpty())
-		{
-			UTextBlock* Text = TDUI::Text(WidgetTree, Satz, 13, TDUI::C(200, 200, 200));
-			Text->SetAutoWrapText(true);
-			Inhalt->AddChildToVerticalBox(Text);
-		}
-		Feld->AddChild(Inhalt);
+		Knopf->SetToolTipText(FText::FromString(Satz.IsEmpty() ? W.Name.ToString() : W.Name.ToString() + TEXT(": ") + Satz));
+		UBorder* Feld = WidgetTree->ConstructWidget<UBorder>();
+		Feld->SetBrush(FSlateRoundedBoxBrush(TDUI::C(58, 58, 58, 230), 3.f));
+		Feld->SetPadding(FMargin(10.f, 1.f));
+		Feld->SetHorizontalAlignment(HAlign_Center);
+		Feld->SetVerticalAlignment(VAlign_Center);
+		UTextBlock* Name = TDUI::Text(WidgetTree, AuswahlKurzname(W.Name.ToString()), 15, TDUI::Hell, true);
+		Feld->AddChild(Name);
 		Knopf->AddChild(Feld);
-		if (UVerticalBoxSlot* Platz = mListe->AddChildToVerticalBox(Knopf))
+		if (UHorizontalBoxSlot* Platz = mReihe->AddChildToHorizontalBox(Knopf))
 		{
-			Platz->SetPadding(FMargin(0.f, 2.f));
+			Platz->SetPadding(FMargin(2.f, 0.f));
+			Platz->SetVerticalAlignment(VAlign_Center);
 		}
 		UTDAuswahlKlick* Klick = NewObject<UTDAuswahlKlick>(this);
 		Klick->mAuswahl = this;
@@ -3913,7 +3925,7 @@ void UTDAuswahlKarten::NativeTick(const FGeometry& MyGeometry, float InDeltaTime
 	for (int32 i = 0; i < mWerte.Num(); ++i)
 	{
 		const bool bGewaehlt = mWerte[i] == Wert;
-		mFelder[i]->SetBrush(FSlateRoundedBoxBrush(bGewaehlt ? TDUI::Akzent : TDUI::C(31, 31, 31, 220), 3.f));
+		mFelder[i]->SetBrush(FSlateRoundedBoxBrush(bGewaehlt ? TDUI::Akzent : TDUI::C(58, 58, 58, 230), 3.f));
 		mNamen[i]->SetColorAndOpacity(FSlateColor(bGewaehlt ? TDUI::DunkelText : TDUI::Hell));
 	}
 }

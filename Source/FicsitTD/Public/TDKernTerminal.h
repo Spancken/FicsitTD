@@ -552,7 +552,7 @@ private:
 	void Fuelle();
 	int32 AktuellerWert() const;
 	UPROPERTY()
-	TObjectPtr<class UVerticalBox> mListe;
+	TObjectPtr<class UHorizontalBox> mReihe;
 	UPROPERTY()
 	TArray<TObjectPtr<class UBorder>> mFelder;
 	UPROPERTY()

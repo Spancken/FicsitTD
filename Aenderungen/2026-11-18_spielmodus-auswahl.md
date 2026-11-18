@@ -21,8 +21,12 @@ Einstellung nicht fand, bekam normales Satisfactory.
    Grund: Spielstaende ohne gespeicherten Modus (z. B. Fabrikwelten, angelegt ohne Mod) bekaemen sonst den neuen Standard.
    Schalter `Spielmodus.BestehendeWeltAus` (1).
 3. **Eigene Auswahl:** `UTDAuswahlKarten` (C++, `UFGOptionsValueController`) als `CustomValueSelectorWidget` von Spielmodus und Stufe:
-   jede Moeglichkeit eine Zeile mit Namen (17 pt fett) und einem Satz Beschreibung, die gewaehlte orange; Wert ueber `IFGOptionInterface`.
+   jede Moeglichkeit als Schaltflaeche in einer Zeile (siehe Nachtrag); Wert ueber `IFGOptionInterface`.
    Schalter `Spielmodus.EigeneAuswahl` (1).
+
+**Nachtrag (Screenshot Marius 13:35):** Die Zeile im Menue hat eine feste Hoehe – die Liste untereinander wurde abgeschnitten und
+ueberlappte „Stufe“. Jetzt alle Moeglichkeiten als Schaltflaechen **nebeneinander in einer Zeile** (Kurzname, 15 pt fett, gewaehlte orange),
+der Beschreibungssatz als Tooltip.
 
 **Stand:** gebaut. Nicht geprueft: Aussehen im Menue (Marius beim Handspiel), Schutz bestehender Welten (braucht einen Stand ohne Mod).
 
