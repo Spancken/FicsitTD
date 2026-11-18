@@ -956,6 +956,40 @@ void UTDWaveSubsystem::FrontenFuer(ATDDefenseCore* Kern)
 	}
 }
 
+/** 18.11. (Marius: feste Fronten je Platz): Die Wahl der Fronten hing am Ladestand des Navigationsnetzes (Fels-S8: frueh Nordwesten
+ *  343 m, spaeter Norden 357 m). Je fester Kernplatz stehen die Fronten deshalb fest: Richtung 0-15 (22,5 Grad je Schritt, 0 = Osten
+ *  wie FRotator-Yaw) und Abstand 0/1/2 (nah/mittel/fern der Stufe), in der Reihenfolge, in der sie aufgehen. Gemessen mit dem Paket
+ *  Fronten-Messung (Protokoll "Front i: ... r= d="). Plaetze ohne Eintrag waehlen wie bisher. */
+struct FTDFesteFront { const TCHAR* Platz; int32 R[4]; int32 D[4]; };
+static const FTDFesteFront TDFesteFronten[] = {
+	// Messung 18.11. (Paket Fronten-Messung, Stufe Normal, Suche beim Einsatzstart und 90 s spaeter jeweils gleich)
+	{ TEXT("Gras-S1"),  { 10,  2,  6, 14 }, { 2, 2, 2, 0 } },
+	{ TEXT("Gras-S8"),  { 13,  5,  1,  9 }, { 2, 0, 2, 2 } },
+	{ TEXT("Gras-S2"),  {  7, 15,  3, 11 }, { 2, 0, 2, 1 } },
+	{ TEXT("Fels-S3"),  { 10,  2,  6, 14 }, { 2, 2, 2, 2 } },
+	{ TEXT("Fels-S8"),  { 10,  2, 14,  5 }, { 2, 0, 2, 2 } },   // Nordwesten 343 m zuerst, Grundlage aller P12-Messungen
+	{ TEXT("Fels-S1"),  {  9,  1,  5, 13 }, { 2, 0, 2, 2 } },
+	{ TEXT("Wald-S2"),  {  5, 13,  1,  9 }, { 2, 0, 0, 0 } },
+	{ TEXT("Wald-S3"),  { 15,  8,  3, 11 }, { 2, 2, 1, 0 } },
+	{ TEXT("Wald-S5"),  { 12,  2, 15, 10 }, { 2, 0, 1, 2 } },
+	{ TEXT("Duene-S1"), {  5, 13,  1,  9 }, { 2, 0, 2, 0 } },
+	{ TEXT("Duene-S6"), {  9,  1,  5, 13 }, { 2, 0, 0, 0 } },
+	{ TEXT("Duene-S8"), {  8,  0,  4, 12 }, { 2, 0, 2, 2 } },   // nachgemessen 18.11. (Paket Fronten-Nachweis)
+	{ nullptr, { -1, -1, -1, -1 }, { 0, 0, 0, 0 } },   // Ende der Liste
+};
+
+static const FTDFesteFront* FindeFesteFronten(const FString& Platz)
+{
+	for (const FTDFesteFront& F : TDFesteFronten)
+	{
+		if (F.Platz && Platz.Equals(F.Platz, ESearchCase::IgnoreCase))
+		{
+			return &F;
+		}
+	}
+	return nullptr;
+}
+
 FString UTDWaveSubsystem::FrontenSignatur() const
 {
 	TArray<FString> Teile;
@@ -977,6 +1011,9 @@ void UTDWaveSubsystem::SucheFronten(const FVector& Mitte)
 	// je Richtung der beste gepruefte Punkt (kleinster Umweg), sonst ein Ersatzpunkt mit Boden ohne Wasser
 	TArray<FTDFront> Gueltig, Ersatz;
 	TArray<FString> Richtungen;
+	// 18.11.: je Richtung und Abstand der Kandidat (fuer feste Fronten je Kernplatz)
+	const float Abstaende[3] = { S.MinAbstand, 0.5f * (S.MinAbstand + S.MaxAbstand), S.MaxAbstand };
+	FTDFront Kand[16][3];
 	int32 OhneBoden = 0, Wasser = 0, ZuHoch = 0, OhneNetz = 0, OhnePfad = 0, Teilweise = 0, Umwege = 0, Tuerme = 0, WasserWeg = 0;
 	for (int32 r = 0; r < 16; ++r)
 	{
@@ -985,8 +1022,13 @@ void UTDWaveSubsystem::SucheFronten(const FVector& Mitte)
 		float BesterUmweg = TNumericLimits<float>::Max();
 		bool bErsatz = false;
 		FString Grund;   // 18.11.: je Abstand das Ergebnis fuers Richtungsprotokoll
-		for (const float Abstand : { S.MinAbstand, 0.5f * (S.MinAbstand + S.MaxAbstand), S.MaxAbstand })
+		for (int32 k = 0; k < 3; ++k)
 		{
+			const float Abstand = Abstaende[k];
+			Kand[r][k].Winkel = Winkel;
+			Kand[r][k].Richtung = r;
+			Kand[r][k].Abstand = k;
+			Kand[r][k].Ort = Mitte + FRotator(0.f, Winkel, 0.f).Vector() * Abstand;
 			bool bTreffer = false, bWasser = false;
 			const FVector Ort = FrontBoden(World, Mitte + FRotator(0.f, Winkel, 0.f).Vector() * Abstand, bTreffer, bWasser);
 			if (!bTreffer || bWasser || FMath::Abs(Ort.Z - Mitte.Z) > 4000.f)
@@ -1000,11 +1042,14 @@ void UTDWaveSubsystem::SucheFronten(const FVector& Mitte)
 				++Tuerme;
 				continue;
 			}
+			Kand[r][k].Ort = Ort;
 			if (!bErsatz)
 			{
 				bErsatz = true;
 				ErsatzPunkt.Winkel = Winkel;
 				ErsatzPunkt.Ort = Ort;
+				ErsatzPunkt.Richtung = r;
+				ErsatzPunkt.Abstand = k;
 			}
 			FNavLocation NavOrt;
 			if (!bMitteNav || !Nav->ProjectPointToNavigation(Ort, NavOrt, FVector(500.f, 500.f, 500.f)))
@@ -1029,6 +1074,9 @@ void UTDWaveSubsystem::SucheFronten(const FVector& Mitte)
 			const float Umweg = Laenge / FMath::Max(1.f, FVector::Dist(NavOrt.Location, MitteNav.Location));
 			Umwege += Umweg > 1.8f ? 1 : 0;
 			Grund += FString::Printf(TEXT(" %.0f%s"), Laenge / 100.f, Umweg > 1.8f ? TEXT("u") : TEXT(""));
+			Kand[r][k].Ort = NavOrt.Location;
+			Kand[r][k].Weg = Laenge;
+			Kand[r][k].Punkte = Pfad->PathPoints;
 			if (Umweg <= 1.8f && Umweg < BesterUmweg)
 			{
 				BesterUmweg = Umweg;
@@ -1036,6 +1084,8 @@ void UTDWaveSubsystem::SucheFronten(const FVector& Mitte)
 				Beste.Ort = NavOrt.Location;
 				Beste.Weg = Laenge;
 				Beste.Punkte = Pfad->PathPoints;
+				Beste.Richtung = r;
+				Beste.Abstand = k;
 			}
 		}
 		if (Beste.Weg > 0.f)
@@ -1046,7 +1096,7 @@ void UTDWaveSubsystem::SucheFronten(const FVector& Mitte)
 		{
 			Ersatz.Add(ErsatzPunkt);
 		}
-		Richtungen.Add(FString::Printf(TEXT("%s:%s"), *Himmelsrichtung(Winkel, true), *Grund));
+		Richtungen.Add(FString::Printf(TEXT("r%d %s:%s"), r, *Himmelsrichtung(Winkel, true), *Grund));
 	}
 	UE_LOG(LogFicsitTD, Log, TEXT("Fronten-Richtungen (nah/mittel/fern, Weg in m, u = Umweg): %s"), *FString::Join(Richtungen, TEXT(" |")));
 	mGueltigeRichtungen = Gueltig.Num();
@@ -1111,13 +1161,48 @@ void UTDWaveSubsystem::SucheFronten(const FVector& Mitte)
 		UE_LOG(LogFicsitTD, Log, TEXT("Bohrung: %d Ersatzpunkte ohne geprueften Weg ausgelassen, Gegner kommen ueber %d gepruefte Wege"), Ersatz.Num(), mFronten.Num());
 	}
 
+	// 18.11.: feste Fronten je Kernplatz (nur fuer den Kern dieses Laufs, nicht in der Bohrung und nicht bei der Platzpruefung)
+	const ATDDefenseCore* FestKern = mKern.Get();
+	const FTDFesteFront* Fest = (!mBohrung && FestKern && FVector::Dist2D(FestKern->GetActorLocation(), Mitte) < 5000.f
+		&& TDBalance::Wert(TEXT("Gegner.FesteFronten"), 1.f) > 0.f) ? FindeFesteFronten(FestKern->mLaufPlatz) : nullptr;
+	if (Fest)
+	{
+		mFronten.Reset();
+		int32 Geprueft = 0;
+		for (int32 i = 0; i < 4; ++i)
+		{
+			const int32 r = Fest->R[i], k = FMath::Clamp(Fest->D[i], 0, 2);
+			if (r < 0 || r > 15)
+			{
+				continue;
+			}
+			// Gemessen auf Normal; andere Stufen haben andere Abstaende. Ohne vollen Weg am festen Abstand den naechsten Abstand
+			// derselben Richtung nehmen (erst +-1, dann +-2), die Richtung bleibt fest
+			int32 Wahl = k;
+			for (const int32 Versatz : { 0, -1, 1, -2, 2 })
+			{
+				const int32 kk = k + Versatz;
+				if (kk >= 0 && kk <= 2 && Kand[r][kk].Weg > 0.f)
+				{
+					Wahl = kk;
+					break;
+				}
+			}
+			mFronten.Add(Kand[r][Wahl]);
+			Geprueft += Kand[r][Wahl].Weg > 0.f ? 1 : 0;
+		}
+		UE_LOG(LogFicsitTD, Log, TEXT("Fronten fest fuer Kernplatz %s: %d von %d mit vollem Weg"), *FestKern->mLaufPlatz, Geprueft, mFronten.Num());
+		// Fehlt einer festen Front noch der Weg, ist das Netz nicht fertig: wie "0 von 16" behandeln (Nachpruefung, Neusuche vor
+		// der Klippenprobe, Start wartet bis Gegner.FrontenWarteMax, sonst Sicherheitsnetz "Fronten ungeprueft")
+		mGueltigeRichtungen = Geprueft == mFronten.Num() ? mGueltigeRichtungen : 0;
+	}
 	UE_LOG(LogFicsitTD, Log, TEXT("Fronten (%s): %d von 16 Richtungen geprueft gueltig, %d Fronten gewaehlt"), S.Name, mGueltigeRichtungen, mFronten.Num());
 	UE_LOG(LogFicsitTD, Log, TEXT("Fronten verworfen: ohne Boden %d, Wasser %d, Hoehe %d, ohne Netz %d (Kern auf Netz: %s), kein Pfad %d, teilweise %d, Umweg %d, Turm in 60 m %d, Weg durch Wasser %d"),
 		OhneBoden, Wasser, ZuHoch, OhneNetz, bMitteNav ? TEXT("ja") : TEXT("nein"), OhnePfad, Teilweise, Umwege, Tuerme, WasserWeg);
 	UE_LOG(LogFicsitTD, Log, TEXT("Fronten %s"), *NavDiagnose(World, Mitte));
 	for (int32 i = 0; i < mFronten.Num(); ++i)
 	{
-		UE_LOG(LogFicsitTD, Log, TEXT("Front %d: %s bei %s"), i + 1, *FrontText(mFronten, i, true),*mFronten[i].Ort.ToCompactString());
+		UE_LOG(LogFicsitTD, Log, TEXT("Front %d: %s bei %s (r=%d d=%d)"), i + 1, *FrontText(mFronten, i, true), *mFronten[i].Ort.ToCompactString(), mFronten[i].Richtung, mFronten[i].Abstand);
 	}
 }
 

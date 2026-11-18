@@ -1,0 +1,18 @@
+{
+  "Name": "Fronten-Messung",
+  "_Hinweis": "18.11.: alle 12 festen Kernplaetze, Fronten frueh und nach 90 s, fuer die Tabelle TDFesteFronten. Etwa 40 min.",
+  "Plaene": [
+    "Fronten-Gras-S1",
+    "Fronten-Gras-S8",
+    "Fronten-Gras-S2",
+    "Fronten-Fels-S3",
+    "Fronten-Fels-S8",
+    "Fronten-Fels-S1",
+    "Fronten-Wald-S2",
+    "Fronten-Wald-S3",
+    "Fronten-Wald-S5",
+    "Fronten-Duene-S1",
+    "Fronten-Duene-S6",
+    "Fronten-Duene-S8"
+  ]
+}

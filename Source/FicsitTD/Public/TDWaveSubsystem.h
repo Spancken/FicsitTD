@@ -53,6 +53,9 @@ struct FTDFront
 	float Weg = 0.f;
 	/** Wegpunkte fuer die Vorschau (nur bei geprueften Fronten) */
 	TArray<FVector> Punkte;
+	/** 18.11. (feste Fronten je Kernplatz): Richtung 0-15 (je 22,5 Grad) und Abstand 0 nah / 1 mittel / 2 fern; -1 = unbekannt */
+	int32 Richtung = -1;
+	int32 Abstand = -1;
 };
 
 /** T3 Wellenvorschau: eine Gegnerart der geplanten Welle */

@@ -1,0 +1,45 @@
+{
+  "Name": "Fronten-Gras-S8",
+  "_Hinweis": "18.11. Fronten-Messung: Kernplatz Gras-S8 (Startort Grass Fields, Platz 2), Normal. Erste Suche beim Einsatzstart, zweite nach 90 s (td kern fronten neu). Ausgewertet werden die Logzeilen 'Fronten-Richtungen' und 'Front i: ... (r= d=)'.",
+  "NeuesSpiel": {
+    "Startort": "Grass Fields",
+    "Kernplatz": "2"
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 8,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warte": 15
+    },
+    {
+      "befehl": "td einsatz stop"
+    },
+    {
+      "befehl": "td kern stop"
+    },
+    {
+      "befehl": "td einsatz start normal 50"
+    },
+    {
+      "warte": 90
+    },
+    {
+      "befehl": "td kern fronten neu"
+    },
+    {
+      "warte": 5
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "Fronten-Gras-S8"
+    }
+  ]
+}

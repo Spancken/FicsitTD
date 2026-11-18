@@ -26,6 +26,7 @@
 
 ### Fixed
 - Wave enemies no longer get stuck on ore deposits, rock nodes, crab nests and nut or berry bushes next to their path, and less often at cliff overhangs.
+- Each core site now has fixed enemy fronts, so a site always plays the same, no matter how fast the game loads.
 - The wave panel on the left fits on screen in large waves.
 - Towers and buildings: no floating lamps, power poles or black panels, no flickering surfaces, darker patches removed.
 - Wave saves carry the session name; "Retry wave" only loads saves of the current game. Turrets can no longer be dismantled near the Core during a wave.
@@ -62,6 +63,7 @@
 
 **Behoben**
 - Wellengegner bleiben nicht mehr an Erzvorkommen, Steinknoten, Krabbennestern und Büschen am Weg hängen, seltener an Felsüberhängen.
+- Jeder Kernplatz hat feste Gegnerfronten – ein Platz spielt sich immer gleich, egal wie schnell das Spiel lädt.
 - Die Wellenleiste passt auch in großen Wellen ins Bild.
 - Optik: keine schwebenden Lampen, Strommasten oder schwarzen Platten, kein Flimmern, dunkle Flecken entfernt.
 - Wellen-Spielstände tragen den Spielnamen, „Welle wiederholen“ lädt nur Stände dieses Spiels; kein Abriss am Kern während der Welle.
@@ -75,7 +77,7 @@
 
 ## Offen vor dem Upload
 
-- [ ] Fronten je nach Ladestand des Netzes (P12-E5: Nordwesten oder Norden auf Fels-S8): Entscheidung Marius; Zeile unter „Fixed“ erst nach Lösung. Bis dahin evtl. bekanntes Problem.
+- [x] Fronten: feste Fronten je Kernplatz (18.11., Nachweis Fels-S8 und R3).
 - [ ] Datum 20.11.2026 im Handbuch prüfen.
 - [ ] Stinger am Startpunkt: behoben oder als bekannter Fehler (steht oben schon allgemein drin).
 - [ ] Hart/Albtraum: Ergebnis P12-R / G3 eintragen oder Hinweis lassen.
