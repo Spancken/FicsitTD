@@ -413,6 +413,10 @@ void UTDKernplatz::SucheBoden()
 		return;
 	}
 	Schuetze(true);
+	if (mBauen && mVersuche == 0)
+	{
+		Fortschritt(1);
+	}
 	FVector Grund;
 	bool bHindernis = false;
 	FString Was;
@@ -464,6 +468,7 @@ void UTDKernplatz::SucheBoden()
 	if (mBauen)
 	{
 		Melde(TDF(TEXT("%s: Boden gefunden, baue in 2 s ..."), TEXT("%s: ground found, building in 2 s ..."), *mId));
+		Fortschritt(2);
 		GetWorld()->GetTimerManager().SetTimer(mTimer, this, &UTDKernplatz::BaueJetzt, 2.f, false);
 		return;
 	}
@@ -1606,6 +1611,7 @@ void UTDKernplatz::BaueJetzt()
 		return;
 	}
 	Melde(TDT(TEXT("Warte auf das Navigationsnetz um den Kern, dann startet der Einsatz ..."), TEXT("Waiting for the navigation mesh around the Core, then the operation starts ...")));
+	Fortschritt(3);
 	GetWorld()->GetTimerManager().SetTimer(mTimer, this, &UTDKernplatz::WarteNetzFuerEinsatz, 2.f, true, 2.f);
 }
 
@@ -1675,6 +1681,7 @@ void UTDKernplatz::WarteNetzFuerEinsatz()
 	{
 		Melde(M);
 	}
+	Fortschritt(4);
 	SpieleBegruessung(this, mSpieler.Get());
 }
 
@@ -1920,12 +1927,8 @@ void UTDKernplatz::PruefeTDStart()
 		mStehtSeit = 0;
 		return;
 	}
-	if (++mStehtSeit < 3)
-	{
-		return;
-	}
 	// 18.11. (Startfenster): vor dem ersten Kernplatz Spielmodus und Stufe im eigenen Fenster waehlen lassen - nicht im Selbsttest
-	// (der Plan setzt beides ueber die Sitzungseinstellungen), nicht wenn schon gewaehlt
+	// (der Plan setzt beides ueber die Sitzungseinstellungen), nicht wenn schon gewaehlt. Sobald der Spieler zu Fuss ist (ohne die 6 s).
 	if (TDBalance::Wert(TEXT("Spielmodus.Startfenster"), 1.f) > 0.f)
 	{
 		const UTDAutotest* Test = World->GetGameInstance() ? World->GetGameInstance()->GetSubsystem<UTDAutotest>() : nullptr;
@@ -1938,6 +1941,10 @@ void UTDKernplatz::PruefeTDStart()
 			}
 			return;
 		}
+	}
+	if (++mStehtSeit < 3)
+	{
+		return;
 	}
 	World->GetTimerManager().ClearTimer(mStartTimer);
 	// Startort = naechstes Startgebiet des Spiels
@@ -1955,6 +1962,7 @@ void UTDKernplatz::PruefeTDStart()
 	}
 	UE_LOG(LogFicsitTD, Log, TEXT("Kernplatz: Tower-Defense-Spielstand ohne Kern, Startort %s (%.0f m vom Startgebiet), baue den Kernplatz"), Biome[Bestes], Abstand / 100.f);
 	Melde(TDT(TEXT("FICSIT Tower Defense: Dein Einsatzort wird vorbereitet ..."), TEXT("FICSIT Tower Defense: preparing your operation site ...")));
+	Fortschritt(0);
 	// 0.83.1: der Selbsttest gibt den Platz vor (sonst zufaellig), gilt nur fuer diesen einen Bau
 	const FString Nr = sVorgabePlatz;
 	sVorgabePlatz.Reset();
@@ -1998,7 +2006,7 @@ void UTDKernplatz::StartfensterGewaehlt(int32 Modus, int32 Stufe)
 		mStartfenster->RemoveFromParent();
 		mStartfenster = nullptr;
 	}
-	mStehtSeit = 0;
+	mStehtSeit = 3;   // 18.11.: nach der Wahl sofort bauen (der Spieler steht ja schon)
 	UE_LOG(LogFicsitTD, Log, TEXT("Startfenster: Spielmodus %d, Stufe %d gewaehlt"), Modus, Stufe);
 	if (Modus == ETDModus::Aus)
 	{
@@ -2008,5 +2016,41 @@ void UTDKernplatz::StartfensterGewaehlt(int32 Modus, int32 Stufe)
 	{
 		Melde(TDT(TEXT("Freies Spiel mit Abwehr: Türme und Abwehr-Forschung findest du im MAM. Eine Bohrung startest du mit einem Abwehrkern neben einem Rohstoffknoten."),
 			TEXT("Free play with defense: turrets and defense research are in the MAM. Start a drilling with a Defense Core next to a resource node.")));
+	}
+}
+
+void UTDKernplatz::Fortschritt(int32 Schritt)
+{
+	if (TDBalance::Wert(TEXT("Spielmodus.Fortschritt"), 1.f) <= 0.f)
+	{
+		return;
+	}
+	UWorld* World = GetWorld();
+	APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
+	if (!mVorbereitung && PC && Schritt < 4)
+	{
+		mVorbereitung = CreateWidget<UTDVorbereitung>(PC, UTDVorbereitung::StaticClass());
+		if (mVorbereitung)
+		{
+			mVorbereitung->AddToViewport(40);
+		}
+	}
+	if (mVorbereitung)
+	{
+		mVorbereitung->SetzeSchritt(Schritt);
+		UE_LOG(LogFicsitTD, Log, TEXT("Vorbereitung: Schritt %d"), Schritt);
+	}
+	if (Schritt >= 4 && World)
+	{
+		FTimerHandle Zu;
+		TWeakObjectPtr<UTDKernplatz> Selbst(this);
+		World->GetTimerManager().SetTimer(Zu, FTimerDelegate::CreateLambda([Selbst]()
+		{
+			if (Selbst.IsValid() && Selbst->mVorbereitung)
+			{
+				Selbst->mVorbereitung->RemoveFromParent();
+				Selbst->mVorbereitung = nullptr;
+			}
+		}), 3.f, false);
 	}
 }

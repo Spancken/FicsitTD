@@ -624,3 +624,26 @@ public:
 	UFUNCTION()
 	void Klick() { if (mFenster) { mFenster->Waehle(mArt, mWert); } }
 };
+
+/** 18.11. (Marius: nach der Landung und nach der Modus-Wahl passiert lange sichtbar nichts): Fortschritt der Vorbereitung oben
+ *  in der Mitte - vier Schritte mit Sekunden, der laufende orange, erledigte gruen, am Ende "Bereit!". Steuert UTDKernplatz::Fortschritt. */
+UCLASS()
+class FICSITTD_API UTDVorbereitung : public UUserWidget
+{
+	GENERATED_BODY()
+public:
+	void SetzeSchritt(int32 Schritt);
+protected:
+	virtual TSharedRef<SWidget> RebuildWidget() override;
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+private:
+	void Zeige();
+	UPROPERTY()
+	TArray<TObjectPtr<class UTextBlock>> mZeilen;
+	UPROPERTY()
+	TObjectPtr<class UTextBlock> mTitel;
+	int32 mSchritt = 0;
+	float mSekunden = 0.f;
+	float mGesamt = 0.f;
+	float mTakt = 0.f;
+};

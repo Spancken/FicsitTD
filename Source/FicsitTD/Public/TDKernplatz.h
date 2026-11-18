@@ -104,6 +104,11 @@ public:
 	void StartfensterGewaehlt(int32 Modus, int32 Stufe);
 	UPROPERTY()
 	TObjectPtr<class UTDStartfenster> mStartfenster;
+	/** 18.11. (Marius: nach der Landung und nach der Wahl passiert lange sichtbar nichts): Fortschritt der Vorbereitung zeigen.
+	 *  0 Platz anfliegen, 1 Gelaende laden, 2 Plattform bauen, 3 Wege der Gegner berechnen, 4 bereit (schliesst nach 3 s) */
+	void Fortschritt(int32 Schritt);
+	UPROPERTY()
+	TObjectPtr<class UTDVorbereitung> mVorbereitung;
 private:
 	/** 0.9.6: automatische Kernplatz-Versuche (scheitert die Bodensuche, kommt ein anderer Platz dran) */
 	int32 mStartVersuche = 0;

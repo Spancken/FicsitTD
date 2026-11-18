@@ -4214,3 +4214,111 @@ void UTDStartfenster::NativeDestruct()
 	}
 	Super::NativeDestruct();
 }
+
+// ---------------------------------------------------------------------------------------------------------------------------
+// 18.11.: Fortschritt der Vorbereitung (Kernplatz anfliegen, Gelaende, Plattform, Netz)
+
+static FString VorbereitungSchritt(int32 i)
+{
+	switch (i)
+	{
+	case 0: return TDT(TEXT("Einsatzort anfliegen"), TEXT("Flying to the operation site"));
+	case 1: return TDT(TEXT("Gelände laden"), TEXT("Loading the terrain"));
+	case 2: return TDT(TEXT("Plattform und Abwehrkern bauen"), TEXT("Building platform and Defense Core"));
+	default: return TDT(TEXT("Wege der Gegner berechnen (bis zu 60 s)"), TEXT("Calculating enemy paths (up to 60 s)"));
+	}
+}
+
+TSharedRef<SWidget> UTDVorbereitung::RebuildWidget()
+{
+	if (WidgetTree && !WidgetTree->RootWidget)
+	{
+		UCanvasPanel* Flaeche = WidgetTree->ConstructWidget<UCanvasPanel>();
+		WidgetTree->RootWidget = Flaeche;
+		UBorder* Rahmen = WidgetTree->ConstructWidget<UBorder>();
+		Rahmen->SetBrush(FSlateRoundedBoxBrush(TDUI::C(24, 24, 24, 235), 6.f, TDUI::Akzent, 2.f));
+		Rahmen->SetPadding(FMargin(22.f, 14.f));
+		if (UCanvasPanelSlot* S = Flaeche->AddChildToCanvas(Rahmen))
+		{
+			S->SetAnchors(FAnchors(0.5f, 0.16f));
+			S->SetAlignment(FVector2D(0.5f, 0.f));
+			S->SetAutoSize(true);
+		}
+		UVerticalBox* Spalte = WidgetTree->ConstructWidget<UVerticalBox>();
+		Rahmen->AddChild(Spalte);
+		mTitel = TDUI::Text(WidgetTree, TDT(TEXT("FICSIT Tower Defense: Einsatzort wird vorbereitet"), TEXT("FICSIT Tower Defense: preparing your operation site")), 20, TDUI::Akzent, true);
+		Spalte->AddChildToVerticalBox(mTitel);
+		for (int32 i = 0; i < 4; ++i)
+		{
+			UTextBlock* Zeile = TDUI::Text(WidgetTree, VorbereitungSchritt(i), 16, TDUI::Grau);
+			if (UVerticalBoxSlot* S = Spalte->AddChildToVerticalBox(Zeile))
+			{
+				S->SetPadding(FMargin(0.f, i == 0 ? 10.f : 4.f, 0.f, 0.f));
+			}
+			mZeilen.Add(Zeile);
+		}
+		UTextBlock* Hinweis = TDUI::Text(WidgetTree, TDT(TEXT("Du kannst dich schon umsehen. Danach meldet sich ADA."), TEXT("Feel free to look around. ADA will brief you afterwards.")), 13, TDUI::Grau);
+		if (UVerticalBoxSlot* S = Spalte->AddChildToVerticalBox(Hinweis))
+		{
+			S->SetPadding(FMargin(0.f, 10.f, 0.f, 0.f));
+		}
+		Zeige();
+	}
+	return Super::RebuildWidget();
+}
+
+void UTDVorbereitung::SetzeSchritt(int32 Schritt)
+{
+	if (Schritt != mSchritt)
+	{
+		mSekunden = 0.f;
+	}
+	mSchritt = Schritt;
+	Zeige();
+}
+
+void UTDVorbereitung::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+{
+	Super::NativeTick(MyGeometry, InDeltaTime);
+	mSekunden += InDeltaTime;
+	mGesamt += InDeltaTime;
+	mTakt -= InDeltaTime;
+	if (mTakt <= 0.f)
+	{
+		mTakt = 0.25f;
+		Zeige();
+	}
+}
+
+void UTDVorbereitung::Zeige()
+{
+	if (mZeilen.Num() < 4)
+	{
+		return;
+	}
+	const int32 Punkte = 1 + (static_cast<int32>(mGesamt * 2.f) % 3);
+	for (int32 i = 0; i < 4; ++i)
+	{
+		if (i < mSchritt)
+		{
+			mZeilen[i]->SetText(FText::FromString(TDT(TEXT("Erledigt: "), TEXT("Done: ")) + VorbereitungSchritt(i)));
+			mZeilen[i]->SetColorAndOpacity(FSlateColor(TDUI::Gut));
+		}
+		else if (i == mSchritt)
+		{
+			mZeilen[i]->SetText(FText::FromString(VorbereitungSchritt(i) + FString(TEXT(" ")) + FString::ChrN(Punkte, TEXT('.'))
+				+ FString::Printf(TEXT("  %.0f s"), mSekunden)));
+			mZeilen[i]->SetColorAndOpacity(FSlateColor(TDUI::Akzent));
+		}
+		else
+		{
+			mZeilen[i]->SetText(FText::FromString(VorbereitungSchritt(i)));
+			mZeilen[i]->SetColorAndOpacity(FSlateColor(TDUI::Grau));
+		}
+	}
+	if (mTitel && mSchritt >= 4)
+	{
+		mTitel->SetText(FText::FromString(TDT(TEXT("Bereit! Dein Einsatz beginnt."), TEXT("Ready! Your operation begins."))));
+		mTitel->SetColorAndOpacity(FSlateColor(TDUI::Gut));
+	}
+}
