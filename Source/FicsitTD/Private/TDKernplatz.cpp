@@ -1883,6 +1883,32 @@ void UTDKernplatz::PruefeTDStart()
 			return;
 		}
 	}
+	// 18.11. (Standard Einsatz): eine bestehende Welt ohne Abwehrkern (Spielstand ohne gespeicherten Modus, z. B. die Fabrik eines
+	// Spielers, der den Mod gerade installiert hat) bekommt sonst den Standard Einsatz - HUB gesperrt, Plattform in der Fabrik.
+	// Merkmal: schon Bauten des Spielers in der Welt (ein neues Spiel hat hier noch keine). Dann Modus Aus und Hinweis.
+	if (TDBalance::Wert(TEXT("Spielmodus.BestehendeWeltAus"), 1.f) > 0.f)
+	{
+		int32 Bauten = 0;
+		for (TActorIterator<AFGBuildable> It(World); It && Bauten < 3; ++It)
+		{
+			if (!It->GetClass()->GetPathName().StartsWith(TEXT("/FicsitTD/")))
+			{
+				++Bauten;
+			}
+		}
+		if (Bauten > 0)
+		{
+			World->GetTimerManager().ClearTimer(mStartTimer);
+			if (USessionSettingsManager* Einstellungen = World->GetSubsystem<USessionSettingsManager>())
+			{
+				Einstellungen->ForceSetOptionValue(UTDGameInstanceModule::ModusId, FVariant(static_cast<int32>(ETDModus::Aus)), Einstellungen);
+			}
+			UE_LOG(LogFicsitTD, Log, TEXT("Kernplatz: bestehende Welt ohne Abwehrkern (Bauten vorhanden) - Spielmodus auf Aus gesetzt"));
+			Melde(TDT(TEXT("FICSIT Tower Defense ist in diesem Spielstand aus (bestehende Welt ohne Abwehrkern). Für einen Einsatz ein neues Spiel starten. Nur Türme und Abwehr ohne Wellen: /td modus abwehr"),
+				TEXT("FICSIT Tower Defense is off in this save (existing world without a Defense Core). Start a new game for an operation. Turrets and defense without waves only: /td modus abwehr")));
+			return;
+		}
+	}
 	const APlayerController* PC = World->GetFirstPlayerController();
 	APawn* Spieler = PC ? PC->GetPawn() : nullptr;
 	const ACharacter* Figur = Cast<ACharacter>(Spieler);

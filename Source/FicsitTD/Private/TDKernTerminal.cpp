@@ -9,6 +9,9 @@
 #include "TDTurretBase.h"
 #include "TDWaveSubsystem.h"
 #include "TDBalance.h"
+#include "TDGameInstanceModule.h"
+#include "Settings/FGUserSetting.h"
+#include "FGOptionInterface.h"
 #include "TDForschung.h"
 #include "TDPionier.h"
 #include "TDSprache.h"
@@ -3773,5 +3776,144 @@ void UTDKernTerminal::BaueStatistik()
 			S->SetPadding(FMargin(0.f, 6.f, 0.f, 0.f));
 		}
 		Abschnitt(Karte, 10.f);
+	}
+}
+
+// ---------------------------------------------------------------------------------------------------------------------------
+// 18.11.: Auswahl "Spielmodus" / "Stufe" im Menue "Neues Spiel"
+
+static FString AuswahlBeschreibung(const FString& Id, int32 Wert)
+{
+	if (Id == UTDGameInstanceModule::ModusId)
+	{
+		switch (Wert)
+		{
+		case ETDModus::Aus: return TDT(TEXT("Normales Satisfactory, der Mod greift nicht ein."), TEXT("Regular Satisfactory, the mod stays out of the way."));
+		case ETDModus::Einsatz: return TDT(TEXT("Abwehrkern an einem festen Platz, 50 Wellen in fünf Phasen. Deine Fabrik liefert die Munition."),
+			TEXT("Defense Core at a fixed site, 50 waves in five phases. Your factory makes the ammo."));
+		case ETDModus::Endlos: return TDT(TEXT("Wie Einsatz, aber Wellen auf Zeit aus einer Richtung, ohne Ende. Wie weit kommst du?"),
+			TEXT("Like Operation, but timed waves from one direction that never stop. How far can you get?"));
+		case ETDModus::Abwehr: return TDT(TEXT("Normales Satisfactory mit Türmen. Gekämpft wird nur, wenn du an einem Rohstoffknoten eine Bohrung startest."),
+			TEXT("Regular Satisfactory with turrets. You only fight when you start a drilling at a resource node."));
+		default: return FString();
+		}
+	}
+	switch (Wert)
+	{
+	case 0: return TDT(TEXT("Grasfelder Erkundung, Felsenwüste Normal, Nördlicher Wald Hart, Dünenwüste Albtraum."),
+		TEXT("Grass Fields Exploration, Rocky Desert Normal, Northern Forest Hard, Dune Desert Nightmare."));
+	case 1: return TDT(TEXT("Ohne Druck, zum Kennenlernen."), TEXT("No pressure, for getting to know the mod."));
+	case 2: return TDT(TEXT("Die vorgesehene Schwierigkeit."), TEXT("The intended difficulty."));
+	case 3: return TDT(TEXT("Mehr Fronten, frühere Eliten. Noch nicht fertig eingestellt."), TEXT("More fronts, earlier elites. Not fully balanced yet."));
+	default: return TDT(TEXT("Für Erfahrene. Noch nicht fertig eingestellt."), TEXT("For veterans. Not fully balanced yet."));
+	}
+}
+
+TSharedRef<SWidget> UTDAuswahlKarten::RebuildWidget()
+{
+	if (WidgetTree && !WidgetTree->RootWidget)
+	{
+		USizeBox* Breite = WidgetTree->ConstructWidget<USizeBox>();
+		Breite->SetMinDesiredWidth(560.f);
+		Breite->SetMaxDesiredWidth(760.f);
+		WidgetTree->RootWidget = Breite;
+		mListe = WidgetTree->ConstructWidget<UVerticalBox>();
+		Breite->AddChild(mListe);
+	}
+	return Super::RebuildWidget();
+}
+
+void UTDAuswahlKarten::Fuelle()
+{
+	const UFGUserSetting_IntSelector* Wahl = mUserSetting ? Cast<UFGUserSetting_IntSelector>(mUserSetting->ValueSelector) : nullptr;
+	if (!mListe || !Wahl || mWerte.Num() > 0)
+	{
+		return;
+	}
+	const FString Id = mUserSetting->StrId;
+	for (const FIntegerSelection& W : Wahl->IntegerSelectionValues)
+	{
+		UButton* Knopf = WidgetTree->ConstructWidget<UButton>();
+		FButtonStyle Stil;
+		Stil.SetNormal(FSlateNoResource());
+		Stil.SetHovered(FSlateRoundedBoxBrush(TDUI::C(255, 255, 255, 24), 3.f));
+		Stil.SetPressed(FSlateRoundedBoxBrush(TDUI::C(255, 255, 255, 40), 3.f));
+		Stil.SetNormalPadding(FMargin(0.f));
+		Stil.SetPressedPadding(FMargin(0.f, 1.f, 0.f, -1.f));
+		Knopf->SetStyle(Stil);
+		UBorder* Feld = WidgetTree->ConstructWidget<UBorder>();
+		Feld->SetBrush(FSlateRoundedBoxBrush(TDUI::C(31, 31, 31, 220), 3.f));
+		Feld->SetPadding(FMargin(12.f, 6.f));
+		UVerticalBox* Inhalt = WidgetTree->ConstructWidget<UVerticalBox>();
+		UTextBlock* Name = TDUI::Text(WidgetTree, W.Name.ToString(), 17, TDUI::Hell, true);
+		Inhalt->AddChildToVerticalBox(Name);
+		const FString Satz = AuswahlBeschreibung(Id, W.Value);
+		if (!Satz.IsEmpty())
+		{
+			UTextBlock* Text = TDUI::Text(WidgetTree, Satz, 13, TDUI::C(200, 200, 200));
+			Text->SetAutoWrapText(true);
+			Inhalt->AddChildToVerticalBox(Text);
+		}
+		Feld->AddChild(Inhalt);
+		Knopf->AddChild(Feld);
+		if (UVerticalBoxSlot* Platz = mListe->AddChildToVerticalBox(Knopf))
+		{
+			Platz->SetPadding(FMargin(0.f, 2.f));
+		}
+		UTDAuswahlKlick* Klick = NewObject<UTDAuswahlKlick>(this);
+		Klick->mAuswahl = this;
+		Klick->mWert = W.Value;
+		Knopf->OnClicked.AddDynamic(Klick, &UTDAuswahlKlick::Klick);
+		mKlicks.Add(Klick);
+		mFelder.Add(Feld);
+		mNamen.Add(Name);
+		mWerte.Add(W.Value);
+	}
+	mGezeigt = INDEX_NONE;
+}
+
+int32 UTDAuswahlKarten::AktuellerWert() const
+{
+	const UFGUserSetting_IntSelector* Wahl = mUserSetting ? Cast<UFGUserSetting_IntSelector>(mUserSetting->ValueSelector) : nullptr;
+	const int32 Standard = Wahl ? Wahl->DefaultValue : 0;
+	if (IFGOptionInterface* Optionen = mOptionInterface.GetInterface())
+	{
+		const FVariant V = Optionen->GetOptionValue(GetSettingIdentifier(), FVariant(Standard));
+		return V.GetType() == EVariantTypes::Int32 ? V.GetValue<int32>() : Standard;
+	}
+	return Standard;
+}
+
+void UTDAuswahlKarten::Waehle(int32 Wert)
+{
+	if (IFGOptionInterface* Optionen = mOptionInterface.GetInterface())
+	{
+		Optionen->SetOptionValue(GetSettingIdentifier(), FVariant(Wert));
+		UE_LOG(LogFicsitTD, Log, TEXT("Auswahl %s: %d"), *GetSettingIdentifier(), Wert);
+	}
+	mGezeigt = INDEX_NONE;
+}
+
+void UTDAuswahlKarten::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+{
+	Super::NativeTick(MyGeometry, InDeltaTime);
+	Fuelle();
+	mTakt -= InDeltaTime;
+	if (mTakt > 0.f && mGezeigt != INDEX_NONE)
+	{
+		return;
+	}
+	mTakt = 0.2f;
+	const int32 Wert = AktuellerWert();
+	if (Wert == mGezeigt)
+	{
+		return;
+	}
+	mGezeigt = Wert;
+	for (int32 i = 0; i < mWerte.Num(); ++i)
+	{
+		const bool bGewaehlt = mWerte[i] == Wert;
+		mFelder[i]->SetBrush(FSlateRoundedBoxBrush(bGewaehlt ? TDUI::Akzent : TDUI::C(31, 31, 31, 220), 3.f));
+		mNamen[i]->SetColorAndOpacity(FSlateColor(bGewaehlt ? TDUI::DunkelText : TDUI::Hell));
 	}
 }

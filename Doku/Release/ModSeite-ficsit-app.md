@@ -41,7 +41,7 @@ Take two roles fully or three halfway. Your strongest role shows as a badge in t
 ☕ **Support the mod:** https://ko-fi.com/mariusspancken
 
 ## Quick start
-1. Back up your saves. Start a **new game** and, in the session settings category **FICSIT Tower Defense**, set **Game Mode** to **Operation** (or **Endless waves** / **Free play with defense**; the help text explains each mode).
+1. Back up your saves. Start a **new game** and, in the session settings category **FICSIT Tower Defense**, **Game Mode** is already set to **Operation** (or pick **Endless waves** / **Free play with defense**). Existing worlds without a Defense Core stay regular Satisfactory.
 2. After landing, the mod builds a platform with the **Defense Core** near your start, and ADA briefs you.
 3. Build miners, smelters and constructors, then a **Bolt Turret**. Feed it rebar by conveyor and connect power.
 4. Press **E** at the Core and hit **Start wave** when you are ready. There is no timer.

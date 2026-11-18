@@ -1,6 +1,8 @@
 #include "TDGameInstanceModule.h"
 #include "FicsitTDModule.h"
 #include "TDSprache.h"
+#include "TDBalance.h"
+#include "TDKernTerminal.h"
 #include "SessionSettings/SessionSetting.h"
 #include "Settings/FGUserSetting.h"
 #include "Settings/FGUserSettingCategory.h"   // 16.11.: kam bisher nur zufaellig ueber die Unity-Gruppe mit
@@ -68,6 +70,9 @@ void UTDGameInstanceModule::SetzeTexte()
 			"Details in the player guide: spancken.github.io/FicsitTD")));
 	if (UFGUserSetting_IntSelector* Wahl = Cast<UFGUserSetting_IntSelector>(mModus->ValueSelector))
 	{
+		// 18.11. (Marius: Tester finden die Einstellung kaum): neue Spiele stehen auf Einsatz. Bestehende Welten ohne gespeicherten Modus
+		// bekaemen damit auch Einsatz - davor schuetzt UTDKernplatz::PruefeTDStart (eigene Bauten, kein Kern -> Modus Aus).
+		Wahl->DefaultValue = ETDModus::Einsatz;
 		// 0.11: Eintrag fuer Wert 2 zur Laufzeit anlegen (das Asset kennt nur 0 und 1)
 		if (!Wahl->IntegerSelectionValues.ContainsByPredicate([](const FIntegerSelection& W) { return W.Value == ETDModus::Endlos; }))
 		{
@@ -99,6 +104,15 @@ void UTDGameInstanceModule::SetzeTexte()
 			{
 				W.Name = FText::FromString(TDT(TEXT("Freies Spiel mit Abwehr – HUB, Türme, Bohrung"), TEXT("Free play with defense – HUB, turrets, drilling")));
 			}
+		}
+	}
+	// 18.11.: eigene, gut lesbare Auswahl statt der schmalen Aufklappliste (Schalter Spielmodus.EigeneAuswahl)
+	if (TDBalance::Wert(TEXT("Spielmodus.EigeneAuswahl"), 1.f) > 0.f)
+	{
+		mModus->CustomValueSelectorWidget = TSoftClassPtr<UFGOptionsValueController>(UTDAuswahlKarten::StaticClass());
+		if (mStufe)
+		{
+			mStufe->CustomValueSelectorWidget = TSoftClassPtr<UFGOptionsValueController>(UTDAuswahlKarten::StaticClass());
 		}
 	}
 	for (const FSettingsWidgetLocationDescriptor& Ort : mModus->WidgetsToCreate)

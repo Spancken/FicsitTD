@@ -4,6 +4,7 @@
 #include "Blueprint/UserWidget.h"
 #include "UI/FGInteractWidget.h"
 #include "TDEinsatz.h"
+#include "UI/FGOptionsValueController.h"
 #include "TDKernTerminal.generated.h"
 
 class ATDDefenseCore;
@@ -533,4 +534,45 @@ private:
 	TObjectPtr<class UImage> mRolle;
 	int32 mRolleZweig = -2;
 	FTimerHandle mTimer;
+};
+
+/** 18.11. (Marius: im Menue "Neues Spiel" war die Auswahl ein schmaler Streifen, fuer Tester schwer zu finden): eigene Auswahl fuer
+ *  "Spielmodus" und "Stufe" - jede Moeglichkeit als gut lesbare Zeile mit Namen und einem Satz Beschreibung, die gewaehlte orange.
+ *  Wird als CustomValueSelectorWidget der beiden Sitzungseinstellungen gesetzt (UTDGameInstanceModule). */
+UCLASS()
+class FICSITTD_API UTDAuswahlKarten : public UFGOptionsValueController
+{
+	GENERATED_BODY()
+public:
+	void Waehle(int32 Wert);
+protected:
+	virtual TSharedRef<SWidget> RebuildWidget() override;
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+private:
+	void Fuelle();
+	int32 AktuellerWert() const;
+	UPROPERTY()
+	TObjectPtr<class UVerticalBox> mListe;
+	UPROPERTY()
+	TArray<TObjectPtr<class UBorder>> mFelder;
+	UPROPERTY()
+	TArray<TObjectPtr<class UTextBlock>> mNamen;
+	UPROPERTY()
+	TArray<TObjectPtr<class UTDAuswahlKlick>> mKlicks;
+	TArray<int32> mWerte;
+	int32 mGezeigt = INDEX_NONE;
+	float mTakt = 0.f;
+};
+
+/** Klick auf eine Zeile von UTDAuswahlKarten (UButton::OnClicked kennt keinen Parameter) */
+UCLASS()
+class FICSITTD_API UTDAuswahlKlick : public UObject
+{
+	GENERATED_BODY()
+public:
+	UPROPERTY()
+	TObjectPtr<UTDAuswahlKarten> mAuswahl;
+	int32 mWert = 0;
+	UFUNCTION()
+	void Klick() { if (mAuswahl) { mAuswahl->Waehle(mWert); } }
 };
