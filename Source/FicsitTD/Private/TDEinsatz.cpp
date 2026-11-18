@@ -87,6 +87,8 @@ static const TPair<const TCHAR*, int32> StartRessourcen[] = {
 	{ TEXT("/Game/FactoryGame/Resource/Parts/GenericBiomass/Desc_Leaves.Desc_Leaves_C"), 200 },
 	{ TEXT("/Game/FactoryGame/Resource/Parts/GenericBiomass/Desc_Wood.Desc_Wood_C"), 100 },
 	{ TEXT("/Game/FactoryGame/Resource/Parts/GenericBiomass/Desc_GenericBiomass.Desc_GenericBiomass_C"), 300 },   // Test 0.27: Strom fuer HUB-Brenner (~30 min)
+	// 18.11. (B23, Handspiel Marius: "wirkt am Anfang sehr langsam"): Klingenlaeufer von Anfang an; im Laden bleiben sie als Ersatz
+	{ TEXT("/Game/FactoryGame/Resource/Equipment/JumpingStilts/BP_EquipmentDescriptorJumpingStilts.BP_EquipmentDescriptorJumpingStilts_C"), 1 },
 };
 
 /** Laden (Einsatz-Konzept Abschnitt 4): Preis = Grundpreis x (1 + Aufschlag x bisher gekauft); Paket = Gebaeude je Kauf;
@@ -151,6 +153,10 @@ static const FTDLadenEintrag LadenListe[] = {
 	{ TEXT("Klingenläufer"), 8, 0.f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_AssemblerMk1.Recipe_AssemblerMk1_C") },
 	{ TEXT("Gewehr"), 10, 0.f, 1, TEXT("/FicsitTD/Buildings/GunTurret/Recipe_TD_GunTurret.Recipe_TD_GunTurret_C") },
 	{ TEXT("Nobelisken-Zünder"), 12, 0.f, 1, TEXT("/FicsitTD/Buildings/NobeliskLauncher/Recipe_TD_NobeliskLauncher.Recipe_TD_NobeliskLauncher_C") },
+	// 18.11. (Marius: Bewegung spaeter kaufen): Jetpack erst mit Oel (Raffinerie im MAM, der Jetpack fliegt mit Treibstoff), danach das
+	// Hover-Pack mit dem Fertiger (spaetes Spiel, braucht Stromleitungen in der Naehe)
+	{ TEXT("Jetpack"), 16, 0.f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_OilRefinery.Recipe_OilRefinery_C") },
+	{ TEXT("Hover-Pack"), 24, 0.f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_ManufacturerMk1.Recipe_ManufacturerMk1_C") },
 	// Kern reparieren (Marius 03.11.2026, 0.57): teuer und mit jedem Kauf teurer; Paket = Prozent der Kern-LP
 	{ TEXT("Kernreparatur"), 15, 0.5f, 25, TEXT("/FicsitTD/Buildings/DefenseCore/Recipe_TD_DefenseCore.Recipe_TD_DefenseCore_C") },
 };
@@ -172,6 +178,8 @@ static const FTDSpielerPosten SpielerPosten[] = {
 	{ TEXT("Klingenläufer"), 0, 1, TEXT("/Game/FactoryGame/Resource/Equipment/JumpingStilts/BP_EquipmentDescriptorJumpingStilts.BP_EquipmentDescriptorJumpingStilts_C") },
 	{ TEXT("Gewehr"), 0, 1, TEXT("/Game/FactoryGame/Resource/Equipment/Rifle/BP_EquipmentDescriptorRifle.BP_EquipmentDescriptorRifle_C") },
 	{ TEXT("Nobelisken-Zünder"), 0, 1, TEXT("/Game/FactoryGame/Resource/Equipment/NobeliskDetonator/BP_EquipmentDescriptorNobeliskDetonator.BP_EquipmentDescriptorNobeliskDetonator_C") },
+	{ TEXT("Jetpack"), 0, 1, TEXT("/Game/FactoryGame/Resource/Equipment/JetPack/BP_EquipmentDescriptorJetPack.BP_EquipmentDescriptorJetPack_C") },
+	{ TEXT("Hover-Pack"), 0, 1, TEXT("/Game/FactoryGame/Resource/Equipment/HoverPack/BP_EquipmentDescriptorHoverPack.BP_EquipmentDescriptorHoverPack_C") },
 	{ TEXT("Kernreparatur"), 3, 0, TEXT("/Game/FactoryGame/Resource/Parts/IronPlateReinforced/Desc_IronPlateReinforced.Desc_IronPlateReinforced_C") },
 };
 static const FTDSpielerPosten* SpielerFuer(const FString& Key)
@@ -283,6 +291,7 @@ static FString TDAnzeige(const FString& Key)
 		{ TEXT("Fabrik"), TEXT("Factory") }, { TEXT("Fluessigkeitspuffer"), TEXT("Fluid Buffer") }, { TEXT("Inventarplätze"), TEXT("Inventory Slots") },
 		{ TEXT("Handplatz"), TEXT("Hand Slot") }, { TEXT("Armierpistole"), TEXT("Rebar Gun") }, { TEXT("Klingenläufer"), TEXT("Blade Runners") },
 		{ TEXT("Gewehr"), TEXT("Rifle") }, { TEXT("Nobelisken-Zünder"), TEXT("Nobelisk Detonator") }, { TEXT("Kernreparatur"), TEXT("Core Repair") },
+		{ TEXT("Jetpack"), TEXT("Jetpack") }, { TEXT("Hover-Pack"), TEXT("Hover Pack") },
 	};
 	const FString* Gefunden = En.Find(Key);
 	return Gefunden ? *Gefunden : Key;

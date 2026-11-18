@@ -11,7 +11,7 @@
 - **Game Mode "Free play with defense":** regular Satisfactory plus turrets and an optional drilling challenge at resource nodes. Nothing attacks unless you start it.
 - **Operation phases:** every tenth wave closes a phase with a short report and a bonus pick; a final report and a best result per core site and difficulty end each run.
 - **Ammo lasts longer:** one item fires several shots (basic ammo 4, advanced 3, special 2; rifle ammo 3/2/1 magazines). The turret window shows consumption per minute and how many turrets a Mk.1 belt can feed.
-- New in the MAM: Conveyor Belt Mk.4 and Mk.5, Miner Mk.2 and Mk.3. Power Storage in the shop after Coal Power.
+- New in the MAM: Conveyor Belt Mk.4 and Mk.5, Miner Mk.2 and Mk.3. Power Storage in the shop after Coal Power. You start with Blade Runners; the Jetpack (after Refinery) and the Hover Pack (after Heavy Industry) are in the shop.
 - Turrets shield their ammo storage; researching the Singularity unlocks the Hazmat Suit and Iodine Filters.
 - ADA comments on new enemy species and boss waves.
 
@@ -52,7 +52,7 @@
 - Spielmodus „Freies Spiel mit Abwehr“: normales Satisfactory mit Türmen und Bohrung auf Knopfdruck an Rohstoffknoten.
 - Einsatz in Phasen: jede zehnte Welle schließt eine Phase mit Kurzbericht und Bonuswahl ab, ein Abschlussbericht und ein Bestwert je Kernplatz und Stufe beenden den Lauf.
 - Munition hält länger: Ein Stück reicht für mehrere Schuss (Grundmunition 4, bessere 3, Spezialmunition 2; Gewehrmunition 3/2/1 Magazine). Das Turmfenster zeigt den Verbrauch pro Minute und wie viele Türme ein Band Mk1 versorgt.
-- Neu im MAM: Förderband Mk4 und Mk5, Miner Mk2 und Mk3. Akku im Laden nach Kohlekraft.
+- Neu im MAM: Förderband Mk4 und Mk5, Miner Mk2 und Mk3. Akku im Laden nach Kohlekraft. Klingenläufer gibt es von Anfang an, Jetpack (nach Raffinerie) und Hover-Pack (nach Schwerindustrie) im Laden.
 - Türme schirmen ihre Munition ab; die Forschung Singularität schaltet Hazmat-Anzug und Iod-Filter frei.
 - ADA kommentiert neue Gegnerarten und Bosswellen.
 
