@@ -1,12 +1,12 @@
 # ficsit.app – Texte für die Mod-Seite (zum Einfügen, Englisch)
 
-> **Stand 0.10.2** (15.11.2026, live auf ficsit.app). Aufbau nach Marius 15.11.: zuerst Beschreibung, Bilder gesammelt unter „Screenshots“; Heldenbild, Marksman und Commander von Marius herausgenommen. Danach (Marius: „zu viele, zu groß“) nur drei Vorschaubilder 480 × 270 (`docs/img/klein/`) in einer Reihe, verlinkt auf die großen Fassungen. ficsit.app zeigt Bilder in Originalgröße, höchstens Spaltenbreite. Neu: englische Screenshots aus dem Plan `Screenshots-EN` (`hero`, `fight`, `wave-preview`, `pioneer-tab`, `role-*`, `core-menu` in `docs/img/`), Logistik-Satz korrigiert (Splitter/Verbinder/Lager mit Kontingent). Bilder liegen im Repo unter `docs/img/` und werden über GitHub Pages ausgeliefert (`https://spancken.github.io/FicsitTD/`). Sie erscheinen erst, wenn `docs/` gepusht und Pages eingeschaltet ist. `https://ko-fi.com/mariusspancken` durch die echte Ko-fi-Adresse ersetzen (auch in `docs/index.html`).
+> **Entwurf 0.11.0** (18.11.2026, live ist noch 0.10.2). Beim Upload die Full description komplett ersetzen. Aufbau nach Marius 15.11.: zuerst Beschreibung, Bilder gesammelt unter „Screenshots“; Heldenbild, Marksman und Commander von Marius herausgenommen. Danach (Marius: „zu viele, zu groß“) nur drei Vorschaubilder 480 × 270 (`docs/img/klein/`) in einer Reihe, verlinkt auf die großen Fassungen. ficsit.app zeigt Bilder in Originalgröße, höchstens Spaltenbreite. Neu: englische Screenshots aus dem Plan `Screenshots-EN` (`hero`, `fight`, `wave-preview`, `pioneer-tab`, `role-*`, `core-menu` in `docs/img/`), Logistik-Satz korrigiert (Splitter/Verbinder/Lager mit Kontingent). Bilder liegen im Repo unter `docs/img/` und werden über GitHub Pages ausgeliefert (`https://spancken.github.io/FicsitTD/`). Sie erscheinen erst, wenn `docs/` gepusht und Pages eingeschaltet ist. `https://ko-fi.com/mariusspancken` durch die echte Ko-fi-Adresse ersetzen (auch in `docs/index.html`).
 
 Mod reference: `FicsitTD` (permanent). Name: **FICSIT Tower Defense**. Sichtbarkeit: **Hidden** (Fremdtest).
 
 ## Short description (max. ~200 chars)
 
-Factory-fed tower defense: real ammo chains feed your turrets. Hold a FICSIT Defense Core through 50 waves. Alpha.
+Factory-fed tower defense: real ammo chains feed your turrets. 50-wave operations, endless waves or free play with drilling. Alpha.
 
 ## Full description (Markdown)
 
@@ -19,11 +19,12 @@ Factory-fed tower defense: real ammo chains feed your turrets. Hold a FICSIT Def
 
 FICSIT Tower Defense turns Satisfactory into a tower defense that lives off your factory. A FICSIT Defense Core stands in your start biome, and waves of native fauna attack it from up to three fronts. Every turret fires **real ammunition from your own production lines**, delivered by conveyor belt or pipe. Fifty waves lead you from simple iron rebar to plasma flames.
 
-## 🆕 What's new in 0.10.2
-- **The Pioneer (0.10.0):** you fight alongside your turrets, earn ranks and pick talents in four roles (details below).
-- **Real game items (0.10.0):** FICSIT Coupons are the game's Coupon item, research is paid with the game's **Hard Drives**. Old saves are converted when loaded.
-- **Game Mode menu (0.10.1):** a new session settings category **FICSIT Tower Defense** with a **Game Mode** dropdown (Off / Operation) and a help text for each mode. More modes will follow.
-- **Fixes (0.10.1–0.10.2):** crash when a save was loaded twice within a few seconds, fronts no longer discarded right after loading, ADA follows the mod language, Core and Tank Trap show their real maximum health, chat messages point to the **Start wave** button, diagnostic tick measurements only run in developer mode.
+## 🆕 What's new in 0.11
+- **Three ways to play:** in the session settings category **FICSIT Tower Defense**, pick **Operation** (50 waves), **Endless waves** (timed waves from one direction that never stop – how far can you get?) or **Free play with defense** (regular Satisfactory with turrets; drill at resource nodes when *you* want a fight).
+- **Operation phases:** a short report and a bonus pick after every tenth wave, a final report and a best result per core site and difficulty.
+- **Ammo lasts longer:** one item fires several shots (basic 4, advanced 3, special 2). The turret window shows consumption per minute and how many turrets a Mk.1 belt feeds. Belts Mk.4/Mk.5 and Miners Mk.2/Mk.3 in the MAM.
+- **Balance:** elites from wave 16 on Normal, Rifle Turret master tier +25 % fire rate, difficulty in the session settings.
+- **Fixes:** enemies no longer get stuck on ore deposits, crab nests and bushes, the wave panel fits large waves, cleaner turret models, one chat line per wave.
 
 ### The Pioneer
 
@@ -40,12 +41,13 @@ Take two roles fully or three halfway. Your strongest role shows as a badge in t
 ☕ **Support the mod:** https://ko-fi.com/mariusspancken
 
 ## Quick start
-1. Back up your saves. Start a **new game** and, in the session settings category **FICSIT Tower Defense**, set **Game Mode** to **Operation** (the help text explains each mode).
+1. Back up your saves. Start a **new game** and, in the session settings category **FICSIT Tower Defense**, set **Game Mode** to **Operation** (or **Endless waves** / **Free play with defense**; the help text explains each mode).
 2. After landing, the mod builds a platform with the **Defense Core** near your start, and ADA briefs you.
 3. Build miners, smelters and constructors, then a **Bolt Turret**. Feed it rebar by conveyor and connect power.
 4. Press **E** at the Core and hit **Start wave** when you are ready. There is no timer.
 
 ## What you get
+- **Three game modes:** Operation (50 waves), Endless waves (timed, never ends, best result per difficulty) and Free play with defense (regular Satisfactory plus turrets and an optional drilling challenge).
 - **An operation of 50 waves** in five phases with a boss every tenth wave, elites and new enemy types: Hogs, Stingers, forest, desert and water Spitters, Nuclear Hogs and Johnny.
 - **5 turret lines with real ammo chains:** Bolt Turret (rebar → piercing → shrapnel/stun → explosive), Rifle Turret (rifle ammo → homing/armor-piercing → incendiary → turbo), Nobelisk Launcher (nobelisk → gas/pulse → cluster), Tesla Coil (power, chain lightning or overload) and Flamethrower (fuel → turbofuel → rocket fuel → ionized fuel). Late game: Sky Tower (flyers still in development) and Singularity Launcher (Endless mode, after wave 50).
 - **Turret levels 1–5** bought with Coupons in the turret window, visible on the model. Level 5 unlocks a master ability per turret. Pick a **doctrine** for your main line.
@@ -62,10 +64,11 @@ Take two roles fully or three halfway. Your strongest role shows as a badge in t
 
 *Click a picture for full size.*
 
-## Status: Alpha (0.10.2)
+## Status: Alpha (0.11.0)
 - Steam and Epic, Windows. **Single-player only**; multiplayer and dedicated servers are not supported.
 - Balance is work in progress; the target length is 50 waves.
-- **Known issues** (stuck enemies, Sky Tower without flyers yet, Tesla power spikes, retry wave untested and more): https://spancken.github.io/FicsitTD/#issues
+- Hard and Nightmare are not fully balanced yet.
+- **Known issues** (occasional stuck enemies, Sky Tower without flyers yet, Tesla power spikes, retry wave untested and more): https://spancken.github.io/FicsitTD/#issues
 
 ## Feedback
 Report bugs or suggest ideas right in the game: Core Menu → **Report bug / idea**. It opens a prefilled GitHub issue in your browser and a folder with your log and a screenshot. Or directly: https://github.com/Spancken/FicsitTD/issues
@@ -80,34 +83,7 @@ This mod was developed with substantial help of AI (Anthropic Claude): most of t
 
 ## Changelog für die nächste hochgeladene Version
 
-> **Entwurf 0.11 (unveröffentlicht, Stand 17.11.2026, erzeugt mit `python Tests\pruefe_konsistenz.py --changelog`, vor dem Upload neu erzeugen):**
-> **New**
-> - New Game Mode “Endless waves”: timed waves from one direction that never stop – build and keep your turrets supplied.
-> - New Game Mode “Free play with defense”: regular Satisfactory plus turrets and an optional drilling challenge at resource nodes – nothing attacks unless you start it.
-> - ADA now comments on new enemy species and boss waves.
-> - Turrets shield their ammo storage; researching the Singularity unlocks the Hazmat Suit and Iodine Filters.
-> - Power Storage is now available in the shop after researching Coal Power.
->
-> **Changed**
-> - Game Mode “Off” is now plain Satisfactory (no turret recipes, no defense research); old saves switch with `/td modus einsatz`.
-> - Operation: the test jump, Free Build and “Restart” are developer tools now – a new run is a new game. Choose the difficulty in the session settings (default: by start location); Hard and Nightmare were retuned and are marked untested. Every tenth wave closes a phase with a short report and a bonus pick; a final report and a best result per core site and difficulty end each run.
-> - Fewer chat lines after each wave: one summary line, details in the Core Menu. Endless waves: from wave 60 on, more enemies and more elites.
->
-> **Balance**
-> - Endless waves: enemies keep getting tougher after wave 50 so there is always a best run to beat; slightly smaller waves and more time between waves on Normal. Drilling: the drill repairs itself between waves, more HP on Medium and Hard.
-> - Ammo now lasts longer: one item fires several shots (basic ammo 4, advanced 3, special 2; rifle ammo 3/2/1 magazines). The turret window shows consumption per minute and how many turrets a Mk.1 belt can feed. New in the MAM: Conveyor Belt Mk.4 and Mk.5, Miner Mk.2 and Mk.3.
->
-> **Fixed**
-> - Fewer enemies stuck at cliffs next to a front's start point.
-> - Fewer enemies stuck at cliff overhangs.
-> - Free play with defense: research no longer waits for wave numbers, destroyed buildings refund their materials during drilling and defenses heal each drilling wave, drilling only works at real resource nodes, talent points are capped at 15. Operation: after ending an operation the world stays free to build, advanced game settings make a run unranked, the Core bonus now permanently adds 10 % Core HP and unclaimed bonuses are kept. Endless waves: the timer keeps running while enemies are still queued, an unfinished boss wave gives no break or bonus, the shop is open during waves, no saves per wave.
-> - Towers and buildings: status light and power socket are now part of the base (no floating lamp, no protruding power pole), build clearance includes the conveyor input, darker panels brightened.
-> - Defense gate: power socket built into the pillar, status light seated on its mount. Darker patches on towers and buildings removed (ambient occlusion re-baked).
-> - Removed the floating black panels next to towers and buildings (inherited fog planes of the copied vanilla buildings).
-> - Towers and buildings: removed flickering overlapping surfaces.
-> - Free play with defense: drilling rewards and Pioneer rank belong to the save, not to a single Defense Core.
-> - Wave saves now carry the session name, and "Retry wave" only loads a save of the current game. Turrets and defenses can no longer be dismantled near the Core during a wave. Research unlocked "from wave N" opens after the previous wave ends, not during it.
-
+> **0.11.0:** Text in `Changelog-0.11.0.md` (Abschnitt English), Stand 18.11.2026. Vor dem Upload die offenen Punkte dort abhaken.
 
 **0.10.2 (Tag `v0.10.2`, G2 DE 12/14 mit bekanntem Felspfeiler-Rest, EN 5/5, G5 bestanden):**
 

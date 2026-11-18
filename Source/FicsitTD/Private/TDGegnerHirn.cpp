@@ -1084,7 +1084,27 @@ void UTDGegnerHirn::Marschiere(AFGCreature* Kreatur, float DeltaTime)
 				Wellen->SperreKlippe(KapselKlippe);
 			}
 		}
-		const FString Zustand = Diagnose() + TEXT(" | vorn: ") + Vorn + TEXT(" | Antrieb: ") + Antrieb + TEXT(" | Kapsel: ") + Kapselprobe;
+		// 18.11. (Diagnose, 9 Faelle seit 17.11.: grosse Stinger am Startpunkt Nordwesten, MOVE_NavWalking, Tempo voll, Boden nicht begehbar):
+		// warum bleiben sie im NavWalking, obwohl die Pflege jede Sekunde auf Walking schaltet? Engine verlaesst NavWalking nur, wenn
+		// FindTeleportSpot einen freien Platz findet (TryToLeaveNavWalking). Dazu: welches Netz gilt fuer die Groesse, liegt darunter Netz?
+		FString NavDiag;
+		if (UCharacterMovementComponent* NB = Kreatur->GetCharacterMovement(); NB && NB->MovementMode == MOVE_NavWalking)
+		{
+			FVector Frei = Vorher;
+			const bool bFrei = GetWorld()->FindTeleportSpot(Kreatur, Frei, Kreatur->GetActorRotation());
+			NB->SetMovementMode(MOVE_Walking);
+			const FString Danach = UEnum::GetValueAsString(NB->MovementMode.GetValue());
+			const FNavAgentProperties& Agent = Kreatur->GetNavAgentPropertiesRef();
+			UNavigationSystemV1* NS = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
+			const ANavigationData* ND = NS ? NS->GetNavDataForProps(Agent, Vorher) : nullptr;
+			FNavLocation Unter;
+			const bool bUnter = ND && NS->ProjectPointToNavigation(Vorher, Unter, FVector(100.f, 100.f, 300.f), ND);
+			NavDiag = FString::Printf(TEXT(" | NavWalking: freier Platz %s (%.0f cm entfernt), nach Umschalten %s, Agent Radius %.0f Hoehe %.0f, Netz %s, darunter Netz %s%s"),
+				bFrei ? TEXT("ja") : TEXT("NEIN"), FVector::Dist(Frei, Vorher), *Danach, Agent.AgentRadius, Agent.AgentHeight,
+				ND ? *ND->GetName() : TEXT("-"), bUnter ? TEXT("ja") : TEXT("NEIN"),
+				bUnter ? *FString::Printf(TEXT(" (%.0f cm tiefer)"), Vorher.Z - Unter.Location.Z) : TEXT(""));
+		}
+		const FString Zustand = Diagnose() + TEXT(" | vorn: ") + Vorn + TEXT(" | Antrieb: ") + Antrieb + TEXT(" | Kapsel: ") + Kapselprobe + NavDiag;
 		// 0.78.1 (Pruefstand: versetzte Gegner fielen bis -100 km): nur auf echten Boden versetzen - von 5 m ueber dem Wegpunkt
 		// nach unten suchen; ohne Boden in 20 m bleibt er stehen und wird beim naechsten Mal weiter vorn versucht
 		FHitResult Boden;

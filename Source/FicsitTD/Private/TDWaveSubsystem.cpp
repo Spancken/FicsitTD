@@ -956,6 +956,16 @@ void UTDWaveSubsystem::FrontenFuer(ATDDefenseCore* Kern)
 	}
 }
 
+FString UTDWaveSubsystem::FrontenSignatur() const
+{
+	TArray<FString> Teile;
+	for (const FTDFront& F : mFronten)
+	{
+		Teile.Add(Himmelsrichtung(F.Winkel, true) + (F.Weg > 0.f ? TEXT("") : TEXT("?")));
+	}
+	return FString::Printf(TEXT("%d gueltig: %s"), mGueltigeRichtungen, *FString::Join(Teile, TEXT(", ")));
+}
+
 void UTDWaveSubsystem::SucheFronten(const FVector& Mitte)
 {
 	UWorld* World = GetWorld();
@@ -966,6 +976,7 @@ void UTDWaveSubsystem::SucheFronten(const FVector& Mitte)
 
 	// je Richtung der beste gepruefte Punkt (kleinster Umweg), sonst ein Ersatzpunkt mit Boden ohne Wasser
 	TArray<FTDFront> Gueltig, Ersatz;
+	TArray<FString> Richtungen;
 	int32 OhneBoden = 0, Wasser = 0, ZuHoch = 0, OhneNetz = 0, OhnePfad = 0, Teilweise = 0, Umwege = 0, Tuerme = 0, WasserWeg = 0;
 	for (int32 r = 0; r < 16; ++r)
 	{
@@ -973,6 +984,7 @@ void UTDWaveSubsystem::SucheFronten(const FVector& Mitte)
 		FTDFront Beste, ErsatzPunkt;
 		float BesterUmweg = TNumericLimits<float>::Max();
 		bool bErsatz = false;
+		FString Grund;   // 18.11.: je Abstand das Ergebnis fuers Richtungsprotokoll
 		for (const float Abstand : { S.MinAbstand, 0.5f * (S.MinAbstand + S.MaxAbstand), S.MaxAbstand })
 		{
 			bool bTreffer = false, bWasser = false;
@@ -980,6 +992,7 @@ void UTDWaveSubsystem::SucheFronten(const FVector& Mitte)
 			if (!bTreffer || bWasser || FMath::Abs(Ort.Z - Mitte.Z) > 4000.f)
 			{
 				(!bTreffer ? OhneBoden : bWasser ? Wasser : ZuHoch)++;
+				Grund += !bTreffer ? TEXT(" Boden-") : bWasser ? TEXT(" Wasser") : TEXT(" hoch");
 				continue;
 			}
 			if (NaheVerteidigung(World, Ort))
@@ -997,12 +1010,14 @@ void UTDWaveSubsystem::SucheFronten(const FVector& Mitte)
 			if (!bMitteNav || !Nav->ProjectPointToNavigation(Ort, NavOrt, FVector(500.f, 500.f, 500.f)))
 			{
 				++OhneNetz;
+				Grund += TEXT(" Netz-");
 				continue;
 			}
 			UNavigationPath* Pfad = UNavigationSystemV1::FindPathToLocationSynchronously(World, NavOrt.Location, MitteNav.Location, nullptr, UTDNavFilter::StaticClass());
 			if (!PfadAmZiel(Pfad, MitteNav.Location))
 			{
 				(Pfad && Pfad->IsValid() ? Teilweise : OhnePfad)++;
+				Grund += Pfad && Pfad->IsValid() ? TEXT(" teil") : TEXT(" Pfad-");
 				continue;
 			}
 			if (WegDurchWasser(World, Pfad->PathPoints))
@@ -1013,6 +1028,7 @@ void UTDWaveSubsystem::SucheFronten(const FVector& Mitte)
 			const float Laenge = Pfad->GetPathLength();
 			const float Umweg = Laenge / FMath::Max(1.f, FVector::Dist(NavOrt.Location, MitteNav.Location));
 			Umwege += Umweg > 1.8f ? 1 : 0;
+			Grund += FString::Printf(TEXT(" %.0f%s"), Laenge / 100.f, Umweg > 1.8f ? TEXT("u") : TEXT(""));
 			if (Umweg <= 1.8f && Umweg < BesterUmweg)
 			{
 				BesterUmweg = Umweg;
@@ -1030,7 +1046,9 @@ void UTDWaveSubsystem::SucheFronten(const FVector& Mitte)
 		{
 			Ersatz.Add(ErsatzPunkt);
 		}
+		Richtungen.Add(FString::Printf(TEXT("%s:%s"), *Himmelsrichtung(Winkel, true), *Grund));
 	}
+	UE_LOG(LogFicsitTD, Log, TEXT("Fronten-Richtungen (nah/mittel/fern, Weg in m, u = Umweg): %s"), *FString::Join(Richtungen, TEXT(" |")));
 	mGueltigeRichtungen = Gueltig.Num();
 
 	// Reihenfolge: Start = gepruefte Richtung mit dem laengsten Weg (meiste Vorwarnzeit, 0.56), ohne gepruefte Zufall;
@@ -1261,6 +1279,11 @@ bool UTDWaveSubsystem::StarteKernVerteidigung(ATDDefenseCore* Kern, int32 Wellen
 	mPlanWelle = -1;   // T3: Wellenplan haengt an Kern und Stufe
 	mFrontCheckWelle = -1;
 	mKlippenWarte = 0.f;
+	// 18.11.: Abgleich vor Welle 1 - P12-E5 zeigte zwei stabile Zustaende je nach Ladestand des Netzes (Nordwesten 343 m frueh,
+	// Norden 357 m spaeter); der Abgleich schaltete auf den spaeteren um. Deshalb aus (Gegner.FrontenAbgleich 0), bis Marius entscheidet.
+	mFrontenStabil = TDBalance::Wert(TEXT("Gegner.FrontenAbgleich"), 0.f) <= 0.f;
+	mFrontenWarte = 0.f;
+	mFrontenSuchUhr = 0.f;
 	if (!Kern || mLauf != ETDLauf::Aus)
 	{
 		return false;
@@ -1514,6 +1537,7 @@ void UTDWaveSubsystem::SetzeLaufFort(ATDDefenseCore* Kern)
 	mGueltigeRichtungen = mFronten.FilterByPredicate([](const FTDFront& F) { return F.Weg > 0.f; }).Num();
 	mFrontenKern = Kern;
 	mFrontenStufe = mStufe;
+	mFrontenStabil = true;   // 18.11.: gespeicherte Fronten gelten (Abgleich nur vor der ersten Welle eines neuen Laufs)
 	if (mFronten.Num() == 0)
 	{
 		SucheFronten(Kern->GetActorLocation());   // Spielstand von vor 0.16
@@ -3005,7 +3029,49 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 		mCountdown -= mManuell ? 0.f : DeltaTime;   // Einsatz: Countdown steht, /td kern weiter setzt ihn auf 0
 		// 16.11. (W06: Klippenprobe und Wellenstart im selben Frame - ein Hog fuhr sich fest, bevor das Netz die Sperre kannte):
 		// Frontpruefung schon 20 s vor dem Start, damit der Netzumbau vor der Welle fertig ist
-		if (mFrontCheckWelle != mWelle + 1 && mCountdown <= TDBalance::Wert(TEXT("Gegner.FrontPruefungVorStart"), 20.f))
+		// 18.11. (P12-E5): vor der ersten Welle die Fronten abgleichen - alle 2 s neu suchen, bis zwei Suchen dieselben Fronten liefern
+		// (hoechstens Gegner.FrontenWarteMax s). Erst dann Klippenprobe und Start; sonst haengt die Wahl am Stand des Netzes.
+		if (!mFrontenStabil && !mBohrung && mWelle == 0 && mCountdown <= TDBalance::Wert(TEXT("Gegner.FrontPruefungVorStart"), 20.f))
+		{
+			if (mFrontenWarte < TDBalance::Wert(TEXT("Gegner.FrontenWarteMax"), 30.f))
+			{
+				mFrontenWarte += DeltaTime;
+				mFrontenSuchUhr -= DeltaTime;
+				if (mFrontenSuchUhr <= 0.f)
+				{
+					mFrontenSuchUhr = 2.f;
+					const FString Alt = FrontenSignatur();
+					if (const ATDDefenseCore* K = mKern.Get())
+					{
+						SucheFronten(K->GetActorLocation());
+					}
+					const FString Neu = FrontenSignatur();
+					if (mGueltigeRichtungen > 0 && Alt == Neu)
+					{
+						mFrontenStabil = true;
+						UE_LOG(LogFicsitTD, Log, TEXT("Fronten-Abgleich: stabil nach %.1f s (%s)"), mFrontenWarte, *Neu);
+						SpeichereLauf();
+						MarkiereFronten();
+					}
+					else
+					{
+						UE_LOG(LogFicsitTD, Log, TEXT("Fronten-Abgleich nach %.1f s: %s -> %s"), mFrontenWarte, *Alt, *Neu);
+					}
+				}
+			}
+			else
+			{
+				mFrontenStabil = true;
+				UE_LOG(LogFicsitTD, Warning, TEXT("Fronten-Abgleich: nach %.0f s nicht stabil, Welle 1 startet mit %s"), mFrontenWarte, *FrontenSignatur());
+				TDNetz::Melde(TDNetz::EArt::FrontenUngeprueft);
+			}
+			if (!mFrontenStabil && mCountdown <= 0.f)
+			{
+				mCountdown = 0.f;
+				return;
+			}
+		}
+		if ((mFrontenStabil || mBohrung) && mFrontCheckWelle != mWelle + 1 && mCountdown <= TDBalance::Wert(TEXT("Gegner.FrontPruefungVorStart"), 20.f))
 		{
 			mFrontCheckWelle = mWelle + 1;
 			PruefeFrontenVorWelle(mWelle + 1);

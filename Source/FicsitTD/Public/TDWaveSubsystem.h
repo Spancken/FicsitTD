@@ -595,6 +595,10 @@ private:
 	int32 mFrontenStufe = -1;
 	/** Wie viele der 16 Richtungen beim Suchen geprueft gueltig waren */
 	int32 mGueltigeRichtungen = 0;
+	/** 18.11. (P12-E5: Neusuche nach 0 von 16 fand 13 Richtungen, waehlte aber Norden 357 m statt Nordwesten 343 m - welche
+	 *  Wege gueltig sind, haengt am Stand des Netzes): vor Welle 1 erst starten, wenn zwei Suchen nacheinander dieselben Fronten liefern */
+	bool mFrontenStabil = true;
+	FString FrontenSignatur() const;
 	/** Abschuesse je Turm zu Wellenbeginn (fuer die Auswertung) */
 	TMap<TWeakObjectPtr<class ATDTurretBase>, int32> mKillsBeiStart;
 	/** Messwerte der laufenden Welle (nicht gespeichert: nach dem Laden mitten in der Welle fehlen sie) */
