@@ -126,7 +126,7 @@ FString UTDBandUpgrade::RuesteUm(int32 Stufe)
 	UClass* LiftRezept = LoadClass<UFGRecipe>(nullptr, *FString::Printf(TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_ConveyorLiftMk%d.Recipe_ConveyorLiftMk%d_C"), Stufe, Stufe));
 	if (!Bau || !BandKlasse)
 	{
-		return TDF(TEXT("Baender Mk%d: Klasse nicht gefunden, nichts aufgeruestet."), TEXT("Belts Mk%d: class not found, nothing upgraded."), Stufe);
+		return TDF(TEXT("Bänder Mk%d: Klasse nicht gefunden, nichts aufgerüstet."), TEXT("Belts Mk%d: class not found, nothing upgraded."), Stufe);
 	}
 	TArray<AFGBuildableConveyorBelt*> Baender;
 	TArray<AFGBuildableConveyorLift*> Lifte;
@@ -256,7 +256,7 @@ FString UTDBandUpgrade::RuesteUm(int32 Stufe)
 		Stufe, Verbindungen.Num(), Verbunden, Fehlt);
 	const int32 Plaetze = SchnellleisteAufStufe(World, Stufe);
 	UE_LOG(LogFicsitTD, Log, TEXT("Band-Upgrade Mk%d: %d Baender, %d Lifte aufgeruestet, %d Plaetze der Schnellleiste umgestellt"), Stufe, B, L, Plaetze);
-	return TDF(TEXT("FICSIT-Logistik: %d Foerderbaender und %d Lifte automatisch auf Mk%d aufgeruestet."),
+	return TDF(TEXT("FICSIT-Logistik: %d Förderbänder und %d Lifte automatisch auf Mk%d aufgerüstet."),
 		TEXT("FICSIT Logistics: %d Conveyor Belts and %d Conveyor Lifts automatically upgraded to Mk%d."), B, L, Stufe);
 }
 
@@ -382,9 +382,10 @@ int32 UTDBandUpgrade::VerbindeOffeneEnden(UWorld* World, bool bNurZaehlen, FStri
 		}
 	}
 	const FString Bericht = bNurZaehlen
-		? FString::Printf(TEXT("%d falsch herum verbundene und %d offene Band-Enden mit Gegenstueck%s"), Falsch, Offen,
+		? TDF(TEXT("%d falsch herum verbundene und %d offene Band-Enden mit Gegenstück%s"), TEXT("%d reversed and %d open belt ends with a counterpart%s"), Falsch, Offen,
 			Beispiele.Num() ? *(TEXT(": ") + FString::Join(Beispiele, TEXT("; "))) : TEXT(""))
-		: FString::Printf(TEXT("%d falsch herum verbundene Enden geloest, %d offene Enden verbunden. Jetzt speichern und den Spielstand neu laden, dann baut das Spiel die Bandketten neu auf."), Geloest, Verbunden);
+		: TDF(TEXT("%d falsch herum verbundene Enden gelöst, %d offene Enden verbunden. Jetzt speichern und den Spielstand neu laden, dann baut das Spiel die Bandketten neu auf."),
+			TEXT("%d reversed ends released, %d open ends connected. Save now and reload the game, then it rebuilds the belt chains."), Geloest, Verbunden);
 	UE_LOG(LogFicsitTD, Log, TEXT("Band-Verbindungen: %s"), *Bericht);
 	if (OutBericht)
 	{

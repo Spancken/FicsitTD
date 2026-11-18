@@ -62,7 +62,7 @@ static void Antwort(UCommandSender* Sender, const FString& Text)
 /** Hilfetext in der Spielsprache (0.85); auch bei falscher Eingabe neu gesetzt, falls die Sprache nach dem Start wechselt */
 static FText TDUsage()
 {
-	return TDTX(TEXT("/td umgebung|instanzen [Radius_m] - Objekte bzw. Instanzen um dich auflisten | /td koeder - alle Koeder entfernen | /td reichweite [an|aus] - Reichweitenkreise | /td turmlevel <1-5> - naechsten Turm auf Level setzen (Test) | /td teil [Name] - Turmteil ein-/ausblenden | /td probe gewehr|flamme|weg - Effekt-Vorschau | /td fuellen [art] [m3] - Puffer/Flammenwerfer fuellen | /td kern start [erkundung|normal|hart|albtraum] [Wellen] [Min] [Min]|weiter|stop|status|fronten [neu]|wege [aus]|stufen|tempo [Faktor]|stress [N ...] [lp=20] [s=20] [mix|art=<Gegner>] [anim=immer|sichtbar] [kollision=an|aus] [ragdoll=an|aus] [tuerme=aus] [geschoss=aus] [angriff=aus] [drehen=aus] [schatten=aus] [effekte=aus] [df=aus] [drehtakt=N] [toeten=N/s]|stress stop - Kern-Verteidigung | /td test [karte|gegner|marsch] - automatischer Test | /td einsatz start [stufe] [wellen]|frei [an|aus]|status|stop - Einsatz mit Kontingenten | /td laden, /td kaufe <Gebaeude> [n] - Laden | /td freischalten - alles frei | /td balance - Balance-Datei neu lesen | /td platz [liste|scan <Biom>|scan stop|pruefen <Id|S1..S8|hier [Biom]>|merken <Biom> [Notiz]|gemerkt|zurueck|bauen <Biom> [1-3]] - Kernplaetze suchen, pruefen, merken und bauen | /td szenario [liste|<1-5>|pruefen [Nr]|fertig|leeren] - Testszenarien | /td ada [bank] - ADA-Begruessung | /td baender <2-6>|pruefen|reparieren - alle Baender aufruesten, offene Band-Enden pruefen oder verbinden"),
+	return TDTX(TEXT("/td umgebung|instanzen [Radius_m] - Objekte bzw. Instanzen um dich auflisten | /td koeder - alle Köder entfernen | /td reichweite [an|aus] - Reichweitenkreise | /td turmlevel <1-5> - naechsten Turm auf Level setzen (Test) | /td teil [Name] - Turmteil ein-/ausblenden | /td probe gewehr|flamme|weg - Effekt-Vorschau | /td fuellen [art] [m3] - Puffer/Flammenwerfer füllen | /td kern start [erkundung|normal|hart|albtraum] [Wellen] [Min] [Min]|weiter|stop|status|fronten [neu]|wege [aus]|stufen|tempo [Faktor]|stress [N ...] [lp=20] [s=20] [mix|art=<Gegner>] [anim=immer|sichtbar] [kollision=an|aus] [ragdoll=an|aus] [tuerme=aus] [geschoss=aus] [angriff=aus] [drehen=aus] [schatten=aus] [effekte=aus] [df=aus] [drehtakt=N] [töten=N/s]|stress stop - Kern-Verteidigung | /td test [karte|gegner|marsch] - automatischer Test | /td einsatz start [stufe] [wellen]|frei [an|aus]|status|stop - Einsatz mit Kontingenten | /td laden, /td kaufe <Gebäude> [n] - Laden | /td freischalten - alles frei | /td balance - Balance-Datei neu lesen | /td platz [liste|scan <Biom>|scan stop|prüfen <Id|S1..S8|hier [Biom]>|merken <Biom> [Notiz]|gemerkt|zurück|bauen <Biom> [1-3]] - Kernplätze suchen, prüfen, merken und bauen | /td szenario [liste|<1-5>|pruefen [Nr]|fertig|leeren] - Testszenarien | /td ada [bank] - ADA-Begrüßung | /td baender <2-6>|pruefen|reparieren - alle Bänder aufrüsten, offene Band-Enden prüfen oder verbinden"),
 		TEXT("/td umgebung|instanzen [radius_m] - list objects or instances around you | /td koeder - remove all decoys | /td reichweite [an|aus] - range circles | /td turmlevel <1-5> - set the nearest turret to a level (test) | /td teil [name] - show/hide a turret part | /td probe gewehr|flamme|weg - effect preview | /td fuellen [type] [m3] - fill buffer/flamethrower | /td kern start [erkundung|normal|hart|albtraum] [waves] [min] [min]|weiter|stop|status|fronten [neu]|wege [aus]|stufen|tempo [factor]|stress [N ...] [lp=20] [s=20] [mix|art=<enemy>] [anim=immer|sichtbar] [kollision=an|aus] [ragdoll=an|aus] [tuerme=aus] [geschoss=aus] [angriff=aus] [drehen=aus] [schatten=aus] [effekte=aus] [df=aus] [drehtakt=N] [toeten=N/s]|stress stop - core defense | /td test [karte|gegner|marsch] - automatic test | /td einsatz start [level] [waves]|frei [an|aus]|status|stop - Operation with quotas | /td laden, /td kaufe <building> [n] - Shop | /td freischalten - unlock everything | /td balance - reload the balance file | /td platz [liste|scan <biome>|scan stop|pruefen <Id|S1..S8|hier [biome]>|merken <biome> [note]|gemerkt|zurueck|bauen <biome> [1-3]] - find, check, save and build core sites | /td szenario [liste|<1-5>|pruefen [no]|fertig|leeren] - test scenarios | /td ada [bank] - ADA greeting | /td baender <2-6>|pruefen|reparieren - upgrade all belts, check or connect open belt ends"));
 }
 
@@ -89,7 +89,7 @@ EExecutionStatus ATDDebugCommand::ExecuteCommand_Implementation(UCommandSender* 
 			|| (Befehl == TEXT("kern") && (Unter == TEXT("status") || Unter == TEXT("weiter"))) || Befehl == TEXT("modus");
 		if (Entwickler == 0 && !bSpieler)
 		{
-			Antwort(Sender, TDT(TEXT("Dieser Befehl ist nur im Entwicklermodus verfuegbar. Spielerbefehle: /td ada, /td kern status, /td kern weiter, /td baender reparieren, /td modus einsatz, /td modus abwehr."),
+			Antwort(Sender, TDT(TEXT("Dieser Befehl ist nur im Entwicklermodus verfügbar. Spielerbefehle: /td ada, /td kern status, /td kern weiter, /td baender reparieren, /td modus einsatz, /td modus abwehr."),
 				TEXT("This command is only available in developer mode. Player commands: /td ada, /td kern status, /td kern weiter, /td baender reparieren, /td modus einsatz, /td modus abwehr.")));
 			return EExecutionStatus::COMPLETED;
 		}
@@ -104,17 +104,17 @@ EExecutionStatus ATDDebugCommand::ExecuteCommand_Implementation(UCommandSender* 
 		const UTDEinsatzSubsystem* ModusEinsatz = GetWorld() ? GetWorld()->GetSubsystem<UTDEinsatzSubsystem>() : nullptr;
 		if (Arguments.Num() > 1 && Arguments[1].Equals(TEXT("abwehr"), ESearchCase::IgnoreCase) && ModusEinsatz && ModusEinsatz->IstAktiv() && !bEndlosSpiel)
 		{
-			Antwort(Sender, TDT(TEXT("In diesem Spiel laeuft ein Einsatz - erst im Kern-Menue beenden, dann /td modus abwehr."), TEXT("An operation is running in this game - end it in the Core menu first, then /td modus abwehr.")));
+			Antwort(Sender, TDT(TEXT("In diesem Spiel läuft ein Einsatz - erst im Kern-Menü beenden, dann /td modus abwehr."), TEXT("An operation is running in this game - end it in the Core menu first, then /td modus abwehr.")));
 		}
 		else if (Arguments.Num() > 1 && (Arguments[1].Equals(TEXT("einsatz"), ESearchCase::IgnoreCase) || Arguments[1].Equals(TEXT("abwehr"), ESearchCase::IgnoreCase)) && bEndlosSpiel)
 		{
-			Antwort(Sender, TDT(TEXT("Dieses Spiel laeuft im Spielmodus \"Endlos-Wellen\" - es bleibt dabei."), TEXT("This game runs in Game Mode \"Endless waves\" - it stays that way.")));
+			Antwort(Sender, TDT(TEXT("Dieses Spiel läuft im Spielmodus \"Endlos-Wellen\" - es bleibt dabei."), TEXT("This game runs in Game Mode \"Endless waves\" - it stays that way.")));
 		}
 		else if (Arguments.Num() > 1 && Arguments[1].Equals(TEXT("abwehr"), ESearchCase::IgnoreCase))
 		{
 			// 0.12-dev (Marius 15.11.): bestehende Spielstaende ins Freie Spiel mit Abwehr holen
 			const bool bOk = UTDKernplatz::SetzeModusAbwehr(this);
-			Antwort(Sender, bOk ? TDT(TEXT("Spielmodus auf \"Freies Spiel mit Abwehr\" gestellt. Speichere jetzt, damit es im Spielstand bleibt; Tuerme und Abwehr-Forschung erscheinen in wenigen Sekunden."),
+			Antwort(Sender, bOk ? TDT(TEXT("Spielmodus auf \"Freies Spiel mit Abwehr\" gestellt. Speichere jetzt, damit es im Spielstand bleibt; Türme und Abwehr-Forschung erscheinen in wenigen Sekunden."),
 					TEXT("Game Mode set to \"Free play with defense\". Save now so it stays in your save; turrets and defense research appear within a few seconds."))
 				: TDT(TEXT("Spielmodus konnte nicht gesetzt werden (Sitzungseinstellungen nicht gefunden)."), TEXT("Could not set the Game Mode (session settings not found).")));
 			if (bOk)
@@ -128,7 +128,7 @@ EExecutionStatus ATDDebugCommand::ExecuteCommand_Implementation(UCommandSender* 
 		else if (Arguments.Num() > 1 && Arguments[1].Equals(TEXT("einsatz"), ESearchCase::IgnoreCase))
 		{
 			const bool bOk = UTDKernplatz::SetzeModusEinsatz(this);
-			Antwort(Sender, bOk ? TDT(TEXT("Spielmodus auf \"Einsatz\" gestellt. Speichere jetzt, damit es im Spielstand bleibt; TD-Rezepte und MAM-Baeume erscheinen in wenigen Sekunden."),
+			Antwort(Sender, bOk ? TDT(TEXT("Spielmodus auf \"Einsatz\" gestellt. Speichere jetzt, damit es im Spielstand bleibt; TD-Rezepte und MAM-Bäume erscheinen in wenigen Sekunden."),
 					TEXT("Game Mode set to \"Operation\". Save now so it stays in your save; TD recipes and MAM trees appear within a few seconds."))
 				: TDT(TEXT("Spielmodus konnte nicht gesetzt werden (Sitzungseinstellungen nicht gefunden)."), TEXT("Could not set the Game Mode (session settings not found).")));
 			if (bOk)
@@ -143,7 +143,7 @@ EExecutionStatus ATDDebugCommand::ExecuteCommand_Implementation(UCommandSender* 
 		{
 			const int32 Aktuell = bEndlosSpiel ? 2 : UTDKernplatz::IstAbwehr(this) ? 3 : UTDKernplatz::TowerDefenseAn(this) ? 1 : 0;
 			UE_LOG(LogFicsitTD, Log, TEXT("Spielmodus aktuell: %d"), Aktuell);
-			Antwort(Sender, TDF(TEXT("Spielmodus: %s. Alte Staende ohne Modus: /td modus einsatz oder /td modus abwehr"), TEXT("Game Mode: %s. Old saves without a mode: /td modus einsatz or /td modus abwehr"),
+			Antwort(Sender, TDF(TEXT("Spielmodus: %s. Alte Stände ohne Modus: /td modus einsatz oder /td modus abwehr"), TEXT("Game Mode: %s. Old saves without a mode: /td modus einsatz or /td modus abwehr"),
 				Aktuell == 3 ? *TDT(TEXT("Freies Spiel mit Abwehr"), TEXT("Free play with defense")) : Aktuell == 2 ? *TDT(TEXT("Endlos-Wellen"), TEXT("Endless waves")) : Aktuell == 1 ? *TDT(TEXT("Einsatz"), TEXT("Operation")) : *TDT(TEXT("Aus"), TEXT("Off"))));
 		}
 		return EExecutionStatus::COMPLETED;
@@ -501,7 +501,7 @@ EExecutionStatus ATDDebugCommand::ExecuteCommand_Implementation(UCommandSender* 
 		{
 			Waves->SchalteSandkastenFrei();
 		}
-		Antwort(Sender, TDT(TEXT("Alle FicsitTD-Gebaeude und -Rezepte freigeschaltet."), TEXT("All FicsitTD buildings and recipes unlocked.")));
+		Antwort(Sender, TDT(TEXT("Alle FicsitTD-Gebäude und -Rezepte freigeschaltet."), TEXT("All FicsitTD buildings and recipes unlocked.")));
 		return EExecutionStatus::COMPLETED;
 	}
 	// 0.12-dev Freies Spiel mit Abwehr: /td bohrung [info|platz|leicht|mittel|schwer|abbrechen] (Selbsttests; Spieler nutzen das Kern-Menue)
@@ -628,7 +628,7 @@ EExecutionStatus ATDDebugCommand::ExecuteCommand_Implementation(UCommandSender* 
 		{
 			if (!Kern)
 			{
-				Antwort(Sender, TEXT("Kein Abwehrkern gebaut (Baumenue: Verteidigung)."));
+				Antwort(Sender, TEXT("Kein Abwehrkern gebaut (Baumenü: Verteidigung)."));
 			}
 			// /td kern start [Stufe] [Wellen] [Minuten bis Welle 1] [Minuten zwischen den Wellen]; Stufe als Wort an beliebiger Stelle
 			else
@@ -654,7 +654,7 @@ EExecutionStatus ATDDebugCommand::ExecuteCommand_Implementation(UCommandSender* 
 					Zahlen.Num() > 1 ? Zahlen[1] * 60.f : -1.f,
 					Zahlen.Num() > 2 ? Zahlen[2] * 60.f : -1.f, Stufe))
 				{
-					Antwort(Sender, TEXT("Es laeuft schon eine Kern-Verteidigung (/td kern stop)."));
+					Antwort(Sender, TEXT("Es läuft schon eine Kern-Verteidigung (/td kern stop)."));
 				}
 			}
 		}
@@ -815,7 +815,7 @@ EExecutionStatus ATDDebugCommand::ExecuteCommand_Implementation(UCommandSender* 
 		UClass* Fluessigkeit = Pfad ? LoadClass<UFGItemDescriptor>(nullptr, **Pfad) : nullptr;
 		if (!Fluessigkeit || !Pawn)
 		{
-			Antwort(Sender, TEXT("/td fuellen [treibstoff|bio|turbo|rakete|ionisiert|wasser] [m3] - auf einen Fluessigkeitspuffer oder Flammenwerfer schauen"));
+			Antwort(Sender, TEXT("/td fuellen [treibstoff|bio|turbo|rakete|ionisiert|wasser] [m3] - auf einen Flüssigkeitspuffer oder Flammenwerfer schauen"));
 			return EExecutionStatus::BAD_ARGUMENTS;
 		}
 		const float Menge = Arguments.Num() > 2 ? FMath::Max(1.f, FCString::Atof(*Arguments[2])) : 10000.f;
@@ -950,7 +950,7 @@ EExecutionStatus ATDDebugCommand::ExecuteCommand_Implementation(UCommandSender* 
 			return EExecutionStatus::COMPLETED;
 		}
 		UTDBandUpgrade* Upgrade = UTDBandUpgrade::Get(this);
-		Antwort(Sender, Upgrade ? Upgrade->RuesteUm(FMath::Clamp(Arguments.Num() > 1 ? FCString::Atoi(*Arguments[1]) : 2, 2, 6)) : TDT(TEXT("nicht verfuegbar"), TEXT("not available")));
+		Antwort(Sender, Upgrade ? Upgrade->RuesteUm(FMath::Clamp(Arguments.Num() > 1 ? FCString::Atoi(*Arguments[1]) : 2, 2, 6)) : TDT(TEXT("nicht verfügbar"), TEXT("not available")));
 		return EExecutionStatus::COMPLETED;
 	}
 	// /td szenario [liste|<1-5>|pruefen [Nr]|leeren]: Testszenarien (Konzept-Kernplaetze S5, 0.70)
@@ -1004,8 +1004,8 @@ EExecutionStatus ATDDebugCommand::ExecuteCommand_Implementation(UCommandSender* 
 			Antwort(Sender, UTDKernplatz::PruefeWwiseInitBank());
 			return EExecutionStatus::COMPLETED;
 		}
-		Antwort(Sender, UTDKernplatz::SpieleBegruessung(this, Pawn) ? TDT(TEXT("ADA spielt die Begruessung ab."), TEXT("ADA is playing the greeting."))
-			: TDT(TEXT("Begruessung nicht moeglich (siehe Log)."), TEXT("Greeting not possible (see log).")));
+		Antwort(Sender, UTDKernplatz::SpieleBegruessung(this, Pawn) ? TDT(TEXT("ADA spielt die Begrüßung ab."), TEXT("ADA is playing the greeting."))
+			: TDT(TEXT("Begrüßung nicht möglich (siehe Log)."), TEXT("Greeting not possible (see log).")));
 		return EExecutionStatus::COMPLETED;
 	}
 	// /td platz pruefen <G1..D3|hier> | zurueck | liste: Kandidaten fuer feste Kernplaetze (Konzept-Kernplaetze.md, S1)
@@ -1057,7 +1057,7 @@ EExecutionStatus ATDDebugCommand::ExecuteCommand_Implementation(UCommandSender* 
 			{
 				Antwort(Sender, FString::Printf(TEXT("%s: %s bei x %.0f / y %.0f"), K.Id, K.Biom, K.X, K.Y));
 			}
-			Antwort(Sender, TEXT("/td platz pruefen hier <grasfelder|felsenwueste|wald|duenen> - deinen Standort pruefen (du stehst auf der Kernmitte), /td platz merken <Biom> [Notiz] - speichern, /td platz gemerkt - Liste, /td platz pruefen <Id> - Kandidat anfliegen, /td platz zurueck. Ergebnisse in Saved/FicsitTD/Kernplaetze.csv"));
+			Antwort(Sender, TEXT("/td platz pruefen hier <grasfelder|felsenwueste|wald|duenen> - deinen Standort prüfen (du stehst auf der Kernmitte), /td platz merken <Biom> [Notiz] - speichern, /td platz gemerkt - Liste, /td platz pruefen <Id> - Kandidat anfliegen, /td platz zurueck. Ergebnisse in Saved/FicsitTD/Kernplätze.csv"));
 		}
 		return EExecutionStatus::COMPLETED;
 	}

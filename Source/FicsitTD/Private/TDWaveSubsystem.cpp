@@ -676,7 +676,7 @@ static FString PhasenBeschreibung(int32 Ph)
 	case 0: return TDT(TEXT("Hogs rammen die Mauern - Bolzen und Mauern halten sie auf."), TEXT("Hogs ram the walls - bolts and walls stop them."));
 	case 1: return TDT(TEXT("Stinger kommen schnell und in Massen - Gewehrturm, Streubolzen und Tesla."), TEXT("Stingers come fast and in swarms - Rifle Turret, spread bolts and Tesla."));
 	case 2: return TDT(TEXT("Spucker greifen aus der Ferne an - Flammenwerfer und Nobelisk."), TEXT("Spitters attack from range - Flamethrower and Nobelisk."));
-	case 3: return TDT(TEXT("Klippen-Hogs, Wuesten- und Wasserspucker, Gas-Stinger - Feuer allein reicht nicht mehr."), TEXT("Cliff Hogs, desert and aquatic spitters, gas stingers - fire alone is no longer enough."));
+	case 3: return TDT(TEXT("Klippen-Hogs, Wüsten- und Wasserspucker, Gas-Stinger - Feuer allein reicht nicht mehr."), TEXT("Cliff Hogs, desert and aquatic spitters, gas stingers - fire alone is no longer enough."));
 	case 4: return TDT(TEXT("Nuklear-Hogs und Johnny - die schwersten Gegner des Planeten."), TEXT("Nuclear Hogs and Johnny - the toughest enemies on the planet."));
 	default: return KernPhasen[FMath::Clamp(Ph, 0, KernPhasenAnzahl - 1)].Text;
 	}
@@ -685,10 +685,10 @@ static FString PhasenVorwarnung(int32 Ph)
 {
 	switch (Ph)
 	{
-	case 1: return TDT(TEXT("Spaeher melden Stinger-Nester: ab Welle 13 kommt der Schwarm. Gewehrturm und Kohlekraft vorbereiten."), TEXT("Scouts report stinger nests: the swarm arrives from wave 13. Prepare Rifle Turrets and coal power."));
-	case 2: return TDT(TEXT("Spaeher melden Saeurespucker: ab Welle 21 greifen sie aus der Ferne an. Raffinerie und Oel vorbereiten."), TEXT("Scouts report acid spitters: from wave 21 they attack from range. Prepare a Refinery and oil."));
-	case 3: return TDT(TEXT("Spaeher melden fremde Arten aus Wueste und Wasser: ab Welle 31 hilft Feuer allein nicht mehr."), TEXT("Scouts report foreign species from desert and water: from wave 31 fire alone no longer helps."));
-	case 4: return TDT(TEXT("Spaeher melden Strahlung: ab Welle 41 kommen Nuklear-Hogs und Johnny."), TEXT("Scouts report radiation: Nuclear Hogs and Johnny arrive from wave 41."));
+	case 1: return TDT(TEXT("Späher melden Stinger-Nester: ab Welle 13 kommt der Schwarm. Gewehrturm und Kohlekraft vorbereiten."), TEXT("Scouts report stinger nests: the swarm arrives from wave 13. Prepare Rifle Turrets and coal power."));
+	case 2: return TDT(TEXT("Späher melden Säurespucker: ab Welle 21 greifen sie aus der Ferne an. Raffinerie und Öl vorbereiten."), TEXT("Scouts report acid spitters: from wave 21 they attack from range. Prepare a Refinery and oil."));
+	case 3: return TDT(TEXT("Späher melden fremde Arten aus Wüste und Wasser: ab Welle 31 hilft Feuer allein nicht mehr."), TEXT("Scouts report foreign species from desert and water: from wave 31 fire alone no longer helps."));
+	case 4: return TDT(TEXT("Späher melden Strahlung: ab Welle 41 kommen Nuklear-Hogs und Johnny."), TEXT("Scouts report radiation: Nuclear Hogs and Johnny arrive from wave 41."));
 	default: return KernPhasen[FMath::Clamp(Ph, 0, KernPhasenAnzahl - 1)].Vorwarnung;
 	}
 }
@@ -698,7 +698,7 @@ static FString PhasenBossName(int32 Ph)
 	{
 	case 0: return TDT(TEXT("Panzerkoloss"), TEXT("Armored Colossus"));
 	case 1: return TDT(TEXT("Brutmutter"), TEXT("Brood Mother"));
-	case 2: return TDT(TEXT("Saeurekoenigin"), TEXT("Acid Queen"));
+	case 2: return TDT(TEXT("Säurekönigin"), TEXT("Acid Queen"));
 	case 3: return TDT(TEXT("Gasriese"), TEXT("Gas Giant"));
 	case 4: return TDT(TEXT("Johnny-Rotte"), TEXT("Johnny Pack"));
 	default: return KernPhasen[FMath::Clamp(Ph, 0, KernPhasenAnzahl - 1)].BossName;
@@ -743,9 +743,9 @@ static FString Himmelsrichtung(float WinkelGrad, bool bDeutsch = false)
 	case 0: return TDT(TEXT("Norden"), TEXT("North"));
 	case 1: return TDT(TEXT("Nordosten"), TEXT("Northeast"));
 	case 2: return TDT(TEXT("Osten"), TEXT("East"));
-	case 3: return TDT(TEXT("Suedosten"), TEXT("Southeast"));
-	case 4: return TDT(TEXT("Sueden"), TEXT("South"));
-	case 5: return TDT(TEXT("Suedwesten"), TEXT("Southwest"));
+	case 3: return TDT(TEXT("Südosten"), TEXT("Southeast"));
+	case 4: return TDT(TEXT("Süden"), TEXT("South"));
+	case 5: return TDT(TEXT("Südwesten"), TEXT("Southwest"));
 	case 6: return TDT(TEXT("Westen"), TEXT("West"));
 	default: return TDT(TEXT("Nordwesten"), TEXT("Northwest"));
 	}
@@ -780,7 +780,7 @@ static FString FrontText(const TArray<FTDFront>& Fronten, int32 Index, bool bDeu
 			: FString::Printf(TEXT("%s (ungeprueft)"), *Himmelsrichtung(F.Winkel, true));
 	}
 	return F.Weg > 0.f ? TDF(TEXT("%s (Weg %.0f m)"), TEXT("%s (path %.0f m)"), *Himmelsrichtung(F.Winkel), F.Weg / 100.f)
-		: TDF(TEXT("%s (ungeprueft)"), TEXT("%s (unchecked)"), *Himmelsrichtung(F.Winkel));
+		: TDF(TEXT("%s (ungeprüft)"), TEXT("%s (unchecked)"), *Himmelsrichtung(F.Winkel));
 }
 
 // ---- Schwierigkeit und Fronten (Level-Konzept Abschnitte 3 und 5) ----
@@ -1257,7 +1257,7 @@ TArray<FString> UTDWaveSubsystem::GetFrontenText(ATDDefenseCore* Kern)
 	}
 	if (mGueltigeRichtungen == 0)
 	{
-		Zeilen.Add(TDT(TEXT("Kein Weg geprueft (Navigationsnetz fehlt dort?) - Gegner kommen aus ungeprueften Richtungen."), TEXT("No path checked (navigation mesh missing there?) - enemies come from unchecked directions.")));
+		Zeilen.Add(TDT(TEXT("Kein Weg geprüft (Navigationsnetz fehlt dort?) - Gegner kommen aus ungeprüften Richtungen."), TEXT("No path checked (navigation mesh missing there?) - enemies come from unchecked directions.")));
 		Zeilen.Add(NavDiagnose(GetWorld(), Kern->GetActorLocation()));
 	}
 	return Zeilen;
@@ -1284,7 +1284,7 @@ TArray<TArray<FVector>> UTDWaveSubsystem::BerechneWege(ATDDefenseCore* Kern, FSt
 	FNavLocation MitteNav;
 	if (!Nav || !Nav->ProjectPointToNavigation(Mitte, MitteNav, FVector(1200.f, 1200.f, 1000.f)))
 	{
-		Bericht = TDT(TEXT("Kein Navigationsnetz am Kern - keine Wegvorschau moeglich."), TEXT("No navigation mesh at the Core - no path preview possible."));
+		Bericht = TDT(TEXT("Kein Navigationsnetz am Kern - keine Wegvorschau möglich."), TEXT("No navigation mesh at the Core - no path preview possible."));
 		return Wege;
 	}
 	// aktive Fronten und die naechste, die dazukommt
@@ -1305,7 +1305,7 @@ TArray<TArray<FVector>> UTDWaveSubsystem::BerechneWege(ATDDefenseCore* Kern, FSt
 		F.Weg = Pfad->GetPathLength();
 		Wege.Add(F.Punkte);
 		Teile.Add(FString::Printf(TEXT("%s %.0f m%s%s"), *Himmelsrichtung(F.Winkel), F.Weg / 100.f, !PfadAmZiel(Pfad, MitteNav.Location) ? *TDT(TEXT(" (TEILWEISE)"), TEXT(" (PARTIAL)")) : TEXT(""),
-			i >= Aktiv ? *TDT(TEXT(" (kommt spaeter)"), TEXT(" (comes later)")) : TEXT("")));
+			i >= Aktiv ? *TDT(TEXT(" (kommt später)"), TEXT(" (comes later)")) : TEXT("")));
 	}
 	Bericht = TDF(TEXT("Wege: %s"), TEXT("Paths: %s"), *FString::Join(Teile, TEXT("; ")));
 	return Wege;
@@ -1329,10 +1329,10 @@ void UTDWaveSubsystem::PruefeVersorgung() const
 	}
 	if (OhneMunition.Num() + OhneStrom.Num() + OhneRezept.Num() == 0)
 	{
-		Ansage(TDF(TEXT("Versorgung: alle %d Tuerme haben Munition und Strom."), TEXT("Supply: all %d turrets have ammo and power."), Tuerme));
+		Ansage(TDF(TEXT("Versorgung: alle %d Türme haben Munition und Strom."), TEXT("Supply: all %d turrets have ammo and power."), Tuerme));
 		return;
 	}
-	FString Text = TDF(TEXT("Versorgung WARNUNG (%d Tuerme):"), TEXT("Supply WARNING (%d turrets):"), Tuerme);
+	FString Text = TDF(TEXT("Versorgung WARNUNG (%d Türme):"), TEXT("Supply WARNING (%d turrets):"), Tuerme);
 	if (OhneMunition.Num()) Text += TDF(TEXT(" ohne Munition: %s;"), TEXT(" no ammo: %s;"), *FString::Join(OhneMunition, TEXT(", ")));
 	if (OhneStrom.Num())    Text += TDF(TEXT(" ohne Strom: %s;"), TEXT(" no power: %s;"), *FString::Join(OhneStrom, TEXT(", ")));
 	if (OhneRezept.Num())   Text += TDF(TEXT(" ohne Rezept: %s;"), TEXT(" no recipe: %s;"), *FString::Join(OhneRezept, TEXT(", ")));
@@ -1401,7 +1401,7 @@ bool UTDWaveSubsystem::StarteKernVerteidigung(ATDDefenseCore* Kern, int32 Wellen
 	}
 	else if (mEndlos)
 	{
-		Ansage(TDF(TEXT("Endlos-Wellen gestartet (%s): Kern %.0f LP, eine Front. Erste Welle in %.0f min, danach alle %.0f min ab Wellenbeginn - mit jeder Welle etwas schneller, nach jeder Bosswelle %.0f min Pause. Anhalten geht nicht: Munition herstellen und Tuerme versorgen!"),
+		Ansage(TDF(TEXT("Endlos-Wellen gestartet (%s): Kern %.0f LP, eine Front. Erste Welle in %.0f min, danach alle %.0f min ab Wellenbeginn - mit jeder Welle etwas schneller, nach jeder Bosswelle %.0f min Pause. Anhalten geht nicht: Munition herstellen und Türme versorgen!"),
 			TEXT("Endless waves started (%s): Core %.0f HP, one front. First wave in %.0f min, then every %.0f min from wave start - a little faster each wave, %.0f min break after every boss wave. No pausing: produce ammo and keep your turrets supplied!"),
 			*StufenText, S.KernLP, mCountdown / 60.f, mZwischenCountdown / 60.f, TDBalance::Wert(TEXT("Endlos.BossPause"), 300.f) / 60.f));
 	}
@@ -1413,7 +1413,7 @@ bool UTDWaveSubsystem::StarteKernVerteidigung(ATDDefenseCore* Kern, int32 Wellen
 	}
 	else
 	{
-		Ansage(TDF(TEXT("Kern-Verteidigung gestartet (%s): %s, Kern %.0f LP. Erste Welle in %.0f min, danach alle %.0f min Aufbau. Munitions-Produktion aufbauen und Tuerme versorgen! (Sofort: am Kern \"Welle starten\")"),
+		Ansage(TDF(TEXT("Kern-Verteidigung gestartet (%s): %s, Kern %.0f LP. Erste Welle in %.0f min, danach alle %.0f min Aufbau. Munitions-Produktion aufbauen und Türme versorgen! (Sofort: am Kern \"Welle starten\")"),
 			TEXT("Core defense started (%s): %s, Core %.0f HP. First wave in %.0f min, then %.0f min build time each. Set up ammo production and supply your turrets! (Now: \"Start wave\" at the Core)"),
 			*StufenText, *WellenText, S.KernLP, mCountdown / 60.f, mZwischenCountdown / 60.f));
 	}
@@ -1451,7 +1451,7 @@ void UTDWaveSubsystem::PruefeFrontenNach()
 	if (mGueltigeRichtungen > 0)
 	{
 		GetWorld()->GetTimerManager().ClearTimer(mFrontenNachTimer);
-		Ansage(TDF(TEXT("Wege geprueft: die erste Welle kommt aus %s. Markierung auf Karte und Kompass ist aktualisiert."), TEXT("Paths checked: the first wave comes from %s. The marker on map and compass is updated."), *FrontName(0)));
+		Ansage(TDF(TEXT("Wege geprüft: die erste Welle kommt aus %s. Markierung auf Karte und Kompass ist aktualisiert."), TEXT("Paths checked: the first wave comes from %s. The marker on map and compass is updated."), *FrontName(0)));
 		SpeichereLauf();
 		MarkiereFronten();
 	}
@@ -1502,8 +1502,8 @@ bool UTDWaveSubsystem::SpringeZuWelle(int32 N)
 	}
 	mWelle = N - 1;
 	SpeichereLauf();
-	const FString BelohnText = Belohnt > 0 ? TDF(TEXT(", Belohnung fuer %d uebersprungene Wellen gutgeschrieben"), TEXT(", reward for %d skipped waves credited"), Belohnt) : FString();
-	Ansage(TDF(TEXT("Test: naechste Welle ist %d (%d Front(en))%s."), TEXT("Test: next wave is %d (%d front(s))%s."), N, AktiveFrontenFuer(N), *BelohnText));
+	const FString BelohnText = Belohnt > 0 ? TDF(TEXT(", Belohnung für %d übersprungene Wellen gutgeschrieben"), TEXT(", reward for %d skipped waves credited"), Belohnt) : FString();
+	Ansage(TDF(TEXT("Test: nächste Welle ist %d (%d Front(en))%s."), TEXT("Test: next wave is %d (%d front(s))%s."), N, AktiveFrontenFuer(N), *BelohnText));
 	if (AktiveFrontenFuer(N) > AktiveFrontenFuer(FMath::Max(1, N - 1)))
 	{
 		Ansage(TDF(TEXT("ACHTUNG: Ab Welle %d greifen sie auch aus %s an! Die neue Front ist auf Karte und Kompass markiert."), TEXT("WARNING: From wave %d they also attack from %s! The new front is marked on map and compass."), N, *FrontName(AktiveFrontenFuer(N) - 1)));
@@ -1723,14 +1723,14 @@ FString UTDWaveSubsystem::GetLaufText() const
 		{
 			// Endlos: Restzeit bis zur naechsten Welle (Abstand zaehlt ab Wellenbeginn)
 			const int32 Rest = FMath::Max(0, FMath::CeilToInt(EndlosAbstand(mWelle) - mWellenZeit));
-			return TDF(TEXT("Welle %d (endlos): %d Gegner uebrig, naechste in %d:%02d min, aus %s"), TEXT("Wave %d (endless): %d enemies left, next in %d:%02d min, from %s"),
+			return TDF(TEXT("Welle %d (endlos): %d Gegner übrig, nächste in %d:%02d min, aus %s"), TEXT("Wave %d (endless): %d enemies left, next in %d:%02d min, from %s"),
 				mWelle, Lebend + Offen, Rest / 60, Rest % 60, *mRichtungen);
 		}
 		if (mWellenGesamt <= 0)
 		{
-			return TDF(TEXT("Welle %d: %d / %d Gegner uebrig (%d unterwegs), aus %s"), TEXT("Wave %d: %d / %d enemies left (%d on the way), from %s"), mWelle, Lebend + Offen, mWellenGroesse, Lebend, *mRichtungen);
+			return TDF(TEXT("Welle %d: %d / %d Gegner übrig (%d unterwegs), aus %s"), TEXT("Wave %d: %d / %d enemies left (%d on the way), from %s"), mWelle, Lebend + Offen, mWellenGroesse, Lebend, *mRichtungen);
 		}
-		return TDF(TEXT("Welle %d von %d: %d / %d Gegner uebrig (%d unterwegs), aus %s"), TEXT("Wave %d of %d: %d / %d enemies left (%d on the way), from %s"), mWelle, mWellenGesamt, Lebend + Offen, mWellenGroesse, Lebend, *mRichtungen);
+		return TDF(TEXT("Welle %d von %d: %d / %d Gegner übrig (%d unterwegs), aus %s"), TEXT("Wave %d of %d: %d / %d enemies left (%d on the way), from %s"), mWelle, mWellenGesamt, Lebend + Offen, mWellenGroesse, Lebend, *mRichtungen);
 	}
 	default:
 		return TDT(TEXT("Bereit - /td kern start"), TEXT("Ready - /td kern start"));
@@ -2747,7 +2747,7 @@ void UTDWaveSubsystem::SpawneKernWelle(int32 Nummer)
 	const int32 Gleichzeitig = TDBalance::Ganz(TEXT("Wellen.MaxGleichzeitig"), TDBalance::Ganz(TEXT("Wellen.MaxGegner"), KernMaxGegner));
 	if (Gespawnt > Gleichzeitig)
 	{
-		Boss += TDF(TEXT(" Sie kommen in Schueben, hoechstens %d gleichzeitig."), TEXT(" They come in batches, at most %d at once."), Gleichzeitig);
+		Boss += TDF(TEXT(" Sie kommen in Schüben, höchstens %d gleichzeitig."), TEXT(" They come in batches, at most %d at once."), Gleichzeitig);
 	}
 	// T3: neue Arten in der Ansage nennen (Steckbrief in der Wellenvorschau am Kern)
 	FString Neu;
@@ -2848,7 +2848,7 @@ void UTDWaveSubsystem::WelleAusgewertet(float Anteil, bool bVerloren)
 	{
 		Beste += FString::Printf(TEXT("%s%s %d"), i ? TEXT(", ") : TEXT(""), *Bilanz[i].Key, Bilanz[i].Value);
 	}
-	const FString BesteText = Beste.IsEmpty() ? FString() : TDF(TEXT(" Beste Tuerme: %s."), TEXT(" Best turrets: %s."), *Beste);
+	const FString BesteText = Beste.IsEmpty() ? FString() : TDF(TEXT(" Beste Türme: %s."), TEXT(" Best turrets: %s."), *Beste);
 	if (bVerloren)
 	{
 		MeldeMetrik(Anteil);
@@ -3412,8 +3412,8 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 	}
 	// 17.11. (Chatflut): der Bauhinweis nur in den ersten drei Wellen, danach weiss man es
 	if (!Sammelzeile() || mWelle <= 3)
-	Ansage(mManuell ? TDT(TEXT("Bauen, so lange du willst - naechste Welle am Kern (E) mit \"Welle starten\"."), TEXT("Build as long as you like - next wave at the Core (E) with \"Start wave\"."))
-		: TDF(TEXT("Naechste Welle in %d:%02d min (sofort: am Kern \"Welle starten\")."), TEXT("Next wave in %d:%02d min (now: \"Start wave\" at the Core)."),
+	Ansage(mManuell ? TDT(TEXT("Bauen, so lange du willst - nächste Welle am Kern (E) mit \"Welle starten\"."), TEXT("Build as long as you like - next wave at the Core (E) with \"Start wave\"."))
+		: TDF(TEXT("Nächste Welle in %d:%02d min (sofort: am Kern \"Welle starten\")."), TEXT("Next wave in %d:%02d min (now: \"Start wave\" at the Core)."),
 			FMath::FloorToInt(mCountdown / 60.f), FMath::FloorToInt(mCountdown) % 60));
 	const int32 Jetzt = AktiveFrontenFuer(mWelle);
 	const int32 Danach = AktiveFrontenFuer(mWelle + 1);
@@ -4555,7 +4555,7 @@ bool UTDWaveSubsystem::StarteStress(ATDDefenseCore* Kern, const TArray<int32>& S
 	}
 	if (mLauf == ETDLauf::Welle || mStressPhase != 0)
 	{
-		Meldung = mStressPhase != 0 ? TDT(TEXT("Stresstest laeuft schon (/td kern stress stop)."), TEXT("Stress test already running (/td kern stress stop).")) : TDT(TEXT("Erst nach der Welle (Stresstest nur in der Bauphase oder ohne Lauf)."), TEXT("Only after the wave (stress test only in the build phase or without a run)."));
+		Meldung = mStressPhase != 0 ? TDT(TEXT("Stresstest läuft schon (/td kern stress stop)."), TEXT("Stress test already running (/td kern stress stop).")) : TDT(TEXT("Erst nach der Welle (Stresstest nur in der Bauphase oder ohne Lauf)."), TEXT("Only after the wave (stress test only in the build phase or without a run)."));
 		return false;
 	}
 	FrontenFuer(Kern);
@@ -4596,7 +4596,7 @@ bool UTDWaveSubsystem::StarteStress(ATDDefenseCore* Kern, const TArray<int32>& S
 		}
 		UE_LOG(LogFicsitTD, Log, TEXT("Render (Stresstest Start): %s; %d Tuerme"), *Render, Tuerme);
 	}
-	Meldung = TDF(TEXT("Stresstest: %d Stufen je %.0f s an %s, Gegner x%.0f LP, kein Schaden am Kern/Mauern, Abschuesse zaehlen nicht. Bitte nahe am Kern bleiben und nicht bauen."),
+	Meldung = TDF(TEXT("Stresstest: %d Stufen je %.0f s an %s, Gegner x%.0f LP, kein Schaden am Kern/Mauern, Abschüsse zählen nicht. Bitte nahe am Kern bleiben und nicht bauen."),
 		TEXT("Stress test: %d stages of %.0f s each at %s, enemies x%.0f HP, no damage to Core/walls, kills do not count. Please stay near the Core and do not build."),
 		Stufen.Num(), Sekunden, *FrontName(0), LPFaktor);
 	return true;
@@ -4739,7 +4739,7 @@ void UTDWaveSubsystem::StressTick()
 	}
 	if (Klassen.Num() == 0)
 	{
-		StoppeStress(TDF(TEXT("Stresstest abgebrochen: Art '%s' unbekannt. Moeglich: mix, %s"), TEXT("Stress test aborted: type '%s' unknown. Possible: mix, %s"), *mStressArt, *FString::Join(Namen, TEXT(", ")).ToLower()));
+		StoppeStress(TDF(TEXT("Stresstest abgebrochen: Art '%s' unbekannt. Möglich: mix, %s"), TEXT("Stress test aborted: type '%s' unknown. Possible: mix, %s"), *mStressArt, *FString::Join(Namen, TEXT(", ")).ToLower()));
 		return;
 	}
 	const int32 Vorher = mGegner.Num();

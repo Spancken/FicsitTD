@@ -1165,7 +1165,7 @@ FString ATDDronePort::ZusatzInfo() const
 	{
 		Unterwegs += D.Zustand != 0 ? 1 : 0;
 	}
-	return TDF(TEXT("%s: %d von %d Drohnen unterwegs, %d Einsaetze"), TEXT("%s: %d of %d drones out, %d sorties"),
+	return TDF(TEXT("%s: %d von %d Drohnen unterwegs, %d Einsätze"), TEXT("%s: %d of %d drones out, %d sorties"),
 		*(IstKampf() ? TDT(TEXT("Kampfdrohnen"), TEXT("Combat drones")) : TDT(TEXT("Reparaturdrohnen"), TEXT("Repair drones"))), Unterwegs, mDrohnen.Num(), mEinsaetze);
 }
 

@@ -89,9 +89,9 @@ static FString TDBiomAnzeige(int32 Stufe)
 	switch (FMath::Clamp(Stufe, 0, 3))
 	{
 	case 0: return TDT(TEXT("Grasfelder"), TEXT("Grass Fields"));
-	case 1: return TDT(TEXT("Felsenwueste"), TEXT("Rocky Desert"));
-	case 2: return TDT(TEXT("Noerdlicher Wald"), TEXT("Northern Forest"));
-	default: return TDT(TEXT("Duenenwueste"), TEXT("Dune Desert"));
+	case 1: return TDT(TEXT("Felsenwüste"), TEXT("Rocky Desert"));
+	case 2: return TDT(TEXT("Nördlicher Wald"), TEXT("Northern Forest"));
+	default: return TDT(TEXT("Dünenwüste"), TEXT("Dune Desert"));
 	}
 }
 /** Plattform 6 x 6 Fundamente zu 8 m: Raster 7 x 7 Messpunkte im Abstand von 8 m */
@@ -427,7 +427,7 @@ void UTDKernplatz::SucheBoden()
 	GetWorld()->GetTimerManager().ClearTimer(mTimer);
 	if (!bGefunden)
 	{
-		Melde(TDF(TEXT("%s: nach 30 s kein Boden gefunden - Gelaende nicht geladen oder Platz ueber Wasser."),
+		Melde(TDF(TEXT("%s: nach 30 s kein Boden gefunden - Gelände nicht geladen oder Platz über Wasser."),
 			TEXT("%s: no ground found after 30 s - terrain not loaded or site over water."), *mId));
 		if (mScanLaeuft && mScanPhase == 2)
 		{
@@ -592,7 +592,7 @@ void UTDKernplatz::Auswerten()
 	mErgebnisNetz = Netz;
 	mErgebnisFronten = FString::Join(FrontText, TEXT(", "));
 	mErgebnisRohstoffe = FString::Join(RohText, TEXT("; "));
-	Melde(TEXT("Gefaellt dir der Platz: /td platz merken <grasfelder|felsenwueste|wald|duenen> [Notiz]"));
+	Melde(TEXT("Gefällt dir der Platz: /td platz merken <grasfelder|felsenwueste|wald|duenen> [Notiz]"));
 	EntferneInvoker();
 	if (!mScanLaeuft)
 	{
@@ -1044,12 +1044,12 @@ void UTDKernplatz::ScanBewerten()
 	FFileHelper::SaveStringToFile(Csv, *Datei, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
 	if (mScanTreffer.Num() == 0)
 	{
-		Melde(TEXT("Keine ebene freie Flaeche gefunden. /td platz zurueck"));
+		Melde(TEXT("Keine ebene freie Fläche gefunden. /td platz zurueck"));
 		StoppeScan();
 		return;
 	}
 	// Phase 2: die Treffer nacheinander voll pruefen (Netz, Fronten, Rohstoffe)
-	Melde(TEXT("Pruefe die Treffer jetzt einzeln mit Navigationsnetz und Fronten (je etwa 30-90 s) ..."));
+	Melde(TEXT("Prüfe die Treffer jetzt einzeln mit Navigationsnetz und Fronten (je etwa 30-90 s) ..."));
 	mScanPhase = 2;
 	mScanPruefIndex = 0;
 	ScanNaechstePruefung();
@@ -1319,7 +1319,7 @@ FString UTDKernplatz::BauePlatz(const FString& Biom, const FString& Nr, APawn* S
 		Figur->GetCharacterMovement()->SetMovementMode(MOVE_Flying);
 	}
 	GetWorld()->GetTimerManager().SetTimer(mTimer, this, &UTDKernplatz::SucheBoden, 1.f, true, 1.f);
-	return TDF(TEXT("Baue den Kernplatz %s (%s, Stufe %s, %d von %d Plaetzen): fliege hin und warte auf das Gelaende ..."),
+	return TDF(TEXT("Baue den Kernplatz %s (%s, Stufe %s, %d von %d Plätzen): fliege hin und warte auf das Gelände ..."),
 		TEXT("Building core site %s (%s, difficulty %s, %d of %d sites): flying there and waiting for the terrain ..."),
 		P->Id, *TDBiomAnzeige(Stufe), *TDStufeAnzeige(GewaehlteStufe(this, Stufe)), Index + 1, Auswahl.Num());   // 16.11. (E7): gewaehlte Stufe
 }
@@ -1336,7 +1336,7 @@ void UTDKernplatz::BaueJetzt()
 	UClass* KernRezept = LoadClass<UFGRecipe>(nullptr, TDKernRezept);
 	if (!Bau || !Fundament || !KernKlasse)
 	{
-		Melde(TDT(TEXT("Bauen nicht moeglich: Fundament- oder Kernklasse nicht gefunden."), TEXT("Cannot build: foundation or core class not found.")));
+		Melde(TDT(TEXT("Bauen nicht möglich: Fundament- oder Kernklasse nicht gefunden."), TEXT("Cannot build: foundation or core class not found.")));
 		Schuetze(false);
 		return;
 	}
@@ -1366,7 +1366,7 @@ void UTDKernplatz::BaueJetzt()
 	}
 	if (Hoehen.Num() == 0)
 	{
-		Melde(TDT(TEXT("Bauen nicht moeglich: kein Boden unter der Plattform."), TEXT("Cannot build: no ground under the platform.")));
+		Melde(TDT(TEXT("Bauen nicht möglich: kein Boden unter der Plattform."), TEXT("Cannot build: no ground under the platform.")));
 		Schuetze(false);
 		return;
 	}
@@ -1592,7 +1592,7 @@ void UTDKernplatz::BaueJetzt()
 		}
 	}
 	Schuetze(false);
-	Melde(TDF(TEXT("%s: Plattform (6 x 6, bis %d uebereinander, %d Fundamente) mit %d Rampen, %d Eckstuecken und Abwehrkern gebaut, %d Pflanzen im Umkreis von 60 m geraeumt."),
+	Melde(TDF(TEXT("%s: Plattform (6 x 6, bis %d übereinander, %d Fundamente) mit %d Rampen, %d Eckstücken und Abwehrkern gebaut, %d Pflanzen im Umkreis von 60 m geräumt."),
 		TEXT("%s: platform (6 x 6, up to %d stacked, %d foundations) built with %d ramps, %d corner pieces and the Defense Core, %d plants cleared within 60 m."),
 		*mId, Stapel, Gesetzt, Rampen, Ecken, Geraeumt));
 	mNeuerKern = Cast<ATDDefenseCore>(Kern);

@@ -658,11 +658,11 @@ void UTDEinsatzSubsystem::WelleBeendet(int32 Welle, float KernAnteil)
 		{
 			Teile.Add(FString::Printf(TEXT("%d %s"), Z.Value, *TDAnzeige(Z.Key)));
 		}
-		Melde(TDF(TEXT("Zerstoert in dieser Welle: %s. Das Baumaterial liegt im Inventar (oder wartet am Kern) - Kontingent ist wieder frei."),
+		Melde(TDF(TEXT("Zerstört in dieser Welle: %s. Das Baumaterial liegt im Inventar (oder wartet am Kern) - Kontingent ist wieder frei."),
 			TEXT("Destroyed this wave: %s. The building materials are in your inventory (or waiting at the Core) - the quota is free again."), *FString::Join(Teile, TEXT(", "))));
 		mZerstoert.Reset();
 	}
-	Melde(TDF(TEXT("+%d FICSIT-Coupons%s (Konto %d Coupons%s). Ausgeben im Kern-Menue (E am Kern)."),
+	Melde(TDF(TEXT("+%d FICSIT-Coupons%s (Konto %d Coupons%s). Ausgeben im Kern-Menü (E am Kern)."),
 		TEXT("+%d FICSIT Coupons%s (balance %d Coupons%s). Spend them in the Core Menu (E at the Core)."), Punkte,
 		Welle % 10 == 0 ? *TDT(TEXT(" inkl. Boss-Bonus"), TEXT(" incl. boss bonus")) : TEXT(""), Konto(),
 		Kern->mEinsatzPunkte > 0 ? *TDF(TEXT(", %d warten am Kern, Inventar voll"), TEXT(", %d waiting at the Core, inventory full"), Kern->mEinsatzPunkte) : TEXT("")));
@@ -678,7 +678,7 @@ void UTDEinsatzSubsystem::WelleBeendet(int32 Welle, float KernAnteil)
 		{
 			// Test 0.53: bei vollem Inventar verfiel die Biomasse, danach fehlte der Strom - jetzt wartet der Rest am Kern
 			const FString Text = GibMaterial({ { Biomasse, Bio } });
-			Melde(TDF(TEXT("Biomasse fuer die Brenner: %s."), TEXT("Biomass for the burners: %s."), *Text));
+			Melde(TDF(TEXT("Biomasse für die Brenner: %s."), TEXT("Biomass for the burners: %s."), *Text));
 		}
 	}
 	// Forschungspunkte (Schritt B): je Welle, Bonus bei gutem Kern und nach dem Boss; als Item ins Inventar (MAM-Kosten)
@@ -1296,7 +1296,7 @@ FString UTDEinsatzSubsystem::Kaufe(const FString& Name, int32 Anzahl)
 	// 16.11. (Nachpruefung, Marius): im Endlos-Modus ist der Laden auch in der Welle offen
 	if (Waves && Waves->LaeuftWelle() && !Waves->IstEndlos())
 	{
-		return TDT(TEXT("Waehrend der Welle ist der Laden geschlossen."), TEXT("The shop is closed during a wave."));
+		return TDT(TEXT("Während der Welle ist der Laden geschlossen."), TEXT("The shop is closed during a wave."));
 	}
 	// erst der genaue Name, dann der Anfang (Test 0.56: "Gewehr" traf zuerst "Gewehrturm" - drei Gewehrtuerme statt der Waffe)
 	const FTDLadenEintrag* E = nullptr;
@@ -1374,7 +1374,7 @@ FString UTDEinsatzSubsystem::Kaufe(const FString& Name, int32 Anzahl)
 	TMap<UClass*, int32> Material;
 	SammleBaumaterial(E->Key, Gekauft * LadenPaket(*E), Material);
 	const FString MaterialText = Material.Num() ? GibMaterial(Material) : FString();
-	return TDF(TEXT("Gekauft: %s +%d fuer %d Coupons. Jetzt %d/%d, Konto %d Coupons.%s"), TEXT("Bought: %s +%d for %d Coupons. Now %d/%d, balance %d Coupons.%s"),
+	return TDF(TEXT("Gekauft: %s +%d für %d Coupons. Jetzt %d/%d, Konto %d Coupons.%s"), TEXT("Bought: %s +%d for %d Coupons. Now %d/%d, balance %d Coupons.%s"),
 		*TDAnzeige(E->Key), Gekauft * LadenPaket(*E), Kosten,
 		Belegt(E->Key), Grenze(E->Key), Konto(), MaterialText.IsEmpty() ? TEXT("") : *(TDT(TEXT(" Material: "), TEXT(" Materials: ")) + MaterialText));
 }
@@ -1866,7 +1866,7 @@ void UTDEinsatzSubsystem::Starte(ATDDefenseCore* Kern, int32 Stufe, int32 Wellen
 		const float Abstand = bEndlos ? TDBalance::Wert(*FString::Printf(TEXT("Endlos.%s.Abstand"), EndlosStufen[Si]), AbstandStandard[Si]) : -1.f;
 		if (!Waves->StarteKernVerteidigung(Kern, bEndlos ? 0 : Wellen, Erster, Abstand, Stufe))
 		{
-			Meldungen.Add(TDT(TEXT("Es laeuft schon eine Kern-Verteidigung - erst /td kern stop."), TEXT("A Core defense is already running - use /td kern stop first.")));
+			Meldungen.Add(TDT(TEXT("Es läuft schon eine Kern-Verteidigung - erst /td kern stop."), TEXT("A Core defense is already running - use /td kern stop first.")));
 		}
 	}
 	mBelegtZeit = -1.f;
@@ -2052,7 +2052,7 @@ TArray<FString> UTDEinsatzSubsystem::StatusText()
 	}
 	Zeilen.Add(mFrei ? TDT(TEXT("Einsatz aktiv - FREIES BAUEN (Kontingente und Bausperre aus, /td einsatz frei aus)"),
 			TEXT("Operation active - FREE BUILD (quotas and build lock off, /td einsatz frei aus)"))
-		: TDT(TEXT("Einsatz aktiv - Kontingente gelten, Bauen waehrend der Welle gesperrt (/td einsatz frei an)"),
+		: TDT(TEXT("Einsatz aktiv - Kontingente gelten, Bauen während der Welle gesperrt (/td einsatz frei an)"),
 			TEXT("Operation active - quotas apply, building is locked during a wave (/td einsatz frei an)")));
 	ZaehleNeu();
 	TArray<FString> Teile;

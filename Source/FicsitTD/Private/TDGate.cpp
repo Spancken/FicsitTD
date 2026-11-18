@@ -224,7 +224,7 @@ FText ATDGate::GetLookAtDecription_Implementation(AFGCharacterPlayer* byCharacte
 {
 	return FText::FromString(TDF(TEXT("Tor (%s)\nLebenspunkte %.0f / %.0f%s"), TEXT("Gate (%s)\nHealth %.0f / %.0f%s"),
 		*(mOffen > 0.95f ? TDT(TEXT("offen"), TEXT("open")) : mOffen < 0.05f ? TDT(TEXT("zu"), TEXT("closed")) : TDT(TEXT("bewegt sich"), TEXT("moving"))),
-		FMath::Max(mHealth, 0.f), GetTDMaxHealth(), *(mGegnerNah ? TDT(TEXT("\nGegner in der Naehe: bleibt zu"), TEXT("\nEnemies nearby: stays closed")) : FString())));
+		FMath::Max(mHealth, 0.f), GetTDMaxHealth(), *(mGegnerNah ? TDT(TEXT("\nGegner in der Nähe: bleibt zu"), TEXT("\nEnemies nearby: stays closed")) : FString())));
 }
 
 float ATDGate::TakeDamage(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
