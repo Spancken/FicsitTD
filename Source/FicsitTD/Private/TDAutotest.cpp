@@ -1,4 +1,4 @@
-#include "TDAutotest.h"
+﻿#include "TDAutotest.h"
 #include "FicsitTDModule.h"
 #include "TDDefenseCore.h"
 #include "TDTurretBase.h"
@@ -1171,6 +1171,33 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 			Turm ? FString::Printf(TEXT("%s in %.0f m"), *Turm->GetName(), FVector::Dist(Auge, Turm->GetActorLocation()) / 100.f) : FString(TEXT("kein Turm")));
 		return true;
 	}
+	if (S->HasField(TEXT("warteGegner")))
+	{
+		// 18.11. (Fotos): warten, bis ein Wellengegner hoechstens "warteGegner" m vom Kern entfernt ist (hoechstens "max" s, Standard 120)
+		const float Grenze = static_cast<float>(S->GetNumberField(TEXT("warteGegner"))) * 100.f;
+		const UTDWaveSubsystem* Waves = World->GetSubsystem<UTDWaveSubsystem>();
+		ATDDefenseCore* Kern = nullptr;
+		for (TActorIterator<ATDDefenseCore> It(World); It && !Kern; ++It)
+		{
+			Kern = *It;
+		}
+		float Naechster = 1e9f;
+		if (Waves && Kern)
+		{
+			for (const AFGCreature* G : Waves->GetLivingWaveCreatures())
+			{
+				Naechster = G ? FMath::Min(Naechster, FVector::Dist2D(G->GetActorLocation(), Kern->GetActorLocation())) : Naechster;
+			}
+		}
+		const float Max = S->HasField(TEXT("max")) ? static_cast<float>(S->GetNumberField(TEXT("max"))) : 120.f;
+		if (Naechster <= Grenze || mSchrittUhr > Max)
+		{
+			Ergebnis(TEXT("Warten"), FString::Printf(TEXT("Gegner naeher als %.0f m"), Grenze / 100.f), Naechster <= Grenze,
+				FString::Printf(TEXT("naechster %.0f m nach %.0f s"), Naechster / 100.f, mSchrittUhr));
+			return true;
+		}
+		return false;
+	}
 	if (S->TryGetStringField(TEXT("kamera"), Wort))
 	{
 		// 0.10.2 (Screenshots fuer Handbuch/Mod-Seite): Kamera des Spiels in dritter Person ("dritte") oder zurueck ("erste").
@@ -1211,6 +1238,139 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 				PC->SetViewTarget(FrontKamera.Get());
 			}
 			Ergebnis(TEXT("Kamera"), TEXT("kamera front"), FrontKamera.IsValid(), FrontKamera.IsValid() ? TEXT("eigene Kamera vor der Figur") : TEXT("Kamera nicht erzeugt"));
+			return true;
+		}
+		if (PC && Wort == TEXT("frei"))
+		{
+			// 18.11. (Marius: Bilder fuer Posts, Basis und anrollende Wellen): freie Kamera wie ein Fotomodus, ohne Figur im Bild.
+			// Punkte: "kern", "front1".."front4", "gegner" (Mitte der lebenden Wellengegner), "spieler".
+			// "ort" (Standard kern) + "richtung" (Grad, Welt) oder "richtungZu" (Punkt) * "abstand" m + "seite" m quer + "hoehe" m;
+			// Blick auf "blick" (Standard ort) + "blickhoehe" m (3), "fov" (70). Bodenschutz: Kamera mind. 2 m ueber dem Gelaende.
+			const UTDWaveSubsystem* Waves = World->GetSubsystem<UTDWaveSubsystem>();
+			ATDDefenseCore* Kern = nullptr;
+			for (TActorIterator<ATDDefenseCore> It(World); It && !Kern; ++It)
+			{
+				Kern = *It;
+			}
+			// Mitte der lebenden Wellengegner (fuer "gegner" und "zwischen")
+			FVector GegnerMitte = FVector::ZeroVector;
+			int32 GegnerZahl = 0;
+			if (Waves)
+			{
+				for (const AFGCreature* G : Waves->GetLivingWaveCreatures())
+				{
+					if (G)
+					{
+						GegnerMitte += G->GetActorLocation();
+						++GegnerZahl;
+					}
+				}
+				GegnerMitte = GegnerZahl > 0 ? GegnerMitte / GegnerZahl : GegnerMitte;
+			}
+			auto Punkt = [&](const FString& Name, FVector& Out) -> bool
+			{
+				if (Name == TEXT("zwischen") && Kern && GegnerZahl > 0)
+				{
+					// Punkt auf der Linie Kern -> Gegnermitte, "anteil" 0..1 (Standard 0.5); Test 18.11.: nach 20 s ist die Welle 150 m weit
+					const float Anteil = S->HasField(TEXT("anteil")) ? static_cast<float>(S->GetNumberField(TEXT("anteil"))) : 0.5f;
+					Out = FMath::Lerp(Kern->GetActorLocation(), GegnerMitte, Anteil);
+					return true;
+				}
+				if (Name == TEXT("kern") && Kern)
+				{
+					Out = Kern->GetActorLocation();
+					return true;
+				}
+				if (Name == TEXT("spieler") && PC->GetPawn())
+				{
+					Out = PC->GetPawn()->GetActorLocation();
+					return true;
+				}
+				if (Name.StartsWith(TEXT("front")) && Waves)
+				{
+					const int32 i = FCString::Atoi(*Name.Mid(5)) - 1;
+					if (Waves->GetFronten().IsValidIndex(i))
+					{
+						Out = Waves->GetFronten()[i].Ort;
+						return true;
+					}
+					return false;
+				}
+				if (Name == TEXT("gegner") && GegnerZahl > 0)
+				{
+					Out = GegnerMitte;
+					return true;
+				}
+				return false;
+			};
+			auto Text = [&](const TCHAR* Feld, const TCHAR* Standard) { FString W; return S->TryGetStringField(Feld, W) ? W : FString(Standard); };
+			auto Wert = [&](const TCHAR* Feld, float Standard) { return S->HasField(Feld) ? static_cast<float>(S->GetNumberField(Feld)) : Standard; };
+			FVector Ort, Ziel;
+			const FString OrtName = Text(TEXT("ort"), TEXT("kern"));
+			const FString BlickName = Text(TEXT("blick"), *OrtName);
+			bool bOk = Punkt(OrtName, Ort) && Punkt(BlickName, Ziel);
+			float Yaw = Wert(TEXT("richtung"), 0.f);
+			FVector ZuPunkt;
+			const FString ZuName = Text(TEXT("richtungZu"), TEXT(""));
+			if (bOk && !ZuName.IsEmpty())
+			{
+				bOk = Punkt(ZuName, ZuPunkt);
+				Yaw = bOk ? (ZuPunkt - Ort).GetSafeNormal2D().Rotation().Yaw + Wert(TEXT("richtung"), 0.f) : Yaw;
+			}
+			FString Info = TEXT("Punkt fehlt");
+			if (bOk)
+			{
+				const FRotator Dir(0.f, Yaw, 0.f);
+				FVector Kamera = Ort + Dir.RotateVector(FVector(Wert(TEXT("abstand"), 30.f) * 100.f, Wert(TEXT("seite"), 0.f) * 100.f, 0.f))
+					+ FVector(0.f, 0.f, Wert(TEXT("hoehe"), 15.f) * 100.f);
+				FHitResult Boden;
+				FCollisionQueryParams Q(SCENE_QUERY_STAT(TDFotoBoden), false);
+				if (World->LineTraceSingleByChannel(Boden, Kamera + FVector(0.f, 0.f, 20000.f), Kamera - FVector(0.f, 0.f, 20000.f), ECC_Visibility, Q)
+					&& Kamera.Z < Boden.ImpactPoint.Z + 200.f)
+				{
+					Kamera.Z = Boden.ImpactPoint.Z + 200.f;
+				}
+				// Sichtschutz (Test 18.11.: Fels und Kernturm verdeckten das Bild): verdeckt etwas die Sicht zum Ziel (Treffer mehr als
+				// 15 m vor dem Ziel), die Kamera in 5-m-Schritten anheben, hoechstens um "anheben" m (Standard 40)
+				const FVector ZielPunkt = Ziel + FVector(0.f, 0.f, Wert(TEXT("blickhoehe"), 3.f) * 100.f);
+				FCollisionQueryParams Sicht(SCENE_QUERY_STAT(TDFotoSicht), true);
+				Sicht.AddIgnoredActor(PC->GetPawn());
+				int32 Angehoben = 0;
+				for (; Angehoben < FMath::RoundToInt(Wert(TEXT("anheben"), 40.f) / 5.f); ++Angehoben)
+				{
+					FHitResult Treffer;
+					if (!World->LineTraceSingleByChannel(Treffer, Kamera, ZielPunkt, ECC_Visibility, Sicht)
+						|| FVector::Dist(Treffer.ImpactPoint, ZielPunkt) < 1500.f)
+					{
+						break;
+					}
+					Kamera.Z += 500.f;
+				}
+				const FRotator Blick = (Ziel + FVector(0.f, 0.f, Wert(TEXT("blickhoehe"), 3.f) * 100.f) - Kamera).Rotation();
+				static TWeakObjectPtr<ACameraActor> FreiKamera;
+				if (!FreiKamera.IsValid())
+				{
+					FActorSpawnParameters Param;
+					Param.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+					FreiKamera = World->SpawnActor<ACameraActor>(ACameraActor::StaticClass(), Kamera, Blick, Param);
+				}
+				if (FreiKamera.IsValid())
+				{
+					FreiKamera->SetActorLocationAndRotation(Kamera, Blick);
+					if (UCameraComponent* Linse = FreiKamera->GetCameraComponent())
+					{
+						// 16:9-Bildfeld (Test 18.11.: auf 32:9 gab der 16:9-Zuschnitt nur das halbe Sichtfeld); Seitenbalken schneidet der Zuschnitt weg
+						Linse->SetConstraintAspectRatio(true);
+						Linse->SetAspectRatio(16.f / 9.f);
+						Linse->SetFieldOfView(Wert(TEXT("fov"), 70.f));
+					}
+					PC->SetViewTarget(FreiKamera.Get());
+				}
+				bOk = FreiKamera.IsValid();
+				Info = FString::Printf(TEXT("%s -> %s, Kamera %.0f m vom Ziel, %.0f m hoch, %d x angehoben, %d Gegner"), *OrtName, *BlickName,
+					FVector::Dist(Kamera, Ziel) / 100.f, (Kamera.Z - Ziel.Z) / 100.f, Angehoben, GegnerZahl);
+			}
+			Ergebnis(TEXT("Kamera"), TEXT("kamera frei"), bOk, Info);
 			return true;
 		}
 		if (Spieler)
