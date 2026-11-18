@@ -1,5 +1,7 @@
 #include "TDWaveSubsystem.h"
 #include "TDAda.h"
+#include "GameFramework/Character.h"
+#include "Components/CapsuleComponent.h"
 #include "Components/BoxComponent.h"
 #include "Engine/StaticMeshActor.h"
 #include "NavModifierComponent.h"
@@ -2018,6 +2020,52 @@ void UTDWaveSubsystem::EntferneBossBalken()
 	mBosse.Reset();
 }
 
+/** 18.11. (B16, Diagnose G3: grosse Stinger am Startpunkt Nordwesten bleiben im NavWalking des Alpha-Netzes, Agent-Radius 120):
+ *  Netz zur Groesse der Klasse, nach denselben Regeln wie UTDGegnerHirn::BerechneWeg (kleinere Netze als das Standardnetz nicht).
+ *  Groesse aus der Kapsel des Klassen-Standardobjekts; nullptr = Standardnetz. */
+static ANavigationData* SpawnNetzFuer(UNavigationSystemV1* Nav, UClass* Klasse, const FVector& Ort)
+{
+	const ACharacter* Vorlage = Klasse ? Cast<ACharacter>(Klasse->GetDefaultObject()) : nullptr;
+	const UCapsuleComponent* Kapsel = Vorlage ? Vorlage->GetCapsuleComponent() : nullptr;
+	ANavigationData* Std = Nav ? Nav->GetDefaultNavDataInstance(FNavigationSystem::DontCreate) : nullptr;
+	if (!Kapsel || !Std || TDBalance::Wert(TEXT("Gegner.SpawnEigenesNetz"), 0.f) <= 0.f)
+	{
+		return nullptr;
+	}
+	// Stinger-Nachweis 18.11.: die Kapsel (84 cm) reichte nicht - das Spiel ordnet ueber die Agenteneigenschaften der Bewegung zu
+	// (Stinger: Radius 120 -> Alpha-Netz). Diese nehmen, die Kapsel nur, wenn dort nichts eingetragen ist.
+	FNavAgentProperties Agent;
+	const UCharacterMovementComponent* Bewegung = Vorlage->GetCharacterMovement();
+	if (Bewegung && Bewegung->GetNavAgentPropertiesRef().AgentRadius > 0.f)
+	{
+		Agent = Bewegung->GetNavAgentPropertiesRef();
+	}
+	else
+	{
+		Agent.AgentRadius = Kapsel->GetScaledCapsuleRadius();
+		Agent.AgentHeight = 2.f * Kapsel->GetScaledCapsuleHalfHeight();
+	}
+	ANavigationData* Eigenes = const_cast<ANavigationData*>(Nav->GetNavDataForProps(Agent, Ort));
+	if (!Eigenes || !Eigenes->IsRegistered() || Eigenes->GetConfig().AgentRadius <= Std->GetConfig().AgentRadius)
+	{
+		return nullptr;
+	}
+	return Eigenes;
+}
+
+/** 18.11. (Stinger-Nachweis: die Klasse liefert vor dem Spawn nicht die echte Agentengroesse, der Stinger hat erst im Spiel Radius 120):
+ *  Netz zu den echten Agenteneigenschaften eines gespawnten Gegners, gleiche Regeln; nullptr = Standardnetz genuegt. */
+static ANavigationData* NetzFuerAgent(UNavigationSystemV1* Nav, const FNavAgentProperties& Agent, const FVector& Ort)
+{
+	ANavigationData* Std = Nav ? Nav->GetDefaultNavDataInstance(FNavigationSystem::DontCreate) : nullptr;
+	if (!Std || Agent.AgentRadius <= 0.f)
+	{
+		return nullptr;
+	}
+	ANavigationData* Eigenes = const_cast<ANavigationData*>(Nav->GetNavDataForProps(Agent, Ort));
+	return Eigenes && Eigenes->IsRegistered() && Eigenes->GetConfig().AgentRadius > Std->GetConfig().AgentRadius ? Eigenes : nullptr;
+}
+
 int32 UTDWaveSubsystem::SpawneGruppe(TSubclassOf<AFGCreature> Klasse, int32 Anzahl, const FVector& Mitte, const FVector& FrontOrt, float LPFaktor, int32 Elite, bool bBoss,
 	const TArray<FVector>* VorWeg)
 {
@@ -2031,7 +2079,9 @@ int32 UTDWaveSubsystem::SpawneGruppe(TSubclassOf<AFGCreature> Klasse, int32 Anza
 	// Weg Front -> Kern einmal je Gruppe (ohne Wasser); ihm folgen die Gehirne
 	const TArray<FVector> Weg = VorWeg ? *VorWeg : UTDGegnerHirn::BerechneWeg(World, FrontOrt, mKern.Get());
 	int32 Gespawnt = 0;
-	int32 ProbeAbgelehnt = 0, AnDerFront = 0, FrontNichtAufNetz = 0;
+	int32 ProbeAbgelehnt = 0, AnDerFront = 0, FrontNichtAufNetz = 0, KlassenNetzTreffer = 0, KlassenNetzOhne = 0;
+	int32 NachSpawnGeprueft = 0, NachSpawnUmgesetzt = 0, NachSpawnOhne = 0;
+	const ANavigationData* GenutztesNetz = nullptr;
 	for (int32 i = 0; i < Anzahl; ++i)
 	{
 		// Spawnfeld: quer zur Angriffsrichtung verteilt (Wellen.SpawnBreite, Marius 03.11.2026), bevorzugt ein erreichbarer Punkt des Netzes
@@ -2042,9 +2092,14 @@ int32 UTDWaveSubsystem::SpawneGruppe(TSubclassOf<AFGCreature> Klasse, int32 Anza
 		// 0.78.2 Ursache der "Abstuerze" (Paket Ursache 14:54): Spawnpunkte lagen im See - die Gegner schwammen, wurden versetzt
 		// und sanken bis -180 m. Gesucht wird deshalb mit dem Filter der Wege (ohne Wasserbereich) und der Punkt zusaetzlich
 		// gegen die Wasservolumen geprueft (das Netz kennt nicht jedes Wasser als eigenen Bereich)
-		ANavigationData* NavDaten = Nav ? Nav->GetDefaultNavDataInstance(FNavigationSystem::DontCreate) : nullptr;
-		const FSharedConstNavQueryFilter Filter = NavDaten ? UNavigationQueryFilter::GetQueryFilter(*NavDaten, this, UTDNavFilter::StaticClass()) : nullptr;
+		// 18.11. (B16): erst im Netz zur Groesse der Klasse suchen (sonst stand ein grosser Stinger auf einer Insel seines Netzes),
+		// ohne Treffer dort wie bisher im Standardnetz
+		ANavigationData* KlassenNetz = SpawnNetzFuer(Nav, Klasse, FrontOrt);
 		bool bTrocken = false;
+		for (int32 Netzlauf = KlassenNetz ? 0 : 1; Netzlauf < 2 && !bTrocken; ++Netzlauf)
+		{
+		ANavigationData* NavDaten = Netzlauf == 0 ? KlassenNetz : (Nav ? Nav->GetDefaultNavDataInstance(FNavigationSystem::DontCreate) : nullptr);
+		const FSharedConstNavQueryFilter Filter = NavDaten ? UNavigationQueryFilter::GetQueryFilter(*NavDaten, this, UTDNavFilter::StaticClass()) : nullptr;
 		// 0.84.6 (Pruefung0845: oft alle 6 Proben verworfen, die 4 Versuche danach ungeprueft wieder auf der Insel): Ziel der Probe ist
 		// die aufs Netz gesetzte Front (die Abfrage verlangt einen begehbaren Endpunkt), und jeder Versuch wird geprueft.
 		FNavLocation FrontNav;
@@ -2072,6 +2127,15 @@ int32 UTDWaveSubsystem::SpawneGruppe(TSubclassOf<AFGCreature> Klasse, int32 Anza
 				ProbeAbgelehnt += bTrocken ? 0 : 1;
 			}
 		}
+		if (Netzlauf == 0)
+		{
+			(bTrocken ? KlassenNetzTreffer : KlassenNetzOhne)++;
+		}
+		if (bTrocken)
+		{
+			GenutztesNetz = NavDaten;
+		}
+		}
 		if (bTrocken)
 		{
 			Ort = NavOrt.Location + FVector(0, 0, 150.f);
@@ -2097,6 +2161,42 @@ int32 UTDWaveSubsystem::SpawneGruppe(TSubclassOf<AFGCreature> Klasse, int32 Anza
 		if (!Kreatur)
 		{
 			continue;
+		}
+		// 18.11. (B16): mit den echten Agenteneigenschaften pruefen, ob der Gegner in seinem eigenen Netz einen vollen Weg zur Front hat;
+		// sonst auf einen Punkt dieses Netzes mit vollem Weg setzen (bevor er losläuft). Gegner.SpawnEigenesNetz 0 = aus
+		if (TDBalance::Wert(TEXT("Gegner.SpawnEigenesNetz"), 0.f) > 0.f)
+		{
+			ANavigationData* Echt = NetzFuerAgent(Nav, Kreatur->GetNavAgentPropertiesRef(), Ort);
+			if (Echt && Echt != GenutztesNetz)
+			{
+				++NachSpawnGeprueft;
+				const FSharedConstNavQueryFilter EchtFilter = UNavigationQueryFilter::GetQueryFilter(*Echt, this, UTDNavFilter::StaticClass());
+				FNavLocation EchtFront, Hier;
+				bool bGut = false;
+				if (Nav->ProjectPointToNavigation(FrontOrt, EchtFront, FVector(800.f, 800.f, 600.f), Echt, EchtFilter))
+				{
+					auto VollerWeg = [&](const FVector& Von)
+					{
+						FPathFindingQuery Probe(this, *Echt, Von, EchtFront.Location, EchtFilter);
+						Probe.SetAllowPartialPaths(false);
+						return Nav->TestPathSync(Probe, EPathFindingMode::Regular);
+					};
+					bGut = Nav->ProjectPointToNavigation(Kreatur->GetActorLocation(), Hier, FVector(300.f, 300.f, 500.f), Echt, EchtFilter) && VollerWeg(Hier.Location);
+					for (int32 Versuch = 0; Versuch < 10 && !bGut; ++Versuch)
+					{
+						FNavLocation Neu;
+						if (Nav->GetRandomReachablePointInRadius(EchtFront.Location, Versuch < 6 ? 1000.f : 1500.f, Neu, Echt, EchtFilter)
+							&& FMath::Abs(Neu.Location.Z - FrontOrt.Z) <= TDBalance::Wert(TEXT("Wellen.SpawnHoehe"), 4.f) * 100.f
+							&& !PunktImWasser(World, Neu.Location) && VollerWeg(Neu.Location))
+						{
+							Kreatur->TeleportTo(Neu.Location + FVector(0.f, 0.f, 150.f), Kreatur->GetActorRotation(), false, true);
+							++NachSpawnUmgesetzt;
+							bGut = true;
+						}
+					}
+				}
+				NachSpawnOhne += bGut ? 0 : 1;
+			}
 		}
 		// T4: Elite groesser mit violetter Huelle, Boss deutlich groesser mit rot pulsierender Huelle
 		if (bBoss)
@@ -2131,6 +2231,16 @@ int32 UTDWaveSubsystem::SpawneGruppe(TSubclassOf<AFGCreature> Klasse, int32 Anza
 		G.bKern = true;
 		mGegner.Add(G);
 		++Gespawnt;
+	}
+	if (NachSpawnGeprueft > 0)
+	{
+		UE_LOG(LogFicsitTD, Log, TEXT("Spawnprobe nach dem Spawn: %s x%d, %d im eigenen Netz geprueft, %d umgesetzt, %d ohne vollen Weg"), *Klasse->GetName(), Anzahl,
+			NachSpawnGeprueft, NachSpawnUmgesetzt, NachSpawnOhne);
+	}
+	if (KlassenNetzTreffer + KlassenNetzOhne > 0)
+	{
+		UE_LOG(LogFicsitTD, Log, TEXT("Spawnprobe: %s x%d im Netz der Groesse %s: %d Punkte dort, %d im Standardnetz"), *Klasse->GetName(), Anzahl,
+			*SpawnNetzFuer(FNavigationSystem::GetCurrent<UNavigationSystemV1>(World), Klasse, FrontOrt)->GetName(), KlassenNetzTreffer, KlassenNetzOhne);
 	}
 	if (ProbeAbgelehnt > 0 || AnDerFront > 0 || FrontNichtAufNetz > 0)
 	{
