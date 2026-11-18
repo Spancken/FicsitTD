@@ -3386,6 +3386,8 @@ void UTDWaveSubsystem::EntschaerfeLogistik(const FVector& Mitte)
 	if (TDBalance::Wert(TEXT("Gegner.HindernisseInsNetz"), 1.f) > 0.f && !mHindernisMitte.Equals(Mitte, 100.f))
 	{
 		mHindernisMitte = Mitte;
+		mWeltHindernisse.Reset();
+		++mLogistikVersion;
 		static const TCHAR* Namen[] = { TEXT("ResourceDeposit"), TEXT("NodeMeshActor"), TEXT("CrabHatcher"), TEXT("NutBush"), TEXT("BerryBush") };
 		const float Radius = TDBalance::Wert(TEXT("Gegner.HindernisRadius"), 400.f) * 100.f;
 		int32 Objekte = 0, Gefunden = 0;
@@ -3459,6 +3461,7 @@ void UTDWaveSubsystem::EntschaerfeLogistik(const FVector& Mitte)
 				}
 				continue;
 			}
+			mWeltHindernisse.Add(*It);   // 18.11.: auch beim Laufen kein Hindernis (siehe GetWeltHindernisse)
 			if (It->FindComponentByClass<UNavModifierComponent>())
 			{
 				continue;

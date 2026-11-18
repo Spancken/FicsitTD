@@ -371,6 +371,11 @@ public:
 	int32 GetLogistikVersion() const { return mLogistikVersion; }
 	TArray<TWeakObjectPtr<AActor>> mLogistik;
 	int32 mLogistikVersion = 0;
+	/** 18.11. (P12-E2 R3: 4x festgefahren an Nussbusch und Krabbennest, die schon als Sperrflaeche im Netz stehen - der Weg fuehrt
+	 *  zu knapp vorbei, die Kapsel streift die Kante): die ins Netz genommenen Weltobjekte ignorieren Wellengegner beim Laufen.
+	 *  Das Gegnerhirn uebernimmt sie zusammen mit der Logistik (gleiche Version). Gegner.HindernisseDurchlaufen 0 = aus */
+	const TArray<TWeakObjectPtr<AActor>>& GetWeltHindernisse() const { return mWeltHindernisse; }
+	TArray<TWeakObjectPtr<AActor>> mWeltHindernisse;
 	/** 0.9.6 (Marius' Partie 11.11.: ab Welle 6 hingen fast alle Gegner an einem Klippenpfeiler, den das Netz fuer begehbar hielt):
 	 *  genau diese Klippe als Sperrflaeche ins Netz nehmen. Nach dem Netzumbau pruefen, ob alle aktiven Frontwege noch voll sind -
 	 *  sonst die Sperre zuruecknehmen. Jede Klippe wird nur einmal versucht. */

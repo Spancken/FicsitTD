@@ -605,6 +605,17 @@ void UTDGegnerHirn::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 					Kapsel->IgnoreActorWhenMoving(A, true);
 				}
 			}
+			// 18.11.: Nussbuesche, Krabbennester, Erz und Steinknoten im Netz - der Weg fuehrt um sie herum, wer die Kante streift, laeuft durch
+			if (TDBalance::Wert(TEXT("Gegner.HindernisseDurchlaufen"), 1.f) > 0.f)
+			{
+				for (const TWeakObjectPtr<AActor>& Teil : Wellen->GetWeltHindernisse())
+				{
+					if (AActor* A = Teil.Get())
+					{
+						Kapsel->IgnoreActorWhenMoving(A, true);
+					}
+				}
+			}
 		}
 	}
 	// Weg alle 10 s neu (Mauern koennen gebaut oder gefallen sein), nicht waehrend eine Mauer angegriffen wird

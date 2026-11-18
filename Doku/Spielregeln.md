@@ -50,6 +50,7 @@
    - Während der Welle kann nicht gespeichert werden, auch der Autosave ruht. Sonst ließe sich Beute durch Laden wiederholen.
    - Die Welle endet, wenn alle Gegner tot sind. Nachzügler werden versetzt oder entfernt.
    - **Klippenprobe (ab 0.11-dev):** Vor jeder Welle fährt eine Gegner-Kapsel (Radius und Halbhöhe 70 cm) jeden vollen Frontweg in 2-m-Schritten ab. Klippen mit Flächen steiler als 45 Grad, an denen sie hängen bleibt, werden vorab aus dem Navigationsnetz genommen (`Gegner.KlippenProbe*`, höchstens `Gegner.KlippenSperrenMax` = 24). Nach dem Netzumbau planen marschierende Gegner ihren Weg neu. Liegt die Hängestelle am Startpunkt einer Front, wird der Startpunkt entlang des Frontwegs hinter die Sperrfläche verlegt (`Gegner.FrontVerlegen`, 16.11.).
+   - **Weltobjekte am Weg (ab 0.11-dev):** Erzvorkommen, Steinknoten, Krabbennester, Nuss- und Beerenbüsche bis 400 m um den Kern stehen als Sperrfläche im Navigationsnetz, die Wege führen um sie herum. Seit 18.11. laufen Wellengegner durch diese Objekte hindurch, wenn sie deren Kante streifen. Vorher blieben sie an der Kante hängen und mussten versetzt werden (`Gegner.HindernisseDurchlaufen`).
 4. **Nach der Welle:**
    - Es gibt Coupons, Festplatten und Biomasse.
    - Der Kern repariert sich (Grundreparatur, mit Forschung mehr).
