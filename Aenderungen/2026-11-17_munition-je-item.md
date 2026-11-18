@@ -20,6 +20,8 @@ tests: Fabrik-F1, Grundtest, MAMBild
 
 **Offen:** im Spiel nicht gemessen; Abnahme „1 voller Knoten / 4 Bolzentuerme L2 bis W5 ohne Munitionsloch“ (Fabrik-Pruefstand, Kette mit vollem Knoten folgt mit P11). Ob das Maschinenfenster die neue Zyklusdauer zeigt, ist im Spiel zu pruefen. Flammenwerfer-Verbrauch nach Messung (B9).
 
+**Nachtrag 18.11. (G2 `BautenP2`):** Bauten mit Verbrauch je Aktion (Funkmast, Schildgenerator, Elektrozaun: Strom; Drohnenplatz: Reparatur/Kampf; Störfeld: SAM) hatten keinen Schlüssel `Munition.SchussJeItem.*` und warnten im Log. Ausdrücklich mit 1 eingetragen (unverändert: ein Stück je Aktion).
+
 **Changelog EN:** Ammo now lasts longer: one item fires several shots (basic ammo 4, advanced 3, special 2; rifle ammo 3/2/1 magazines). The turret window shows consumption per minute and how many turrets a Mk.1 belt can feed. New in the MAM: Conveyor Belt Mk.4 and Mk.5, Miner Mk.2 and Mk.3.
 
 **Changelog DE:** Munition hält länger: Ein Stück reicht für mehrere Schuss (Grundmunition 4, bessere 3, Spezialmunition 2; Gewehrmunition 3/2/1 Magazine). Das Turmfenster zeigt den Verbrauch pro Minute und wie viele Türme ein Band Mk1 versorgt. Neu im MAM: Förderband Mk4 und Mk5, Miner Mk2 und Mk3.

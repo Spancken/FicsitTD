@@ -1,0 +1,8 @@
+{
+  "Name": "G2-Nachlauf",
+  "_Hinweis": "18.11.: BautenP2 nach Balance-Schluesseln der Bauten (SchussJeItem), dazu Grundtest.",
+  "Plaene": [
+    "Grundtest",
+    "BautenP2"
+  ]
+}
