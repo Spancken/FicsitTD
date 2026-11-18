@@ -16,7 +16,7 @@
 - ADA comments on new enemy species and boss waves.
 
 ### Changed
-- New games start in Operation by default; the game mode and difficulty are shown as clear choices with a short description. Existing worlds without a Defense Core stay regular Satisfactory.
+- A new start window right after landing: choose Operation, Endless waves, Free play with defense or Off, and the difficulty. New games default to Operation. Existing worlds without a Defense Core stay regular Satisfactory.
 - Choose the difficulty in the session settings (default: by start location). Hard and Nightmare were retuned and are still marked untested.
 - Elite enemies appear later: from wave 16 instead of 13 on Normal, from wave 18 instead of 15 on Exploration.
 - Rifle Turret master tier (Ammo Drum): +25 % fire rate.
@@ -56,7 +56,7 @@
 - ADA kommentiert neue Gegnerarten und Bosswellen.
 
 **Geändert**
-- Neue Spiele starten standardmäßig als Einsatz; Spielmodus und Stufe stehen als gut lesbare Auswahl mit kurzer Beschreibung da. Bestehende Welten ohne Abwehrkern bleiben normales Satisfactory.
+- Neues Startfenster direkt nach der Landung: Einsatz, Endlos-Wellen, Freies Spiel mit Abwehr oder Aus wählen, dazu die Stufe. Neue Spiele stehen standardmäßig auf Einsatz. Bestehende Welten ohne Abwehrkern bleiben normales Satisfactory.
 - Stufe in den Sitzungseinstellungen (Standard nach Startort); Hart und Albtraum neu eingestellt, weiter als ungetestet markiert.
 - Elite-Gegner später: Normal ab Welle 16 statt 13, Erkundung ab Welle 18 statt 15.
 - Gewehrturm-Meisterstufe (Gurttrommel): +25 % Feuerrate.

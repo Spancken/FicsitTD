@@ -576,3 +576,51 @@ public:
 	UFUNCTION()
 	void Klick() { if (mAuswahl) { mAuswahl->Waehle(mWert); } }
 };
+
+/** 18.11. (Marius: die Modus-Wahl im Menue "Neues Spiel" ist ein Mini-Fenster, fuer Tester kaum zu finden): eigenes Startfenster
+ *  nach der Landung - vier Modus-Karten, darunter die Stufe, unten "Los geht's". Oeffnet UTDKernplatz::PruefeTDStart. */
+UCLASS()
+class FICSITTD_API UTDStartfenster : public UUserWidget
+{
+	GENERATED_BODY()
+public:
+	UPROPERTY()
+	TObjectPtr<class UTDKernplatz> mKernplatz;
+	void Waehle(int32 Art, int32 Wert);
+protected:
+	virtual TSharedRef<SWidget> RebuildWidget() override;
+	virtual void NativeConstruct() override;
+	virtual void NativeDestruct() override;
+private:
+	void Zeige();
+	int32 mModus = 1;
+	int32 mStufe = 0;
+	UPROPERTY()
+	TArray<TObjectPtr<class UBorder>> mModusFelder;
+	UPROPERTY()
+	TArray<TObjectPtr<class UTextBlock>> mModusNamen;
+	UPROPERTY()
+	TArray<TObjectPtr<class UBorder>> mStufenFelder;
+	UPROPERTY()
+	TArray<TObjectPtr<class UTextBlock>> mStufenNamen;
+	UPROPERTY()
+	TObjectPtr<class UTextBlock> mStufenText;
+	UPROPERTY()
+	TObjectPtr<class UWidget> mStufenBereich;
+	UPROPERTY()
+	TArray<TObjectPtr<class UTDStartKlick>> mKlicks;
+};
+
+/** Klick im Startfenster: Art 0 = Modus, 1 = Stufe, 2 = Los */
+UCLASS()
+class FICSITTD_API UTDStartKlick : public UObject
+{
+	GENERATED_BODY()
+public:
+	UPROPERTY()
+	TObjectPtr<UTDStartfenster> mFenster;
+	int32 mArt = 0;
+	int32 mWert = 0;
+	UFUNCTION()
+	void Klick() { if (mFenster) { mFenster->Waehle(mArt, mWert); } }
+};

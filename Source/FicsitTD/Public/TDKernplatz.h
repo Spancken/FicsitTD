@@ -97,6 +97,14 @@ private:
 	void PruefeTDStart();
 	FTimerHandle mStartTimer;
 	int32 mStehtSeit = 0;
+public:
+	/** 18.11. (Marius: Modus-Wahl im Menue fuer Tester kaum zu finden): Startfenster nach der Landung oeffnen (bOhnePruefung: Befehl /td startfenster) */
+	void OeffneStartfenster(bool bOhnePruefung = false);
+	/** Aus dem Startfenster: Spielmodus und Stufe uebernehmen; Einsatz/Endlos bauen danach den Kernplatz */
+	void StartfensterGewaehlt(int32 Modus, int32 Stufe);
+	UPROPERTY()
+	TObjectPtr<class UTDStartfenster> mStartfenster;
+private:
 	/** 0.9.6: automatische Kernplatz-Versuche (scheitert die Bodensuche, kommt ein anderer Platz dran) */
 	int32 mStartVersuche = 0;
 	/** 0.69.1: Einsatz erst starten, wenn das Navigationsnetz um den neuen Kern steht (Test 0.69.0: Ansage "0 von 16") */

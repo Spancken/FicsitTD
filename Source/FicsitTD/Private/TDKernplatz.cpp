@@ -1,5 +1,7 @@
 ﻿#include "TDKernplatz.h"
 #include "TDSpielstand.h"
+#include "TDAutotest.h"
+#include "TDKernTerminal.h"
 #include "TDAda.h"
 #include "FicsitTDModule.h"
 #include "TDDefenseCore.h"
@@ -1922,6 +1924,21 @@ void UTDKernplatz::PruefeTDStart()
 	{
 		return;
 	}
+	// 18.11. (Startfenster): vor dem ersten Kernplatz Spielmodus und Stufe im eigenen Fenster waehlen lassen - nicht im Selbsttest
+	// (der Plan setzt beides ueber die Sitzungseinstellungen), nicht wenn schon gewaehlt
+	if (TDBalance::Wert(TEXT("Spielmodus.Startfenster"), 1.f) > 0.f)
+	{
+		const UTDAutotest* Test = World->GetGameInstance() ? World->GetGameInstance()->GetSubsystem<UTDAutotest>() : nullptr;
+		const ATDSpielstand* Stand = ATDSpielstand::Get(this);
+		if (!(Test && Test->LaeuftPlan()) && Stand && !Stand->mModusGewaehlt)
+		{
+			if (!mStartfenster)
+			{
+				OeffneStartfenster();
+			}
+			return;
+		}
+	}
 	World->GetTimerManager().ClearTimer(mStartTimer);
 	// Startort = naechstes Startgebiet des Spiels
 	static const TCHAR* Biome[] = { TEXT("grasfelder"), TEXT("felsenwueste"), TEXT("wald"), TEXT("duenen") };
@@ -1942,4 +1959,54 @@ void UTDKernplatz::PruefeTDStart()
 	const FString Nr = sVorgabePlatz;
 	sVorgabePlatz.Reset();
 	Melde(BauePlatz(Biome[Bestes], Nr, Spieler));
+}
+
+// ---------------------------------------------------------------------------------------------------------------------------
+// 18.11.: Startfenster (Spielmodus und Stufe nach der Landung waehlen)
+
+void UTDKernplatz::OeffneStartfenster(bool bOhnePruefung)
+{
+	UWorld* World = GetWorld();
+	APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
+	if (!PC || mStartfenster)
+	{
+		return;
+	}
+	mStartfenster = CreateWidget<UTDStartfenster>(PC, UTDStartfenster::StaticClass());
+	if (mStartfenster)
+	{
+		mStartfenster->mKernplatz = this;
+		mStartfenster->AddToViewport(50);
+		UE_LOG(LogFicsitTD, Log, TEXT("Startfenster: geoeffnet%s"), bOhnePruefung ? TEXT(" (Befehl)") : TEXT(""));
+	}
+}
+
+void UTDKernplatz::StartfensterGewaehlt(int32 Modus, int32 Stufe)
+{
+	UWorld* World = GetWorld();
+	if (USessionSettingsManager* Einstellungen = World ? World->GetSubsystem<USessionSettingsManager>() : nullptr)
+	{
+		Einstellungen->ForceSetOptionValue(UTDGameInstanceModule::ModusId, FVariant(Modus), Einstellungen);
+		Einstellungen->ForceSetOptionValue(UTDGameInstanceModule::StufeId, FVariant(Stufe), Einstellungen);
+	}
+	if (ATDSpielstand* Stand = ATDSpielstand::Get(this))
+	{
+		Stand->mModusGewaehlt = true;
+	}
+	if (mStartfenster)
+	{
+		mStartfenster->RemoveFromParent();
+		mStartfenster = nullptr;
+	}
+	mStehtSeit = 0;
+	UE_LOG(LogFicsitTD, Log, TEXT("Startfenster: Spielmodus %d, Stufe %d gewaehlt"), Modus, Stufe);
+	if (Modus == ETDModus::Aus)
+	{
+		Melde(TDT(TEXT("FICSIT Tower Defense ist in diesem Spiel aus. Viel Spaß mit normalem Satisfactory!"), TEXT("FICSIT Tower Defense is off in this game. Enjoy regular Satisfactory!")));
+	}
+	else if (Modus == ETDModus::Abwehr)
+	{
+		Melde(TDT(TEXT("Freies Spiel mit Abwehr: Türme und Abwehr-Forschung findest du im MAM. Eine Bohrung startest du mit einem Abwehrkern neben einem Rohstoffknoten."),
+			TEXT("Free play with defense: turrets and defense research are in the MAM. Start a drilling with a Defense Core next to a resource node.")));
+	}
 }

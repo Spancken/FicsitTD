@@ -1,5 +1,5 @@
 ---
-titel: Spielmodus standardmaessig Einsatz, eigene gut lesbare Auswahl, Schutz bestehender Welten
+titel: Startfenster nach der Landung, Spielmodus standardmaessig Einsatz, Auswahl im Menue, Schutz bestehender Welten
 typ: geaendert
 modi: aus, einsatz, endlos, abwehr
 sichtbar: ja
@@ -27,6 +27,16 @@ Einstellung nicht fand, bekam normales Satisfactory.
 **Nachtrag (Screenshot Marius 13:35):** Die Zeile im Menue hat eine feste Hoehe – die Liste untereinander wurde abgeschnitten und
 ueberlappte „Stufe“. Jetzt alle Moeglichkeiten als Schaltflaechen **nebeneinander in einer Zeile** (Kurzname, 15 pt fett, gewaehlte orange),
 der Beschreibungssatz als Tooltip.
+
+**Startfenster (Entscheidung Marius 18.11., nach Screenshot 13:50: der Menue-Rahmen von SML bleibt ein Mini-Fenster):** `UTDStartfenster`
+(C++, Stil Kern-Menue) oeffnet `UTDKernplatz::PruefeTDStart` in neuen Spielen nach der Landung, bevor der Kernplatz entsteht: vier
+Modus-Karten (Einsatz, Endlos-Wellen, Freies Spiel mit Abwehr, Aus; Name 20 pt, zwei bis drei Saetze), Stufe als Schaltflaechen (nur bei
+Einsatz/Endlos) mit Satz zur Stufe, „Los geht's“. Uebernahme ueber `ForceSetOptionValue` (Modus, Stufe), Merker
+`ATDSpielstand::mModusGewaehlt`; Aus/Abwehr: kein Kernplatz, Hinweis im Chat. Nicht im Selbsttest (`UTDAutotest::LaeuftPlan`), Befehl
+`/td startfenster [waehle <modus> <stufe>]`, Schalter `Spielmodus.Startfenster`.
+**Nachweis:** Plan `Startfenster` DE und EN bestanden (Berichte `Testberichte/2026-11-18_1351_Startfenster.md`, `..._1353_...`, nach dem
+Angleichen der Kartenhoehen `..._1359_...`), Fotos zeigen das Fenster, Wahl Einsatz/Normal uebernommen. Nicht geprueft: der echte Weg
+nach der Landung in einem neuen Spiel (Marius beim Handspiel).
 
 **Stand:** gebaut. Nicht geprueft: Aussehen im Menue (Marius beim Handspiel), Schutz bestehender Welten (braucht einen Stand ohne Mod).
 

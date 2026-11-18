@@ -96,6 +96,26 @@ EExecutionStatus ATDDebugCommand::ExecuteCommand_Implementation(UCommandSender* 
 	}
 	// 0.11 (Modus Aus, Marius 15.11.: nur der Spielmodus zaehlt): alte Staende, in denen der Einsatz ohne Spielmodus "Einsatz"
 	// lief (Start per /td oder Kern-Menue), stellen den Modus einmal nach. Ohne Argument: aktuellen Modus zeigen.
+	// 18.11.: /td startfenster - Startfenster oeffnen (Selbsttest, Foto); /td startfenster waehle <modus 0-3> <stufe 0-4>
+	if (Arguments[0].Equals(TEXT("startfenster"), ESearchCase::IgnoreCase))
+	{
+		UTDKernplatz* Platz = GetWorld() ? GetWorld()->GetSubsystem<UTDKernplatz>() : nullptr;
+		if (!Platz)
+		{
+			return EExecutionStatus::COMPLETED;
+		}
+		if (Arguments.Num() >= 4 && Arguments[1].Equals(TEXT("waehle"), ESearchCase::IgnoreCase))
+		{
+			Platz->StartfensterGewaehlt(FCString::Atoi(*Arguments[2]), FCString::Atoi(*Arguments[3]));
+			Antwort(Sender, TEXT("Startfenster: Wahl uebernommen."));
+		}
+		else
+		{
+			Platz->OeffneStartfenster(true);
+			Antwort(Sender, TEXT("Startfenster geoeffnet."));
+		}
+		return EExecutionStatus::COMPLETED;
+	}
 	if (Arguments[0].Equals(TEXT("modus"), ESearchCase::IgnoreCase))
 	{
 		// Gegencheck 15.11. (F4): ein Endlos-Spiel darf der Befehl nicht auf Einsatz kippen (sonst mehrere Fronten, fester Abstand)

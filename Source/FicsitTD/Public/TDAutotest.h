@@ -79,6 +79,10 @@ private:
 
 	EPhase mPhase = EPhase::Aus;
 	TSharedPtr<FJsonObject> mPlan;
+public:
+	/** 18.11.: laeuft gerade ein Selbsttest-Plan (das Startfenster bleibt dann zu, der Plan setzt Modus und Stufe selbst) */
+	bool LaeuftPlan() const { return mPlan.IsValid(); }
+private:
 	TSharedPtr<FJsonObject> mPaket;
 	TArray<TSharedPtr<FJsonValue>> mPlaene;
 	TArray<TSharedPtr<FJsonValue>> mPlanErgebnisse;

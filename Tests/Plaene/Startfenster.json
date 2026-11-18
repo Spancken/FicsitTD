@@ -1,0 +1,42 @@
+{
+  "Name": "Startfenster",
+  "_Hinweis": "18.11.: Startfenster nach der Landung (Spielmodus und Stufe). Per Befehl geoeffnet (im Selbsttest bleibt es sonst zu), Foto, Wahl Einsatz/Normal.",
+  "NeuesSpiel": {
+    "Startort": "Rocky Desert"
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 6,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warte": 10
+    },
+    {
+      "befehl": "td startfenster"
+    },
+    {
+      "warte": 3
+    },
+    {
+      "foto": "Startfenster"
+    },
+    {
+      "befehl": "td startfenster waehle 1 2"
+    },
+    {
+      "warte": 3
+    },
+    {
+      "foto": "Startfenster_zu"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}

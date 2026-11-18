@@ -17,6 +17,8 @@
 #include "TDSprache.h"
 #include "Blueprint/WidgetTree.h"
 #include "Brushes/SlateRoundedBoxBrush.h"
+#include "Brushes/SlateColorBrush.h"
+#include "SessionSettings/SessionSettingsManager.h"
 #include "Components/Border.h"
 #include "Components/BorderSlot.h"
 #include "Components/Button.h"
@@ -3928,4 +3930,287 @@ void UTDAuswahlKarten::NativeTick(const FGeometry& MyGeometry, float InDeltaTime
 		mFelder[i]->SetBrush(FSlateRoundedBoxBrush(bGewaehlt ? TDUI::Akzent : TDUI::C(58, 58, 58, 230), 3.f));
 		mNamen[i]->SetColorAndOpacity(FSlateColor(bGewaehlt ? TDUI::DunkelText : TDUI::Hell));
 	}
+}
+
+// ---------------------------------------------------------------------------------------------------------------------------
+// 18.11.: Startfenster nach der Landung
+
+static const int32 GTDStartModi[] = { ETDModus::Einsatz, ETDModus::Endlos, ETDModus::Abwehr, ETDModus::Aus };
+
+static FString StartModusName(int32 Modus)
+{
+	switch (Modus)
+	{
+	case ETDModus::Einsatz: return TDT(TEXT("Einsatz"), TEXT("Operation"));
+	case ETDModus::Endlos: return TDT(TEXT("Endlos-Wellen"), TEXT("Endless waves"));
+	case ETDModus::Abwehr: return TDT(TEXT("Freies Spiel mit Abwehr"), TEXT("Free play with defense"));
+	default: return TDT(TEXT("Aus"), TEXT("Off"));
+	}
+}
+
+static FString StartModusText(int32 Modus)
+{
+	switch (Modus)
+	{
+	case ETDModus::Einsatz: return TDT(TEXT("Dein Abwehrkern steht an einem festen Platz. 50 Wellen in fünf Phasen mit Bossen. Deine Fabrik liefert die Munition, Gebäude kosten Kontingent, geforscht wird im MAM."),
+		TEXT("Your Defense Core stands at a fixed site. 50 waves in five phases with bosses. Your factory makes the ammo, buildings cost quota, research happens in the MAM."));
+	case ETDModus::Endlos: return TDT(TEXT("Wie Einsatz, aber die Wellen kommen auf Zeit und hören nie auf, immer aus einer Richtung. Wie weit kommst du?"),
+		TEXT("Like Operation, but the waves come on a timer and never stop, always from one direction. How far can you get?"));
+	case ETDModus::Abwehr: return TDT(TEXT("Normales Satisfactory mit HUB und Meilensteinen, dazu Türme und Abwehr-Forschung. Gekämpft wird nur, wenn du an einem Rohstoffknoten eine Bohrung startest."),
+		TEXT("Regular Satisfactory with HUB and milestones, plus turrets and defense research. You only fight when you start a drilling at a resource node."));
+	default: return TDT(TEXT("Normales Satisfactory, der Mod greift nicht ein."), TEXT("Regular Satisfactory, the mod stays out of the way."));
+	}
+}
+
+static FString StartStufeName(int32 Stufe)
+{
+	switch (Stufe)
+	{
+	case 0: return TDT(TEXT("Nach Startort"), TEXT("By start location"));
+	case 1: return TDT(TEXT("Erkundung"), TEXT("Exploration"));
+	case 2: return TDT(TEXT("Normal"), TEXT("Normal"));
+	case 3: return TDT(TEXT("Hart"), TEXT("Hard"));
+	default: return TDT(TEXT("Albtraum"), TEXT("Nightmare"));
+	}
+}
+
+TSharedRef<SWidget> UTDStartfenster::RebuildWidget()
+{
+	if (WidgetTree && !WidgetTree->RootWidget)
+	{
+		if (const UWorld* World = GetWorld())
+		{
+			if (const USessionSettingsManager* E = World->GetSubsystem<USessionSettingsManager>())
+			{
+				mModus = E->GetIntOptionValue(UTDGameInstanceModule::ModusId);
+				mStufe = E->GetIntOptionValue(UTDGameInstanceModule::StufeId);
+			}
+		}
+		UCanvasPanel* Flaeche = WidgetTree->ConstructWidget<UCanvasPanel>();
+		WidgetTree->RootWidget = Flaeche;
+		UBorder* Dunkel = WidgetTree->ConstructWidget<UBorder>();
+		Dunkel->SetBrush(FSlateColorBrush(TDUI::C(0, 0, 0, 150)));
+		if (UCanvasPanelSlot* S = Flaeche->AddChildToCanvas(Dunkel))
+		{
+			S->SetAnchors(FAnchors(0.f, 0.f, 1.f, 1.f));
+			S->SetOffsets(FMargin(0.f));
+		}
+		UBorder* Fenster = WidgetTree->ConstructWidget<UBorder>();
+		Fenster->SetBrush(FSlateRoundedBoxBrush(TDUI::Fenster, 6.f));
+		Fenster->SetPadding(FMargin(0.f));
+		if (UCanvasPanelSlot* S = Flaeche->AddChildToCanvas(Fenster))
+		{
+			S->SetAnchors(FAnchors(0.5f, 0.5f));
+			S->SetAlignment(FVector2D(0.5f, 0.5f));
+			S->SetAutoSize(true);
+		}
+		USizeBox* Breite = WidgetTree->ConstructWidget<USizeBox>();
+		Breite->SetWidthOverride(1180.f);
+		Fenster->AddChild(Breite);
+		UVerticalBox* Spalte = WidgetTree->ConstructWidget<UVerticalBox>();
+		Breite->AddChild(Spalte);
+
+		// Kopfleiste
+		UBorder* Kopf = WidgetTree->ConstructWidget<UBorder>();
+		Kopf->SetBrush(FSlateRoundedBoxBrush(TDUI::Kopfleiste, 6.f));
+		Kopf->SetPadding(FMargin(20.f, 12.f));
+		Kopf->AddChild(TDUI::Text(WidgetTree, TDT(TEXT("FICSIT Tower Defense – Wie willst du spielen?"), TEXT("FICSIT Tower Defense – How do you want to play?")), 22, TDUI::Hell, true));
+		Spalte->AddChildToVerticalBox(Kopf);
+
+		UVerticalBox* Inhalt = WidgetTree->ConstructWidget<UVerticalBox>();
+		if (UVerticalBoxSlot* S = Spalte->AddChildToVerticalBox(Inhalt))
+		{
+			S->SetPadding(FMargin(20.f, 16.f, 20.f, 20.f));
+		}
+		UTextBlock* Hinweis = TDUI::Text(WidgetTree, TDT(TEXT("Wähle einen Spielmodus. Du kannst ihn nur jetzt festlegen; für einen anderen Modus startest du später ein neues Spiel."),
+			TEXT("Choose a game mode. You set it only now; for another mode, start a new game later.")), 14, TDUI::Grau);
+		Hinweis->SetAutoWrapText(true);
+		Inhalt->AddChildToVerticalBox(Hinweis);
+
+		auto NeuerKlick = [this](UButton* Knopf, int32 Art, int32 Wert)
+		{
+			UTDStartKlick* K = NewObject<UTDStartKlick>(this);
+			K->mFenster = this;
+			K->mArt = Art;
+			K->mWert = Wert;
+			Knopf->OnClicked.AddDynamic(K, &UTDStartKlick::Klick);
+			mKlicks.Add(K);
+		};
+		auto LeererStil = []()
+		{
+			FButtonStyle Stil;
+			Stil.SetNormal(FSlateNoResource());
+			Stil.SetHovered(FSlateRoundedBoxBrush(TDUI::C(255, 255, 255, 18), 4.f));
+			Stil.SetPressed(FSlateRoundedBoxBrush(TDUI::C(255, 255, 255, 36), 4.f));
+			Stil.SetNormalPadding(FMargin(0.f));
+			Stil.SetPressedPadding(FMargin(0.f));
+			return Stil;
+		};
+
+		// vier Modus-Karten
+		UHorizontalBox* Karten = WidgetTree->ConstructWidget<UHorizontalBox>();
+		if (UVerticalBoxSlot* S = Inhalt->AddChildToVerticalBox(Karten))
+		{
+			S->SetPadding(FMargin(0.f, 14.f, 0.f, 0.f));
+		}
+		for (const int32 Modus : GTDStartModi)
+		{
+			UButton* Knopf = WidgetTree->ConstructWidget<UButton>();
+			Knopf->SetStyle(LeererStil());
+			UBorder* Feld = WidgetTree->ConstructWidget<UBorder>();
+			Feld->SetPadding(FMargin(16.f, 14.f));
+			Feld->SetVerticalAlignment(VAlign_Top);
+			USizeBox* Hoehe = WidgetTree->ConstructWidget<USizeBox>();
+			Hoehe->SetMinDesiredHeight(170.f);
+			UVerticalBox* Karte = WidgetTree->ConstructWidget<UVerticalBox>();
+			UTextBlock* Name = TDUI::Text(WidgetTree, StartModusName(Modus), 20, TDUI::Hell, true);
+			Name->SetAutoWrapText(true);
+			Karte->AddChildToVerticalBox(Name);
+			UTextBlock* Text = TDUI::Text(WidgetTree, StartModusText(Modus), 14, TDUI::C(210, 210, 210));
+			Text->SetAutoWrapText(true);
+			if (UVerticalBoxSlot* S = Karte->AddChildToVerticalBox(Text))
+			{
+				S->SetPadding(FMargin(0.f, 8.f, 0.f, 0.f));
+			}
+			Hoehe->AddChild(Karte);
+			Feld->AddChild(Hoehe);
+			Knopf->AddChild(Feld);
+			if (UButtonSlot* Innen = Cast<UButtonSlot>(Feld->Slot))
+			{
+				Innen->SetHorizontalAlignment(HAlign_Fill);
+				Innen->SetVerticalAlignment(VAlign_Fill);
+				Innen->SetPadding(FMargin(0.f));
+			}
+			if (UHorizontalBoxSlot* S = Karten->AddChildToHorizontalBox(Knopf))
+			{
+				S->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
+				S->SetPadding(FMargin(0.f, 0.f, Modus == ETDModus::Aus ? 0.f : 10.f, 0.f));
+				S->SetVerticalAlignment(VAlign_Fill);   // alle Karten gleich hoch
+			}
+			NeuerKlick(Knopf, 0, Modus);
+			mModusFelder.Add(Feld);
+			mModusNamen.Add(Name);
+		}
+
+		// Stufe
+		UVerticalBox* StufenBox = WidgetTree->ConstructWidget<UVerticalBox>();
+		mStufenBereich = StufenBox;
+		if (UVerticalBoxSlot* S = Inhalt->AddChildToVerticalBox(StufenBox))
+		{
+			S->SetPadding(FMargin(0.f, 18.f, 0.f, 0.f));
+		}
+		StufenBox->AddChildToVerticalBox(TDUI::Text(WidgetTree, TDT(TEXT("Stufe"), TEXT("Difficulty")), 16, TDUI::Akzent, true));
+		UHorizontalBox* Stufen = WidgetTree->ConstructWidget<UHorizontalBox>();
+		if (UVerticalBoxSlot* S = StufenBox->AddChildToVerticalBox(Stufen))
+		{
+			S->SetPadding(FMargin(0.f, 6.f, 0.f, 0.f));
+		}
+		for (int32 Stufe = 0; Stufe <= 4; ++Stufe)
+		{
+			UButton* Knopf = WidgetTree->ConstructWidget<UButton>();
+			Knopf->SetStyle(LeererStil());
+			UBorder* Feld = WidgetTree->ConstructWidget<UBorder>();
+			Feld->SetPadding(FMargin(16.f, 6.f));
+			UTextBlock* Name = TDUI::Text(WidgetTree, StartStufeName(Stufe), 16, TDUI::Hell, true);
+			Feld->AddChild(Name);
+			Knopf->AddChild(Feld);
+			if (UHorizontalBoxSlot* S = Stufen->AddChildToHorizontalBox(Knopf))
+			{
+				S->SetPadding(FMargin(0.f, 0.f, 8.f, 0.f));
+			}
+			NeuerKlick(Knopf, 1, Stufe);
+			mStufenFelder.Add(Feld);
+			mStufenNamen.Add(Name);
+		}
+		mStufenText = TDUI::Text(WidgetTree, FString(), 13, TDUI::Grau);
+		mStufenText->SetAutoWrapText(true);
+		if (UVerticalBoxSlot* S = StufenBox->AddChildToVerticalBox(mStufenText))
+		{
+			S->SetPadding(FMargin(0.f, 6.f, 0.f, 0.f));
+		}
+
+		// Los
+		UButton* Los = WidgetTree->ConstructWidget<UButton>();
+		Los->SetStyle(TDUI::KnopfStil(true));
+		Los->AddChild(TDUI::Text(WidgetTree, TDT(TEXT("Los geht's"), TEXT("Let's go")), 18, TDUI::DunkelText, true));
+		if (UVerticalBoxSlot* S = Inhalt->AddChildToVerticalBox(Los))
+		{
+			S->SetPadding(FMargin(0.f, 20.f, 0.f, 0.f));
+			S->SetHorizontalAlignment(HAlign_Right);
+		}
+		NeuerKlick(Los, 2, 0);
+		Zeige();
+	}
+	return Super::RebuildWidget();
+}
+
+void UTDStartfenster::Zeige()
+{
+	for (int32 i = 0; i < mModusFelder.Num(); ++i)
+	{
+		const bool bGewaehlt = GTDStartModi[i] == mModus;
+		mModusFelder[i]->SetBrush(bGewaehlt ? FSlateRoundedBoxBrush(TDUI::C(64, 46, 30), 4.f, TDUI::Akzent, 3.f) : FSlateRoundedBoxBrush(TDUI::Feld, 4.f, TDUI::C(70, 70, 70), 1.f));
+		mModusNamen[i]->SetColorAndOpacity(FSlateColor(bGewaehlt ? TDUI::Akzent : TDUI::Hell));
+	}
+	for (int32 i = 0; i < mStufenFelder.Num(); ++i)
+	{
+		const bool bGewaehlt = i == mStufe;
+		mStufenFelder[i]->SetBrush(FSlateRoundedBoxBrush(bGewaehlt ? TDUI::Akzent : TDUI::Reiter, 3.f));
+		mStufenNamen[i]->SetColorAndOpacity(FSlateColor(bGewaehlt ? TDUI::DunkelText : TDUI::Hell));
+	}
+	// Stufe nur fuer Einsatz und Endlos
+	const bool bStufe = mModus == ETDModus::Einsatz || mModus == ETDModus::Endlos;
+	if (mStufenBereich)
+	{
+		mStufenBereich->SetVisibility(bStufe ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+	}
+	if (mStufenText)
+	{
+		mStufenText->SetText(FText::FromString(AuswahlBeschreibung(UTDGameInstanceModule::StufeId, mStufe)));
+	}
+}
+
+void UTDStartfenster::Waehle(int32 Art, int32 Wert)
+{
+	if (Art == 0)
+	{
+		mModus = Wert;
+	}
+	else if (Art == 1)
+	{
+		mStufe = Wert;
+	}
+	else if (mKernplatz)
+	{
+		mKernplatz->StartfensterGewaehlt(mModus, mStufe);
+		return;
+	}
+	Zeige();
+}
+
+void UTDStartfenster::NativeConstruct()
+{
+	Super::NativeConstruct();
+	if (APlayerController* PC = GetOwningPlayer())
+	{
+		PC->SetShowMouseCursor(true);
+		FInputModeUIOnly Modus;
+		Modus.SetWidgetToFocus(TakeWidget());
+		Modus.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+		PC->SetInputMode(Modus);
+		PC->SetIgnoreLookInput(true);
+		PC->SetIgnoreMoveInput(true);
+	}
+}
+
+void UTDStartfenster::NativeDestruct()
+{
+	if (APlayerController* PC = GetOwningPlayer())
+	{
+		PC->SetShowMouseCursor(false);
+		PC->SetInputMode(FInputModeGameOnly());
+		PC->ResetIgnoreLookInput();
+		PC->ResetIgnoreMoveInput();
+	}
+	Super::NativeDestruct();
 }

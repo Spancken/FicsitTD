@@ -46,4 +46,7 @@ public:
 	 *  wieder ein Einsatz (kein neuer Kernplatz nach Abriss des Kerns, kein Start von Hand ohne Entwicklermodus) */
 	UPROPERTY(SaveGame)
 	bool mEinsatzBeendet = false;
+	/** 18.11. (Startfenster): Spielmodus und Stufe wurden im Startfenster gewaehlt - es erscheint nicht noch einmal */
+	UPROPERTY(SaveGame)
+	bool mModusGewaehlt = false;
 };
