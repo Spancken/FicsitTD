@@ -58,34 +58,14 @@ void UTDGameInstanceModule::SetzeTexte()
 		return;
 	}
 	mModus->DisplayName = FText::FromString(TDT(TEXT("Spielmodus"), TEXT("Game Mode")));
-	// Hilfetext unten im Menue (keine Zeilenumbrueche moeglich, das Spiel bricht selbst um)
+	// Hilfetext unten im Menue (keine Zeilenumbrueche moeglich, das Spiel bricht selbst um).
+	// 18.11. (Marius, Screenshot): der lange Text aller vier Modi nahm dem Menue fast die ganze Hoehe, die Einstellungen waren nur noch
+	// ein schmaler Streifen. Kurz wie die Texte des Spiels; die Auswahl nennt jeden Modus schon, Einzelheiten stehen im Handbuch.
 	mModus->ToolTip = FText::FromString(TDT(
-		TEXT("Wähle, wie FICSIT Tower Defense dieses Spiel verändert. "
-			"AUS: normales Satisfactory, die Mod greift nicht ein. "
-			"EINSATZ: Du landest an einem festen Kernplatz deines Startorts, Plattform und Abwehrkern stehen schon. Kreaturen greifen den Kern in 50 Wellen an, "
-			"in fünf Phasen mit Bossen. Deine Fabrik liefert die Munition für die Türme. Gebäude sind über Kontingente begrenzt (mehr gibt es für FICSIT-Coupons), "
-			"geforscht wird im MAM mit Festplatten, HUB-Meilensteine und Blaupausen sind gesperrt. Die Schwierigkeit stellst du unter „Stufe“ ein, "
-			"Standard ist der Startort: Grasfelder leicht, Felsenwüste normal, Nördlicher Wald schwer, Dünenwüste Albtraum."),
-		TEXT("Choose how FICSIT Tower Defense changes this game. "
-			"OFF: regular Satisfactory, the mod stays out of the way. "
-			"OPERATION: you land at a fixed core site of your start location, the platform and the Defense Core are already built. Creatures attack the core in 50 waves, "
-			"in five phases with bosses. Your factory supplies the ammo for the turrets. Buildings are limited by quotas (FICSIT Coupons buy more), "
-			"research happens in the MAM with Hard Drives, HUB milestones and blueprints are locked. Set the difficulty under \"Difficulty\", "
-			"by default it follows the start location: Grass Fields easy, Rocky Desert normal, Northern Forest hard, Dune Desert nightmare.")));
-	// 0.11 (Marius 15.11.): dritter Modus "Endlos-Wellen" - Hilfetext ergaenzen
-	mModus->ToolTip = FText::FromString(mModus->ToolTip.ToString() + TDT(
-		TEXT(" ENDLOS-WELLEN: wie Einsatz, aber die Wellen kommen auf Zeit und ohne Ende aus einer einzigen Richtung. Anhalten geht nicht - "
-			"baue weiter aus und halte die Türme ständig mit Munition versorgt. Coupons und Festplatten gibt es wie im Einsatz."),
-		TEXT(" ENDLESS WAVES: like Operation, but waves arrive on a timer and never stop, always from one direction. You cannot pause them - "
-			"keep expanding and keep your turrets supplied with ammo. Coupons and Hard Drives work as in Operation.")));
-	// 0.12-dev (Marius 15.11.): vierter Modus "Freies Spiel mit Abwehr"
-	mModus->ToolTip = FText::FromString(mModus->ToolTip.ToString() + TDT(
-		TEXT(" FREIES SPIEL MIT ABWEHR: normales Satisfactory mit HUB und Meilensteinen, dazu Türme, Mauern und Abwehr-Forschung im MAM (mit Coupons). "
-			"Nichts greift an, was du nicht einschaltest: Stell einen Abwehrkern als Tiefbohrer neben einen Rohstoffknoten und starte dort eine Bohrung - "
-			"hält deine Verteidigung, gibt es Erz, beim ersten Erfolg je Rohstoff und Stufe auch Festplatten, auf Schwer zusätzlich einen Talentpunkt."),
-		TEXT(" FREE PLAY WITH DEFENSE: regular Satisfactory with HUB and milestones, plus turrets, walls and defense research in the MAM (paid with Coupons). "
-			"Nothing attacks unless you switch it on: place a Defense Core as a deep drill next to a resource node and start a drilling there - "
-			"if your defense holds, you get ore, and on the first success per resource and level also Hard Drives, plus a Talent Point on Hard.")));
+		TEXT("Wie FICSIT Tower Defense dieses Spiel verändert: Aus, Einsatz (50 Wellen), Endlos-Wellen oder Freies Spiel mit Abwehr. "
+			"Einzelheiten im Handbuch: spancken.github.io/FicsitTD"),
+		TEXT("How FICSIT Tower Defense changes this game: Off, Operation (50 waves), Endless waves or Free play with defense. "
+			"Details in the player guide: spancken.github.io/FicsitTD")));
 	if (UFGUserSetting_IntSelector* Wahl = Cast<UFGUserSetting_IntSelector>(mModus->ValueSelector))
 	{
 		// 0.11: Eintrag fuer Wert 2 zur Laufzeit anlegen (das Asset kennt nur 0 und 1)
@@ -130,12 +110,10 @@ void UTDGameInstanceModule::SetzeTexte()
 	{
 		mStufe->DisplayName = FText::FromString(TDT(TEXT("Stufe"), TEXT("Difficulty")));
 		mStufe->ToolTip = FText::FromString(TDT(
-			TEXT("Schwierigkeit für Einsatz und Endlos-Wellen. NACH STARTORT: Grasfelder Erkundung, Felsenwüste Normal, Nördlicher Wald Hart, Dünenwüste Albtraum. "
-				"Erkundung ist ohne Druck zum Kennenlernen, Normal ist die vorgesehene Stufe. Hart und Albtraum sind noch ungetestet: Sie sind nur in der Simulation eingestellt, "
-				"ein ganzer Lauf im Spiel steht aus."),
-			TEXT("Difficulty for Operation and Endless waves. BY START LOCATION: Grass Fields Exploration, Rocky Desert Normal, Northern Forest Hard, Dune Desert Nightmare. "
-				"Exploration has no pressure and is for getting to know the mod, Normal is the intended difficulty. Hard and Nightmare are still untested: they are only tuned "
-				"in the simulation, a full run in the game is still missing.")));
+			TEXT("Schwierigkeit für Einsatz und Endlos-Wellen; Standard nach Startort (Grasfelder Erkundung bis Dünenwüste Albtraum). "
+				"Hart und Albtraum sind noch nicht fertig eingestellt."),
+			TEXT("Difficulty for Operation and Endless waves; by default it follows the start location (Grass Fields Exploration to Dune Desert Nightmare). "
+				"Hard and Nightmare are not fully balanced yet.")));
 		if (UFGUserSetting_IntSelector* Wahl = Cast<UFGUserSetting_IntSelector>(mStufe->ValueSelector))
 		{
 			for (FIntegerSelection& W : Wahl->IntegerSelectionValues)

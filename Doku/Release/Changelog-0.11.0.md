@@ -29,6 +29,7 @@
 - Each core site now has fixed enemy fronts, so a site always plays the same, no matter how fast the game loads.
 - The wave panel on the left fits on screen in large waves.
 - German texts now use proper umlauts.
+- The New Game settings have short help texts and are easy to read again.
 - Towers and buildings: no floating lamps, power poles or black panels, no flickering surfaces, darker patches removed.
 - Wave saves carry the session name; "Retry wave" only loads saves of the current game. Turrets can no longer be dismantled near the Core during a wave.
 - Free play with defense: drilling rewards and Pioneer rank belong to the save; destroyed buildings refund their materials during drilling; drilling only at real resource nodes; talent points capped at 15.
@@ -67,6 +68,7 @@
 - Jeder Kernplatz hat feste Gegnerfronten – ein Platz spielt sich immer gleich, egal wie schnell das Spiel lädt.
 - Die Wellenleiste passt auch in großen Wellen ins Bild.
 - Deutsche Texte schreiben Umlaute jetzt richtig.
+- Die Einstellungen im Menü „Neues Spiel“ haben kurze Hilfetexte und sind wieder gut lesbar.
 - Optik: keine schwebenden Lampen, Strommasten oder schwarzen Platten, kein Flimmern, dunkle Flecken entfernt.
 - Wellen-Spielstände tragen den Spielnamen, „Welle wiederholen“ lädt nur Stände dieses Spiels; kein Abriss am Kern während der Welle.
 - Freies Spiel mit Abwehr: Bohr-Erfolge und Pionier-Rang gehören zum Spielstand, Material zerstörter Bauten zurück, Bohrung nur an echten Knoten, Talentpunkte höchstens 15.
