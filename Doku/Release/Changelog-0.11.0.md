@@ -29,6 +29,7 @@
 - Wave enemies no longer get stuck on ore deposits, rock nodes, crab nests and nut or berry bushes next to their path, and less often at cliff overhangs.
 - Each core site now has fixed enemy fronts, so a site always plays the same, no matter how fast the game loads.
 - The wave panel on the left fits on screen in large waves.
+- Xeno-Zapper and Xeno-Basher now count as hand weapons (self-defense: electric damage at about a third of a rebar bolt, growing with the waves).
 - German texts now use proper umlauts.
 - The New Game settings have short help texts and are easy to read again.
 - Towers and buildings: no floating lamps, power poles or black panels, no flickering surfaces, darker patches removed.
@@ -69,6 +70,7 @@
 - Wellengegner bleiben nicht mehr an Erzvorkommen, Steinknoten, Krabbennestern und Büschen am Weg hängen, seltener an Felsüberhängen.
 - Jeder Kernplatz hat feste Gegnerfronten – ein Platz spielt sich immer gleich, egal wie schnell das Spiel lädt.
 - Die Wellenleiste passt auch in großen Wellen ins Bild.
+- Xeno-Zapper und Xeno-Basher zählen jetzt als Handwaffen (Notwehr: Stromschaden etwa ein Drittel eines Armierungsbolzens, wächst mit den Wellen).
 - Deutsche Texte schreiben Umlaute jetzt richtig.
 - Die Einstellungen im Menü „Neues Spiel“ haben kurze Hilfetexte und sind wieder gut lesbar.
 - Optik: keine schwebenden Lampen, Strommasten oder schwarzen Platten, kein Flimmern, dunkle Flecken entfernt.
