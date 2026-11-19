@@ -392,6 +392,8 @@ static bool KoederFuer(const AFGCreatureController* Self, const AActor* Actor)
 void FFicsitTDModule::StartupModule()
 {
 	UE_LOG(LogFicsitTD, Log, TEXT("FICSIT Tower Defense geladen"));
+	// 19.11.2026: Diagnose Spielupdate 1.2.5.1 - Header-Layout gegen das laufende Spiel pruefen (TDLayoutDiagnose.cpp)
+	{ extern void TDLayoutPruefen(); TDLayoutPruefen(); }
 
 #if !WITH_EDITOR
 	// Die Kreatur-KI soll Koeder wie Spieler behandeln: gueltiges Ziel, Feindschaft, Bedrohung
