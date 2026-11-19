@@ -1,0 +1,434 @@
+// Erzeugt 19.11.2026: alle FG-Klassen/Strukturen aus den Headern, die FicsitTD einbindet
+#include "AI/FGCreatureController.h"
+#include "AI/FGNavArea_Water.h"
+#include "AvailabilityDependencies/FGAvailabilityDependency.h"
+#include "Buildables/FGBuildable.h"
+#include "Buildables/FGBuildableConveyorAttachment.h"
+#include "Buildables/FGBuildableConveyorBase.h"
+#include "Buildables/FGBuildableConveyorBelt.h"
+#include "Buildables/FGBuildableConveyorLift.h"
+#include "Buildables/FGBuildableFactory.h"
+#include "Buildables/FGBuildableGenerator.h"
+#include "Buildables/FGBuildableGeneratorFuel.h"
+#include "Buildables/FGBuildableMAM.h"
+#include "Buildables/FGBuildableManufacturer.h"
+#include "Buildables/FGBuildablePipeReservoir.h"
+#include "Buildables/FGBuildablePipeline.h"
+#include "Buildables/FGBuildablePipelineJunction.h"
+#include "Buildables/FGBuildablePoleBase.h"
+#include "Buildables/FGBuildablePowerPole.h"
+#include "Buildables/FGBuildablePowerStorage.h"
+#include "Buildables/FGBuildableResourceExtractor.h"
+#include "Buildables/FGBuildableResourceExtractorBase.h"
+#include "Buildables/FGBuildableStorage.h"
+#include "Buildables/FGBuildableTradingPost.h"
+#include "Buildables/FGBuildableWall.h"
+#include "Buildables/FGBuildableWire.h"
+#include "Creature/Enemy/FGFlyingBabyCrab.h"
+#include "Creature/FGCreature.h"
+#include "Creature/FGCreatureAction.h"
+#include "Creature/FGCreatureMovementComponent.h"
+#include "Equipment/FGAmmoType.h"
+#include "Equipment/FGAmmoTypeProjectile.h"
+#include "Equipment/FGBuildGun.h"
+#include "Equipment/FGBuildGunBuild.h"
+#include "Equipment/FGEquipment.h"
+#include "Equipment/FGWeapon.h"
+#include "FGActorRepresentation.h"
+#include "FGActorRepresentationManager.h"
+#include "FGBuildableSubsystem.h"
+#include "FGCharacterBase.h"
+#include "FGCharacterMovementComponent.h"
+#include "FGCharacterPlayer.h"
+#include "FGChatManager.h"
+#include "FGCircuitConnectionComponent.h"
+#include "FGClearanceData.h"
+#include "FGConstructDisqualifier.h"
+#include "FGCreatureSubsystem.h"
+#include "FGDotReceiverComponent.h"
+#include "FGFactoryColoringTypes.h"
+#include "FGFactoryConnectionComponent.h"
+#include "FGFoliageRemovalSubsystem.h"
+#include "FGGameMode.h"
+#include "FGGameState.h"
+#include "FGGasPillar.h"
+#include "FGGasPillarCloud.h"
+#include "FGHUD.h"
+#include "FGHealthComponent.h"
+#include "FGIconDatabaseSubsystem.h"
+#include "FGInventoryComponent.h"
+#include "FGInventoryComponentEquipment.h"
+#include "FGItemPickup.h"
+#include "FGItemPickup_Spawnable.h"
+#include "FGLightweightBuildableSubsystem.h"
+#include "FGMapManager.h"
+#include "FGMapMarker.h"
+#include "FGPipeConnectionComponent.h"
+#include "FGPipeConnectionFactory.h"
+#include "FGPipeNetwork.h"
+#include "FGPipeSubsystem.h"
+#include "FGPlayerController.h"
+#include "FGPlayerState.h"
+#include "FGPowerCircuit.h"
+#include "FGPowerConnectionComponent.h"
+#include "FGPowerInfoComponent.h"
+#include "FGProjectile.h"
+#include "FGProjectileMovementComponent.h"
+#include "FGRadioactivitySubsystem.h"
+#include "FGRecipe.h"
+#include "FGRecipeManager.h"
+#include "FGRecipeShortcut.h"
+#include "FGResearchManager.h"
+#include "FGResearchTree.h"
+#include "FGSaveManagerInterface.h"
+#include "FGSaveSession.h"
+#include "FGSaveSystem.h"
+#include "FGSchematic.h"
+#include "FGSchematicManager.h"
+#include "FGSporeFlower.h"
+#include "FGUnlockSubsystem.h"
+#include "FGWaterVolume.h"
+#include "Hologram/FGBlueprintHologram.h"
+#include "Hologram/FGHologram.h"
+#include "ItemAmount.h"
+#include "Narrative/FGMessage.h"
+#include "Resources/FGBuildingDescriptor.h"
+#include "Resources/FGItemDescriptor.h"
+#include "Resources/FGResourceDeposit.h"
+#include "Resources/FGResourceDescriptor.h"
+#include "Resources/FGResourceNode.h"
+#include "Resources/FGResourceNodeBase.h"
+#include "Resources/FGResourceNodeFrackingSatellite.h"
+#include "Settings/FGUserSetting.h"
+#include "Settings/FGUserSettingCategory.h"
+#include "ShoppingList/FGShoppingListComponent.h"
+#include "ShoppingList/FGShoppingListObject.h"
+#include "Tests/FGBuildableSpawnStrategy_Spline.h"
+#include "Tests/FGTestBlueprintFunctionLibrary.h"
+#include "UI/FGGameUI.h"
+#include "UI/FGInteractWidget.h"
+#include "UI/FGOptionsValueController.h"
+#include "Unlocks/FGUnlockInfoOnly.h"
+#include "Unlocks/FGUnlockRecipe.h"
+#include "Unlocks/FGUnlockScannableResource.h"
+#include "WheeledVehicles/FGWheeledVehicle.h"
+#define TD_ALLE_GROESSEN \
+	TD_GR(AFGCreatureController) \
+	TD_GR(UFGNavArea_Water) \
+	TD_GR(UFGAvailabilityDependency) \
+	TD_GR(UFGSignificantNetworkRCO) \
+	TD_GR(UFGBuildableSparseDataObject) \
+	TD_GR(AFGBuildable) \
+	TD_GRS(FConnectionItemStruct) \
+	TD_GR(UFGHologramOverride) \
+	TD_GR(UFGHologramOverride_ConveyorAttachment_FloorToLift) \
+	TD_GR(UFGHologramOverride_ConveyorAttachment_LiftToFloor) \
+	TD_GR(AFGBuildableConveyorAttachment) \
+	TD_GR(AFGBuildableConveyorAttachmentLightweight) \
+	TD_GR(UFGUseState_ConveyorBeltValid) \
+	TD_GR(UFGUseState_ConveyorBeltFullInventory) \
+	TD_GR(UFGUseState_ConveyorBeltEmpty) \
+	TD_GR(UFGConveyorRemoteCallObject) \
+	TD_GR(AFGBuildableConveyorBase) \
+	TD_GR(AFGBuildableConveyorBelt) \
+	TD_GR(UFGConveyorBeltVisibilityMesh) \
+	TD_GR(UFGBuildableConveyorLiftSparseData) \
+	TD_GR(AFGBuildableConveyorLift) \
+	TD_GR(UFGConveyorLiftVisibilityMesh) \
+	TD_GR(AFGBuildableFactory) \
+	TD_GR(UFGGeneratorClipboardSettings) \
+	TD_GR(UFGGeneratorClipboardRCO) \
+	TD_GR(AFGBuildableGenerator) \
+	TD_GR(AFGBuildableGeneratorFuel) \
+	TD_GR(AFGBuildableMAM) \
+	TD_GR(UFGManufacturerClipboardSettings) \
+	TD_GR(UFGManufacturerClipboardRCO) \
+	TD_GR(AFGBuildableManufacturer) \
+	TD_GRS(FQuantizedReservoirIndicatorData) \
+	TD_GR(AFGBuildablePipeReservoir) \
+	TD_GR(AFGBuildablePipeline) \
+	TD_GR(AFGBuildablePipelineJunction) \
+	TD_GR(AFGBuildablePoleBase) \
+	TD_GR(AFGBuildablePowerPole) \
+	TD_GR(AFGBuildablePowerStorage) \
+	TD_GR(AFGBuildableResourceExtractor) \
+	TD_GR(UFGResourceExtractorClipboardRCO) \
+	TD_GR(UFGResourceExtractorClipboardSettings) \
+	TD_GR(AFGBuildableResourceExtractorBase) \
+	TD_GR(AFGBuildableStorage) \
+	TD_GR(AFGBuildableTradingPost) \
+	TD_GR(AFGBuildableWall) \
+	TD_GR(AFGBuildableWallLightweight) \
+	TD_GR(AFGBuildableWire) \
+	TD_GR(AFGFlyingBabyCrab) \
+	TD_GR(UFGCreatureInterruptTest) \
+	TD_GRS(FCreatureBehaviorOverride) \
+	TD_GR(AFGCreature) \
+	TD_GRS(FCreatureActionTargetParams) \
+	TD_GR(UFGCreatureAction) \
+	TD_GR(UFGCreatureMovementComponent) \
+	TD_GRS(FAmmoTickFunction) \
+	TD_GR(UFGAmmoType) \
+	TD_GR(UFGAmmoTypeProjectile) \
+	TD_GR(UFGBuildGunState) \
+	TD_GR(AFGBuildGun) \
+	TD_GR(UFGBuildGunStateBuild) \
+	TD_GR(AFGEquipment) \
+	TD_GRS(FFGWeaponItemState) \
+	TD_GR(AFGWeapon) \
+	TD_GR(UFGActorRepresentation) \
+	TD_GRS(FFGActorRepresentationReplicator) \
+	TD_GR(AFGActorRepresentationManager) \
+	TD_GR(AFGBuildableSubsystem) \
+	TD_GRS(FFootstepEffect) \
+	TD_GRS(FFootstepEffectSurface) \
+	TD_GRS(FFootstepEffectWater) \
+	TD_GR(AFGCharacterBase) \
+	TD_GRS(FFGPendingHyperJunctionInfo) \
+	TD_GRS(FPlayerPipeHyperData) \
+	TD_GRS(FPlayerZiplineData) \
+	TD_GR(UFGCharacterMovementComponent) \
+	TD_GRS(FDisabledInputGate) \
+	TD_GR(UFGUseState_ReviveInvalid_PlayerNotDead) \
+	TD_GR(UFGUseState_ReviveValid) \
+	TD_GRS(FFGActorPlayerPerceptionInfo) \
+	TD_GRS(FFGPlayerPortalData) \
+	TD_GR(AFGCharacterPlayer) \
+	TD_GRS(FChatMessageStruct) \
+	TD_GR(AFGChatManager) \
+	TD_GR(UFGCircuitConnectionComponent) \
+	TD_GRS(FFGClearanceData) \
+	TD_GR(UFGConstructDisqualifier) \
+	TD_GR(UFGCDInitializing) \
+	TD_GR(UFGCDInvalidAimLocation) \
+	TD_GR(UFGCDUnaffordable) \
+	TD_GR(UFGCDInvalidPlacement) \
+	TD_GR(UFGCDEncroachingClearance) \
+	TD_GR(UFGCDEncroachingSoftClearance) \
+	TD_GR(UFGCDEncroachingPlayer) \
+	TD_GR(UFGCDEncroachingCreature) \
+	TD_GR(UFGCDEncroachingVehicle) \
+	TD_GR(UFGCDInvalidFloor) \
+	TD_GR(UFGCDUniqueBuilding) \
+	TD_GR(UFGCDMustSnap) \
+	TD_GR(UFGCMustBuildOnLift) \
+	TD_GR(UFGCCanNotBuildOnLift) \
+	TD_GR(UFGCDMustSnapWall) \
+	TD_GR(UFGCDMustSnapRailroadTrack) \
+	TD_GR(UFGCDMustSnapToCeiling) \
+	TD_GR(UFGCDShouldntSnap) \
+	TD_GR(UFGCDNeedsResourceNode) \
+	TD_GR(UFGCDMustSnapStation) \
+	TD_GR(UFGCDOccupiedStation) \
+	TD_GR(UFGCDDroneStationHasDrone) \
+	TD_GR(UFGCDNeedsFrackingCoreNode) \
+	TD_GR(UFGCDNeedsFrackingSatelliteNode) \
+	TD_GR(UFGCDResourceNodeIsOccuped) \
+	TD_GR(UFGCDResourceIsTooShallow) \
+	TD_GR(UFGCDNeedsWaterVolume) \
+	TD_GR(UFGCDResourceDeposit) \
+	TD_GR(UFGCDWireSnap) \
+	TD_GR(UFGCDWireTooLong) \
+	TD_GR(UFGCDWireConnectionAlreadyExists) \
+	TD_GR(UFGCDInvalidSignSize) \
+	TD_GR(UFGCDWireTooManyConnections) \
+	TD_GR(UFGCDBeltMustSnap) \
+	TD_GR(UFGCDBeltConnectionMismatch) \
+	TD_GR(UFGCDConveyorTooLong) \
+	TD_GR(UFGCDConveyorTooShort) \
+	TD_GR(UFGCDConveyorTooSteep) \
+	TD_GR(UFGCDConveyorInvalidShape) \
+	TD_GR(UFGCDConveyorAttachmentTooSharpTurn) \
+	TD_GR(UFGCDMustHaveRailRoadTrack) \
+	TD_GR(UFGCDNotEnoughSpaceOnTrack) \
+	TD_GR(UFGCDSignalAlreadyPlaced) \
+	TD_GR(UFGCDSignalCannotBePlaceAtTheEndOfATrack) \
+	TD_GR(UFGCDInvalidDoubleSwitch) \
+	TD_GR(UFGCDTooManySwitchPositions) \
+	TD_GR(UFGCDMustAttachToTrainPlatform) \
+	TD_GR(UFGCDTrackTooLong) \
+	TD_GR(UFGCDTrackTooShort) \
+	TD_GR(UFGCDTrackTooSteep) \
+	TD_GR(UFGCDTrackTrunToSharp) \
+	TD_GR(UFGCDPipeTooShort) \
+	TD_GR(UFGCDPipeTooLong) \
+	TD_GR(UFGCDPipeAttachmentTooSharpTurn) \
+	TD_GR(UFGCDPipeMustSnap) \
+	TD_GR(UFGCDPipeFluidTypeMismatch) \
+	TD_GR(UFGCDPipeInvalidShape) \
+	TD_GR(UFGCDPipeNoPathFound) \
+	TD_GR(UFGCDIdenticalOverlappingBuildable) \
+	TD_GR(UFGCDNotAllowedInBlueprint) \
+	TD_GR(UFGCDIntersectingBlueprintDesigner) \
+	TD_GR(UFGCDDesignerWorldCommingling) \
+	TD_GR(UFGCDInvalidUpgradeConnections) \
+	TD_GR(UFGCDInvalidCustomizationTarget) \
+	TD_GR(UFGCDCustomizationAlreadyApplied) \
+	TD_GR(UFGDDBuildablesInsideBlueprintDesigner) \
+	TD_GR(UFGDDElevatorOccupied) \
+	TD_GR(UFGDDRailroadStationDocking) \
+	TD_GR(UFGDDRailroadPlatformHasVehicles) \
+	TD_GR(UFGDDRailwayHasVehicles) \
+	TD_GR(UFGDDRailwayVehicleIsMoving) \
+	TD_GR(UFGDDRailwayVehicleIsDocked) \
+	TD_GR(UFGDDRailwayVehicleDerailed) \
+	TD_GR(UFGDDVehicleHasDriver) \
+	TD_GR(UFGDCrashSiteNotOpened) \
+	TD_GR(UFGDCrashSiteHasLoot) \
+	TD_GR(UFGCDMustSnapElevator) \
+	TD_GR(UFGCDMaxElevatorFloorStops) \
+	TD_GR(UFGCDElevatorIsOccupied) \
+	TD_GR(UFGCDMaxElevatorHeight) \
+	TD_GR(UFGCDElevatorStopUpgradeMustChange) \
+	TD_GR(UFGCDDockingStationInvalidDockingPathNodeElevation) \
+	TD_GR(UFGCDIncompatibleVehiclePathSegment) \
+	TD_GRS(FSpawnerInfo) \
+	TD_GR(AFGCreatureSubsystem) \
+	TD_GRS(FActiveDOT) \
+	TD_GR(UFGDotReceiverComponent) \
+	TD_GRS(FGlobalColorPreset) \
+	TD_GR(UFGFactoryCustomizationDescriptor) \
+	TD_GR(UFGFactoryCustomizationDescriptor_Swatch) \
+	TD_GR(UFGFactoryCustomizationDescriptor_Pattern) \
+	TD_GR(UFGFactoryCustomizationDescriptor_Material) \
+	TD_GR(UFGFactoryCustomizationDescriptor_PaintFinish) \
+	TD_GR(UFGFactoryCustomizationDescriptor_Skin) \
+	TD_GRS(FIndexToMaterialData) \
+	TD_GRS(FFactorySkinComponentData) \
+	TD_GRS(FFactorySkinComponentGroup) \
+	TD_GR(UFGFactorySkinActorData) \
+	TD_GR(UFGFactoryCustomizationCollection) \
+	TD_GRS(FFactoryCustomizationColorSlot) \
+	TD_GRS(FFactoryCustomizationData) \
+	TD_GR(UFGFactoryConnectionComponent) \
+	TD_GR(AFGFoliageRemovalSubsystem) \
+	TD_GR(UFGDedicatedServerGameModeComponentInterface) \
+	TD_GR(AFGGameMode) \
+	TD_GR(UFGGameModeStatics) \
+	TD_GR(UFGGameStateRemoteCallObject) \
+	TD_GR(AFGGameState) \
+	TD_GR(AFGGasPillar) \
+	TD_GR(AFGGasPillarCloud) \
+	TD_GR(AFGHUD) \
+	TD_GR(UFGHealthComponent) \
+	TD_GR(AFGIconDatabaseSubsystem) \
+	TD_GRS(FInventoryItem) \
+	TD_GRS(FInventoryStack) \
+	TD_GR(UFGInventoryComponent) \
+	TD_GR(UFGInventoryComponentEquipment) \
+	TD_GR(UFGUseState_FullInventory) \
+	TD_GR(UFGUseState_Collecting) \
+	TD_GR(AFGItemPickup) \
+	TD_GRS(FSpawnInventoryCrateParameters) \
+	TD_GR(AFGItemPickup_Spawnable) \
+	TD_GRS(FBuildEffectAndRuntimeInfo) \
+	TD_GRS(FRuntimeBuildableInstanceData) \
+	TD_GRS(FLightweightBuildablePool) \
+	TD_GRS(FInstanceConverterInstigator) \
+	TD_GR(UFGLightweightBuildableConstructionBundle) \
+	TD_GR(UFGLightweightBuildableRemovalBundle) \
+	TD_GR(UFGLightweightCustomizationBundle) \
+	TD_GR(AFGLightweightBuildableRepProxy) \
+	TD_GRS(FPendingGamestateRuntimeDataAdd) \
+	TD_GRS(FInstanceHandleIdToRuntimeIndex) \
+	TD_GRS(FLightweightBuildableInstanceRef) \
+	TD_GR(AFGLightweightBuildableSubsystem) \
+	TD_GR(AFGMapManager) \
+	TD_GRS(FMapMarker) \
+	TD_GR(UFGMapMarkerWrapper) \
+	TD_GR(UFGHighlightedMarker) \
+	TD_GR(UFGHighlightedMarker_Actor) \
+	TD_GR(UFGHighlightedMarker_MapMarker) \
+	TD_GR(UFGPipeConnectionComponentBase) \
+	TD_GR(UFGPipeConnectionComponent) \
+	TD_GR(UFGPipeConnectionFactory) \
+	TD_GR(AFGPipeNetwork) \
+	TD_GR(AFGPipeSubsystem) \
+	TD_GR(AFGPlayerController) \
+	TD_GRS(FPlayerColorData) \
+	TD_GR(UFGPlayerHotbar) \
+	TD_GRS(FHotbar) \
+	TD_GRS(FSubCategoryMaterialDefault) \
+	TD_GR(AFGPlayerState) \
+	TD_GRS(FPowerGraphPoint) \
+	TD_GRS(FPowerCircuitStats) \
+	TD_GR(UFGPowerCircuit) \
+	TD_GR(UFGPowerCircuitGroup) \
+	TD_GR(UFGPowerConnectionComponent) \
+	TD_GR(UFGBatteryInfo) \
+	TD_GR(UFGPowerInfoComponent) \
+	TD_GR(AFGProjectile) \
+	TD_GR(UFGProjectileMovementComponent) \
+	TD_GR(AFGRadioactivitySubsystem) \
+	TD_GR(UFGRecipe) \
+	TD_GR(AFGRecipeManager) \
+	TD_GR(UFGRecipeShortcut) \
+	TD_GRS(FResearchData) \
+	TD_GRS(FResearchTime) \
+	TD_GRS(FHardDriveData) \
+	TD_GR(UFGResearchManagerRemoteCallObject) \
+	TD_GR(AFGResearchManager) \
+	TD_GR(UFGResearchTree) \
+	TD_GRS(FSaveHeader) \
+	TD_GRS(FMapRedirector) \
+	TD_GRS(FSubObjectRedirector) \
+	TD_GRS(FSessionSaveStruct) \
+	TD_GRS(FCreateNewGameParameters) \
+	TD_GRS(FLoadSaveFileParameters) \
+	TD_GR(UFGSaveSession) \
+	TD_GR(UFGSaveSystem) \
+	TD_GR(UFGSchematic) \
+	TD_GRS(FSchematicCost) \
+	TD_GRS(FSchematicSubCategoryData) \
+	TD_GRS(FSchematicCategoryData) \
+	TD_GR(AFGSchematicManager) \
+	TD_GR(AFGSporeFlower) \
+	TD_GR(AFGUnlockSubsystem) \
+	TD_GR(AFGWaterVolume) \
+	TD_GR(AFGBlueprintHologram) \
+	TD_GRS(FFGHologramMaterialSlotOverride) \
+	TD_GR(UFGHologramMaterialOverrideIdentifier) \
+	TD_GR(AFGHologram) \
+	TD_GRS(FItemAmount) \
+	TD_GRS(FMappedItemAmount) \
+	TD_GR(UFGMessage) \
+	TD_GR(UFGBuildingDescriptor) \
+	TD_GR(UFGItemDescriptor) \
+	TD_GR(AFGResourceDeposit) \
+	TD_GR(UFGResourceDescriptor) \
+	TD_GRS(FPurityTextPair) \
+	TD_GR(UFGUseState_NodeFullInventory) \
+	TD_GR(AFGResourceNode) \
+	TD_GR(UFGUseState_NonConveyorResource) \
+	TD_GR(AFGNodeMeshActor) \
+	TD_GR(AFGResourceNodeBase) \
+	TD_GR(AFGResourceNodeFrackingSatellite) \
+	TD_GR(UFGUserSetting) \
+	TD_GR(UFGUserSetting_ValueSelector) \
+	TD_GR(UFGUserSetting_CheckBox) \
+	TD_GR(UFGUserSetting_IntSelector) \
+	TD_GR(UFGUserSetting_Slider) \
+	TD_GR(UFGUserSetting_LinearColorPicker) \
+	TD_GR(UFGUserSetting_Custom) \
+	TD_GRS(FUserSettingSubCategoryMapping) \
+	TD_GRS(FUserSettingCategoryMapping) \
+	TD_GR(UFGUserSettingCategory) \
+	TD_GRS(FShoppingListBlueprintEntry) \
+	TD_GRS(FShoppingListRecipeEntry) \
+	TD_GRS(FShoppingListClassEntry) \
+	TD_GR(UFGShoppingListComponent) \
+	TD_GR(UFGShoppingListObject) \
+	TD_GR(UFGShoppingListObject_Class) \
+	TD_GR(UFGShoppingListObject_Object) \
+	TD_GR(UFGBuildableSpawnStrategy_Spline) \
+	TD_GR(UFGTestBlueprintFunctionLibrary) \
+	TD_GR(UFGGameUI) \
+	TD_GR(UFGHitResultWrapper) \
+	TD_GR(UFGInteractWidget) \
+	TD_GR(UFGOptionsValueController) \
+	TD_GR(UFGUnlockInfoOnly) \
+	TD_GR(UFGUnlockRecipe) \
+	TD_GRS(FScannableResourcePair) \
+	TD_GR(UFGUnlockScannableResource) \
+	TD_GR(AFGWheeledVehicle) \
+

@@ -1,0 +1,134 @@
+diff --git a/Source/FactoryGame/Private/Buildables/FGBuildableConveyorBase.cpp b/Source/FactoryGame/Private/Buildables/FGBuildableConveyorBase.cpp
+index 0675458c03..27602aebf3 100644
+--- a/Source/FactoryGame/Private/Buildables/FGBuildableConveyorBase.cpp
++++ b/Source/FactoryGame/Private/Buildables/FGBuildableConveyorBase.cpp
+@@ -94,3 +94,6 @@ void AFGBuildableConveyorBase::OnRep_ChainInformation(){ }
+ void AFGBuildableConveyorBase::PlayPickupFX(int32 itemIndex) const{ }
+ void AFGBuildableConveyorBase::Factory_DequeueItem(){ }
+ void AFGBuildableConveyorBase::Factory_EnqueueItem(const FInventoryItem& item, float initialOffset){ }
++
++// FicsitTD-Nachtrag 19.11.2026 CL520140
++void AFGBuildableConveyorBase::SetFactoryConnectionConnected( const UFGFactoryConnectionComponent* connection, bool isConnected ){ }
+diff --git a/Source/FactoryGame/Private/Buildables/FGBuildableFactory.cpp b/Source/FactoryGame/Private/Buildables/FGBuildableFactory.cpp
+index d0b315caef..71c5777cae 100644
+--- a/Source/FactoryGame/Private/Buildables/FGBuildableFactory.cpp
++++ b/Source/FactoryGame/Private/Buildables/FGBuildableFactory.cpp
+@@ -175,3 +175,6 @@ void AFGBuildableFactory::StartAlienOverclockingEffects(){ }
+ void AFGBuildableFactory::GetSlotsForPowerShardType(EPowerShardType powerShardType, TArray< int32 >& out_slotIndices) const{ }
+ EPowerShardType AFGBuildableFactory::GetPowerShardTypeForSlot(int32 slotIdx) const{ return EPowerShardType(); }
+ void AFGBuildableFactory::RecalculateProducingPowerConsumption(){ }
++
++// FicsitTD-Nachtrag 19.11.2026 CL520140
++void AFGBuildableFactory::SetFactoryConnectionConnected( const UFGFactoryConnectionComponent* connection, bool isConnected ){ }
+diff --git a/Source/FactoryGame/Public/Buildables/FGBuildableConveyorBase.h b/Source/FactoryGame/Public/Buildables/FGBuildableConveyorBase.h
+index c6ada7d45b..89d4ba8004 100644
+--- a/Source/FactoryGame/Public/Buildables/FGBuildableConveyorBase.h
++++ b/Source/FactoryGame/Public/Buildables/FGBuildableConveyorBase.h
+@@ -9,6 +9,7 @@
+ #include "FGSignificanceInterface.h"
+ #include "FGConveyorItem.h"
+ #include "FGFactoryConnectionComponent.h"
++#include "FGFactoryConnectionStateOwner.h" // FicsitTD-Nachtrag 19.11.2026 CL520140
+ #include "FGBuildableConveyorBase.generated.h"
+ 
+ 
+@@ -94,7 +95,7 @@ extern bool GIsConveyorFreezingEnabled;
+  * Responsible for common logic such as the factory ticking, replication, interactions etc.
+  */
+ UCLASS(Abstract)
+-class FACTORYGAME_API AFGBuildableConveyorBase : public AFGBuildable, public IFGSignificanceInterface
++class FACTORYGAME_API AFGBuildableConveyorBase : public AFGBuildable, public IFGSignificanceInterface, public IFGFactoryConnectionStateOwner /* FicsitTD-Nachtrag 19.11.2026 CL520140 */
+ {
+ 	GENERATED_BODY()
+ public:
+@@ -407,6 +408,12 @@ protected:
+ 	
+ 	/** For conveyor chain support this is a quick way to tell if this base conveyor is a lift or not */
+ 	bool mIsConveyorLift = false;
++
++	// FicsitTD-Nachtrag 19.11.2026 CL520140: im Spiel mFactoryConnectionStates (8 Byte) an Offset 1800
++	FTDFactoryConnectionStatesPlatzhalter mFactoryConnectionStates;
++
++	// FicsitTD-Nachtrag 19.11.2026 CL520140
++	virtual void SetFactoryConnectionConnected( const UFGFactoryConnectionComponent* connection, bool isConnected ) override;
+ 	
+ private:
+ 	int16 mLastItemsDirtyKey = -2;
+diff --git a/Source/FactoryGame/Public/Buildables/FGBuildableFactory.h b/Source/FactoryGame/Public/Buildables/FGBuildableFactory.h
+index da96e33b8b..a0a7537a7c 100644
+--- a/Source/FactoryGame/Public/Buildables/FGBuildableFactory.h
++++ b/Source/FactoryGame/Public/Buildables/FGBuildableFactory.h
+@@ -5,6 +5,7 @@
+ #include "FactoryGame.h"
+ #include "FGBuildable.h"
+ #include "FGSignificanceInterface.h"
++#include "FGFactoryConnectionStateOwner.h" // FicsitTD-Nachtrag 19.11.2026 CL520140
+ #include "FGBuildableFactory.generated.h"
+ 
+ class UFGPipeConnectionComponent;
+@@ -24,7 +25,7 @@ DECLARE_MULTICAST_DELEGATE_OneParam( FBuildingCurrentPotentialChanged, float );
+  * @todorefactor Comments about the Factory_ and non factory code.
+  */
+ UCLASS( Abstract )
+-class FACTORYGAME_API AFGBuildableFactory : public AFGBuildable, public IFGSignificanceInterface, public IFGConditionalReplicationInterface
++class FACTORYGAME_API AFGBuildableFactory : public AFGBuildable, public IFGSignificanceInterface, public IFGConditionalReplicationInterface, public IFGFactoryConnectionStateOwner // FicsitTD-Nachtrag 19.11.2026 CL520140: dritte Schnittstelle
+ {
+ 	GENERATED_BODY()
+ public:
+@@ -53,6 +54,9 @@ public:
+ 	virtual void UpdateSignificanceTickRate_Implementation(float NewTickRate, bool bTickEnabled) override;
+ 	//End IFGSignificanceInterface
+ 
++	// FicsitTD-Nachtrag 19.11.2026 CL520140
++	virtual void SetFactoryConnectionConnected( const UFGFactoryConnectionComponent* connection, bool isConnected ) override;
++
+ 	//~ Begin IFGUseableInterface
+ 	virtual void RegisterInteractingPlayer_Implementation( class AFGCharacterPlayer* player ) override;
+ 	virtual void UnregisterInteractingPlayer_Implementation( class AFGCharacterPlayer* player ) override;
+@@ -810,6 +814,9 @@ private:
+ 	/** Caching all skeletal meshes so that we can set tick optimizations later from significance manager */
+ 	UPROPERTY()
+ 	TArray< TObjectPtr<USkeletalMeshComponent> > mCachedSkeletalMeshes;
++
++	// FicsitTD-Nachtrag 19.11.2026 CL520140: im Spiel UPROPERTY FFGFactoryConnectionStates mFactoryConnectionStates (8 Byte)
++	FTDFactoryConnectionStatesPlatzhalter mFactoryConnectionStates;
+ protected:
+ 	/** The range to keep the factory in significance */
+ 	UPROPERTY( EditDefaultsOnly, Category = "Significance" )
+diff --git a/Source/FactoryGame/Public/FGFactoryConnectionStateOwner.h b/Source/FactoryGame/Public/FGFactoryConnectionStateOwner.h
+new file mode 100644
+index 0000000000..45bcb43696
+--- /dev/null
++++ b/Source/FactoryGame/Public/FGFactoryConnectionStateOwner.h
+@@ -0,0 +1,31 @@
++// FicsitTD-Nachtrag 19.11.2026 fuer Spiel CL 520140 (1.2.5.1), bis SML die offiziellen Header liefert.
++// Rekonstruiert aus Exportliste der Spiel-DLL und Laufzeit-Reflexion (Layout-Pruefung in FicsitTD):
++// neue Schnittstelle von AFGBuildableFactory und AFGBuildableConveyorBase, einzige Funktion SetFactoryConnectionConnected.
++
++#pragma once
++
++#include "FactoryGame.h"
++#include "CoreMinimal.h"
++#include "UObject/Interface.h"
++#include "FGFactoryConnectionStateOwner.generated.h"
++
++class UFGFactoryConnectionComponent;
++
++UINTERFACE()
++class FACTORYGAME_API UFGFactoryConnectionStateOwner : public UInterface
++{
++	GENERATED_BODY()
++};
++
++class FACTORYGAME_API IFGFactoryConnectionStateOwner
++{
++	GENERATED_BODY()
++public:
++	virtual void SetFactoryConnectionConnected( const UFGFactoryConnectionComponent* connection, bool isConnected ) = 0;
++};
++
++/** Platzhalter fuer FFGFactoryConnectionStates (im Spiel ein USTRUCT, 8 Byte, Inhalt unbekannt) */
++struct FTDFactoryConnectionStatesPlatzhalter
++{
++	uint64 Unbekannt;
++};

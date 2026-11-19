@@ -1,5 +1,5 @@
 // Erzeugt 19.11.2026 (Diagnose Spielupdate 1.2.5.1) aus den SML-Headern CL517554 - nicht von Hand pflegen
-// Ohne Editor-Felder (WITH_EDITORONLY_DATA), die im Spiel nicht existieren
+// Ohne Editor-Felder (#if WITH_EDITOR...-Bloecke), die im Spiel nicht existieren
 TD_OFF(AFGBuildable, mRainOcclusionBoundingBox)
 TD_OFF(AFGBuildable, mAffectsOcclusion)
 TD_OFF(AFGBuildable, mOcclusionShape)
@@ -105,3 +105,13 @@ TD_OFF(AFGBuildableManufacturer, mOutputInventory)
 TD_OFF(AFGBuildableManufacturer, mCurrentRecipe)
 TD_OFF(AFGBuildableManufacturer, mCurrentRecipeRemnants)
 TD_OFF(AFGBuildableManufacturer, mCachedRecipe)
+TD_OFF(AFGBuildableConveyorBase, mSpeed)
+TD_OFF(AFGBuildableConveyorBase, mItems)
+TD_OFF(AFGBuildableConveyorBase, mConnection0)
+TD_OFF(AFGBuildableConveyorBase, mConnection1)
+TD_OFF(AFGBuildableConveyorBase, mNextConveyor)
+TD_OFF(AFGBuildableConveyorBase, mConveyorChainFlags)
+TD_OFF(AFGBuildableConveyorBase, mFrozenItemsInstancedStaticMeshComponents)
+TD_OFF(AFGBuildableConveyorBase, mConveyorChainActor)
+TD_OFF(AFGBuildableConveyorBase, mChainSegmentIndex)
+TD_OFF(AFGBuildableConveyorBase, mAttachedThroughputMonitors)

@@ -1,4 +1,5 @@
 #include "TDEinsatz.h"
+#include "TDSpielZugriff.h"
 #include "FGGameState.h"
 #include "TDSpielstand.h"
 #include "TDKernplatz.h"
@@ -1931,7 +1932,7 @@ FString UTDEinsatzSubsystem::WiederholeWelle(APlayerController* Spieler)
 	UFGSaveSystem* Speicher = UFGSaveSystem::Get(GetWorld());
 	FSaveHeader Kopf;
 	const AFGGameState* Zustand = GetWorld()->GetGameState<AFGGameState>();
-	if (!Speicher || !Speicher->LoadSaveGameHeaderSync(Name, Kopf) || (Zustand && Kopf.SessionName != Zustand->GetSessionName()))
+	if (!Speicher || !Speicher->LoadSaveGameHeaderSync(Name, Kopf) || (Zustand && Kopf.SessionName != TDSitzungsName(Zustand)))
 	{
 		return TDF(TEXT("Kein Spielstand dieses Spiels vom Start der Welle %d gefunden (%s)."), TEXT("No save of this game from the start of wave %d found (%s)."), Kern->mLaufEndWelle, *Name);
 	}
@@ -2235,7 +2236,7 @@ FString UTDEinsatzSubsystem::WerteEndlosAus(int32 ErreichteWelle, int32 Stufe)
 	// 16.11. (Nachpruefung E8): wie im Einsatz - Eingriffe und erweiterte Spieleinstellungen: ohne Wertung
 	const ATDDefenseCore* KernW = mKern.Get();
 	const AFGGameState* SpielW = GetWorld()->GetGameState<AFGGameState>();
-	if ((KernW && KernW->mLaufEingriffe > 0) || (SpielW && SpielW->IsCreativeModeEnabled()))
+	if ((KernW && KernW->mLaufEingriffe > 0) || (SpielW && TDKreativModusAn(SpielW)))
 	{
 		UE_LOG(LogFicsitTD, Log, TEXT("Endlos: Lauf beendet, %d Wellen, ohne Wertung (Eingriffe oder erweiterte Spieleinstellungen)"), ErreichteWelle);
 		return TDF(TEXT("%d Wellen geschafft - ohne Wertung (Eingriffe oder erweiterte Spieleinstellungen)."), TEXT("%d waves done - not ranked (interventions or advanced game settings)."), ErreichteWelle);
@@ -2356,7 +2357,7 @@ FString UTDEinsatzSubsystem::WerteEinsatzAus(bool bSieg, int32 Welle, float Kern
 	// 16.11. (Nachpruefung E3, Marius): erweiterte Spieleinstellungen des Spiels machen den Lauf zum Lauf ohne Wertung
 	if (const AFGGameState* Spiel = GetWorld()->GetGameState<AFGGameState>())
 	{
-		if (Spiel->IsCreativeModeEnabled())
+		if (TDKreativModusAn(Spiel))
 		{
 			UE_LOG(LogFicsitTD, Log, TEXT("Einsatz: Lauf %s Stufe %d ohne Wertung (erweiterte Spieleinstellungen)"), *Platz, Stufe);
 			return TDT(TEXT("Ohne Wertung: erweiterte Spieleinstellungen sind an."), TEXT("Not ranked: advanced game settings are on."));

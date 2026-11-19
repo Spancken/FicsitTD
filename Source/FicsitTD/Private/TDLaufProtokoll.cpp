@@ -1,4 +1,5 @@
 #include "TDLaufProtokoll.h"
+#include "TDSpielZugriff.h"
 #include "TDPionier.h"
 #include "FicsitTDModule.h"
 #include "TDBalance.h"
@@ -122,7 +123,7 @@ FString UTDLaufProtokoll::StandName(const UObject* WorldContext, int32 Welle, bo
 {
 	const UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
 	const AFGGameState* Zustand = World ? World->GetGameState<AFGGameState>() : nullptr;
-	FString Sitzung = UFGSaveSystem::SanitizeSaveName(Zustand ? Zustand->GetSessionName() : FString());
+	FString Sitzung = UFGSaveSystem::SanitizeSaveName(Zustand ? TDSitzungsName(Zustand) : FString());
 	if (Sitzung.IsEmpty())
 	{
 		Sitzung = TEXT("FicsitTD");

@@ -22,6 +22,8 @@
 #include "AvailabilityDependencies/FGAvailabilityDependency.h"
 #include "Components/ActorComponent.h"
 #include "Blueprint/UserWidget.h"
+#include "Buildables/FGBuildableConveyorBase.h"
+#include "TDLayoutGroessen.inl"
 
 class FTDLayoutDiagnose
 {
@@ -34,18 +36,15 @@ public:
 			const int32 Echt = Klasse->GetStructureSize();
 			++Groessen;
 			if (Echt != Gebaut) ++GroessenFalsch;
-			UE_LOG(LogFicsitTD, Log, TEXT("Layout-Pruefung Groesse %s: gebaut %d, Spiel %d, Differenz %d%s"),
+			if (Echt != Gebaut) UE_LOG(LogFicsitTD, Log, TEXT("Layout-Pruefung Groesse %s: gebaut %d, Spiel %d, Differenz %d%s"),
 				*Klasse->GetName(), Gebaut, Echt, Echt - Gebaut, Echt != Gebaut ? TEXT("  <== ABWEICHUNG") : TEXT(""));
 		};
 #define TD_GR(K) Groesse(K::StaticClass(), (int32)sizeof(K));
+#define TD_GRS(K) Groesse(K::StaticStruct(), (int32)sizeof(K));
 		TD_GR(AActor) TD_GR(UActorComponent) TD_GR(UUserWidget)
-		TD_GR(AFGBuildable) TD_GR(AFGBuildableFactory) TD_GR(AFGBuildableManufacturer)
-		TD_GR(AFGBuildableWall) TD_GR(AFGBuildableStorage)
-		TD_GR(AFGCharacterBase) TD_GR(AFGCharacterPlayer) TD_GR(AFGCreature) TD_GR(AFGCreatureController)
-		TD_GR(UFGInteractWidget) TD_GR(UFGOptionsValueController)
-		TD_GR(UFGCircuitConnectionComponent) TD_GR(UFGPowerConnectionComponent) TD_GR(UFGFactoryConnectionComponent) TD_GR(UFGInventoryComponent)
-		TD_GR(UFGConstructDisqualifier) TD_GR(UFGAvailabilityDependency)
+		TD_ALLE_GROESSEN
 #undef TD_GR
+#undef TD_GRS
 
 		int32 Felder = 0, FelderFalsch = 0, FelderFehlen = 0;
 		auto Feld = [&](UClass* Klasse, const TCHAR* Name, int32 Gebaut)
@@ -69,7 +68,7 @@ public:
 
 		// Felder im Spiel, die unsere Header nicht kennen (neu hinzugekommen)
 		int32 Neu = 0;
-		for (UClass* Klasse : { AFGBuildable::StaticClass(), AFGBuildableFactory::StaticClass(), AFGBuildableManufacturer::StaticClass() })
+		for (UClass* Klasse : { AFGBuildable::StaticClass(), AFGBuildableFactory::StaticClass(), AFGBuildableManufacturer::StaticClass(), AFGBuildableConveyorBase::StaticClass() })
 		{
 			for (TFieldIterator<FProperty> It(Klasse, EFieldIteratorFlags::ExcludeSuper); It; ++It)
 			{
@@ -80,7 +79,7 @@ public:
 		}
 
 		// Runde 2: Schnittstellen (Interface-Basen verschieben die Daten) und Typ des neuen Feldes
-		for (UClass* Klasse : { AFGBuildable::StaticClass(), AFGBuildableFactory::StaticClass(), AFGBuildableManufacturer::StaticClass() })
+		for (UClass* Klasse : { AFGBuildable::StaticClass(), AFGBuildableFactory::StaticClass(), AFGBuildableManufacturer::StaticClass(), AFGBuildableConveyorBase::StaticClass() })
 		{
 			for (const FImplementedInterface& I : Klasse->Interfaces)
 			{
