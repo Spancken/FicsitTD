@@ -1,0 +1,5 @@
+{
+  "Name": "FensterB1",
+  "_Hinweis": "Testfenster B Teil 1 (Fahrplan 0.11, 16.11. abends): Spielersicht ohne Entwicklermodus (B14), EinsatzPhase nach der Nachpruefung (Kern-Bonus), dann G2-Regression Deutsch (Plaene aus Paket Release).",
+  "Plaene": ["Spielersicht", "EinsatzPhase", "Grundtest", "Waehrung", "Neustart", "MAMBild", "Baender", "Spezialisierung", "Sperren091", "BautenP2", "Review-0961", "Wege-Marius-W06", "Netzumbau", "Pionier-P3", "Pionier-P2", "Melden", "Bohrung", "Endlos"]
+}

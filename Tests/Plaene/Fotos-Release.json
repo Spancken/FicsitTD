@@ -1,0 +1,532 @@
+{
+  "Name": "Fotos-Release",
+  "_Hinweis": "18.11. (Marius: Bilder fuer Discord/Reddit/ficsit.app): gemischte Basis auf Fels-S8, Wellen im Zeitraffer, Fotos mit freier Kamera (kamera frei) ohne HUD, dazu je eins mit HUD. Kein Pruefplan. Aufruf: Teste-Mod.ps1 -Paket Fotos -Sprache en Lauf 3: schwaechere Basis (L2), Fotos per warteGegner, wenn die Welle an der Basis ist.",
+  "NeuesSpiel": {
+    "Startort": "Rocky Desert"
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 60,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warte": 15
+    },
+    {
+      "befehl": "td einsatz stop"
+    },
+    {
+      "befehl": "td kern stop"
+    },
+    {
+      "befehl": "td einsatz start normal 50"
+    },
+    {
+      "befehl": "td einsatz frei an"
+    },
+    {
+      "stromfrei": true
+    },
+    {
+      "versorgung": {
+        "Bolzenturm": 50,
+        "Gewehrturm": 25,
+        "Nobelisk-Werfer": 15,
+        "Flammenwerfer": 6000
+      }
+    },
+    {
+      "erforsche": "Assembler"
+    },
+    {
+      "erforsche": "Kupfer"
+    },
+    {
+      "erforsche": "Durchschlagbolzen"
+    },
+    {
+      "erforsche": "Gewehrturm"
+    },
+    {
+      "erforsche": "Kohlekraft"
+    },
+    {
+      "erforsche": "Teslaspule"
+    },
+    {
+      "erforsche": "Giesserei"
+    },
+    {
+      "erforsche": "NobeliskWerfer"
+    },
+    {
+      "erforsche": "Turmfertigung2"
+    },
+    {
+      "erforsche": "Raffinerie"
+    },
+    {
+      "erforsche": "Flammenwerfer"
+    },
+    {
+      "erforsche": "Turmfertigung3"
+    },
+    {
+      "erforsche": "Turmfertigung4"
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 4,
+      "level": 2,
+      "rezept": "Recipe_TD_Gun_Standard"
+    },
+    {
+      "baue": "Teslaspule",
+      "anzahl": 2,
+      "level": 2,
+      "rezept": "Recipe_TD_Tesla_Discharge"
+    },
+    {
+      "baue": "Flammenwerfer",
+      "anzahl": 2,
+      "level": 2,
+      "rezept": "Recipe_TD_Flame_Fuel"
+    },
+    {
+      "baue": "Nobelisk-Werfer",
+      "anzahl": 2,
+      "level": 2,
+      "rezept": "Recipe_TD_Nobelisk_Explosive"
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 2,
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_Durchschlag"
+    },
+    {
+      "warte": 5
+    },
+    {
+      "kamera": "erste"
+    },
+    {
+      "wellenlauf": 9,
+      "zeitraffer": 8,
+      "max": 600
+    },
+    {
+      "befehl": "td kern weiter"
+    },
+    {
+      "warteGegner": 75,
+      "max": 150
+    },
+    {
+      "kamera": "frei",
+      "ort": "gegner",
+      "richtungZu": "kern",
+      "abstand": -12,
+      "seite": 6,
+      "hoehe": 4,
+      "blick": "kern",
+      "blickhoehe": 6,
+      "fov": 70
+    },
+    {
+      "warte": 1
+    },
+    {
+      "foto": "W10_A_Hero",
+      "ohneHUD": true
+    },
+    {
+      "warteGegner": 35,
+      "max": 90
+    },
+    {
+      "kamera": "frei",
+      "ort": "zwischen",
+      "anteil": 0.6,
+      "richtungZu": "kern",
+      "richtung": 90,
+      "abstand": 25,
+      "hoehe": 6,
+      "blick": "zwischen",
+      "blickhoehe": 2,
+      "fov": 75
+    },
+    {
+      "warte": 1
+    },
+    {
+      "foto": "W10_C_Side",
+      "ohneHUD": true
+    },
+    {
+      "kamera": "frei",
+      "ort": "kern",
+      "richtungZu": "gegner",
+      "richtung": 150,
+      "abstand": 30,
+      "hoehe": 20,
+      "blick": "zwischen",
+      "anteil": 0.6,
+      "blickhoehe": 0,
+      "fov": 75
+    },
+    {
+      "warte": 1
+    },
+    {
+      "foto": "W10_D_High",
+      "ohneHUD": true
+    },
+    {
+      "foto": "W10_D_High_HUD"
+    },
+    {
+      "kamera": "frei",
+      "ort": "zwischen",
+      "anteil": 0.7,
+      "richtungZu": "gegner",
+      "richtung": 60,
+      "abstand": 10,
+      "hoehe": 3,
+      "blick": "zwischen",
+      "blickhoehe": 1.5,
+      "fov": 80
+    },
+    {
+      "warte": 1
+    },
+    {
+      "foto": "W10_E_Close",
+      "ohneHUD": true
+    },
+    {
+      "warteGegner": 22,
+      "max": 60
+    },
+    {
+      "kamera": "frei",
+      "ort": "kern",
+      "richtungZu": "gegner",
+      "richtung": -50,
+      "abstand": 14,
+      "hoehe": 5,
+      "blick": "gegner",
+      "blickhoehe": 1,
+      "fov": 80
+    },
+    {
+      "warte": 1
+    },
+    {
+      "foto": "W10_F_Turrets",
+      "ohneHUD": true
+    },
+    {
+      "kamera": "frei",
+      "ort": "kern",
+      "richtungZu": "gegner",
+      "richtung": 180,
+      "abstand": 18,
+      "seite": 8,
+      "hoehe": 12,
+      "blick": "gegner",
+      "blickhoehe": 0,
+      "fov": 75
+    },
+    {
+      "warte": 1
+    },
+    {
+      "foto": "W10_G_Over",
+      "ohneHUD": true
+    },
+    {
+      "kamera": "erste"
+    },
+    {
+      "wellenlauf": 14,
+      "zeitraffer": 8,
+      "max": 600
+    },
+    {
+      "befehl": "td kern weiter"
+    },
+    {
+      "warteGegner": 75,
+      "max": 150
+    },
+    {
+      "kamera": "frei",
+      "ort": "gegner",
+      "richtungZu": "kern",
+      "abstand": -12,
+      "seite": 6,
+      "hoehe": 4,
+      "blick": "kern",
+      "blickhoehe": 6,
+      "fov": 70
+    },
+    {
+      "warte": 1
+    },
+    {
+      "foto": "W15_A_Hero",
+      "ohneHUD": true
+    },
+    {
+      "warteGegner": 35,
+      "max": 90
+    },
+    {
+      "kamera": "frei",
+      "ort": "zwischen",
+      "anteil": 0.6,
+      "richtungZu": "kern",
+      "richtung": 90,
+      "abstand": 25,
+      "hoehe": 6,
+      "blick": "zwischen",
+      "blickhoehe": 2,
+      "fov": 75
+    },
+    {
+      "warte": 1
+    },
+    {
+      "foto": "W15_C_Side",
+      "ohneHUD": true
+    },
+    {
+      "kamera": "frei",
+      "ort": "kern",
+      "richtungZu": "gegner",
+      "richtung": 150,
+      "abstand": 30,
+      "hoehe": 20,
+      "blick": "zwischen",
+      "anteil": 0.6,
+      "blickhoehe": 0,
+      "fov": 75
+    },
+    {
+      "warte": 1
+    },
+    {
+      "foto": "W15_D_High",
+      "ohneHUD": true
+    },
+    {
+      "foto": "W15_D_High_HUD"
+    },
+    {
+      "kamera": "frei",
+      "ort": "zwischen",
+      "anteil": 0.7,
+      "richtungZu": "gegner",
+      "richtung": 60,
+      "abstand": 10,
+      "hoehe": 3,
+      "blick": "zwischen",
+      "blickhoehe": 1.5,
+      "fov": 80
+    },
+    {
+      "warte": 1
+    },
+    {
+      "foto": "W15_E_Close",
+      "ohneHUD": true
+    },
+    {
+      "warteGegner": 22,
+      "max": 60
+    },
+    {
+      "kamera": "frei",
+      "ort": "kern",
+      "richtungZu": "gegner",
+      "richtung": -50,
+      "abstand": 14,
+      "hoehe": 5,
+      "blick": "gegner",
+      "blickhoehe": 1,
+      "fov": 80
+    },
+    {
+      "warte": 1
+    },
+    {
+      "foto": "W15_F_Turrets",
+      "ohneHUD": true
+    },
+    {
+      "kamera": "frei",
+      "ort": "kern",
+      "richtungZu": "gegner",
+      "richtung": 180,
+      "abstand": 18,
+      "seite": 8,
+      "hoehe": 12,
+      "blick": "gegner",
+      "blickhoehe": 0,
+      "fov": 75
+    },
+    {
+      "warte": 1
+    },
+    {
+      "foto": "W15_G_Over",
+      "ohneHUD": true
+    },
+    {
+      "kamera": "erste"
+    },
+    {
+      "wellenlauf": 19,
+      "zeitraffer": 8,
+      "max": 600
+    },
+    {
+      "befehl": "td kern weiter"
+    },
+    {
+      "warteGegner": 75,
+      "max": 150
+    },
+    {
+      "kamera": "frei",
+      "ort": "gegner",
+      "richtungZu": "kern",
+      "abstand": -12,
+      "seite": 6,
+      "hoehe": 4,
+      "blick": "kern",
+      "blickhoehe": 6,
+      "fov": 70
+    },
+    {
+      "warte": 1
+    },
+    {
+      "foto": "W20_A_Hero",
+      "ohneHUD": true
+    },
+    {
+      "warteGegner": 35,
+      "max": 90
+    },
+    {
+      "kamera": "frei",
+      "ort": "zwischen",
+      "anteil": 0.6,
+      "richtungZu": "kern",
+      "richtung": 90,
+      "abstand": 25,
+      "hoehe": 6,
+      "blick": "zwischen",
+      "blickhoehe": 2,
+      "fov": 75
+    },
+    {
+      "warte": 1
+    },
+    {
+      "foto": "W20_C_Side",
+      "ohneHUD": true
+    },
+    {
+      "kamera": "frei",
+      "ort": "kern",
+      "richtungZu": "gegner",
+      "richtung": 150,
+      "abstand": 30,
+      "hoehe": 20,
+      "blick": "zwischen",
+      "anteil": 0.6,
+      "blickhoehe": 0,
+      "fov": 75
+    },
+    {
+      "warte": 1
+    },
+    {
+      "foto": "W20_D_High",
+      "ohneHUD": true
+    },
+    {
+      "foto": "W20_D_High_HUD"
+    },
+    {
+      "kamera": "frei",
+      "ort": "zwischen",
+      "anteil": 0.7,
+      "richtungZu": "gegner",
+      "richtung": 60,
+      "abstand": 10,
+      "hoehe": 3,
+      "blick": "zwischen",
+      "blickhoehe": 1.5,
+      "fov": 80
+    },
+    {
+      "warte": 1
+    },
+    {
+      "foto": "W20_E_Close",
+      "ohneHUD": true
+    },
+    {
+      "warteGegner": 22,
+      "max": 60
+    },
+    {
+      "kamera": "frei",
+      "ort": "kern",
+      "richtungZu": "gegner",
+      "richtung": -50,
+      "abstand": 14,
+      "hoehe": 5,
+      "blick": "gegner",
+      "blickhoehe": 1,
+      "fov": 80
+    },
+    {
+      "warte": 1
+    },
+    {
+      "foto": "W20_F_Turrets",
+      "ohneHUD": true
+    },
+    {
+      "kamera": "frei",
+      "ort": "kern",
+      "richtungZu": "gegner",
+      "richtung": 180,
+      "abstand": 18,
+      "seite": 8,
+      "hoehe": 12,
+      "blick": "gegner",
+      "blickhoehe": 0,
+      "fov": 75
+    },
+    {
+      "warte": 1
+    },
+    {
+      "foto": "W20_G_Over",
+      "ohneHUD": true
+    },
+    {
+      "kamera": "erste"
+    }
+  ]
+}

@@ -1,0 +1,117 @@
+{
+  "Name": "ModusAus",
+  "_Hinweis": "0.11 (Marius 15.11.: nur der Spielmodus zaehlt): neues Spiel mit Spielmodus 0 (Aus). Erwartet: keine TD-Rezepte, TD-Baeume gesperrt, kein Kernplatz. Danach /td modus einsatz: Modus 1, Rezepte und Baeume kommen. Ob der Modus das Speichern/Laden uebersteht, prueft der zweite Teil.",
+  "NeuesSpiel": {
+    "Startort": "Grass Fields",
+    "Modus": 0
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 45,
+  "MaxMinuten": 8,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warte": 10
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Modus Aus: keine TD-Rezepte",
+      "min": 1,
+      "text": "Modus 0: Grundrezepte nicht freigeschaltet"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Rezept freigeschaltet",
+      "min": 0,
+      "max": 0,
+      "text": "Modus 0: kein TD-Rezept im Log"
+    },
+    {
+      "pruefe": "BaumFrei",
+      "baum": "Industrie",
+      "erwartet": false,
+      "text": "Modus 0: Baum Industrie gesperrt"
+    },
+    {
+      "befehl": "td modus"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Spielmodus aktuell: 0",
+      "min": 1,
+      "text": "Modus 0 im Spiel gemeldet"
+    },
+    {
+      "pruefe": "BaumFrei",
+      "baum": "Festung",
+      "erwartet": false,
+      "text": "Modus 0: Baum Festung gesperrt"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Kernplatz: Baue den Kernplatz",
+      "min": 0,
+      "max": 0,
+      "text": "Modus 0: kein automatischer Kernplatz"
+    },
+    {
+      "befehl": "td modus"
+    },
+    {
+      "befehl": "td modus einsatz"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Spielmodus nachtraeglich auf Einsatz gesetzt: ok",
+      "min": 1,
+      "text": "Modus per Befehl auf Einsatz gestellt"
+    },
+    {
+      "warte": 5
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Rezept freigeschaltet",
+      "min": 1,
+      "text": "nach dem Befehl: Grundrezepte freigeschaltet"
+    },
+    {
+      "pruefe": "BaumFrei",
+      "baum": "Industrie",
+      "erwartet": true,
+      "text": "nach dem Befehl: Baum Industrie frei"
+    },
+    {
+      "speichere": "Autotest_ModusAus_gesetzt"
+    },
+    {
+      "lade": "Autotest_ModusAus_gesetzt"
+    },
+    {
+      "warte": 10
+    },
+    {
+      "befehl": "td modus"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Spielmodus aktuell: 1",
+      "min": 1,
+      "text": "nach Speichern und Laden: Spielmodus ist Einsatz (1)"
+    },
+    {
+      "pruefe": "BaumFrei",
+      "baum": "Industrie",
+      "erwartet": true,
+      "text": "nach Speichern und Laden: Baum Industrie frei (Modus blieb erhalten)"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}

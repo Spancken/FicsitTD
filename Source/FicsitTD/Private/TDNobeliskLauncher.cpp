@@ -26,7 +26,6 @@ ATDNobeliskLauncher::ATDNobeliskLauncher()
 	mDrehpunkt = FVector(0.f, 0.f, 301.f);   // 0.9.3: Sockel 165 cm hoeher
 	mNeigeachse = FVector(0.f, 0.f, 119.f);
 	mMuendung = FVector(158.f, 0.f, 0.f);
-	mLampenOrt = FVector(-60.f, 180.f, 340.f);   // 0.9.3: Lampe oben auf dem Original-Statusmast
 	mRange = 6000.f;
 	mTurnSpeed = 90.f;
 	mNeigungMin = 35.f;
@@ -52,8 +51,6 @@ ATDNobeliskLauncher::ATDNobeliskLauncher()
 	}
 	// 0.9.3 Original-Anschluesse (Lagen aus Modelle\Original_Anschluesse.json)
 	OriginalTeil(TDOriginal::Eingang, FVector(-225.f, 0.f, 0.f), 90.f);
-	OriginalTeil(TDOriginal::Strom, FVector(-45.f, -175.f, 82.f), -90.f);
-	OriginalTeil(TDOriginal::Mast, FVector(-60.f, 180.f, 0.f), 180.f);
 
 }
 

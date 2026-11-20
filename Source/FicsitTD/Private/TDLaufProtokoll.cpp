@@ -1,4 +1,5 @@
 #include "TDLaufProtokoll.h"
+#include "TDSpielZugriff.h"
 #include "TDPionier.h"
 #include "FicsitTDModule.h"
 #include "TDBalance.h"
@@ -17,6 +18,8 @@
 #include "FGRecipe.h"
 #include "FGRecipeManager.h"
 #include "FGSaveSession.h"
+#include "FGSaveSystem.h"
+#include "FGGameState.h"
 #include "FGSchematic.h"
 #include "FGSchematicManager.h"
 #include "Buildables/FGBuildableGenerator.h"
@@ -116,6 +119,18 @@ void UTDLaufProtokoll::WellenStart(int32 Welle)
 	UE_LOG(LogFicsitTD, Log, TEXT("Lauf: Welle %d startet, Bauphase %.0f s"), Welle, mBauphase);
 }
 
+FString UTDLaufProtokoll::StandName(const UObject* WorldContext, int32 Welle, bool bStart)
+{
+	const UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
+	const AFGGameState* Zustand = World ? World->GetGameState<AFGGameState>() : nullptr;
+	FString Sitzung = UFGSaveSystem::SanitizeSaveName(Zustand ? TDSitzungsName(Zustand) : FString());
+	if (Sitzung.IsEmpty())
+	{
+		Sitzung = TEXT("FicsitTD");
+	}
+	return FString::Printf(TEXT("%s_TD_W%02d_%s"), *Sitzung, Welle, bStart ? TEXT("Start") : TEXT("Ende"));
+}
+
 void UTDLaufProtokoll::SpeichereSpielstand(const FString& Name) const
 {
 	if (TDBalance::Wert(TEXT("Lauf.Spielstaende"), 1.f) < 0.5f)
@@ -137,6 +152,14 @@ void UTDLaufProtokoll::Kauf(const FString& Key, int32 EP)
 void UTDLaufProtokoll::Eingriff(const FString& Was)
 {
 	mEingriffe.Add(Was);
+	// 0.11 (Gegencheck Einsatz): Eingriffe am Kern zaehlen - ein Lauf mit Eingriffen bekommt keinen Bestwert
+	if (UTDEinsatzSubsystem* Einsatz = GetWorld() ? GetWorld()->GetSubsystem<UTDEinsatzSubsystem>() : nullptr)
+	{
+		if (ATDDefenseCore* Kern = Einsatz->GetKern())
+		{
+			++Kern->mLaufEingriffe;
+		}
+	}
 	UE_LOG(LogFicsitTD, Log, TEXT("Lauf: Eingriff in Welle %d: %s"), mLetzteWelle, *Was);
 	if (bBalancing)
 	{

@@ -1,0 +1,77 @@
+{
+  "Name": "Fabrik-F4-Bohrung",
+  "_Hinweis": "Fabrik-Pruefstand F4 (16.11.): Freies Spiel mit Abwehr, Bohrung Leicht mit echter Bolzenlinie (4 Tuerme L2), keine geschenkte Munition.",
+  "NeuesSpiel": {
+    "Startort": "Grass Fields",
+    "Modus": 3
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 40,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warte": 10
+    },
+    {
+      "befehl": "td bohrung platz"
+    },
+    {
+      "warte": 20
+    },
+    {
+      "stromfrei": true
+    },
+    {
+      "fabrik": "Bolzen",
+      "tuerme": 4,
+      "level": 2,
+      "band": 1
+    },
+    {
+      "warte": 120
+    },
+    {
+      "fabrikbericht": true
+    },
+    {
+      "foto": "Fabrik_F4"
+    },
+    {
+      "befehl": "td bohrung leicht"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Bohrung gestartet: Leicht",
+      "min": 1,
+      "text": "Bohrung Leicht gestartet"
+    },
+    {
+      "zeitraffer": 4
+    },
+    {
+      "warteBis": "BohrungVorbei",
+      "max": 900
+    },
+    {
+      "zeitraffer": 1
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Bohrung beendet (Leicht, Erfolg)",
+      "min": 1,
+      "text": "Bohrung Leicht mit Fabrik-Munition geschafft"
+    },
+    {
+      "fabrikbericht": true
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}

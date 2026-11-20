@@ -4,6 +4,7 @@
 #include "Blueprint/UserWidget.h"
 #include "UI/FGInteractWidget.h"
 #include "TDEinsatz.h"
+#include "UI/FGOptionsValueController.h"
 #include "TDKernTerminal.generated.h"
 
 class ATDDefenseCore;
@@ -105,6 +106,22 @@ private:
 	UFUNCTION()
 	void EndeWiederholen();
 	UFUNCTION()
+	void Bohre0();
+	UFUNCTION()
+	void Bohre1();
+	UFUNCTION()
+	void Bohre2();
+	UFUNCTION()
+	void BohrungAbbrechen();
+	void Bohre(int32 Stufe);
+	UFUNCTION()
+	void WaehleBonus0();
+	UFUNCTION()
+	void WaehleBonus1();
+	UFUNCTION()
+	void WaehleBonus2();
+	void WaehleBonus(int32 Nr);
+	UFUNCTION()
 	void EndeNeustart();
 	UFUNCTION()
 	void EndeBeenden();
@@ -130,6 +147,8 @@ private:
 public:
 	/** 0 Laden, 1 Wellenvorschau, 2 Forschung, 3 Pionier, 4 Statistik, 5 Fehler melden (0.9.6 oeffentlich fuer den Selbsttest) */
 	void ZeigeAnsicht(int32 Ansicht);
+	/** 16.11. (Selbsttest Spielersicht): sichtbare Entwickler-Knoepfe (FreiesBauen, NeuStarten, EinsatzStarten, Testsprung) */
+	TArray<FString> SichtbareTestKnoepfe() const;
 private:
 	void BaueForschung();
 	void BauePionier();
@@ -203,6 +222,8 @@ private:
 	UPROPERTY()
 	TObjectPtr<UButton> mStartKnopf;
 	UPROPERTY()
+	TObjectPtr<UButton> mFreiKnopf;
+	UPROPERTY()
 	TObjectPtr<UButton> mWelleKnopf;
 	UPROPERTY()
 	TObjectPtr<UButton> mEndeWiederholen;
@@ -210,6 +231,25 @@ private:
 	TObjectPtr<UButton> mEndeNeustart;
 	UPROPERTY()
 	TObjectPtr<UButton> mEndeBeenden;
+	/** 0.11 Endlos (Marius 15.11.): Bonuswahl nach der Bosswelle */
+	UPROPERTY()
+	TObjectPtr<UButton> mBonus0;
+	UPROPERTY()
+	TObjectPtr<UButton> mBonus1;
+	UPROPERTY()
+	TObjectPtr<UButton> mBonus2;
+	/** 0.12-dev Freies Spiel mit Abwehr: Bohrung am Kern */
+	UPROPERTY()
+	TObjectPtr<UTextBlock> mBohrInfo;
+	UPROPERTY()
+	TObjectPtr<UButton> mBohr0;
+	UPROPERTY()
+	TObjectPtr<UButton> mBohr1;
+	UPROPERTY()
+	TObjectPtr<UButton> mBohr2;
+	UPROPERTY()
+	TObjectPtr<UButton> mBohrAbbruch;
+	float mBohrInfoUhr = 0.f;
 	UPROPERTY()
 	TObjectPtr<UVerticalBox> mLaden;
 	UPROPERTY()
@@ -461,6 +501,8 @@ private:
 	UPROPERTY()
 	TArray<TObjectPtr<UTextBlock>> mZeilen;
 	TArray<FString> mArten;
+	/** 0.11 (Marius 17.11.: Leiste lief bei grossen Wellen aus dem Bild): Index in FTDWellenStatus::Arten je Zeile */
+	TArray<int32> mSichtbar;
 	float mTakt = 0.f;
 	/** 0.66 (Marius: welche Tuerme machen in der Welle welchen Schaden): Schaden je Turmart live */
 	void FuelleSchaden();
@@ -492,4 +534,116 @@ private:
 	TObjectPtr<class UImage> mRolle;
 	int32 mRolleZweig = -2;
 	FTimerHandle mTimer;
+};
+
+/** 18.11. (Marius: im Menue "Neues Spiel" war die Auswahl ein schmaler Streifen, fuer Tester schwer zu finden): eigene Auswahl fuer
+ *  "Spielmodus" und "Stufe" - jede Moeglichkeit als gut lesbare Zeile mit Namen und einem Satz Beschreibung, die gewaehlte orange.
+ *  Wird als CustomValueSelectorWidget der beiden Sitzungseinstellungen gesetzt (UTDGameInstanceModule). */
+UCLASS()
+class FICSITTD_API UTDAuswahlKarten : public UFGOptionsValueController
+{
+	GENERATED_BODY()
+public:
+	void Waehle(int32 Wert);
+protected:
+	virtual TSharedRef<SWidget> RebuildWidget() override;
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+private:
+	void Fuelle();
+	int32 AktuellerWert() const;
+	UPROPERTY()
+	TObjectPtr<class UHorizontalBox> mReihe;
+	UPROPERTY()
+	TArray<TObjectPtr<class UBorder>> mFelder;
+	UPROPERTY()
+	TArray<TObjectPtr<class UTextBlock>> mNamen;
+	UPROPERTY()
+	TArray<TObjectPtr<class UTDAuswahlKlick>> mKlicks;
+	TArray<int32> mWerte;
+	int32 mGezeigt = INDEX_NONE;
+	float mTakt = 0.f;
+};
+
+/** Klick auf eine Zeile von UTDAuswahlKarten (UButton::OnClicked kennt keinen Parameter) */
+UCLASS()
+class FICSITTD_API UTDAuswahlKlick : public UObject
+{
+	GENERATED_BODY()
+public:
+	UPROPERTY()
+	TObjectPtr<UTDAuswahlKarten> mAuswahl;
+	int32 mWert = 0;
+	UFUNCTION()
+	void Klick() { if (mAuswahl) { mAuswahl->Waehle(mWert); } }
+};
+
+/** 18.11. (Marius: die Modus-Wahl im Menue "Neues Spiel" ist ein Mini-Fenster, fuer Tester kaum zu finden): eigenes Startfenster
+ *  nach der Landung - vier Modus-Karten, darunter die Stufe, unten "Los geht's". Oeffnet UTDKernplatz::PruefeTDStart. */
+UCLASS()
+class FICSITTD_API UTDStartfenster : public UUserWidget
+{
+	GENERATED_BODY()
+public:
+	UPROPERTY()
+	TObjectPtr<class UTDKernplatz> mKernplatz;
+	void Waehle(int32 Art, int32 Wert);
+protected:
+	virtual TSharedRef<SWidget> RebuildWidget() override;
+	virtual void NativeConstruct() override;
+	virtual void NativeDestruct() override;
+private:
+	void Zeige();
+	int32 mModus = 1;
+	int32 mStufe = 0;
+	UPROPERTY()
+	TArray<TObjectPtr<class UBorder>> mModusFelder;
+	UPROPERTY()
+	TArray<TObjectPtr<class UTextBlock>> mModusNamen;
+	UPROPERTY()
+	TArray<TObjectPtr<class UBorder>> mStufenFelder;
+	UPROPERTY()
+	TArray<TObjectPtr<class UTextBlock>> mStufenNamen;
+	UPROPERTY()
+	TObjectPtr<class UTextBlock> mStufenText;
+	UPROPERTY()
+	TObjectPtr<class UWidget> mStufenBereich;
+	UPROPERTY()
+	TArray<TObjectPtr<class UTDStartKlick>> mKlicks;
+};
+
+/** Klick im Startfenster: Art 0 = Modus, 1 = Stufe, 2 = Los */
+UCLASS()
+class FICSITTD_API UTDStartKlick : public UObject
+{
+	GENERATED_BODY()
+public:
+	UPROPERTY()
+	TObjectPtr<UTDStartfenster> mFenster;
+	int32 mArt = 0;
+	int32 mWert = 0;
+	UFUNCTION()
+	void Klick() { if (mFenster) { mFenster->Waehle(mArt, mWert); } }
+};
+
+/** 18.11. (Marius: nach der Landung und nach der Modus-Wahl passiert lange sichtbar nichts): Fortschritt der Vorbereitung oben
+ *  in der Mitte - vier Schritte mit Sekunden, der laufende orange, erledigte gruen, am Ende "Bereit!". Steuert UTDKernplatz::Fortschritt. */
+UCLASS()
+class FICSITTD_API UTDVorbereitung : public UUserWidget
+{
+	GENERATED_BODY()
+public:
+	void SetzeSchritt(int32 Schritt);
+protected:
+	virtual TSharedRef<SWidget> RebuildWidget() override;
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+private:
+	void Zeige();
+	UPROPERTY()
+	TArray<TObjectPtr<class UTextBlock>> mZeilen;
+	UPROPERTY()
+	TObjectPtr<class UTextBlock> mTitel;
+	int32 mSchritt = 0;
+	float mSekunden = 0.f;
+	float mGesamt = 0.f;
+	float mTakt = 0.f;
 };

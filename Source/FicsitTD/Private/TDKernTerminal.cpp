@@ -1,17 +1,24 @@
 #include "TDKernTerminal.h"
+#include "TDSpielstand.h"
 #include "TDWellenStatistik.h"
 #include "TDLaufProtokoll.h"
 #include "FicsitTDModule.h"
 #include "TDDefenseCore.h"
 #include "TDEinsatz.h"
+#include "TDKernplatz.h"
 #include "TDTurretBase.h"
 #include "TDWaveSubsystem.h"
 #include "TDBalance.h"
+#include "TDGameInstanceModule.h"
+#include "Settings/FGUserSetting.h"
+#include "FGOptionInterface.h"
 #include "TDForschung.h"
 #include "TDPionier.h"
 #include "TDSprache.h"
 #include "Blueprint/WidgetTree.h"
 #include "Brushes/SlateRoundedBoxBrush.h"
+#include "Brushes/SlateColorBrush.h"
+#include "SessionSettings/SessionSettingsManager.h"
 #include "Components/Border.h"
 #include "Components/BorderSlot.h"
 #include "Components/Button.h"
@@ -426,6 +433,13 @@ void UTDKernTerminal::BaueOberflaeche()
 	{
 		S->SetPadding(FMargin(0.f, 8.f, 0.f, 0.f));
 	}
+	// 0.12-dev Freies Spiel mit Abwehr: Knoten, Stufen und Lohn der Bohrung
+	mBohrInfo = NeuerText(TEXT(""), 12, TDUI::Hell);
+	mBohrInfo->SetAutoWrapText(true);
+	if (UVerticalBoxSlot* S = StatusSpalte->AddChildToVerticalBox(mBohrInfo))
+	{
+		S->SetPadding(FMargin(0.f, 8.f, 0.f, 0.f));
+	}
 	Zeile(Status, 12.f);
 
 	// Aktionen
@@ -453,6 +467,29 @@ void UTDKernTerminal::BaueOberflaeche()
 	mEndeBeenden = NeuerKnopf(TDT(TEXT("Einsatz beenden"), TEXT("End operation")), Knopftext);
 	mEndeBeenden->OnClicked.AddDynamic(this, &UTDKernTerminal::EndeBeenden);
 	Aktion(mEndeBeenden);
+	// 0.12-dev Freies Spiel mit Abwehr: Bohrung starten (drei Stufen) und abbrechen
+	mBohr0 = NeuerKnopf(TDF(TEXT("Bohrung %s"), TEXT("Drill %s"), *UTDWaveSubsystem::BohrStufenName(0)), Knopftext, true);
+	mBohr0->OnClicked.AddDynamic(this, &UTDKernTerminal::Bohre0);
+	Aktion(mBohr0);
+	mBohr1 = NeuerKnopf(TDF(TEXT("Bohrung %s"), TEXT("Drill %s"), *UTDWaveSubsystem::BohrStufenName(1)), Knopftext, true);
+	mBohr1->OnClicked.AddDynamic(this, &UTDKernTerminal::Bohre1);
+	Aktion(mBohr1);
+	mBohr2 = NeuerKnopf(TDF(TEXT("Bohrung %s"), TEXT("Drill %s"), *UTDWaveSubsystem::BohrStufenName(2)), Knopftext, true);
+	mBohr2->OnClicked.AddDynamic(this, &UTDKernTerminal::Bohre2);
+	Aktion(mBohr2);
+	mBohrAbbruch = NeuerKnopf(TDT(TEXT("Bohrung abbrechen"), TEXT("Abort drilling")), Knopftext);
+	mBohrAbbruch->OnClicked.AddDynamic(this, &UTDKernTerminal::BohrungAbbrechen);
+	Aktion(mBohrAbbruch);
+	// 0.11 Endlos (Marius 15.11.): nach der Bosswelle einer von drei Boni
+	mBonus0 = NeuerKnopf(UTDEinsatzSubsystem::EndlosBonusName(0), Knopftext, true);
+	mBonus0->OnClicked.AddDynamic(this, &UTDKernTerminal::WaehleBonus0);
+	Aktion(mBonus0);
+	mBonus1 = NeuerKnopf(UTDEinsatzSubsystem::EndlosBonusName(1), Knopftext, true);
+	mBonus1->OnClicked.AddDynamic(this, &UTDKernTerminal::WaehleBonus1);
+	Aktion(mBonus1);
+	mBonus2 = NeuerKnopf(UTDEinsatzSubsystem::EndlosBonusName(2), Knopftext, true);
+	mBonus2->OnClicked.AddDynamic(this, &UTDKernTerminal::WaehleBonus2);
+	Aktion(mBonus2);
 	UButton* WegeKnopf = NeuerKnopf(TDT(TEXT("Wegvorschau an"), TEXT("Path preview on")), Knopftext);
 	mWegeText = Knopftext;
 	WegeKnopf->OnClicked.AddDynamic(this, &UTDKernTerminal::WegeUmschalten);
@@ -461,6 +498,9 @@ void UTDKernTerminal::BaueOberflaeche()
 	mFreiText = Knopftext;
 	FreiKnopf->OnClicked.AddDynamic(this, &UTDKernTerminal::FreiUmschalten);
 	Aktion(FreiKnopf);
+	// 0.11 (Gegencheck Einsatz A3, Marius 16.11.): Freies Bauen nur im Entwicklermodus
+	FreiKnopf->SetVisibility(UTDKernplatz::Entwicklermodus() ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+	mFreiKnopf = FreiKnopf;
 
 	UButton* MeldenKnopf = NeuerKnopf(TDT(TEXT("Fehler melden / Idee"), TEXT("Report bug / idea")), Knopftext);
 	MeldenKnopf->OnClicked.AddDynamic(this, &UTDKernTerminal::ReiterMelden);
@@ -616,6 +656,8 @@ void UTDKernTerminal::NativeConstruct()
 	// Forschungspunkte, die wegen vollem Inventar warten, beim Oeffnen nachreichen
 	if (UTDEinsatzSubsystem* Einsatz = GetWorld() ? GetWorld()->GetSubsystem<UTDEinsatzSubsystem>() : nullptr)
 	{
+		// 16.11. (Nachpruefung F4): ohne Einsatz (Freies Spiel mit Abwehr, nach dem Laden) holt das Menue ueber diesen Kern ab
+		Einsatz->SetzeAbwehrKern(Kern());
 		if (const int32 Nach = Einsatz->GibOffeneFP())
 		{
 			Melde(TDF(TEXT("%d Festplatten ins Inventar nachgereicht."), TEXT("%d Hard Drives added to your inventory."), Nach));
@@ -684,7 +726,8 @@ void UTDKernTerminal::Aktualisiere()
 		return;
 	}
 	const bool bEinsatz = Einsatz->IstAktiv();
-	mTitel->SetText(bEinsatz ? TDTX(TEXT("Abwehrkern - Einsatz"), TEXT("Defense Core - Operation")) : TDTX(TEXT("Abwehrkern"), TEXT("Defense Core")));
+	mTitel->SetText(bEinsatz ? TDTX(TEXT("Abwehrkern - Einsatz"), TEXT("Defense Core - Operation"))
+		: UTDKernplatz::IstAbwehr(this) ? TDTX(TEXT("Abwehrkern - Tiefbohrer"), TEXT("Defense Core - Deep Drill")) : TDTX(TEXT("Abwehrkern"), TEXT("Defense Core")));
 	FString WelleText;
 	if (Waves->LaeuftWelle())
 	{
@@ -694,7 +737,7 @@ void UTDKernTerminal::Aktualisiere()
 	}
 	else if (Waves->LaeuftKernVerteidigung())
 	{
-		WelleText = TDF(TEXT("%d / %d bereit"), TEXT("%d / %d ready"), Waves->GetWelle() + 1, Waves->mWellenGesamt);
+		WelleText = Waves->GetBereitText(true);   // Gegencheck 15.11. (F1): auf Zeit mit Countdown
 	}
 	else
 	{
@@ -702,26 +745,73 @@ void UTDKernTerminal::Aktualisiere()
 	}
 	mWelle->SetText(FText::FromString(WelleText));
 	mKernLP->SetText(FText::FromString(K ? FString::Printf(TEXT("%.0f %%"), 100.f * K->GetTDHealth() / FMath::Max(K->GetTDMaxHealth(), 1.f)) : TEXT("-")));
-	mKonto->SetText(FText::FromString(bEinsatz ? TDF(TEXT("%d Coupons  ·  %d Festplatten"), TEXT("%d Coupons  ·  %d Hard Drives"), Einsatz->Konto(), Einsatz->FPImInventar()) : FString(TEXT("-"))));
-	mWelleText->SetText(Waves->LaeuftWelle() ? TDTX(TEXT("Welle läuft ..."), TEXT("Wave running ...")) : TDTX(TEXT("Welle starten"), TEXT("Start wave")));
+	mKonto->SetText(FText::FromString(bEinsatz || UTDKernplatz::IstAbwehr(this) ? TDF(TEXT("%d Coupons  ·  %d Festplatten"), TEXT("%d Coupons  ·  %d Hard Drives"), Einsatz->Konto(), Einsatz->FPImInventar()) : FString(TEXT("-"))));
+	{
+		// 0.11 Endlos: der Knopf zieht vor und nennt den Vorzieh-Bonus
+		const int32 VorziehBonus = Waves->IstEndlos() && Waves->GetCountdown() > 0.f
+			? FMath::FloorToInt(Waves->GetCountdown() / FMath::Max(1.f, TDBalance::Wert(TEXT("Endlos.VorziehSekundenJeCoupon"), 10.f))) : 0;
+		mWelleText->SetText(Waves->LaeuftWelle() ? TDTX(TEXT("Welle läuft ..."), TEXT("Wave running ..."))
+			: VorziehBonus > 0 ? TDFX(TEXT("Welle vorziehen (+%d Coupons)"), TEXT("Bring wave forward (+%d Coupons)"), VorziehBonus)
+			: TDTX(TEXT("Welle starten"), TEXT("Start wave")));
+	}
 	mWegeText->SetText(K && K->ZeigtWege() ? TDTX(TEXT("Wegvorschau aus"), TEXT("Path preview off")) : TDTX(TEXT("Wegvorschau an"), TEXT("Path preview on")));
 	mFreiText->SetText(Einsatz->IstFrei() ? TDTX(TEXT("Freies Bauen: AN"), TEXT("Free Build: ON")) : TDTX(TEXT("Freies Bauen: aus"), TEXT("Free Build: off")));
-	mStartKnopf->SetVisibility(bEinsatz ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
+	// 0.11 (Modus Aus): von Hand nur mit Spielmodus "Einsatz" oder im Entwicklermodus (Selbsttests)
+	// 0.11 (Gegencheck Einsatz A2/A5, Marius 16.11.): ohne Entwicklermodus nur ein Einsatz je Kern - ein neuer Lauf ist ein neues Spiel
+	const ATDSpielstand* StandE = ATDSpielstand::Get(this);
+	const bool bSchonBeendet = (K && K->mEinsatzStartkit) || (StandE && StandE->mEinsatzBeendet);
+	mStartKnopf->SetVisibility(bEinsatz || !(UTDKernplatz::Entwicklermodus() || (UTDKernplatz::TowerDefenseAn(this) && !bSchonBeendet)) ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
 	{
 		const int32 Ende = Einsatz->LaufEnde();
 		if (mWelleKnopf)
 		{
 			mWelleKnopf->SetVisibility(Ende ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
 		}
+		const bool bEndlosEnde = K && K->mLaufEndlos;
+		// 0.12-dev Freies Spiel mit Abwehr: Bohr-Knoepfe statt Einsatz; "Welle starten" nur in der Bohrung (zieht vor)
+		const bool bAbwehr = UTDKernplatz::IstAbwehr(this) && !bEinsatz;
+		if (mBohr0)
+		{
+			const bool bBohrt = Waves->IstBohrung();
+			auto Sicht = [](bool b) { return b ? ESlateVisibility::Visible : ESlateVisibility::Collapsed; };
+			mBohr0->SetVisibility(Sicht(bAbwehr && !bBohrt));
+			mBohr1->SetVisibility(Sicht(bAbwehr && !bBohrt && UTDWaveSubsystem::BohrStufeFrei(K, 1)));
+			mBohr2->SetVisibility(Sicht(bAbwehr && !bBohrt && UTDWaveSubsystem::BohrStufeFrei(K, 2)));
+			mBohrAbbruch->SetVisibility(Sicht(bAbwehr && bBohrt));
+			mBohrInfo->SetVisibility(Sicht(bAbwehr));
+			if (bAbwehr && mWelleKnopf && !bBohrt)
+			{
+				mWelleKnopf->SetVisibility(ESlateVisibility::Collapsed);
+			}
+			// Platzpruefung kostet eine Wegsuche: hoechstens alle 3 s neu
+			mBohrInfoUhr -= 0.5f;
+			if (bAbwehr && mBohrInfoUhr <= 0.f && K)
+			{
+				mBohrInfoUhr = 3.f;
+				mBohrInfo->SetText(FText::FromString(FString::Join(const_cast<UTDWaveSubsystem*>(Waves)->BohrInfo(K), TEXT("\n"))));
+			}
+		}
+		if (mBonus0)
+		{
+			const ESlateVisibility Sicht = !Ende && Einsatz->EndlosBonusOffen() ? ESlateVisibility::Visible : ESlateVisibility::Collapsed;
+			mBonus0->SetVisibility(Sicht);
+			mBonus1->SetVisibility(Sicht);
+			mBonus2->SetVisibility(Sicht);
+		}
 		if (mEndeWiederholen)
 		{
-			mEndeWiederholen->SetVisibility(Ende == 2 ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
-			mEndeNeustart->SetVisibility(Ende ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+			// 0.11 (Marius 15.11.): ein Endlos-Lauf endet mit Wertung - kein Wiederholen
+			mEndeWiederholen->SetVisibility(Ende == 2 && !bEndlosEnde ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+			// 0.11 (Gegencheck Einsatz A2, Marius 16.11.): "Neu starten" behielt Coupons, Turmlevel und Forschung und
+			// zahlte alle Wellen erneut - fuer Spieler raus, ein neuer Lauf ist ein neues Spiel. Bleibt fuer Selbsttests.
+			mEndeNeustart->SetVisibility(Ende && UTDKernplatz::Entwicklermodus() ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 			mEndeBeenden->SetVisibility(Ende ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 		}
 		if (Ende)
 		{
-			mWelle->SetText(Ende == 1 ? TDTX(TEXT("SIEG"), TEXT("VICTORY")) : TDFX(TEXT("Niederlage in Welle %d"), TEXT("Defeat in wave %d"), K ? K->mLaufEndWelle : 0));
+			mWelle->SetText(Ende == 1 ? TDTX(TEXT("SIEG"), TEXT("VICTORY"))
+				: bEndlosEnde ? TDFX(TEXT("Ende in Welle %d (Bestwert %d)"), TEXT("Over in wave %d (best %d)"), K->mLaufEndWelle, UTDEinsatzSubsystem::EndlosBestwert(K->mLaufStufe))
+				: TDFX(TEXT("Niederlage in Welle %d"), TEXT("Defeat in wave %d"), K ? K->mLaufEndWelle : 0));
 		}
 	}
 	if (mLaengeKnopf)
@@ -729,7 +819,8 @@ void UTDKernTerminal::Aktualisiere()
 		const FString Namen[] = { TDT(TEXT("Kurz (20)"), TEXT("Short (20)")), TDT(TEXT("Mittel (30)"), TEXT("Medium (30)")), TDT(TEXT("Standard (50)"), TEXT("Standard (50)")),
 			TDT(TEXT("Endlos"), TEXT("Endless")) };   // 0.77 Marius: 50 Wellen sind Standard
 		const FString Wellen[] = { TDT(TEXT("20 Wellen"), TEXT("20 waves")), TDT(TEXT("30 Wellen"), TEXT("30 waves")), TDT(TEXT("50 Wellen"), TEXT("50 waves")), TDT(TEXT("endlos"), TEXT("endless")) };
-		mLaengeKnopf->SetVisibility(bEinsatz ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
+		// 16.11. (Nachpruefung F10): nur zusammen mit "Einsatz starten" (sonst stand er im Freien Spiel ohne Wirkung da)
+		mLaengeKnopf->SetVisibility(mStartKnopf ? mStartKnopf->GetVisibility() : ESlateVisibility::Collapsed);
 		mLaengeText->SetText(TDFX(TEXT("Länge: %s"), TEXT("Length: %s"), *Namen[mLaenge]));
 		mStartText->SetText(TDFX(TEXT("Einsatz starten (Normal, %s)"), TEXT("Start operation (Normal, %s)"), *Wellen[mLaenge]));
 	}
@@ -1191,7 +1282,7 @@ void UTDKernTerminal::BaueForschung()
 	};
 	UTDEinsatzSubsystem* Einsatz = GetWorld() ? GetWorld()->GetSubsystem<UTDEinsatzSubsystem>() : nullptr;
 	const UTDWaveSubsystem* Waves = GetWorld() ? GetWorld()->GetSubsystem<UTDWaveSubsystem>() : nullptr;
-	const int32 Naechste = Waves ? Waves->GetWelle() + 1 : 1;
+	const int32 Naechste = Waves ? Waves->GetFreigabeWelle() : 1;   // 17.11. (P16/A13)
 	int32 Anzahl[5] = { 0, 0, 0, 0, 0 };
 	for (const FTDForschungKnoten& Kn : TDForschung::Alle())
 	{
@@ -1361,7 +1452,7 @@ void UTDKernTerminal::BauePionier()
 	};
 	UTDPionier* P = UTDPionier::Get(this);
 	const UTDEinsatzSubsystem* Einsatz = GetWorld() ? GetWorld()->GetSubsystem<UTDEinsatzSubsystem>() : nullptr;
-	if (!P || !Einsatz || !Einsatz->IstAktiv())
+	if (!P || !Einsatz || (!Einsatz->IstAktiv() && !UTDKernplatz::IstAbwehr(this)))
 	{
 		Abschnitt(NeuerText(TDT(TEXT("Rang und Talente gibt es im Einsatz. Starte am Kern einen Einsatz."), TEXT("Rank and talents come with an operation. Start an operation at the Core.")), 15, TDUI::Grau), 0.f);
 		return;
@@ -1398,10 +1489,10 @@ void UTDKernTerminal::BauePionier()
 		: TDF(TEXT("%d / %d XP bis Rang %d"), TEXT("%d / %d XP to rank %d"), XP, Bis, Rang + 1), 13, TDUI::Grau), 4.f);
 	// 0.9.8 P3: XP vor allem fuer eigene Leistung, hoechstens 15 Punkte, Rangboni ohne Punkte
 	UTextBlock* Info = NeuerText(TDF(TEXT("XP gibt es für deinen Anteil am Wellenschaden, für Abschüsse (normal 3, Elite 10, Boss 50), Assists und reparierte LP, dazu etwas für jede abgewehrte Welle. "
-		"Jeder Rang bringt einen Talentpunkt, höchstens %d: Wähle zwei Rollen ganz oder drei zur Hälfte. Alle 3 Ränge: +10 LP und +3 %% Lauftempo (jetzt +%d LP). Rang und Talente gelten für diesen Einsatz."),
+		"Jeder Rang bringt einen Talentpunkt, höchstens %d: Wähle zwei Rollen ganz oder drei zur Hälfte. Alle 3 Ränge: +10 LP und +3 %% Lauftempo (jetzt +%d LP). Rang und Talente gehören zum Spielstand."),
 		TEXT("You earn XP for your share of the wave damage, for kills (normal 3, Elite 10, Boss 50), assists and repaired HP, plus a little for every repelled wave. "
-		"Each rank gives one Talent Point, at most %d: pick two roles in full or three halfway. Every 3 ranks: +10 HP and +3 %% walk speed (now +%d HP). Rank and talents apply to this operation."),
-		UTDPionier::MaxRang() - 1, 10 * P->RangBoni()), 13, TDUI::Grau);
+		"Each rank gives one Talent Point, at most %d: pick two roles in full or three halfway. Every 3 ranks: +10 HP and +3 %% walk speed (now +%d HP). Rank and talents belong to the save."),
+		FMath::Min(UTDPionier::MaxRang() - 1, TDBalance::Ganz(TEXT("Pionier.MaxPunkte"), 15)), 10 * P->RangBoni()), 13, TDUI::Grau);
 	Info->SetAutoWrapText(true);
 	Abschnitt(Info, 14.f);
 
@@ -1590,10 +1681,22 @@ static FString AuswahlSchluessel(const FTDPlanGruppe& G)
 	return G.bBoss ? TEXT("BOSS|") + G.Pfad : G.Pfad;
 }
 
-/** Testphase: Wellen in der Zeitleiste waehlen und springen (spaeter Balance Test.WellenSprung = 0) */
+/** Testphase: Wellen in der Zeitleiste waehlen und springen.
+ *  0.11 (Gegencheck Einsatz A1, Marius 16.11.): nur im Entwicklermodus - sonst brachte 1 -> 50 rund 3400 Coupons ohne Kampf */
 static bool TestModus()
 {
-	return !UTDLaufProtokoll::bBalancing && TDBalance::Ganz(TEXT("Test.WellenSprung"), 1) > 0;
+	return UTDKernplatz::Entwicklermodus() && !UTDLaufProtokoll::bBalancing && TDBalance::Ganz(TEXT("Test.WellenSprung"), 1) > 0;
+}
+
+TArray<FString> UTDKernTerminal::SichtbareTestKnoepfe() const
+{
+	TArray<FString> Namen;
+	auto Sichtbar = [](const UWidget* W) { return W && W->GetVisibility() != ESlateVisibility::Collapsed && W->GetVisibility() != ESlateVisibility::Hidden; };
+	if (Sichtbar(mFreiKnopf)) Namen.Add(TEXT("FreiesBauen"));
+	if (Sichtbar(mEndeNeustart)) Namen.Add(TEXT("NeuStarten"));
+	if (Sichtbar(mStartKnopf)) Namen.Add(TEXT("EinsatzStarten"));
+	if (TestModus()) Namen.Add(TEXT("Testsprung"));
+	return Namen;
 }
 
 static FString RollenName(int32 Rolle)
@@ -1913,7 +2016,10 @@ void UTDKernTerminal::BaueListen()
 		mKorb.Reset();
 		UHorizontalBox* Reihe = nullptr;
 		NeueKarte(mLaden, TDUI::ZeileA, Reihe);
-		Fuellen(Reihe, NeuerText(TDT(TEXT("Erst einen Einsatz starten."), TEXT("Start an operation first.")), 13, TDUI::Grau));
+		Fuellen(Reihe, NeuerText(UTDKernplatz::IstAbwehr(this)
+			? TDT(TEXT("Im Freien Spiel mit Abwehr gibt es keinen Laden: Coupons aus dem AWESOME-Sink bezahlen Abwehr-Forschung im MAM und Turmlevel."),
+				TEXT("Free play with defense has no shop: Coupons from the AWESOME Sink pay for defense research in the MAM and turret levels."))
+			: TDT(TEXT("Erst einen Einsatz starten."), TEXT("Start an operation first.")), 13, TDUI::Grau));
 		mKorbSumme->SetText(TDTX(TEXT("Summe: 0 Coupons"), TEXT("Total: 0 Coupons")));
 		mKorbRest->SetText(FText::GetEmpty());
 		mBestaetigen->SetIsEnabled(false);
@@ -2212,8 +2318,59 @@ void UTDKernTerminal::EndeWiederholen()
 	}
 }
 
+void UTDKernTerminal::Bohre0() { Bohre(0); }
+void UTDKernTerminal::Bohre1() { Bohre(1); }
+void UTDKernTerminal::Bohre2() { Bohre(2); }
+
+void UTDKernTerminal::Bohre(int32 Stufe)
+{
+	UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
+	UTDEinsatzSubsystem* Einsatz = GetWorld()->GetSubsystem<UTDEinsatzSubsystem>();
+	ATDDefenseCore* K = Kern();
+	if (!Waves || !K)
+	{
+		return;
+	}
+	FString Meldung;
+	Waves->StarteBohrung(K, Stufe, Meldung);
+	Melde(Meldung);
+	if (Einsatz)
+	{
+		Einsatz->Melde(Meldung);
+	}
+	mBohrInfoUhr = 0.f;
+	Aktualisiere();
+}
+
+void UTDKernTerminal::BohrungAbbrechen()
+{
+	if (UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>())
+	{
+		Melde(Waves->BrecheBohrungAb());
+		mBohrInfoUhr = 0.f;
+		Aktualisiere();
+	}
+}
+
+void UTDKernTerminal::WaehleBonus0() { WaehleBonus(0); }
+void UTDKernTerminal::WaehleBonus1() { WaehleBonus(1); }
+void UTDKernTerminal::WaehleBonus2() { WaehleBonus(2); }
+
+void UTDKernTerminal::WaehleBonus(int32 Nr)
+{
+	if (UTDEinsatzSubsystem* Einsatz = GetWorld()->GetSubsystem<UTDEinsatzSubsystem>())
+	{
+		Melde(Einsatz->WaehleEndlosBonus(Nr));
+		Aktualisiere();
+	}
+}
+
 void UTDKernTerminal::EndeNeustart()
 {
+	if (!UTDKernplatz::Entwicklermodus())
+	{
+		return;
+	}
 	if (UTDEinsatzSubsystem* Einsatz = GetWorld()->GetSubsystem<UTDEinsatzSubsystem>())
 	{
 		APlayerController* PC = GetOwningPlayer();
@@ -2259,6 +2416,10 @@ void UTDKernTerminal::WegeUmschalten()
 
 void UTDKernTerminal::FreiUmschalten()
 {
+	if (!UTDKernplatz::Entwicklermodus())
+	{
+		return;
+	}
 	UTDEinsatzSubsystem* Einsatz = GetWorld()->GetSubsystem<UTDEinsatzSubsystem>();
 	if (!Einsatz || !Einsatz->IstAktiv())
 	{
@@ -2290,6 +2451,12 @@ void UTDKernTerminal::EinsatzStarten()
 	APlayerController* PC = GetOwningPlayer();
 	if (!Einsatz)
 	{
+		return;
+	}
+	const ATDSpielstand* StandS = ATDSpielstand::Get(this);
+	if (!UTDKernplatz::Entwicklermodus() && ((Kern() && Kern()->mEinsatzStartkit) || (StandS && StandS->mEinsatzBeendet)))
+	{
+		Melde(TDT(TEXT("An diesem Kern lief schon ein Einsatz. Ein neuer Lauf beginnt mit einem neuen Spiel."), TEXT("This Core already ran an operation. A new run starts with a new game.")));
 		return;
 	}
 	TArray<FString> Meldungen;
@@ -2976,7 +3143,7 @@ void UTDHud::Aktualisiere()
 	FString Lauf = Waves->GetLaufText();
 	if (!Lauf.Split(TEXT(", aus "), &Lauf, nullptr)) { Lauf.Split(TEXT(", from "), &Lauf, nullptr); }
 	const FString Welle = Waves->LaeuftWelle() ? Lauf
-		: Waves->LaeuftKernVerteidigung() ? TDF(TEXT("Welle %d/%d bereit (Kern-Menü: E)"), TEXT("Wave %d/%d ready (Core Menu: E)"), Waves->GetWelle() + 1, Waves->mWellenGesamt)
+		: Waves->LaeuftKernVerteidigung() ? Waves->GetBereitText()
 		: TDT(TEXT("Kein Lauf"), TEXT("No run"));
 	const UTDPionier* Pionier = UTDPionier::Get(this);
 	const int32 Frei = Pionier ? Pionier->FreiePunkte() : 0;
@@ -3145,13 +3312,23 @@ TSharedRef<SWidget> UTDWellenLeiste::RebuildWidget()
 		UBorder* Rahmen = WidgetTree->ConstructWidget<UBorder>();
 		Rahmen->SetBrush(FSlateRoundedBoxBrush(TDUI::C(20, 20, 20, 200), 4.f));
 		Rahmen->SetPadding(FMargin(12.f, 10.f));
-		if (UCanvasPanelSlot* S = Flaeche->AddChildToCanvas(Rahmen))
+		// links: rechts lag sie ueber der ToDo-Liste (Test 0.53), unten links sitzt der Chat.
+		// 0.11 (Marius 17.11., W42 mit 10 Gegnerarten): mittig verankert wuchs sie nach oben unter die Statuszeile und nach
+		// unten aus dem Bild. Jetzt ein fester Bereich von 9 % bis 74 % der Hoehe; die Leiste waechst von oben nach unten,
+		// und was dann noch nicht passt, wird unten abgeschnitten statt aus dem Bild zu laufen.
+		UVerticalBox* Bereich = WidgetTree->ConstructWidget<UVerticalBox>();
+		Bereich->SetClipping(EWidgetClipping::ClipToBounds);
+		if (UCanvasPanelSlot* S = Flaeche->AddChildToCanvas(Bereich))
 		{
-			// links, etwas ueber der Mitte: rechts lag sie ueber der ToDo-Liste (Test 0.53), unten links sitzt der Chat
-			S->SetAnchors(FAnchors(0.f, 0.4f));
-			S->SetAlignment(FVector2D(0.f, 0.5f));
-			S->SetPosition(FVector2D(20.f, 0.f));
-			S->SetAutoSize(true);
+			S->SetAnchors(FAnchors(0.f, 0.09f, 0.f, 0.74f));
+			S->SetAlignment(FVector2D(0.f, 0.f));
+			S->SetOffsets(FMargin(20.f, 0.f, 274.f, 0.f));   // links, oben, Breite, unten
+		}
+		if (UVerticalBoxSlot* S = Bereich->AddChildToVerticalBox(Rahmen))
+		{
+			S->SetSize(FSlateChildSize(ESlateSizeRule::Automatic));
+			S->SetHorizontalAlignment(HAlign_Fill);
+			S->SetVerticalAlignment(VAlign_Top);
 		}
 		USizeBox* Breite = WidgetTree->ConstructWidget<USizeBox>();
 		Breite->SetWidthOverride(250.f);
@@ -3254,7 +3431,8 @@ void UTDWellenLeiste::FuelleSchaden()
 	for (int32 i = 0; i < Liste.Num() && i < mSchadenTexte.Num(); ++i)
 	{
 		const FTDTurmStat& T = Liste[i];
-		mSchadenTexte[i]->SetText(TDFX(TEXT("%s (%d): %s Schaden · %.0f %% · %d Abschüsse"), TEXT("%s (%d): %s damage · %.0f %% · %d kills"), *T.Art, T.Anzahl,
+		// 0.11: ohne "Schaden" (steht in der Ueberschrift), damit die Zeile meist einzeilig bleibt
+		mSchadenTexte[i]->SetText(TDFX(TEXT("%s (%d): %s · %.0f %% · %d Abschüsse"), TEXT("%s (%d): %s · %.0f %% · %d kills"), *T.Art, T.Anzahl,
 			*FText::AsNumber(FMath::RoundToInt(T.Schaden)).ToString(), Summe > 0.f ? 100.f * T.Schaden / Summe : 0.f, T.Kills));
 		mSchadenBalken[i]->SetPercent(T.Schaden / Hoechst);
 	}
@@ -3272,29 +3450,41 @@ void UTDWellenLeiste::Fuelle()
 		: TDF(TEXT("Welle %d · %s"), TEXT("Wave %d · %s"), S.Welle, *S.Art)));
 	mBalken->SetPercent(S.Groesse > 0 ? float(S.Besiegt) / S.Groesse : 0.f);
 	mZahlen->SetText(TDFX(TEXT("%d von %d besiegt\n%d unterwegs · %d kommen noch"), TEXT("%d of %d defeated\n%d on the way · %d still coming"), S.Besiegt, S.Groesse, S.Lebend, S.Offen));
-	// Zeilen neu bauen, wenn sich die Arten aendern (neue Welle), sonst nur die Zahlen
+	// Zeilen neu bauen, wenn sich die sichtbaren Arten aendern (neue Welle, Art besiegt), sonst nur die Zahlen.
+	// 0.11 (Marius 17.11.): ab 8 Arten werden ganz besiegte Arten ausgeblendet und die Symbole kleiner, damit die Leiste ins Bild passt
+	const bool bLang = S.Arten.Num() >= 8;
+	const float Symbolgroesse = bLang ? 24.f : 32.f;
 	TArray<FString> Arten;
-	for (const FTDArtStatus& A : S.Arten)
+	TArray<int32> Sichtbar;
+	for (int32 i = 0; i < S.Arten.Num(); ++i)
 	{
+		const FTDArtStatus& A = S.Arten[i];
+		if (bLang && !A.bBoss && A.Lebend + A.Offen == 0)
+		{
+			continue;
+		}
+		Sichtbar.Add(i);
 		Arten.Add((A.bBoss ? TEXT("BOSS|") : TEXT("")) + A.Pfad);
 	}
 	if (Arten != mArten)
 	{
 		mArten = Arten;
+		mSichtbar = Sichtbar;
 		mListe->ClearChildren();
 		mZeilen.Reset();
-		for (const FTDArtStatus& A : S.Arten)
+		for (const int32 Index : mSichtbar)
 		{
+			const FTDArtStatus& A = S.Arten[Index];
 			const FTDKreaturSteckbrief B = UTDWaveSubsystem::Steckbrief(A.Pfad);
 			UHorizontalBox* Reihe = WidgetTree->ConstructWidget<UHorizontalBox>();
 			USizeBox* Rahmen = WidgetTree->ConstructWidget<USizeBox>();
-			Rahmen->SetWidthOverride(32.f);
-			Rahmen->SetHeightOverride(32.f);
+			Rahmen->SetWidthOverride(Symbolgroesse);
+			Rahmen->SetHeightOverride(Symbolgroesse);
 			if (UTexture2D* Bild = KreaturTextur(B.Deskriptor))
 			{
 				UImage* Symbol = WidgetTree->ConstructWidget<UImage>();
 				Symbol->SetBrushFromTexture(Bild, false);
-				Symbol->SetDesiredSizeOverride(FVector2D(32.f, 32.f));
+				Symbol->SetDesiredSizeOverride(FVector2D(Symbolgroesse, Symbolgroesse));
 				Rahmen->AddChild(Symbol);
 			}
 			if (UHorizontalBoxSlot* Sl = Reihe->AddChildToHorizontalBox(Rahmen))
@@ -3315,16 +3505,22 @@ void UTDWellenLeiste::Fuelle()
 			}
 			if (UVerticalBoxSlot* Sl = mListe->AddChildToVerticalBox(Reihe))
 			{
-				Sl->SetPadding(FMargin(0.f, 0.f, 0.f, 6.f));
+				Sl->SetPadding(FMargin(0.f, 0.f, 0.f, bLang ? 3.f : 6.f));
 			}
 		}
 	}
-	for (int32 i = 0; i < S.Arten.Num() && i < mZeilen.Num(); ++i)
+	for (int32 z = 0; z < mSichtbar.Num() && z < mZeilen.Num(); ++z)
 	{
-		const FTDArtStatus& A = S.Arten[i];
+		if (!S.Arten.IsValidIndex(mSichtbar[z]))
+		{
+			continue;
+		}
+		const FTDArtStatus& A = S.Arten[mSichtbar[z]];
 		const int32 Weg = A.Gesamt - A.Lebend - A.Offen;
+		const int32 i = z;
+		// 0.11: kurz und einzeilig ("8 + 5 offen" = unterwegs + kommen noch); Kopfzeile erklaert die Zahlen ausfuehrlich
 		mZeilen[i]->SetText(FText::FromString(A.Lebend + A.Offen == 0 ? TDF(TEXT("alle %d besiegt"), TEXT("all %d defeated"), A.Gesamt)
-			: TDF(TEXT("%d unterwegs · %d kommen · %d / %d besiegt"), TEXT("%d on the way · %d coming · %d / %d defeated"), A.Lebend, A.Offen, Weg, A.Gesamt)));
+			: TDF(TEXT("%d + %d offen · %d / %d besiegt"), TEXT("%d + %d left · %d / %d defeated"), A.Lebend, A.Offen, Weg, A.Gesamt)));
 		mZeilen[i]->SetColorAndOpacity(FSlateColor(A.Lebend + A.Offen == 0 ? TDUI::Gut : TDUI::Grau));
 	}
 }
@@ -3582,5 +3778,547 @@ void UTDKernTerminal::BaueStatistik()
 			S->SetPadding(FMargin(0.f, 6.f, 0.f, 0.f));
 		}
 		Abschnitt(Karte, 10.f);
+	}
+}
+
+// ---------------------------------------------------------------------------------------------------------------------------
+// 18.11.: Auswahl "Spielmodus" / "Stufe" im Menue "Neues Spiel"
+
+static FString AuswahlBeschreibung(const FString& Id, int32 Wert)
+{
+	if (Id == UTDGameInstanceModule::ModusId)
+	{
+		switch (Wert)
+		{
+		case ETDModus::Aus: return TDT(TEXT("Normales Satisfactory, der Mod greift nicht ein."), TEXT("Regular Satisfactory, the mod stays out of the way."));
+		case ETDModus::Einsatz: return TDT(TEXT("Abwehrkern an einem festen Platz, 50 Wellen in fünf Phasen. Deine Fabrik liefert die Munition."),
+			TEXT("Defense Core at a fixed site, 50 waves in five phases. Your factory makes the ammo."));
+		case ETDModus::Endlos: return TDT(TEXT("Wie Einsatz, aber Wellen auf Zeit aus einer Richtung, ohne Ende. Wie weit kommst du?"),
+			TEXT("Like Operation, but timed waves from one direction that never stop. How far can you get?"));
+		case ETDModus::Abwehr: return TDT(TEXT("Normales Satisfactory mit Türmen. Gekämpft wird nur, wenn du an einem Rohstoffknoten eine Bohrung startest."),
+			TEXT("Regular Satisfactory with turrets. You only fight when you start a drilling at a resource node."));
+		default: return FString();
+		}
+	}
+	switch (Wert)
+	{
+	case 0: return TDT(TEXT("Grasfelder Erkundung, Felsenwüste Normal, Nördlicher Wald Hart, Dünenwüste Albtraum."),
+		TEXT("Grass Fields Exploration, Rocky Desert Normal, Northern Forest Hard, Dune Desert Nightmare."));
+	case 1: return TDT(TEXT("Ohne Druck, zum Kennenlernen."), TEXT("No pressure, for getting to know the mod."));
+	case 2: return TDT(TEXT("Die vorgesehene Schwierigkeit."), TEXT("The intended difficulty."));
+	case 3: return TDT(TEXT("Mehr Fronten, frühere Eliten. Noch nicht fertig eingestellt."), TEXT("More fronts, earlier elites. Not fully balanced yet."));
+	default: return TDT(TEXT("Für Erfahrene. Noch nicht fertig eingestellt."), TEXT("For veterans. Not fully balanced yet."));
+	}
+}
+
+TSharedRef<SWidget> UTDAuswahlKarten::RebuildWidget()
+{
+	// 18.11. (Marius, Screenshot): die Zeile im Menue hat eine feste Hoehe - eine Liste untereinander wurde abgeschnitten.
+	// Deshalb alle Moeglichkeiten nebeneinander in einer Zeile; der Beschreibungssatz steht im Tooltip.
+	if (WidgetTree && !WidgetTree->RootWidget)
+	{
+		UHorizontalBox* Reihe = WidgetTree->ConstructWidget<UHorizontalBox>();
+		WidgetTree->RootWidget = Reihe;
+		mReihe = Reihe;
+	}
+	return Super::RebuildWidget();
+}
+
+/** Kurzname fuer die Schaltflaeche: "Einsatz – Abwehrkern, 50 Wellen" -> "Einsatz", "Hart (ungetestet)" -> "Hart" */
+static FString AuswahlKurzname(const FString& Name)
+{
+	FString Kurz = Name;
+	int32 Pos = INDEX_NONE;
+	if (Kurz.FindChar(TEXT('('), Pos))
+	{
+		Kurz = Kurz.Left(Pos);
+	}
+	Pos = Kurz.Find(TEXT(" –"));
+	if (Pos != INDEX_NONE)
+	{
+		Kurz = Kurz.Left(Pos);
+	}
+	return Kurz.TrimStartAndEnd();
+}
+
+void UTDAuswahlKarten::Fuelle()
+{
+	const UFGUserSetting_IntSelector* Wahl = mUserSetting ? Cast<UFGUserSetting_IntSelector>(mUserSetting->ValueSelector) : nullptr;
+	if (!mReihe || !Wahl || mWerte.Num() > 0)
+	{
+		return;
+	}
+	const FString Id = mUserSetting->StrId;
+	for (const FIntegerSelection& W : Wahl->IntegerSelectionValues)
+	{
+		UButton* Knopf = WidgetTree->ConstructWidget<UButton>();
+		FButtonStyle Stil;
+		Stil.SetNormal(FSlateNoResource());
+		Stil.SetHovered(FSlateRoundedBoxBrush(TDUI::C(255, 255, 255, 30), 3.f));
+		Stil.SetPressed(FSlateRoundedBoxBrush(TDUI::C(255, 255, 255, 50), 3.f));
+		Stil.SetNormalPadding(FMargin(0.f));
+		Stil.SetPressedPadding(FMargin(0.f));
+		Knopf->SetStyle(Stil);
+		const FString Satz = AuswahlBeschreibung(Id, W.Value);
+		Knopf->SetToolTipText(FText::FromString(Satz.IsEmpty() ? W.Name.ToString() : W.Name.ToString() + TEXT(": ") + Satz));
+		UBorder* Feld = WidgetTree->ConstructWidget<UBorder>();
+		Feld->SetBrush(FSlateRoundedBoxBrush(TDUI::C(58, 58, 58, 230), 3.f));
+		Feld->SetPadding(FMargin(10.f, 1.f));
+		Feld->SetHorizontalAlignment(HAlign_Center);
+		Feld->SetVerticalAlignment(VAlign_Center);
+		UTextBlock* Name = TDUI::Text(WidgetTree, AuswahlKurzname(W.Name.ToString()), 15, TDUI::Hell, true);
+		Feld->AddChild(Name);
+		Knopf->AddChild(Feld);
+		if (UHorizontalBoxSlot* Platz = mReihe->AddChildToHorizontalBox(Knopf))
+		{
+			Platz->SetPadding(FMargin(2.f, 0.f));
+			Platz->SetVerticalAlignment(VAlign_Center);
+		}
+		UTDAuswahlKlick* Klick = NewObject<UTDAuswahlKlick>(this);
+		Klick->mAuswahl = this;
+		Klick->mWert = W.Value;
+		Knopf->OnClicked.AddDynamic(Klick, &UTDAuswahlKlick::Klick);
+		mKlicks.Add(Klick);
+		mFelder.Add(Feld);
+		mNamen.Add(Name);
+		mWerte.Add(W.Value);
+	}
+	mGezeigt = INDEX_NONE;
+}
+
+int32 UTDAuswahlKarten::AktuellerWert() const
+{
+	const UFGUserSetting_IntSelector* Wahl = mUserSetting ? Cast<UFGUserSetting_IntSelector>(mUserSetting->ValueSelector) : nullptr;
+	const int32 Standard = Wahl ? Wahl->DefaultValue : 0;
+	if (IFGOptionInterface* Optionen = mOptionInterface.GetInterface())
+	{
+		const FVariant V = Optionen->GetOptionValue(GetSettingIdentifier(), FVariant(Standard));
+		return V.GetType() == EVariantTypes::Int32 ? V.GetValue<int32>() : Standard;
+	}
+	return Standard;
+}
+
+void UTDAuswahlKarten::Waehle(int32 Wert)
+{
+	if (IFGOptionInterface* Optionen = mOptionInterface.GetInterface())
+	{
+		Optionen->SetOptionValue(GetSettingIdentifier(), FVariant(Wert));
+		UE_LOG(LogFicsitTD, Log, TEXT("Auswahl %s: %d"), *GetSettingIdentifier(), Wert);
+	}
+	mGezeigt = INDEX_NONE;
+}
+
+void UTDAuswahlKarten::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+{
+	Super::NativeTick(MyGeometry, InDeltaTime);
+	Fuelle();
+	mTakt -= InDeltaTime;
+	if (mTakt > 0.f && mGezeigt != INDEX_NONE)
+	{
+		return;
+	}
+	mTakt = 0.2f;
+	const int32 Wert = AktuellerWert();
+	if (Wert == mGezeigt)
+	{
+		return;
+	}
+	mGezeigt = Wert;
+	for (int32 i = 0; i < mWerte.Num(); ++i)
+	{
+		const bool bGewaehlt = mWerte[i] == Wert;
+		mFelder[i]->SetBrush(FSlateRoundedBoxBrush(bGewaehlt ? TDUI::Akzent : TDUI::C(58, 58, 58, 230), 3.f));
+		mNamen[i]->SetColorAndOpacity(FSlateColor(bGewaehlt ? TDUI::DunkelText : TDUI::Hell));
+	}
+}
+
+// ---------------------------------------------------------------------------------------------------------------------------
+// 18.11.: Startfenster nach der Landung
+
+static const int32 GTDStartModi[] = { ETDModus::Einsatz, ETDModus::Endlos, ETDModus::Abwehr, ETDModus::Aus };
+
+static FString StartModusName(int32 Modus)
+{
+	switch (Modus)
+	{
+	case ETDModus::Einsatz: return TDT(TEXT("Einsatz"), TEXT("Operation"));
+	case ETDModus::Endlos: return TDT(TEXT("Endlos-Wellen"), TEXT("Endless waves"));
+	case ETDModus::Abwehr: return TDT(TEXT("Freies Spiel mit Abwehr"), TEXT("Free play with defense"));
+	default: return TDT(TEXT("Aus"), TEXT("Off"));
+	}
+}
+
+static FString StartModusText(int32 Modus)
+{
+	switch (Modus)
+	{
+	case ETDModus::Einsatz: return TDT(TEXT("Dein Abwehrkern steht an einem festen Platz. 50 Wellen in fünf Phasen mit Bossen. Deine Fabrik liefert die Munition, Gebäude kosten Kontingent, geforscht wird im MAM."),
+		TEXT("Your Defense Core stands at a fixed site. 50 waves in five phases with bosses. Your factory makes the ammo, buildings cost quota, research happens in the MAM."));
+	case ETDModus::Endlos: return TDT(TEXT("Wie Einsatz, aber die Wellen kommen auf Zeit und hören nie auf, immer aus einer Richtung. Wie weit kommst du?"),
+		TEXT("Like Operation, but the waves come on a timer and never stop, always from one direction. How far can you get?"));
+	case ETDModus::Abwehr: return TDT(TEXT("Normales Satisfactory mit HUB und Meilensteinen, dazu Türme und Abwehr-Forschung. Gekämpft wird nur, wenn du an einem Rohstoffknoten eine Bohrung startest."),
+		TEXT("Regular Satisfactory with HUB and milestones, plus turrets and defense research. You only fight when you start a drilling at a resource node."));
+	default: return TDT(TEXT("Normales Satisfactory, der Mod greift nicht ein."), TEXT("Regular Satisfactory, the mod stays out of the way."));
+	}
+}
+
+static FString StartStufeName(int32 Stufe)
+{
+	switch (Stufe)
+	{
+	case 0: return TDT(TEXT("Nach Startort"), TEXT("By start location"));
+	case 1: return TDT(TEXT("Erkundung"), TEXT("Exploration"));
+	case 2: return TDT(TEXT("Normal"), TEXT("Normal"));
+	case 3: return TDT(TEXT("Hart"), TEXT("Hard"));
+	default: return TDT(TEXT("Albtraum"), TEXT("Nightmare"));
+	}
+}
+
+TSharedRef<SWidget> UTDStartfenster::RebuildWidget()
+{
+	if (WidgetTree && !WidgetTree->RootWidget)
+	{
+		if (const UWorld* World = GetWorld())
+		{
+			if (const USessionSettingsManager* E = World->GetSubsystem<USessionSettingsManager>())
+			{
+				mModus = E->GetIntOptionValue(UTDGameInstanceModule::ModusId);
+				mStufe = E->GetIntOptionValue(UTDGameInstanceModule::StufeId);
+			}
+		}
+		UCanvasPanel* Flaeche = WidgetTree->ConstructWidget<UCanvasPanel>();
+		WidgetTree->RootWidget = Flaeche;
+		UBorder* Dunkel = WidgetTree->ConstructWidget<UBorder>();
+		Dunkel->SetBrush(FSlateColorBrush(TDUI::C(0, 0, 0, 150)));
+		if (UCanvasPanelSlot* S = Flaeche->AddChildToCanvas(Dunkel))
+		{
+			S->SetAnchors(FAnchors(0.f, 0.f, 1.f, 1.f));
+			S->SetOffsets(FMargin(0.f));
+		}
+		UBorder* Fenster = WidgetTree->ConstructWidget<UBorder>();
+		Fenster->SetBrush(FSlateRoundedBoxBrush(TDUI::Fenster, 6.f));
+		Fenster->SetPadding(FMargin(0.f));
+		if (UCanvasPanelSlot* S = Flaeche->AddChildToCanvas(Fenster))
+		{
+			S->SetAnchors(FAnchors(0.5f, 0.5f));
+			S->SetAlignment(FVector2D(0.5f, 0.5f));
+			S->SetAutoSize(true);
+		}
+		USizeBox* Breite = WidgetTree->ConstructWidget<USizeBox>();
+		Breite->SetWidthOverride(1180.f);
+		Fenster->AddChild(Breite);
+		UVerticalBox* Spalte = WidgetTree->ConstructWidget<UVerticalBox>();
+		Breite->AddChild(Spalte);
+
+		// Kopfleiste
+		UBorder* Kopf = WidgetTree->ConstructWidget<UBorder>();
+		Kopf->SetBrush(FSlateRoundedBoxBrush(TDUI::Kopfleiste, 6.f));
+		Kopf->SetPadding(FMargin(20.f, 12.f));
+		Kopf->AddChild(TDUI::Text(WidgetTree, TDT(TEXT("FICSIT Tower Defense – Wie willst du spielen?"), TEXT("FICSIT Tower Defense – How do you want to play?")), 22, TDUI::Hell, true));
+		Spalte->AddChildToVerticalBox(Kopf);
+
+		UVerticalBox* Inhalt = WidgetTree->ConstructWidget<UVerticalBox>();
+		if (UVerticalBoxSlot* S = Spalte->AddChildToVerticalBox(Inhalt))
+		{
+			S->SetPadding(FMargin(20.f, 16.f, 20.f, 20.f));
+		}
+		UTextBlock* Hinweis = TDUI::Text(WidgetTree, TDT(TEXT("Wähle einen Spielmodus. Du kannst ihn nur jetzt festlegen; für einen anderen Modus startest du später ein neues Spiel."),
+			TEXT("Choose a game mode. You set it only now; for another mode, start a new game later.")), 14, TDUI::Grau);
+		Hinweis->SetAutoWrapText(true);
+		Inhalt->AddChildToVerticalBox(Hinweis);
+
+		auto NeuerKlick = [this](UButton* Knopf, int32 Art, int32 Wert)
+		{
+			UTDStartKlick* K = NewObject<UTDStartKlick>(this);
+			K->mFenster = this;
+			K->mArt = Art;
+			K->mWert = Wert;
+			Knopf->OnClicked.AddDynamic(K, &UTDStartKlick::Klick);
+			mKlicks.Add(K);
+		};
+		auto LeererStil = []()
+		{
+			FButtonStyle Stil;
+			Stil.SetNormal(FSlateNoResource());
+			Stil.SetHovered(FSlateRoundedBoxBrush(TDUI::C(255, 255, 255, 18), 4.f));
+			Stil.SetPressed(FSlateRoundedBoxBrush(TDUI::C(255, 255, 255, 36), 4.f));
+			Stil.SetNormalPadding(FMargin(0.f));
+			Stil.SetPressedPadding(FMargin(0.f));
+			return Stil;
+		};
+
+		// vier Modus-Karten
+		UHorizontalBox* Karten = WidgetTree->ConstructWidget<UHorizontalBox>();
+		if (UVerticalBoxSlot* S = Inhalt->AddChildToVerticalBox(Karten))
+		{
+			S->SetPadding(FMargin(0.f, 14.f, 0.f, 0.f));
+		}
+		for (const int32 Modus : GTDStartModi)
+		{
+			UButton* Knopf = WidgetTree->ConstructWidget<UButton>();
+			Knopf->SetStyle(LeererStil());
+			UBorder* Feld = WidgetTree->ConstructWidget<UBorder>();
+			Feld->SetPadding(FMargin(16.f, 14.f));
+			Feld->SetVerticalAlignment(VAlign_Top);
+			USizeBox* Hoehe = WidgetTree->ConstructWidget<USizeBox>();
+			Hoehe->SetMinDesiredHeight(170.f);
+			UVerticalBox* Karte = WidgetTree->ConstructWidget<UVerticalBox>();
+			UTextBlock* Name = TDUI::Text(WidgetTree, StartModusName(Modus), 20, TDUI::Hell, true);
+			Name->SetAutoWrapText(true);
+			Karte->AddChildToVerticalBox(Name);
+			UTextBlock* Text = TDUI::Text(WidgetTree, StartModusText(Modus), 14, TDUI::C(210, 210, 210));
+			Text->SetAutoWrapText(true);
+			if (UVerticalBoxSlot* S = Karte->AddChildToVerticalBox(Text))
+			{
+				S->SetPadding(FMargin(0.f, 8.f, 0.f, 0.f));
+			}
+			Hoehe->AddChild(Karte);
+			Feld->AddChild(Hoehe);
+			Knopf->AddChild(Feld);
+			if (UButtonSlot* Innen = Cast<UButtonSlot>(Feld->Slot))
+			{
+				Innen->SetHorizontalAlignment(HAlign_Fill);
+				Innen->SetVerticalAlignment(VAlign_Fill);
+				Innen->SetPadding(FMargin(0.f));
+			}
+			if (UHorizontalBoxSlot* S = Karten->AddChildToHorizontalBox(Knopf))
+			{
+				S->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
+				S->SetPadding(FMargin(0.f, 0.f, Modus == ETDModus::Aus ? 0.f : 10.f, 0.f));
+				S->SetVerticalAlignment(VAlign_Fill);   // alle Karten gleich hoch
+			}
+			NeuerKlick(Knopf, 0, Modus);
+			mModusFelder.Add(Feld);
+			mModusNamen.Add(Name);
+		}
+
+		// Stufe
+		UVerticalBox* StufenBox = WidgetTree->ConstructWidget<UVerticalBox>();
+		mStufenBereich = StufenBox;
+		if (UVerticalBoxSlot* S = Inhalt->AddChildToVerticalBox(StufenBox))
+		{
+			S->SetPadding(FMargin(0.f, 18.f, 0.f, 0.f));
+		}
+		StufenBox->AddChildToVerticalBox(TDUI::Text(WidgetTree, TDT(TEXT("Stufe"), TEXT("Difficulty")), 16, TDUI::Akzent, true));
+		UHorizontalBox* Stufen = WidgetTree->ConstructWidget<UHorizontalBox>();
+		if (UVerticalBoxSlot* S = StufenBox->AddChildToVerticalBox(Stufen))
+		{
+			S->SetPadding(FMargin(0.f, 6.f, 0.f, 0.f));
+		}
+		for (int32 Stufe = 0; Stufe <= 4; ++Stufe)
+		{
+			UButton* Knopf = WidgetTree->ConstructWidget<UButton>();
+			Knopf->SetStyle(LeererStil());
+			UBorder* Feld = WidgetTree->ConstructWidget<UBorder>();
+			Feld->SetPadding(FMargin(16.f, 6.f));
+			UTextBlock* Name = TDUI::Text(WidgetTree, StartStufeName(Stufe), 16, TDUI::Hell, true);
+			Feld->AddChild(Name);
+			Knopf->AddChild(Feld);
+			if (UHorizontalBoxSlot* S = Stufen->AddChildToHorizontalBox(Knopf))
+			{
+				S->SetPadding(FMargin(0.f, 0.f, 8.f, 0.f));
+			}
+			NeuerKlick(Knopf, 1, Stufe);
+			mStufenFelder.Add(Feld);
+			mStufenNamen.Add(Name);
+		}
+		mStufenText = TDUI::Text(WidgetTree, FString(), 13, TDUI::Grau);
+		mStufenText->SetAutoWrapText(true);
+		if (UVerticalBoxSlot* S = StufenBox->AddChildToVerticalBox(mStufenText))
+		{
+			S->SetPadding(FMargin(0.f, 6.f, 0.f, 0.f));
+		}
+
+		// Los
+		UButton* Los = WidgetTree->ConstructWidget<UButton>();
+		Los->SetStyle(TDUI::KnopfStil(true));
+		Los->AddChild(TDUI::Text(WidgetTree, TDT(TEXT("Los geht's"), TEXT("Let's go")), 18, TDUI::DunkelText, true));
+		if (UVerticalBoxSlot* S = Inhalt->AddChildToVerticalBox(Los))
+		{
+			S->SetPadding(FMargin(0.f, 20.f, 0.f, 0.f));
+			S->SetHorizontalAlignment(HAlign_Right);
+		}
+		NeuerKlick(Los, 2, 0);
+		Zeige();
+	}
+	return Super::RebuildWidget();
+}
+
+void UTDStartfenster::Zeige()
+{
+	for (int32 i = 0; i < mModusFelder.Num(); ++i)
+	{
+		const bool bGewaehlt = GTDStartModi[i] == mModus;
+		mModusFelder[i]->SetBrush(bGewaehlt ? FSlateRoundedBoxBrush(TDUI::C(64, 46, 30), 4.f, TDUI::Akzent, 3.f) : FSlateRoundedBoxBrush(TDUI::Feld, 4.f, TDUI::C(70, 70, 70), 1.f));
+		mModusNamen[i]->SetColorAndOpacity(FSlateColor(bGewaehlt ? TDUI::Akzent : TDUI::Hell));
+	}
+	for (int32 i = 0; i < mStufenFelder.Num(); ++i)
+	{
+		const bool bGewaehlt = i == mStufe;
+		mStufenFelder[i]->SetBrush(FSlateRoundedBoxBrush(bGewaehlt ? TDUI::Akzent : TDUI::Reiter, 3.f));
+		mStufenNamen[i]->SetColorAndOpacity(FSlateColor(bGewaehlt ? TDUI::DunkelText : TDUI::Hell));
+	}
+	// Stufe nur fuer Einsatz und Endlos
+	const bool bStufe = mModus == ETDModus::Einsatz || mModus == ETDModus::Endlos;
+	if (mStufenBereich)
+	{
+		mStufenBereich->SetVisibility(bStufe ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+	}
+	if (mStufenText)
+	{
+		mStufenText->SetText(FText::FromString(AuswahlBeschreibung(UTDGameInstanceModule::StufeId, mStufe)));
+	}
+}
+
+void UTDStartfenster::Waehle(int32 Art, int32 Wert)
+{
+	if (Art == 0)
+	{
+		mModus = Wert;
+	}
+	else if (Art == 1)
+	{
+		mStufe = Wert;
+	}
+	else if (mKernplatz)
+	{
+		mKernplatz->StartfensterGewaehlt(mModus, mStufe);
+		return;
+	}
+	Zeige();
+}
+
+void UTDStartfenster::NativeConstruct()
+{
+	Super::NativeConstruct();
+	if (APlayerController* PC = GetOwningPlayer())
+	{
+		PC->SetShowMouseCursor(true);
+		FInputModeUIOnly Modus;
+		Modus.SetWidgetToFocus(TakeWidget());
+		Modus.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+		PC->SetInputMode(Modus);
+		PC->SetIgnoreLookInput(true);
+		PC->SetIgnoreMoveInput(true);
+	}
+}
+
+void UTDStartfenster::NativeDestruct()
+{
+	if (APlayerController* PC = GetOwningPlayer())
+	{
+		PC->SetShowMouseCursor(false);
+		PC->SetInputMode(FInputModeGameOnly());
+		PC->ResetIgnoreLookInput();
+		PC->ResetIgnoreMoveInput();
+	}
+	Super::NativeDestruct();
+}
+
+// ---------------------------------------------------------------------------------------------------------------------------
+// 18.11.: Fortschritt der Vorbereitung (Kernplatz anfliegen, Gelaende, Plattform, Netz)
+
+static FString VorbereitungSchritt(int32 i)
+{
+	switch (i)
+	{
+	case 0: return TDT(TEXT("Einsatzort anfliegen"), TEXT("Flying to the operation site"));
+	case 1: return TDT(TEXT("Gelände laden"), TEXT("Loading the terrain"));
+	case 2: return TDT(TEXT("Plattform und Abwehrkern bauen"), TEXT("Building platform and Defense Core"));
+	default: return TDT(TEXT("Wege der Gegner berechnen (bis zu 60 s)"), TEXT("Calculating enemy paths (up to 60 s)"));
+	}
+}
+
+TSharedRef<SWidget> UTDVorbereitung::RebuildWidget()
+{
+	if (WidgetTree && !WidgetTree->RootWidget)
+	{
+		UCanvasPanel* Flaeche = WidgetTree->ConstructWidget<UCanvasPanel>();
+		WidgetTree->RootWidget = Flaeche;
+		UBorder* Rahmen = WidgetTree->ConstructWidget<UBorder>();
+		Rahmen->SetBrush(FSlateRoundedBoxBrush(TDUI::C(24, 24, 24, 235), 6.f, TDUI::Akzent, 2.f));
+		Rahmen->SetPadding(FMargin(22.f, 14.f));
+		if (UCanvasPanelSlot* S = Flaeche->AddChildToCanvas(Rahmen))
+		{
+			S->SetAnchors(FAnchors(0.5f, 0.16f));
+			S->SetAlignment(FVector2D(0.5f, 0.f));
+			S->SetAutoSize(true);
+		}
+		UVerticalBox* Spalte = WidgetTree->ConstructWidget<UVerticalBox>();
+		Rahmen->AddChild(Spalte);
+		mTitel = TDUI::Text(WidgetTree, TDT(TEXT("FICSIT Tower Defense: Einsatzort wird vorbereitet"), TEXT("FICSIT Tower Defense: preparing your operation site")), 20, TDUI::Akzent, true);
+		Spalte->AddChildToVerticalBox(mTitel);
+		for (int32 i = 0; i < 4; ++i)
+		{
+			UTextBlock* Zeile = TDUI::Text(WidgetTree, VorbereitungSchritt(i), 16, TDUI::Grau);
+			if (UVerticalBoxSlot* S = Spalte->AddChildToVerticalBox(Zeile))
+			{
+				S->SetPadding(FMargin(0.f, i == 0 ? 10.f : 4.f, 0.f, 0.f));
+			}
+			mZeilen.Add(Zeile);
+		}
+		UTextBlock* Hinweis = TDUI::Text(WidgetTree, TDT(TEXT("Du kannst dich schon umsehen. Danach meldet sich ADA."), TEXT("Feel free to look around. ADA will brief you afterwards.")), 13, TDUI::Grau);
+		if (UVerticalBoxSlot* S = Spalte->AddChildToVerticalBox(Hinweis))
+		{
+			S->SetPadding(FMargin(0.f, 10.f, 0.f, 0.f));
+		}
+		Zeige();
+	}
+	return Super::RebuildWidget();
+}
+
+void UTDVorbereitung::SetzeSchritt(int32 Schritt)
+{
+	if (Schritt != mSchritt)
+	{
+		mSekunden = 0.f;
+	}
+	mSchritt = Schritt;
+	Zeige();
+}
+
+void UTDVorbereitung::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+{
+	Super::NativeTick(MyGeometry, InDeltaTime);
+	mSekunden += InDeltaTime;
+	mGesamt += InDeltaTime;
+	mTakt -= InDeltaTime;
+	if (mTakt <= 0.f)
+	{
+		mTakt = 0.25f;
+		Zeige();
+	}
+}
+
+void UTDVorbereitung::Zeige()
+{
+	if (mZeilen.Num() < 4)
+	{
+		return;
+	}
+	const int32 Punkte = 1 + (static_cast<int32>(mGesamt * 2.f) % 3);
+	for (int32 i = 0; i < 4; ++i)
+	{
+		if (i < mSchritt)
+		{
+			mZeilen[i]->SetText(FText::FromString(TDT(TEXT("Erledigt: "), TEXT("Done: ")) + VorbereitungSchritt(i)));
+			mZeilen[i]->SetColorAndOpacity(FSlateColor(TDUI::Gut));
+		}
+		else if (i == mSchritt)
+		{
+			mZeilen[i]->SetText(FText::FromString(VorbereitungSchritt(i) + FString(TEXT(" ")) + FString::ChrN(Punkte, TEXT('.'))
+				+ FString::Printf(TEXT("  %.0f s"), mSekunden)));
+			mZeilen[i]->SetColorAndOpacity(FSlateColor(TDUI::Akzent));
+		}
+		else
+		{
+			mZeilen[i]->SetText(FText::FromString(VorbereitungSchritt(i)));
+			mZeilen[i]->SetColorAndOpacity(FSlateColor(TDUI::Grau));
+		}
+	}
+	if (mTitel && mSchritt >= 4)
+	{
+		mTitel->SetText(FText::FromString(TDT(TEXT("Bereit! Dein Einsatz beginnt."), TEXT("Ready! Your operation begins."))));
+		mTitel->SetColorAndOpacity(FSlateColor(TDUI::Gut));
 	}
 }

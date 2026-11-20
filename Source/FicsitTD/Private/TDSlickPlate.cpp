@@ -26,11 +26,8 @@ ATDSlickPlate::ATDSlickPlate()
 	mDrehpunkt = SchlickRad;            // Handrad (Pivot TD_Valve) dreht sich, solange Oel fliesst
 	mMuendung = FVector::ZeroVector;
 	mHalbmasse = FVector(SchlickHalb, SchlickHalb, 15.f);
-	mLampenOrt = FVector(375.f, -140.f, 340.f);
 	// 0.9.3 Original-Anschluesse (Modelle\Original_Anschluesse.json, Gebaeude-Review)
 	OriginalTeil(TDOriginal::Rohr, FVector(450.f, 0.f, 112.f), -90.f);
-	OriginalTeil(TDOriginal::Strom, FVector(375.f, 115.f, 80.f), 90.f);
-	OriginalTeil(TDOriginal::Mast, FVector(375.f, -140.f, 0.f), 0.f);
 
 	mKlarraumHoehe = 60.f;
 	mKlarraumHalb = FVector2D(SchlickHalb, SchlickHalb);
@@ -147,10 +144,10 @@ void ATDSlickPlate::Zuende(const ATDTurretBase* Zuender)
 		++mBraende;
 		UE_LOG(LogFicsitTD, Log, TEXT("Oelschlick %s: entzuendet von %s"), *GetName(), Zuender ? *Zuender->GetTurmName() : TEXT("?"));
 		// 0.9.1: Oelbrand ist die vierte Kombo (Ansage beim ersten Mal, Zaehler im Turmfenster der Platte und des Zuenders)
-		TDKombo::Melde(TEXT("Oelbrand"), this, 0.f);
+		TDKombo::Melde(TEXT("Ölbrand"), this, 0.f);
 		if (Zuender && Zuender != this)
 		{
-			TDKombo::Melde(TEXT("Oelbrand"), Zuender, 0.f);
+			TDKombo::Melde(TEXT("Ölbrand"), Zuender, 0.f);
 		}
 	}
 	mBrandBis = Jetzt() + TDBalance::Wert(TEXT("Tuerme.Oelschlick.BrandDauer"), 5.f);

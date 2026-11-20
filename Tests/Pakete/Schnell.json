@@ -1,0 +1,5 @@
+{
+  "Name": "Schnell",
+  "_Hinweis": "Deploy-Strasse, Stufe Schnell (ENTWICKLUNG.md): je Spielmodus ein kurzer Plan - Einsatz (Grundtest), Modus Aus, Endlos-Wellen, Freies Spiel mit Abwehr (Bohrung). Etwa 15 min.",
+  "Plaene": ["Grundtest", "ModusAus", "Endlos", "Bohrung"]
+}

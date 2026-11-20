@@ -1,0 +1,9 @@
+{
+  "Name": "P12-K-Nachlauf",
+  "_Hinweis": "Nachlauf zu P12-K (17.11.): K1 zweimal fuer die Streuung W8-10 (Start-Warteuhr behoben), K5 mit Ausbau auf dem inneren Ring. Keine Balance-Aenderung im Fenster.",
+  "Plaene": [
+    "P12-K1-Bolzen",
+    "P12-K1-Bolzen",
+    "P12-K5-Misch-W31-50"
+  ]
+}

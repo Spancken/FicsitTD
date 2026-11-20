@@ -1,9 +1,12 @@
-#include "TDAutotest.h"
+﻿#include "TDAutotest.h"
 #include "FicsitTDModule.h"
 #include "TDDefenseCore.h"
 #include "TDTurretBase.h"
 #include "TDForschung.h"
 #include "TDWaveSubsystem.h"
+#include "Misc/App.h"
+#include "FGDismantleInterface.h"
+#include "FGConstructDisqualifier.h"
 #include "TDWellenStatistik.h"
 #include "TDBalance.h"
 #include "Command/ChatCommandLibrary.h"
@@ -13,11 +16,16 @@
 #include "FGGameMode.h"
 #include "FGGameState.h"
 #include "FGBuildableSubsystem.h"
+#include "TDGate.h"
+#include "FGPowerConnectionComponent.h"
+#include "FGClearanceInterface.h"
+#include "Components/InstancedStaticMeshComponent.h"
 #include "TDEinsatz.h"
 #include "TDGegnerHirn.h"
 #include "TDSicherheitsnetz.h"
 #include "TDBandUpgrade.h"
 #include "TDKernplatz.h"
+#include "TDFabrikPruefstand.h"
 #include "Creature/FGCreature.h"
 #include "FGHealthComponent.h"
 #include "FGSaveManagerInterface.h"
@@ -47,6 +55,7 @@
 #include "Widgets/SWindow.h"
 #include "FGSchematic.h"
 #include "FGResearchManager.h"
+#include "FGResearchTree.h"
 #include "Camera/PlayerCameraManager.h"
 #include "FGSchematicManager.h"
 #include "FGRecipe.h"
@@ -127,7 +136,9 @@ public:
 		int32 N = 0;
 		for (const FString& Z : mAlle)
 		{
-			if (Z.Contains(Text))
+			// 16.11. (Bohrung: "kein zweiter Erstlohn" zaehlte die eigene OK-Zeile mit, die den Fund wiederholt): Zeilen des
+			// Autotests selbst zaehlen nicht
+			if (!Z.StartsWith(TEXT("Autotest")) && Z.Contains(Text))
 			{
 				OutErste = N++ == 0 ? Z : OutErste;
 			}
@@ -207,11 +218,23 @@ void UTDAutotest::StartePlan()
 	mNachzueglerWelle = 0;
 	mVersorgung.Reset();
 	mVersorgtRest.Reset();
+	// 17.11. (Test Fenster1117): Pruefstand je Plan neu - Bauten, Netzueberwachung, Zaehler und Kostenmodus
+	mFabrik.Reset();
+	mStromAktiv = false;
+	UTDWaveSubsystem::GTestPlan = mPlan.IsValid() && mPlan->HasField(TEXT("Name")) ? mPlan->GetStringField(TEXT("Name")) : FString();
+	++UTDWaveSubsystem::GTestLauf;
+	mPauseSpiel = 0.f;
+	TDFabrik::NeuerPlan();
 	mPlanZeit = 0.f;
 	mUhr = 0.f;
 	if (mLog)
 	{
 		mLog->Leeren();
+	}
+	// 16.11.: jeder Plan beginnt mit Entwicklermodus (ein abgebrochener Plan Spielersicht darf die folgenden nicht verfaelschen)
+	if (UTDKernplatz::IstSpielersicht())
+	{
+		UTDKernplatz::SetzeSpielersicht(false);
 	}
 	UE_LOG(LogFicsitTD, Log, TEXT("Autotest: Plan %d/%d %s mit %d Schritten, Spielstand %s"), mPlanNr + 1, mPlaene.Num(), *mPlan->GetStringField(TEXT("Name")),
 		mSchritte.Num(), *mPlan->GetStringField(TEXT("Spielstand")));
@@ -253,6 +276,39 @@ static bool TDIstSpielwelt(const UWorld* World)
 	return World && World->IsGameWorld() && World->GetMapName().Contains(TEXT("Persistent_Level"));
 }
 
+void UTDAutotest::SetzeZeitraffer(UWorld* World, float Wunsch)
+{
+	mZeitrafferWunsch = FMath::Max(0.1f, Wunsch);
+	mZeitrafferIst = -1.f;
+	PasseZeitrafferAn(World);
+}
+
+void UTDAutotest::PasseZeitrafferAn(UWorld* World)
+{
+	// 17.11. (B20, Messung Paket B20): das Spiel gibt dem Fabrik-Takt je Bild hoechstens ~1/30 s. Ist ein Rechenschritt
+	// (echte Bildzeit x Zeitraffer) laenger, laufen Baender, Maschinen und das Nachladen der Tuerme langsamer als die Gegner -
+	// bei x4 und 32 ms je Bild nur 52 % (Welle 5: Kern 36 % statt 91 %). Deshalb den Zeitraffer so deckeln, dass ein Schritt
+	// Test.MaxSchritt nicht uebersteigt. Unter 1 wird nie gebremst.
+	if (!World)
+	{
+		return;
+	}
+	mBildMittel = 0.8f * mBildMittel + 0.2f * FMath::Clamp(static_cast<float>(FApp::GetDeltaTime()), 0.001f, 0.5f);
+	const float MaxSchritt = TDBalance::Wert(TEXT("Test.MaxSchritt"), 1.f / 30.f);
+	const float Erlaubt = mZeitrafferWunsch <= 1.f ? mZeitrafferWunsch : FMath::Clamp(MaxSchritt / mBildMittel, 1.f, mZeitrafferWunsch);
+	if (mZeitrafferIst < 0.f || FMath::Abs(Erlaubt - mZeitrafferIst) > 0.05f * mZeitrafferIst)
+	{
+		if (Erlaubt < mZeitrafferWunsch - 0.01f && (mZeitrafferIst < 0.f || mZeitrafferIst >= mZeitrafferWunsch - 0.01f))
+		{
+			++mRafferGedeckelt;
+			UE_LOG(LogFicsitTD, Log, TEXT("Autotest: Zeitraffer x%.1f gedeckelt auf x%.2f (Bild %.0f ms, Schritt hoechstens %.0f ms)"),
+				mZeitrafferWunsch, Erlaubt, 1000.f * mBildMittel, 1000.f * MaxSchritt);
+		}
+		mZeitrafferIst = Erlaubt;
+		UGameplayStatics::SetGlobalTimeDilation(World, Erlaubt);
+	}
+}
+
 bool UTDAutotest::Tick(float /*BildDt*/)
 {
 	// Test 0.74.0: der Ticker uebergibt nur die Zeit eines Bildes, nicht die seit dem letzten Aufruf (alles lief ~30x zu langsam) -> selbst messen
@@ -263,6 +319,10 @@ bool UTDAutotest::Tick(float /*BildDt*/)
 	mGesamt += Dt;
 	mUhr += Dt;
 	mPlanZeit += Dt;
+	if (mZeitrafferWunsch > 1.f)
+	{
+		PasseZeitrafferAn(World);   // 17.11. (B20)
+	}
 	if (mPhase == EPhase::Bereit)
 	{
 		// 0.76 Bereitschaft: auf die naechste Autotest.json warten; Balance neu lesen (Aenderungen ohne Build)
@@ -279,6 +339,14 @@ bool UTDAutotest::Tick(float /*BildDt*/)
 			mUhr = 0.f;
 		}
 		return true;
+	}
+	// 17.11. (P11): Pruefstand-Netz ueberwachen - Sicherung nach Test.SicherungZurueck zuruecksetzen, Spitze merken
+	if (mStromAktiv && World)
+	{
+		for (const FString& Meldung : TDFabrik::Ueberwache(World, mFabrik, Dt))
+		{
+			UE_LOG(LogFicsitTD, Warning, TEXT("Autotest Strom: %s"), *Meldung);
+		}
 	}
 	// 0.77 (Test Neustart: Spielfigur starb in den Duenen, der Test wartete endlos): im Selbsttest ist die Figur unverwundbar
 	if (World && World->GetFirstPlayerController())
@@ -312,8 +380,18 @@ bool UTDAutotest::Tick(float /*BildDt*/)
 		}
 		else if (TDIstSpielwelt(World))
 		{
-			mPhase = EPhase::Laedt;   // schon im Spiel (z. B. Startparameter)
-			mUhr = 0.f;
+			// 0.11 (Paket EndlosTest 15.11.: nach einem Plan, der am Ende einen Spielstand laedt, war die Welt beim Planwechsel
+			// noch im Wechsel; der naechste Plan mit "NeuesSpiel" lief dann in der alten Welt weiter): neues Spiel nachholen
+			if (mPlan->HasField(TEXT("NeuesSpiel")) && World->GetFirstPlayerController() && mUhr > 3.f)
+			{
+				UE_LOG(LogFicsitTD, Log, TEXT("Autotest: Plan verlangt ein neues Spiel - starte es aus der laufenden Welt"));
+				StarteNeuesSpiel(World);
+			}
+			else if (!mPlan->HasField(TEXT("NeuesSpiel")))
+			{
+				mPhase = EPhase::Laedt;   // schon im Spiel (z. B. Startparameter)
+				mUhr = 0.f;
+			}
 		}
 		break;
 	case EPhase::Laedt:
@@ -369,7 +447,18 @@ void UTDAutotest::StarteNeuesSpiel(UWorld* World)
 	// 0.77 Neustart-Rauchtest: neues Spiel mit dem Sitzungsschalter "FICSIT Tower Defense" (Wert wie im Log einer echten Sitzung)
 	const TSharedPtr<FJsonObject> Neu = mPlan->GetObjectField(TEXT("NeuesSpiel"));
 	// Optionsnamen wie im Log einer echten Sitzung ("?sessionName=...", AFGGameMode::SessionNameOption ist nicht linkbar)
-	FString Optionen = TEXT("?sessionName=Autotest_Neu?SessionSettings=FicsitTD.ModusInt=DgAAAAQAAAABAAAA?skiponboarding");
+	// 0.11: "Modus" (Standard 1 = Einsatz, 0 = Aus fuer den Plan ModusAus). Wert ist ein FVariant als Base64:
+	// Typ 14 (Int32), Laenge 4, Wert - also DgAAAAQAAAA + Base64 der letzten 4 Byte
+	const int32 Modus = Neu->HasField(TEXT("Modus")) ? static_cast<int32>(Neu->GetNumberField(TEXT("Modus"))) : 1;
+	// 0.11 (Gegencheck Einsatz, B12): optional "Stufe" (0 nach Startort, 1..4 Erkundung..Albtraum) als zweite Einstellung,
+	// SML trennt die Einstellungen mit Komma (USessionSettingsManager::SerializeSettingsToString)
+	static const TCHAR* IntWert[] = { TEXT("DgAAAAQAAAAAAAAA"), TEXT("DgAAAAQAAAABAAAA"), TEXT("DgAAAAQAAAACAAAA"), TEXT("DgAAAAQAAAADAAAA"), TEXT("DgAAAAQAAAAEAAAA") };
+	FString Einstellungen = FString::Printf(TEXT("FicsitTD.ModusInt=%s"), IntWert[FMath::Clamp(Modus, 0, 3)]);
+	if (Neu->HasField(TEXT("Stufe")))
+	{
+		Einstellungen += FString::Printf(TEXT(",FicsitTD.StufeInt=%s"), IntWert[FMath::Clamp(static_cast<int32>(Neu->GetNumberField(TEXT("Stufe"))), 0, 4)]);
+	}
+	FString Optionen = FString::Printf(TEXT("?sessionName=Autotest_Neu?SessionSettings=%s?skiponboarding"), *Einstellungen);
 	if (Neu->HasField(TEXT("Startort")))
 	{
 		Optionen += FString::Printf(TEXT("?%s=%s"), AFGGameMode::StartLocationOption, *Neu->GetStringField(TEXT("Startort")));
@@ -380,7 +469,7 @@ void UTDAutotest::StarteNeuesSpiel(UWorld* World)
 	UTDKernplatz::sVorgabePlatz = Platz.Equals(TEXT("zufall"), ESearchCase::IgnoreCase) ? FString() : Platz;
 	UE_LOG(LogFicsitTD, Log, TEXT("Autotest: neues Spiel %s, Kernplatz %s"), *Optionen, *Platz);
 	mAlteWelt = TDIstSpielwelt(World) ? World : nullptr;
-	UGameplayStatics::SetGlobalTimeDilation(World, 1.f);
+	SetzeZeitraffer(World, 1.f);
 	UGameplayStatics::OpenLevel(World, FName(TEXT("/Game/FactoryGame/Map/GameLevel01/Persistent_Level")), true, Optionen);
 	mPhase = EPhase::Laedt;
 	mUhr = 0.f;
@@ -401,7 +490,7 @@ void UTDAutotest::LadeSpielstand(UWorld* World, const FString& NameVorgabe)
 	Parameter.bEnableAdvancedGameSettings = !mPlan->HasField(TEXT("ErweiterteEinstellungen")) || mPlan->GetBoolField(TEXT("ErweiterteEinstellungen"));
 	UE_LOG(LogFicsitTD, Log, TEXT("Autotest: lade Spielstand %s"), *Name);
 	mAlteWelt = TDIstSpielwelt(World) ? World : nullptr;
-	UGameplayStatics::SetGlobalTimeDilation(World, 1.f);
+	SetzeZeitraffer(World, 1.f);
 	Speicher->LoadSaveFile(Kopf, Parameter, World->GetFirstPlayerController());
 	mPhase = EPhase::Laedt;
 	mUhr = 0.f;
@@ -421,8 +510,67 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 	}
 	if (!S->HasField(TEXT("wellenlauf")) && S->TryGetNumberField(TEXT("zeitraffer"), Zahl))   // 0.78: "zeitraffer" ist auch Feld des Wellenlaufs
 	{
-		UGameplayStatics::SetGlobalTimeDilation(World, FMath::Clamp(static_cast<float>(Zahl), 0.25f, 8.f));
+		SetzeZeitraffer(World, FMath::Clamp(static_cast<float>(Zahl), 0.25f, 8.f));
 		Ergebnis(TEXT("Zeitraffer"), FString::Printf(TEXT("x%.1f"), Zahl), true);
+		return true;
+	}
+	if (S->TryGetStringField(TEXT("fabrik"), Wort))
+	{
+		// 16.11. Fabrik-Pruefstand F1: echte Munitionslinie mit Spielgebaeuden und Baendern (TDFabrikPruefstand.cpp)
+		ATDDefenseCore* FabrikKern = nullptr;
+		for (TActorIterator<ATDDefenseCore> It(World); It && !FabrikKern; ++It)
+		{
+			FabrikKern = *It;
+		}
+		TArray<FString> Bericht;
+		const bool bOk = TDFabrik::BaueLinie(World, FabrikKern, Wort, S->HasField(TEXT("tuerme")) ? int32(S->GetNumberField(TEXT("tuerme"))) : 4,
+			S->HasField(TEXT("level")) ? int32(S->GetNumberField(TEXT("level"))) : 2, S->HasField(TEXT("band")) ? int32(S->GetNumberField(TEXT("band"))) : 1, mFabrik, Bericht,
+			S->HasField(TEXT("ketten")) ? int32(S->GetNumberField(TEXT("ketten"))) : 1,
+			S->HasField(TEXT("ausbau")) ? int32(S->GetNumberField(TEXT("ausbau"))) : 1);
+		Ergebnis(TEXT("Fabrik"), Wort, bOk, FString::Join(Bericht, TEXT(" | ")));
+		return true;
+	}
+	if (S->TryGetStringField(TEXT("kosten"), Wort))
+	{
+		TDFabrik::SetzeKosten(Wort);   // 17.11. (P11/B6): "frei", "kontingent" oder "echt"
+		Ergebnis(TEXT("Fabrik"), TEXT("Kosten ") + Wort, true);
+		return true;
+	}
+	if (S->TryGetStringField(TEXT("strom"), Wort))
+	{
+		ATDDefenseCore* StromKern = nullptr;
+		for (TActorIterator<ATDDefenseCore> It(World); It && !StromKern; ++It)
+		{
+			StromKern = *It;
+		}
+		TArray<FString> Bericht;
+		const bool bOk = TDFabrik::BaueStrom(World, StromKern, Wort, S->HasField(TEXT("anzahl")) ? int32(S->GetNumberField(TEXT("anzahl"))) : 2, mFabrik, Bericht);
+		// 17.11. (Test Fenster1117): ein fehlgeschlagener zweiter Stromschritt (Kohle ohne Forschung) schaltete die Ueberwachung
+		// des laufenden Biomasse-Netzes ab - die Sicherung blieb dann aus. Ueberwacht wird, sobald irgendein Kraftwerk steht.
+		mStromAktiv = mStromAktiv || bOk;
+		Ergebnis(TEXT("Fabrik"), TEXT("Strom ") + Wort, bOk, FString::Join(Bericht, TEXT(" | ")));
+		return true;
+	}
+	if (S->HasField(TEXT("netz")))
+	{
+		TArray<FString> Bericht;
+		const int32 Masten = TDFabrik::VerbindeNetz(World, mFabrik, Bericht);
+		Ergebnis(TEXT("Fabrik"), TEXT("Netz verbinden"), true, FString::Printf(TEXT("%d neue Masten"), Masten));
+		return true;
+	}
+	if (S->HasField(TEXT("fabrikbericht")))
+	{
+		TArray<FString> Zeilen = TDFabrik::Bericht(mFabrik);
+		Zeilen.Append(TDFabrik::StromBericht());
+		Ergebnis(TEXT("Fabrik-Bericht"), TEXT("Stand der Linie"), mFabrik.Num() > 0, FString::Join(Zeilen, TEXT(" | ")));
+		return true;
+	}
+	if (S->HasField(TEXT("spielersicht")))
+	{
+		// 16.11. (Nachpruefung B14): Entwicklermodus zur Laufzeit ab- bzw. wieder anschalten
+		UTDKernplatz::SetzeSpielersicht(S->GetBoolField(TEXT("spielersicht")));
+		Ergebnis(TEXT("Spielersicht"), UTDKernplatz::IstSpielersicht() ? TEXT("an") : TEXT("aus"), true,
+			UTDKernplatz::Entwicklermodus() ? TEXT("Entwicklermodus an") : TEXT("Entwicklermodus aus"));
 		return true;
 	}
 	if (S->TryGetStringField(TEXT("befehl"), Wort))
@@ -430,7 +578,13 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		mSender->Antworten.Reset();
 		AChatCommandSubsystem* Befehle = AChatCommandSubsystem::Get(World);
 		const EExecutionStatus Status = Befehle ? Befehle->RunChatCommand(Wort, mSender) : EExecutionStatus::UNCOMPLETED;
-		const bool bOk = Status == EExecutionStatus::COMPLETED;
+		bool bOk = Status == EExecutionStatus::COMPLETED;
+		// 16.11.: optional "antwortEnthaelt" - die Antwort muss diesen Text enthalten (z. B. Ablehnung ohne Entwicklermodus)
+		FString Erwartet;
+		if (S->TryGetStringField(TEXT("antwortEnthaelt"), Erwartet))
+		{
+			bOk = bOk && mSender->Antworten.ContainsByPredicate([&Erwartet](const FString& A) { return A.Contains(Erwartet); });
+		}
 		Ergebnis(TEXT("Befehl"), TEXT("/") + Wort, bOk, bOk ? TEXT("ausgefuehrt") : TEXT("nicht ausgefuehrt"), mSender->Antworten);
 		return true;
 	}
@@ -438,7 +592,12 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 	{
 		const UTDWaveSubsystem* Waves = World->GetSubsystem<UTDWaveSubsystem>();
 		const bool bLaeuft = Waves && Waves->LaeuftWelle();
-		const bool bErreicht = Wort == TEXT("WelleLaeuft") ? bLaeuft : !bLaeuft;
+		// 0.11: "EinsatzAktiv" fuer den Plan Endlos (der Kernplatz startet den Einsatz erst nach dem Netz)
+		const UTDEinsatzSubsystem* EinsatzWarte = World->GetSubsystem<UTDEinsatzSubsystem>();
+		const bool bErreicht = Wort == TEXT("WelleLaeuft") ? bLaeuft
+			: Wort == TEXT("EinsatzAktiv") ? (EinsatzWarte && EinsatzWarte->IstAktiv())
+			: Wort == TEXT("BohrungVorbei") ? (Waves && !Waves->IstBohrung())   // 0.12-dev Freies Spiel mit Abwehr
+			: !bLaeuft;
 		const double Max = S->HasField(TEXT("max")) ? S->GetNumberField(TEXT("max")) : 300.0;
 		if (bErreicht || mSchrittUhr >= Max)
 		{
@@ -478,7 +637,8 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		// 0.10.2 (Screenshots): Figur neben einen Turm ("*" = irgendeiner) auf den Boden stellen, Blick zum Turm.
 		// "abstand" in m (Standard 9), "winkel" in Grad um den Turm (Standard 0)
 		// "gegner": waehrend der Welle den Turm, der den Wellengegnern am naechsten steht; die Figur steht hinter ihm und blickt zu den Gegnern
-		ATDTurretBase* Turm = nullptr;
+		// Optik-Durchgang 16.11.2026: auch "Tor" (ATDGate); Standplatz wird gesucht (siehe unten)
+		AActor* Turm = nullptr;
 		bool bGegner = false;
 		FVector GegnerMitte = FVector::ZeroVector;
 		if (Wort == TEXT("gegner"))
@@ -508,6 +668,24 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 				}
 			}
 		}
+		else if (Wort == TEXT("Tor"))
+		{
+			for (TActorIterator<ATDGate> It(World); It && !Turm; ++It)
+			{
+				Turm = *It;
+			}
+		}
+		else if (Wort.StartsWith(TEXT("Build_")))
+		{
+			// Optik-Durchgang 16.11.2026 (P4): Spielgebaeude nach Klassenname (z. B. Build_ConstructorMk1)
+			for (TActorIterator<AFGBuildable> It(World); It && !Turm; ++It)
+			{
+				if (It->GetClass()->GetName().StartsWith(Wort))
+				{
+					Turm = *It;
+				}
+			}
+		}
 		else
 		{
 			Turm = TDTestTurm(World, Wort);
@@ -525,13 +703,33 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 				// hinter den Turm (von den Gegnern aus gesehen), seitlich versetzt um "winkel"
 				Winkel += (Mitte - GegnerMitte).GetSafeNormal2D().Rotation().Yaw;
 			}
+			// Optik-Durchgang 16.11.2026 (Drohnenplatz-Foto zeigte nur Himmel): mit "suchen": true den Standplatz reihum in
+			// 30-Grad-Schritten suchen, bis der Boden frei von Gebaeuden ist und hoechstens 4 m ueber/unter dem Fuss des Baus liegt;
+			// sonst der erste Bodentreffer. Ohne "suchen" wie bisher genau ein Versuch unter "winkel".
 			FVector Ort = Mitte + FRotator(0.f, Winkel, 0.f).RotateVector(FVector(Abstand, 0.f, 0.f));
-			FHitResult Treffer;
 			FCollisionQueryParams Abfrage(TEXT("TDStelle"), false, Figur);
-			if (World->LineTraceSingleByChannel(Treffer, Ort + FVector(0.f, 0.f, 3000.f), Ort - FVector(0.f, 0.f, 5000.f), ECC_Visibility, Abfrage))
+			const int32 Versuche = S->HasField(TEXT("suchen")) && S->GetBoolField(TEXT("suchen")) ? 12 : 1;
+			bool bErster = true;
+			for (int32 Versuch = 0; Versuch < Versuche; ++Versuch)
 			{
-				Ort = Treffer.ImpactPoint + FVector(0.f, 0.f, Figur->GetSimpleCollisionHalfHeight() + 5.f);
-				bBoden = true;
+				const FVector Probe = Mitte + FRotator(0.f, Winkel + Versuch * 30.f, 0.f).RotateVector(FVector(Abstand, 0.f, 0.f));
+				FHitResult Treffer;
+				if (!World->LineTraceSingleByChannel(Treffer, Probe + FVector(0.f, 0.f, 3000.f), Probe - FVector(0.f, 0.f, 5000.f), ECC_Visibility, Abfrage))
+				{
+					continue;
+				}
+				const FVector Stand = Treffer.ImpactPoint + FVector(0.f, 0.f, Figur->GetSimpleCollisionHalfHeight() + 5.f);
+				const bool bFrei = !Cast<AFGBuildable>(Treffer.GetActor()) && FMath::Abs(Treffer.ImpactPoint.Z - Mitte.Z) <= 400.f;
+				if (bErster || bFrei)
+				{
+					Ort = Stand;
+					bBoden = true;
+					bErster = false;
+				}
+				if (bFrei)
+				{
+					break;
+				}
 			}
 			if (Figur->GetCharacterMovement())
 			{
@@ -588,6 +786,12 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 			{ TEXT("Elektrozaun"), TEXT("ConductorWall") }, { TEXT("Funkmast"), TEXT("RadioMast") }, { TEXT("Schildgenerator"), TEXT("ShieldGenerator") }, { TEXT("Himmelsturm"), TEXT("FlakTurret") }, { TEXT("Stoerfeld"), TEXT("FieldProjector") }, { TEXT("Singularitaet"), TEXT("SingularityLauncher") }, { TEXT("Dimensionslager"), TEXT("DimensionalDepot") }, { TEXT("Drohnenplatz"), TEXT("DronePort") } };   // 0.83 Bauten P2/P3, 0.9.3 Drohnenplatz
 		const FString* O = Ordner.Find(Wort);
 		UClass* Klasse = O ? LoadClass<AFGBuildable>(nullptr, *FString::Printf(TEXT("/FicsitTD/Buildings/%s/Build_TD_%s.Build_TD_%s_C"), **O, **O, **O)) : nullptr;
+		// Optik-Durchgang 16.11.2026 (P4): Spielgebaeude als Vergleich im selben Licht, "klasse": voller Klassenpfad
+		// (z. B. /Game/FactoryGame/Buildable/Factory/ConstructorMk1/Build_ConstructorMk1.Build_ConstructorMk1_C)
+		if (!Klasse && S->HasField(TEXT("klasse")))
+		{
+			Klasse = LoadClass<AFGBuildable>(nullptr, *S->GetStringField(TEXT("klasse")));
+		}
 		UClass* BauRezept = O ? LoadClass<UFGRecipe>(nullptr, *FString::Printf(TEXT("/FicsitTD/Buildings/%s/Recipe_TD_%s.Recipe_TD_%s_C"), **O, **O, **O)) : nullptr;
 		UClass* Munition = O && S->HasField(TEXT("rezept")) ? LoadClass<UFGRecipe>(nullptr, *FString::Printf(TEXT("/FicsitTD/Buildings/%s/%s.%s_C"), **O,
 			*S->GetStringField(TEXT("rezept")), *S->GetStringField(TEXT("rezept")))) : nullptr;
@@ -760,11 +964,13 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		{
 			// 0.78.1: nach dem Kernverlust keine weiteren Wellen; der erste Abbruch steht schon im Bericht
 			UE_LOG(LogFicsitTD, Log, TEXT("Autotest: Wellenlauf bis %d uebersprungen (Kern schon gefallen)"), Ziel);
+			// Gegencheck 15.11.: im Bericht sichtbar machen, sonst liest sich der Plan wie ein Lauf bis zur letzten Welle
+			Ergebnis(TEXT("Wellenlauf"), FString::Printf(TEXT("bis Welle %d"), Ziel), true, TEXT("uebersprungen: Kern schon gefallen"));
 			return true;
 		}
 		if (mSchrittUhr <= Dt + 0.01f)
 		{
-			UGameplayStatics::SetGlobalTimeDilation(World, S->HasField(TEXT("zeitraffer")) ? FMath::Clamp(static_cast<float>(S->GetNumberField(TEXT("zeitraffer"))), 1.f, 8.f) : 4.f);
+			SetzeZeitraffer(World, S->HasField(TEXT("zeitraffer")) ? FMath::Clamp(static_cast<float>(S->GetNumberField(TEXT("zeitraffer"))), 1.f, 8.f) : 4.f);
 			mUhr = 0.f;
 		}
 		bool bKern = false;
@@ -775,7 +981,7 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		const double Max = S->HasField(TEXT("max")) ? S->GetNumberField(TEXT("max")) : 400.0;
 		if (!Waves || !bKern || mUhr > Max)
 		{
-			UGameplayStatics::SetGlobalTimeDilation(World, 1.f);
+			SetzeZeitraffer(World, 1.f);
 			// 0.78 (Pruefstand: Mischbasis fiel in W21, Ursache unsichtbar): Schaden und Munitionsmangel je Turmart, lebende Gegner
 			TMap<FString, FVector2D> JeArt;
 			for (TActorIterator<ATDTurretBase> It(World); It; ++It)
@@ -813,6 +1019,10 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		}
 		if (Waves->LaeuftWelle())
 		{
+			mPauseSpiel = 0.f;
+			// 17.11. (P12-K: K1 Lauf 2 brach mit "Welle 8 startet seit 900 s nicht" ab): die Start-Warteuhr unten wurde nur ausserhalb
+			// der Welle hochgezaehlt und nie zurueckgesetzt - sie summierte alle Pausen des Laufs. Hier, waehrend die Welle laeuft, nullen.
+			mStartWarteUhr = 0.f;
 			// 0.78.1 (Pruefstand: ein einzelner Gegner zerstoerte vor 14 feuernden Tuermen den Kern, Art unbekannt):
 			// leben 20 s lang hoechstens 3 Gegner, wird jeder mit LP, Abstand, Hirn und Zielstand der Tuerme gemeldet
 			const TArray<AFGCreature*> Lebende = Waves->GetLivingWaveCreatures();
@@ -826,13 +1036,44 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		}
 		if (Waves->GetWelle() >= Ziel)
 		{
-			UGameplayStatics::SetGlobalTimeDilation(World, 1.f);
+			SetzeZeitraffer(World, 1.f);
 			Ergebnis(TEXT("Wellenlauf"), FString::Printf(TEXT("bis Welle %d"), Ziel), true, FString::Printf(TEXT("%.0f s"), mSchrittUhr));
 			return true;
 		}
-		if (mUhr > 2.f && Waves->NaechsteWelleJetzt())
+		// 0.11 (Endlos-Wellen): "aufZeit" wartet auf den Countdown statt die naechste Welle vorzuziehen; die Haenger-Uhr
+		// misst dann nur die Wellen selbst
+		if (S->HasField(TEXT("aufZeit")) && S->GetBoolField(TEXT("aufZeit")))
+		{
+			// Ohne Countdown (manueller Einsatz) kaeme nie eine Welle: sofort als Fehler melden statt endlos zu warten
+			if (Waves->IstManuell())
+			{
+				SetzeZeitraffer(World, 1.f);
+				Ergebnis(TEXT("Wellenlauf"), FString::Printf(TEXT("bis Welle %d"), Ziel), false,
+					TEXT("aufZeit, aber der Lauf ist manuell (kein Countdown) - Spielmodus nicht Endlos?"));
+				return true;
+			}
+			mUhr = 0.f;
+			return false;
+		}
+		// 17.11. (P12, Marius: Referenzpause 195 s wie im Handspiel): "pause" (Spielsekunden, Standard Test.Pause = 0) zwischen
+		// den Wellen - in der Zeit baut die Fabrik Munition auf wie bei einem Spieler, der zwischen den Wellen baut
+		const float Pause = S->HasField(TEXT("pause")) ? static_cast<float>(S->GetNumberField(TEXT("pause"))) : TDBalance::Wert(TEXT("Test.Pause"), 0.f);
+		mPauseSpiel += Dt * FMath::Max(1.f, mZeitrafferIst);
+		if (mUhr > 2.f && mPauseSpiel >= Pause && Waves->NaechsteWelleJetzt())
 		{
 			mUhr = 0.f;
+		}
+		// 16.11. (B19: Fabrik-F1-3K4T stand 12 min vor Welle 1): die Uhr oben wird bei jedem Startversuch zurueckgesetzt -
+		// startet die Welle gar nicht, hier nach "max" abbrechen statt bis zum Stillstand des Testskripts zu warten
+		mStartWarteUhr = Waves->LaeuftWelle() ? 0.f : mStartWarteUhr + Dt;
+		if (mStartWarteUhr > Max + Pause)
+		{
+			mStartWarteUhr = 0.f;
+			SetzeZeitraffer(World, 1.f);
+			UE_LOG(LogFicsitTD, Warning, TEXT("Autotest: Welle %d startet seit %.0f s nicht (Lauf %d, Countdown %.0f s)"), Waves->GetWelle() + 1, Max,
+				static_cast<int32>(Waves->LaeuftWelle()), Waves->GetCountdown());
+			Ergebnis(TEXT("Wellenlauf"), FString::Printf(TEXT("bis Welle %d"), Ziel), false, FString::Printf(TEXT("Welle %d startet nicht"), Waves->GetWelle() + 1));
+			return true;
 		}
 		return false;
 	}
@@ -930,6 +1171,33 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 			Turm ? FString::Printf(TEXT("%s in %.0f m"), *Turm->GetName(), FVector::Dist(Auge, Turm->GetActorLocation()) / 100.f) : FString(TEXT("kein Turm")));
 		return true;
 	}
+	if (S->HasField(TEXT("warteGegner")))
+	{
+		// 18.11. (Fotos): warten, bis ein Wellengegner hoechstens "warteGegner" m vom Kern entfernt ist (hoechstens "max" s, Standard 120)
+		const float Grenze = static_cast<float>(S->GetNumberField(TEXT("warteGegner"))) * 100.f;
+		const UTDWaveSubsystem* Waves = World->GetSubsystem<UTDWaveSubsystem>();
+		ATDDefenseCore* Kern = nullptr;
+		for (TActorIterator<ATDDefenseCore> It(World); It && !Kern; ++It)
+		{
+			Kern = *It;
+		}
+		float Naechster = 1e9f;
+		if (Waves && Kern)
+		{
+			for (const AFGCreature* G : Waves->GetLivingWaveCreatures())
+			{
+				Naechster = G ? FMath::Min(Naechster, FVector::Dist2D(G->GetActorLocation(), Kern->GetActorLocation())) : Naechster;
+			}
+		}
+		const float Max = S->HasField(TEXT("max")) ? static_cast<float>(S->GetNumberField(TEXT("max"))) : 120.f;
+		if (Naechster <= Grenze || mSchrittUhr > Max)
+		{
+			Ergebnis(TEXT("Warten"), FString::Printf(TEXT("Gegner naeher als %.0f m"), Grenze / 100.f), Naechster <= Grenze,
+				FString::Printf(TEXT("naechster %.0f m nach %.0f s"), Naechster / 100.f, mSchrittUhr));
+			return true;
+		}
+		return false;
+	}
 	if (S->TryGetStringField(TEXT("kamera"), Wort))
 	{
 		// 0.10.2 (Screenshots fuer Handbuch/Mod-Seite): Kamera des Spiels in dritter Person ("dritte") oder zurueck ("erste").
@@ -970,6 +1238,163 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 				PC->SetViewTarget(FrontKamera.Get());
 			}
 			Ergebnis(TEXT("Kamera"), TEXT("kamera front"), FrontKamera.IsValid(), FrontKamera.IsValid() ? TEXT("eigene Kamera vor der Figur") : TEXT("Kamera nicht erzeugt"));
+			return true;
+		}
+		if (PC && Wort == TEXT("frei"))
+		{
+			// 18.11. (Marius: Bilder fuer Posts, Basis und anrollende Wellen): freie Kamera wie ein Fotomodus, ohne Figur im Bild.
+			// Punkte: "kern", "front1".."front4", "gegner" (Mitte der lebenden Wellengegner), "spieler", "fabrik"/"tuerme" (Pruefstand-Bauten).
+			// "ort" (Standard kern) + "richtung" (Grad, Welt) oder "richtungZu" (Punkt) * "abstand" m + "seite" m quer + "hoehe" m;
+			// Blick auf "blick" (Standard ort) + "blickhoehe" m (3), "fov" (70). Bodenschutz: Kamera mind. 2 m ueber dem Gelaende.
+			const UTDWaveSubsystem* Waves = World->GetSubsystem<UTDWaveSubsystem>();
+			ATDDefenseCore* Kern = nullptr;
+			for (TActorIterator<ATDDefenseCore> It(World); It && !Kern; ++It)
+			{
+				Kern = *It;
+			}
+			// Mitte der lebenden Wellengegner (fuer "gegner" und "zwischen")
+			FVector GegnerMitte = FVector::ZeroVector;
+			int32 GegnerZahl = 0;
+			if (Waves)
+			{
+				for (const AFGCreature* G : Waves->GetLivingWaveCreatures())
+				{
+					if (G)
+					{
+						GegnerMitte += G->GetActorLocation();
+						++GegnerZahl;
+					}
+				}
+				GegnerMitte = GegnerZahl > 0 ? GegnerMitte / GegnerZahl : GegnerMitte;
+			}
+			auto Punkt = [&](const FString& Name, FVector& Out) -> bool
+			{
+				if (Name == TEXT("zwischen") && Kern && GegnerZahl > 0)
+				{
+					// Punkt auf der Linie Kern -> Gegnermitte, "anteil" 0..1 (Standard 0.5); Test 18.11.: nach 20 s ist die Welle 150 m weit
+					const float Anteil = S->HasField(TEXT("anteil")) ? static_cast<float>(S->GetNumberField(TEXT("anteil"))) : 0.5f;
+					Out = FMath::Lerp(Kern->GetActorLocation(), GegnerMitte, Anteil);
+					return true;
+				}
+				if (Name == TEXT("kern") && Kern)
+				{
+					Out = Kern->GetActorLocation();
+					return true;
+				}
+				if (Name == TEXT("spieler") && PC->GetPawn())
+				{
+					Out = PC->GetPawn()->GetActorLocation();
+					return true;
+				}
+				if (Name.StartsWith(TEXT("front")) && Waves)
+				{
+					const int32 i = FCString::Atoi(*Name.Mid(5)) - 1;
+					if (Waves->GetFronten().IsValidIndex(i))
+					{
+						Out = Waves->GetFronten()[i].Ort;
+						return true;
+					}
+					return false;
+				}
+				if (Name == TEXT("gegner") && GegnerZahl > 0)
+				{
+					Out = GegnerMitte;
+					return true;
+				}
+				if (Name == TEXT("fabrik") || Name == TEXT("tuerme"))
+				{
+					// 18.11. (Marius: Bilder einer echten Partie mit Baendern): Mitte der vom Pruefstand gebauten Maschinen bzw. Tuerme
+					const bool bTuerme = Name == TEXT("tuerme");
+					FVector Summe = FVector::ZeroVector;
+					int32 Zahl = 0;
+					for (const TWeakObjectPtr<AFGBuildable>& B : mFabrik)
+					{
+						const FString Klasse = B.IsValid() ? B->GetClass()->GetName() : FString();
+						const bool bTurm = Klasse.Contains(TEXT("Turret"));
+						const bool bMaschine = Klasse.Contains(TEXT("Miner")) || Klasse.Contains(TEXT("Smelter")) || Klasse.Contains(TEXT("Constructor"));
+						if (bTuerme ? bTurm : bMaschine)
+						{
+							Summe += B->GetActorLocation();
+							++Zahl;
+						}
+					}
+					if (Zahl > 0)
+					{
+						Out = Summe / Zahl;
+						return true;
+					}
+					return false;
+				}
+				return false;
+			};
+			auto Text = [&](const TCHAR* Feld, const TCHAR* Standard) { FString W; return S->TryGetStringField(Feld, W) ? W : FString(Standard); };
+			auto Wert = [&](const TCHAR* Feld, float Standard) { return S->HasField(Feld) ? static_cast<float>(S->GetNumberField(Feld)) : Standard; };
+			FVector Ort, Ziel;
+			const FString OrtName = Text(TEXT("ort"), TEXT("kern"));
+			const FString BlickName = Text(TEXT("blick"), *OrtName);
+			bool bOk = Punkt(OrtName, Ort) && Punkt(BlickName, Ziel);
+			float Yaw = Wert(TEXT("richtung"), 0.f);
+			FVector ZuPunkt;
+			const FString ZuName = Text(TEXT("richtungZu"), TEXT(""));
+			if (bOk && !ZuName.IsEmpty())
+			{
+				bOk = Punkt(ZuName, ZuPunkt);
+				Yaw = bOk ? (ZuPunkt - Ort).GetSafeNormal2D().Rotation().Yaw + Wert(TEXT("richtung"), 0.f) : Yaw;
+			}
+			FString Info = TEXT("Punkt fehlt");
+			if (bOk)
+			{
+				const FRotator Dir(0.f, Yaw, 0.f);
+				FVector Kamera = Ort + Dir.RotateVector(FVector(Wert(TEXT("abstand"), 30.f) * 100.f, Wert(TEXT("seite"), 0.f) * 100.f, 0.f))
+					+ FVector(0.f, 0.f, Wert(TEXT("hoehe"), 15.f) * 100.f);
+				FHitResult Boden;
+				FCollisionQueryParams Q(SCENE_QUERY_STAT(TDFotoBoden), false);
+				if (World->LineTraceSingleByChannel(Boden, Kamera + FVector(0.f, 0.f, 20000.f), Kamera - FVector(0.f, 0.f, 20000.f), ECC_Visibility, Q)
+					&& Kamera.Z < Boden.ImpactPoint.Z + 200.f)
+				{
+					Kamera.Z = Boden.ImpactPoint.Z + 200.f;
+				}
+				// Sichtschutz (Test 18.11.: Fels und Kernturm verdeckten das Bild): verdeckt etwas die Sicht zum Ziel (Treffer mehr als
+				// 15 m vor dem Ziel), die Kamera in 5-m-Schritten anheben, hoechstens um "anheben" m (Standard 40)
+				const FVector ZielPunkt = Ziel + FVector(0.f, 0.f, Wert(TEXT("blickhoehe"), 3.f) * 100.f);
+				FCollisionQueryParams Sicht(SCENE_QUERY_STAT(TDFotoSicht), true);
+				Sicht.AddIgnoredActor(PC->GetPawn());
+				int32 Angehoben = 0;
+				for (; Angehoben < FMath::RoundToInt(Wert(TEXT("anheben"), 40.f) / 5.f); ++Angehoben)
+				{
+					FHitResult Treffer;
+					if (!World->LineTraceSingleByChannel(Treffer, Kamera, ZielPunkt, ECC_Visibility, Sicht)
+						|| FVector::Dist(Treffer.ImpactPoint, ZielPunkt) < 1500.f)
+					{
+						break;
+					}
+					Kamera.Z += 500.f;
+				}
+				const FRotator Blick = (Ziel + FVector(0.f, 0.f, Wert(TEXT("blickhoehe"), 3.f) * 100.f) - Kamera).Rotation();
+				static TWeakObjectPtr<ACameraActor> FreiKamera;
+				if (!FreiKamera.IsValid())
+				{
+					FActorSpawnParameters Param;
+					Param.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+					FreiKamera = World->SpawnActor<ACameraActor>(ACameraActor::StaticClass(), Kamera, Blick, Param);
+				}
+				if (FreiKamera.IsValid())
+				{
+					FreiKamera->SetActorLocationAndRotation(Kamera, Blick);
+					if (UCameraComponent* Linse = FreiKamera->GetCameraComponent())
+					{
+						// 16:9-Bildfeld (Test 18.11.: auf 32:9 gab der 16:9-Zuschnitt nur das halbe Sichtfeld); Seitenbalken schneidet der Zuschnitt weg
+						Linse->SetConstraintAspectRatio(true);
+						Linse->SetAspectRatio(16.f / 9.f);
+						Linse->SetFieldOfView(Wert(TEXT("fov"), 70.f));
+					}
+					PC->SetViewTarget(FreiKamera.Get());
+				}
+				bOk = FreiKamera.IsValid();
+				Info = FString::Printf(TEXT("%s -> %s, Kamera %.0f m vom Ziel, %.0f m hoch, %d x angehoben, %d Gegner"), *OrtName, *BlickName,
+					FVector::Dist(Kamera, Ziel) / 100.f, (Kamera.Z - Ziel.Z) / 100.f, Angehoben, GegnerZahl);
+			}
+			Ergebnis(TEXT("Kamera"), TEXT("kamera frei"), bOk, Info);
 			return true;
 		}
 		if (Spieler)
@@ -1128,6 +1553,30 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		UClass* Klasse = K ? LoadClass<UFGSchematic>(nullptr, *K->Pfad) : nullptr;
 		AFGSchematicManager* Schemata = AFGSchematicManager::Get(World);
 		APlayerController* PC = World->GetFirstPlayerController();
+		// 17.11. (P11, Marius: Forschung im Pruefstand mit echten Festplatten): "echt": true bezahlt wie das MAM aus dem Inventar
+		// und beachtet Welle, Voraussetzungen und Gabelungen; ohne "echt" wie bisher direkt geschenkt
+		if (K && Klasse && Schemata && S->HasField(TEXT("echt")) && S->GetBoolField(TEXT("echt")))
+		{
+			FString Status;
+			const ETDForschungZustand Zustand = TDForschung::Zustand(World, *K);
+			TDForschung::StatusTitel(World, *K, Status);
+			AFGCharacterPlayer* Figur = PC ? Cast<AFGCharacterPlayer>(PC->GetPawn()) : nullptr;
+			UFGInventoryComponent* Inventar = Figur ? Figur->GetInventory() : nullptr;
+			UClass* Platte = LoadClass<UFGItemDescriptor>(nullptr, TEXT("/Game/FactoryGame/Resource/Environment/CrashSites/Desc_HardDrive.Desc_HardDrive_C"));
+			const int32 Hat = (Inventar && Platte) ? Inventar->GetNumItems(Platte) : 0;
+			if (Zustand != ETDForschungZustand::Moeglich || Hat < K->FP)
+			{
+				Ergebnis(TEXT("Forschung"), Wort + TEXT(" (echt)"), false, FString::Printf(TEXT("%s, Festplatten %d / %d"), *Status, Hat, K->FP));
+				return true;
+			}
+			if (K->FP > 0)
+			{
+				Inventar->Remove(Platte, K->FP);
+			}
+			Schemata->GiveAccessToSchematic(Klasse, Figur);
+			Ergebnis(TEXT("Forschung"), Wort + TEXT(" (echt)"), Schemata->IsSchematicPurchased(Klasse), FString::Printf(TEXT("%d Festplatten bezahlt, %d uebrig"), K->FP, Hat - K->FP));
+			return true;
+		}
 		if (Klasse && Schemata)
 		{
 			Schemata->GiveAccessToSchematic(Klasse, PC ? Cast<AFGCharacterPlayer>(PC->GetPawn()) : nullptr);
@@ -1261,11 +1710,111 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 bool UTDAutotest::Pruefe(UWorld* World, const TSharedPtr<FJsonObject>& S, FString& OutIst)
 {
 	const FString Name = S->GetStringField(TEXT("pruefe"));
+	if (Name == TEXT("TestKnoepfe"))
+	{
+		// 16.11. (Spielersicht): sichtbare Entwickler-Knoepfe im offenen Kern-Menue; "soll" = erwartete Liste (Standard: keine)
+		const FString Soll = S->HasField(TEXT("soll")) ? S->GetStringField(TEXT("soll")) : FString();
+		bool bOffen = false;
+		TArray<FString> Ist;
+		for (TObjectIterator<UTDKernTerminal> It; It; ++It)
+		{
+			if (It->GetWorld() == World && It->GetCachedWidget().IsValid())
+			{
+				Ist = It->SichtbareTestKnoepfe();
+				bOffen = true;
+			}
+		}
+		OutIst = !bOffen ? FString(TEXT("Kern-Menue nicht offen")) : Ist.Num() ? FString::Join(Ist, TEXT(", ")) : FString(TEXT("keine"));
+		return bOffen && FString::Join(Ist, TEXT(", ")) == Soll;
+	}
+	// 17.11. (P16/A12): darf der erste Turm des Typs abgerissen werden? "turm" (Standard Bolzenturm), "soll" true/false
+	if (Name == TEXT("Abriss"))
+	{
+		ATDTurretBase* Turm = TDTestTurm(World, S->HasField(TEXT("turm")) ? S->GetStringField(TEXT("turm")) : TEXT("Bolzenturm"));
+		if (!Turm)
+		{
+			OutIst = TEXT("kein Turm");
+			return false;
+		}
+		const bool bDarf = IFGDismantleInterface::Execute_CanDismantle(Turm);
+		TArray<TSubclassOf<UFGConstructDisqualifier>> Gruende;
+		IFGDismantleInterface::Execute_GetDismantleDisqualifiers(Turm, Gruende, TArray<AActor*>());
+		OutIst = FString::Printf(TEXT("%s, %d Gruende"), bDarf ? TEXT("abreissbar") : TEXT("gesperrt"), Gruende.Num());
+		return !S->HasField(TEXT("soll")) || S->GetBoolField(TEXT("soll")) == bDarf;
+	}
+	// 17.11. (P16/A13): Welle, fuer die "ab Welle" freigibt; "soll" = erwartete Zahl
+	if (Name == TEXT("FreigabeWelle"))
+	{
+		const UTDWaveSubsystem* Waves = World->GetSubsystem<UTDWaveSubsystem>();
+		const int32 Ist = Waves ? Waves->GetFreigabeWelle() : -1;
+		OutIst = FString::Printf(TEXT("%d (Welle %d, laeuft %d)"), Ist, Waves ? Waves->GetWelle() : -1, Waves && Waves->LaeuftWelle() ? 1 : 0);
+		return !S->HasField(TEXT("soll")) || int32(S->GetNumberField(TEXT("soll"))) == Ist;
+	}
 	if (Name == TEXT("Version"))
 	{
 		const TSharedPtr<IPlugin> Plugin = IPluginManager::Get().FindPlugin(TEXT("FicsitTD"));
 		OutIst = Plugin.IsValid() ? Plugin->GetDescriptor().VersionName : TEXT("nicht geladen");
 		return !S->HasField(TEXT("soll")) || OutIst == S->GetStringField(TEXT("soll"));
+	}
+	if (Name == TEXT("Optik"))
+	{
+		// Optik-Durchgang 16.11.2026 (P3): je Turm/Tor kein Original-Strommast oder -Statusmast als Teil, keine Nebelflaeche des
+		// Spiel-Vorbilds im Umkreis von 6 m, Stromanschluss im eigenen Klarraum (sonst haengt das Kabel ausserhalb des Sockels)
+		TArray<FString> Fehler;
+		int32 Bauten = 0;
+		TArray<const UInstancedStaticMeshComponent*> Nebel;
+		for (TObjectIterator<UInstancedStaticMeshComponent> It; It; ++It)
+		{
+			if (It->GetWorld() == World && It->GetStaticMesh() && It->GetStaticMesh()->GetName().Contains(TEXT("FogPlane")))
+			{
+				Nebel.Add(*It);
+			}
+		}
+		for (TActorIterator<AFGBuildable> It(World); It; ++It)
+		{
+			if (!Cast<ATDTurretBase>(*It) && !Cast<ATDGate>(*It))
+			{
+				continue;
+			}
+			++Bauten;
+			const FString Wer = It->GetClass()->GetName().Replace(TEXT("Build_TD_"), TEXT("")).Replace(TEXT("_C"), TEXT(""));
+			TInlineComponentArray<UStaticMeshComponent*> Teile(*It);
+			for (const UStaticMeshComponent* T : Teile)
+			{
+				const FString M = T->GetStaticMesh() ? T->GetStaticMesh()->GetName() : FString();
+				if (M == TEXT("SM_PowerPoleWall_MK1") || M == TEXT("SM_ProductionLight_01"))
+				{
+					Fehler.Add(FString::Printf(TEXT("%s: %s"), *Wer, *M));
+				}
+			}
+			TArray<FFGClearanceData> Klar;
+			IFGClearanceInterface::Execute_GetClearanceData(*It, Klar);
+			const FBox Box = Klar.Num() ? Klar[0].ClearanceBox.ExpandBy(FVector(15.f, 15.f, 0.f)) : FBox(ForceInit);
+			TInlineComponentArray<UFGPowerConnectionComponent*> Strom(*It);
+			for (const UFGPowerConnectionComponent* P : Strom)
+			{
+				const FVector L = It->GetActorTransform().InverseTransformPosition(P->GetComponentLocation());
+				if (Box.IsValid && (L.X < Box.Min.X || L.X > Box.Max.X || L.Y < Box.Min.Y || L.Y > Box.Max.Y))
+				{
+					Fehler.Add(FString::Printf(TEXT("%s: Stromanschluss %s ausserhalb des Klarraums"), *Wer, *L.ToCompactString()));
+				}
+			}
+			for (const UInstancedStaticMeshComponent* N : Nebel)
+			{
+				for (int32 i = 0; i < N->GetInstanceCount(); ++i)
+				{
+					FTransform T;
+					if (N->GetInstanceTransform(i, T, true) && FVector::Dist(T.GetLocation(), It->GetActorLocation()) < 600.f)
+					{
+						Fehler.Add(FString::Printf(TEXT("%s: Nebelflaeche"), *Wer));
+						break;
+					}
+				}
+			}
+		}
+		OutIst = FString::Printf(TEXT("%d Bauten, %d Befunde%s%s"), Bauten, Fehler.Num(), Fehler.Num() ? TEXT(": ") : TEXT(""),
+			*FString::Join(TArray<FString>(Fehler.GetData(), FMath::Min(Fehler.Num(), 6)), TEXT("; ")));
+		return Bauten > 0 && Fehler.Num() == 0;
 	}
 	if (Name == TEXT("KernLebt"))
 	{
@@ -1406,6 +1955,16 @@ bool UTDAutotest::Pruefe(UWorld* World, const TSharedPtr<FJsonObject>& S, FStrin
 			bAlt |= Kosten.ItemClass && Kosten.ItemClass->GetName().Contains(TEXT("Kampfdaten"));
 		}
 		OutIst = FString::Join(Teile, TEXT(", "));
+		// 0.12-dev: "coupons": true erwartet im Freien Spiel mit Abwehr Coupons statt Festplatten
+		if (S->HasField(TEXT("coupons")) && S->GetBoolField(TEXT("coupons")))
+		{
+			bool bCoupon = false;
+			for (const FItemAmount& Kosten : UFGSchematic::GetCost(Klasse))
+			{
+				bCoupon |= Kosten.ItemClass == UTDEinsatzSubsystem::CouponKlasse();
+			}
+			return bCoupon && !bFestplatte;
+		}
 		return bFestplatte && !bAlt;
 	}
 	if (Name == TEXT("ForschungStartbar"))
@@ -1416,6 +1975,22 @@ bool UTDAutotest::Pruefe(UWorld* World, const TSharedPtr<FJsonObject>& S, FStrin
 		const bool bSoll = !S->HasField(TEXT("erwartet")) || S->GetBoolField(TEXT("erwartet"));
 		const bool bIst = Klasse && Forschung && Forschung->CanResearchBeInitiated(Klasse);
 		OutIst = !Klasse ? FString(TEXT("Schematic nicht gefunden")) : FString::Printf(TEXT("%s %s"), *Klasse->GetName(), bIst ? TEXT("startbar") : TEXT("gesperrt"));
+		return Klasse && bIst == bSoll;
+	}
+	if (Name == TEXT("BaumFrei"))
+	{
+		// 0.11 (Modus Aus): ist ein TD-Forschungsbaum freigeschaltet? "baum" = Industrie|Ballistik|Elementar|Festung, "erwartet"
+		// Vorher UpdateUnlockedResearchTrees, damit die Modus-Bedingung frisch ausgewertet wird
+		const FString Baum = S->GetStringField(TEXT("baum"));
+		UClass* Klasse = LoadClass<UFGResearchTree>(nullptr, *FString::Printf(TEXT("/FicsitTD/Research/BPD_ResearchTree_TD_%s.BPD_ResearchTree_TD_%s_C"), *Baum, *Baum));
+		AFGResearchManager* Forschung = AFGResearchManager::Get(World);
+		if (Forschung)
+		{
+			Forschung->UpdateUnlockedResearchTrees();
+		}
+		const bool bSoll = !S->HasField(TEXT("erwartet")) || S->GetBoolField(TEXT("erwartet"));
+		const bool bIst = Klasse && Forschung && Forschung->IsResesearchTreeUnlocked(Klasse);
+		OutIst = !Klasse ? FString(TEXT("Baum nicht gefunden")) : FString::Printf(TEXT("%s %s"), *Baum, bIst ? TEXT("frei") : TEXT("gesperrt"));
 		return Klasse && bIst == bSoll;
 	}
 	if (Name == TEXT("ForschungZustand"))

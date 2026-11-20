@@ -42,21 +42,26 @@ def main():
         return
     namen = sys.argv[3].split(",") if len(sys.argv) > 3 else []
     namen = [n for n in namen if spielt_wellen(n)]   # 07.11.: Neustart verschob alle spaeteren Tabellen um einen Plan
-    kopf = ["| Welle | Stufe | Gegner | Türme | Q | Kern % | Verlust % | Munitionsnot | ohne Strom s | Dauer s | Bild p95 | Hinweis |",
-            "|---|---|---|---|---|---|---|---|---|---|---|---|"]
+    kopf = ["| Welle | Stufe | Gegner | Türme | Q | Kern % | Verlust % | Munitionsnot | ohne Strom s | Dauer s | Bild p95 | Fabrik-Takt | Pause s | Hinweis |",
+            "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
     aus = ["", "## Prüfstand: Kennzahlen je Welle", "",
-           "Munitionsnot = Turm-Sekunden mit Ziel ohne Munition ÷ (Türme × Wellendauer). Bild p95 in ms (22 ms ≈ 45 FPS)."]
+           "Munitionsnot = Turm-Sekunden mit Ziel ohne Munition ÷ (Türme × Wellendauer). Bild p95 in ms (22 ms ≈ 45 FPS).",
+           "Fabrik-Takt = Anteil der Spielzeit, die der Fabrik-Takt der Türme bekam (B20). Unter 0,95 ist die Welle **ungültig** (Zeitraffer zu hoch für die Bildrate) und zählt nicht für Kalibrierung und Bänder."]
     verletzungen = 0
     lauf, vorher = 0, 10 ** 6
     laeufe_kurz = []
     for z in zeilen:
-        if int(zahl(z["Welle"])) <= vorher:   # Wellennummer beginnt neu: naechster Plan im Paket
+        neu_lauf = z.get("Lauf") not in (None, "") and len(laeufe_kurz) > 0 and z.get("Lauf") != laeufe_kurz[-1][3]
+        if int(zahl(z["Welle"])) <= vorher or neu_lauf:   # Wellennummer beginnt neu (oder neue Laufnummer): naechster Plan
             lauf += 1
             aus += ["", f"### {namen[lauf - 1] if lauf <= len(namen) else f'Lauf {lauf}'}", ""] + kopf
         vorher = int(zahl(z["Welle"]))
-        name = namen[lauf - 1] if lauf <= len(namen) else f"Lauf {lauf}"
+        name = z.get("Plan") if z.get("Plan") not in (None, "", "-") else (namen[lauf - 1] if lauf <= len(namen) else f"Lauf {lauf}")
         if len(laeufe_kurz) < lauf:
-            laeufe_kurz.append([name, 100.0, 0])
+            laeufe_kurz.append([name, 100.0, 0, z.get("Lauf")])
+        # 17.11. (P12/B20): Gueltigkeit je Welle - zu wenig Fabrik-Takt verfaelscht Nachladen und Fabrik
+        takt = zahl(z["FabrikTakt_Anteil"]) if z.get("FabrikTakt_Anteil") not in (None, "") else None
+        gueltig = takt is None or takt >= 0.95
         laeufe_kurz[-1][1] = min(laeufe_kurz[-1][1], zahl(z["Kern_Proz"]))
         laeufe_kurz[-1][2] = max(laeufe_kurz[-1][2], int(zahl(z["Welle"])))
         stufe = STUFEN.get(int(zahl(z["Stufe"])), z["Stufe"])
@@ -75,12 +80,18 @@ def main():
             hinweise.append("Munitionsnot")
         if "Bild_p95_ms_max" in b and zahl(z["Bild_p95_ms"]) > b["Bild_p95_ms_max"]:
             hinweise.append("Bildrate")
-        verletzungen += len(hinweise)
+        if not gueltig:
+            hinweise = ["**ungültig** (Fabrik-Takt %.2f)" % takt]
+        else:
+            verletzungen += len(hinweise)
+        pause = zahl(z["Pause_s"]) if z.get("Pause_s") not in (None, "") else None
+        takt_text = "-" if takt is None else f"{takt:.2f}"
+        pause_text = "-" if pause is None else f"{pause:.0f}"
         aus.append(f"| {welle} | {stufe} | {z['Gegner']} | {z['Tuerme']} | {q:.2f} | {kern:.0f} | {zahl(z['Kernverlust_Proz']):.1f} | {100 * not_:.0f} % | "
-                   f"{zahl(z['OhneStrom_s']):.0f} | {dauer:.0f} | {zahl(z['Bild_p95_ms']):.1f} | {', '.join(hinweise) or 'ok'} |")
+                   f"{zahl(z['OhneStrom_s']):.0f} | {dauer:.0f} | {zahl(z['Bild_p95_ms']):.1f} | {takt_text} | {pause_text} | {', '.join(hinweise) or 'ok'} |")
     # 0.78.2 Streuung: je Plan Laeufe, W30 erreicht, Kern-Tiefpunkt (Median, Spanne). Ziel: Spanne <= 25 Punkte
     je_plan = {}
-    for name, tief, hoechste in laeufe_kurz:
+    for name, tief, hoechste, _lauf in laeufe_kurz:
         je_plan.setdefault(name, []).append((tief, hoechste))
     if any(len(v) > 1 for v in je_plan.values()):
         aus += ["", "### Streuung je Plan", "", "| Plan | Läufe | höchste Welle je Lauf | Kern-Tiefpunkt Median | Spanne | Ziel Spanne ≤ 25 |", "|---|---|---|---|---|---|"]

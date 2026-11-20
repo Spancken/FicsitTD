@@ -69,6 +69,15 @@ public:
 	UTDCDSinkGesperrt();
 };
 
+/** 17.11. (P16/A12): Abriss abgelehnt - im Verteidigungsfeld waehrend einer Welle */
+UCLASS()
+class FICSITTD_API UTDCDAbrissSperre : public UFGConstructDisqualifier
+{
+	GENERATED_BODY()
+public:
+	UTDCDAbrissSperre();
+};
+
 /** Bau abgelehnt: im Verteidigungsfeld waehrend einer Welle (Einsatz-Konzept Abschnitt 2) */
 UCLASS()
 class FICSITTD_API UTDCDWellenSperre : public UFGConstructDisqualifier
@@ -154,6 +163,8 @@ public:
 	/** Baukosten (Rezeptzutaten) von Anzahl Gebaeuden eines Kontingent-Schluessels sammeln */
 	void SammleBaumaterial(const FString& Key, int32 Anzahl, TMap<UClass*, int32>& Out) const;
 	ATDDefenseCore* GetKern() const { return mKern.Get(); }
+	/** 0.12-dev Freies Spiel mit Abwehr: Kern der Bohrung fuer Material/Festplatten am Kern (nur ohne laufenden Einsatz) */
+	void SetzeAbwehrKern(ATDDefenseCore* Kern) { if (!mAktiv) { mKern = Kern; } }
 	/** /td laden: Konto, kaufbare Kontingente mit Preis */
 	TArray<FString> LadenText() const;
 	/** /td kaufe <Name> [Anzahl]: Antwortzeile */
@@ -190,6 +201,8 @@ private:
 public:
 	/** Chat-Meldung des Einsatzes (0.9.6 oeffentlich: Meilenstein-Sperre im Modul) */
 	void Melde(const FString& Text) const;
+	/** 0.11 Endlos (Gegencheck: Chat wird voll): waehrend der Wellenabrechnung nur ins Log, danach eine Sammelzeile */
+	mutable bool mStill = false;
 	/** 0.9.6 (Marius 12.11.): nach Sieg oder Niederlage - Ende des Durchgangs (0 offen, 1 Sieg, 2 Niederlage) und die drei Wege */
 	int32 LaufEnde() const;
 	/** Welle der Niederlage noch einmal: laedt den Spielstand vom Start dieser Welle (FicsitTD_Wxx_Start) */
@@ -198,6 +211,26 @@ public:
 	FString StarteNeu(APawn* Spieler);
 	/** Einsatz beenden: Kontingente und Sperren fallen weg, Kern voll und abreissbar */
 	FString BeendeNachEnde();
+	/** 0.11 Endlos-Wellen (Marius 15.11.): Coupons ausserhalb der Wellenabrechnung (Vorzieh-Bonus) mit einer Chatzeile */
+	void GibEndlosCoupons(int32 Anzahl, const FString& Grund);
+	/** Nach einer Endlos-Bosswelle: Bonuswahl anbieten (Kern-Menue, drei Knoepfe) */
+	void BieteEndlosBonusAn(int32 Welle);
+	bool EndlosBonusOffen() const;
+	/** Bonus 0 Coupons, 1 Kernreparatur, 2 Festplatten; Rueckgabe: Meldung */
+	FString WaehleEndlosBonus(int32 Nr);
+	/** Beschriftung der drei Bonus-Knoepfe */
+	static FString EndlosBonusName(int32 Nr);
+	/** Ende eines Endlos-Laufs: Bestwert je Startort/Stufe pruefen und speichern (Saved/FicsitTD/Bestwerte.json); Rueckgabe: Satz fuer die Ansage */
+	FString WerteEndlosAus(int32 ErreichteWelle, int32 Stufe);
+	/** Bestwert (erreichte Welle) je Stufe, 0 = noch keiner */
+	static int32 EndlosBestwert(int32 Stufe);
+	/** 0.11 (Gegencheck Einsatz, Marius 16.11.): nach jeder zehnten Welle Kurzbericht der Phase und Bonuswahl wie im Endlos-Modus */
+	void Phasenabschluss(int32 Welle);
+	/** Kurzbericht der Wellen Von..Bis aus der Wellenstatistik am Kern (Kern-Tief, Coupons, Festplatten, Schaden je Turmart) */
+	TArray<FString> PhasenBericht(int32 Von, int32 Bis) const;
+	/** Sieg oder Niederlage im Einsatz: Abschlussbericht und Bestwert je Kernplatz und Stufe (Saved/FicsitTD/Bestwerte.json).
+	 *  Wertung = Welle * 1000 + Kern-Rest in Prozent; ein Lauf mit Eingriffen zaehlt nicht. Rueckgabe: Satz fuer die Ansage */
+	FString WerteEinsatzAus(bool bSieg, int32 Welle, float KernAnteil);
 private:
 	FString SpielerWirkung(const FTDSpielerPosten& P, int32 Menge);
 	void Verbinde();

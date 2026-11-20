@@ -1,0 +1,450 @@
+{
+ "Bolzen": {
+  "datei": "TD_BoltTurret_Stufen.blend",
+  "entfernt": 5,
+  "sockelteile": 144,
+  "versuche": [
+   109,
+   10
+  ],
+  "kasten_skala": 1.0,
+  "strom": [
+   -0.0,
+   -184.3,
+   188.0
+  ],
+  "strom_gier": -90,
+  "lampe": [
+   -85.0,
+   174.3,
+   214.3
+  ],
+  "lampe_gier": 90,
+  "klarraum_min_cm": [
+   -250.0,
+   -210.0
+  ],
+  "klarraum_max_cm": [
+   210.0,
+   210.0
+  ]
+ },
+ "Gewehr": {
+  "datei": "TD_GunTurret_Stufen.blend",
+  "entfernt": 5,
+  "sockelteile": 264,
+  "versuche": [
+   22,
+   158
+  ],
+  "kasten_skala": 1.0,
+  "strom": [
+   -85.0,
+   -209.3,
+   110.0
+  ],
+  "strom_gier": -90,
+  "lampe": [
+   -100.0,
+   205.3,
+   234.3
+  ],
+  "lampe_gier": 90,
+  "klarraum_min_cm": [
+   -280.0,
+   -230.0
+  ],
+  "klarraum_max_cm": [
+   230.0,
+   230.0
+  ]
+ },
+ "Nobelisk": {
+  "datei": "TD_NobeliskLauncher_Stufen.blend",
+  "entfernt": 5,
+  "sockelteile": 151,
+  "versuche": [
+   25,
+   106
+  ],
+  "kasten_skala": 1.0,
+  "strom": [
+   -45.0,
+   -199.3,
+   110.0
+  ],
+  "strom_gier": -90,
+  "lampe": [
+   -105.0,
+   189.3,
+   234.3
+  ],
+  "lampe_gier": 90,
+  "klarraum_min_cm": [
+   -270.0,
+   -220.0
+  ],
+  "klarraum_max_cm": [
+   220.0,
+   220.0
+  ]
+ },
+ "Flamme": {
+  "datei": "TD_FlameTurret_Stufen.blend",
+  "entfernt": 5,
+  "sockelteile": 151,
+  "versuche": [
+   25,
+   105
+  ],
+  "kasten_skala": 1.0,
+  "strom": [
+   -45.0,
+   -199.3,
+   110.0
+  ],
+  "strom_gier": -90,
+  "lampe": [
+   -189.3,
+   105.0,
+   249.3
+  ],
+  "lampe_gier": -180,
+  "klarraum_min_cm": [
+   -230.0,
+   -220.0
+  ],
+  "klarraum_max_cm": [
+   220.0,
+   220.0
+  ]
+ },
+ "Tesla": {
+  "datei": "TD_TeslaCoil_Stufen.blend",
+  "entfernt": 20,
+  "sockelteile": 178,
+  "saeule": true,
+  "frei": true,
+  "versuche": 31,
+  "strom": [
+   -90.0,
+   -118.1,
+   133.9
+  ],
+  "strom_gier": -90,
+  "lampe": [
+   -90.0,
+   -90.0,
+   170.3
+  ],
+  "lampe_gier": -90,
+  "klarraum_min_cm": [
+   -210.0,
+   -210.0
+  ],
+  "klarraum_max_cm": [
+   210.0,
+   210.0
+  ]
+ },
+ "Himmel": {
+  "datei": "TD_FlakTurret.blend",
+  "entfernt": 5,
+  "sockelteile": 138,
+  "versuche": [
+   109,
+   10
+  ],
+  "kasten_skala": 1.0,
+  "strom": [
+   -0.0,
+   -184.3,
+   188.0
+  ],
+  "strom_gier": -90,
+  "lampe": [
+   -85.0,
+   174.3,
+   214.3
+  ],
+  "lampe_gier": 90,
+  "klarraum_min_cm": [
+   -250.0,
+   -210.0
+  ],
+  "klarraum_max_cm": [
+   210.0,
+   210.0
+  ]
+ },
+ "Singu": {
+  "datei": "TD_SingularityLauncher.blend",
+  "entfernt": 5,
+  "sockelteile": 117,
+  "versuche": [
+   1,
+   1
+  ],
+  "kasten_skala": 1.0,
+  "strom": [
+   -240.0,
+   -324.3,
+   103.0
+  ],
+  "strom_gier": -90,
+  "lampe": [
+   -124.3,
+   310.0,
+   114.3
+  ],
+  "lampe_gier": -180,
+  "klarraum_min_cm": [
+   -390.0,
+   -350.0
+  ],
+  "klarraum_max_cm": [
+   310.0,
+   350.0
+  ]
+ },
+ "Stoerfeld": {
+  "datei": "TD_FieldProjector.blend",
+  "entfernt": 5,
+  "sockelteile": 136,
+  "versuche": [
+   1,
+   10
+  ],
+  "kasten_skala": 1.0,
+  "strom": [
+   -0.0,
+   -184.3,
+   128.0
+  ],
+  "strom_gier": -90,
+  "lampe": [
+   -85.0,
+   174.3,
+   214.3
+  ],
+  "lampe_gier": 90,
+  "klarraum_min_cm": [
+   -250.0,
+   -210.0
+  ],
+  "klarraum_max_cm": [
+   220.0,
+   250.0
+  ]
+ },
+ "Funkmast": {
+  "datei": "TD_RadioMast.blend",
+  "entfernt": 5,
+  "sockelteile": 159,
+  "versuche": [
+   1,
+   1
+  ],
+  "kasten_skala": 1.0,
+  "strom": [
+   124.3,
+   30.0,
+   103.0
+  ],
+  "strom_gier": 0,
+  "lampe": [
+   -79.3,
+   115.0,
+   109.2
+  ],
+  "lampe_gier": -180,
+  "klarraum_min_cm": [
+   -190.0,
+   -190.0
+  ],
+  "klarraum_max_cm": [
+   190.0,
+   190.0
+  ]
+ },
+ "Schild": {
+  "datei": "TD_ShieldGenerator.blend",
+  "entfernt": 5,
+  "sockelteile": 135,
+  "versuche": [
+   3,
+   1
+  ],
+  "kasten_skala": 1.0,
+  "strom": [
+   -175.0,
+   -319.3,
+   108.0
+  ],
+  "strom_gier": -90,
+  "lampe": [
+   -314.3,
+   290.0,
+   169.2
+  ],
+  "lampe_gier": -180,
+  "klarraum_min_cm": [
+   -330.0,
+   -320.0
+  ],
+  "klarraum_max_cm": [
+   310.0,
+   310.0
+  ]
+ },
+ "Drohnenplatz": {
+  "datei": "TD_DronePort.blend",
+  "entfernt": 5,
+  "sockelteile": 83,
+  "versuche": [
+   1,
+   1
+  ],
+  "kasten_skala": 1.0,
+  "strom": [
+   250.0,
+   324.3,
+   98.0
+  ],
+  "strom_gier": 90,
+  "lampe": [
+   -300.0,
+   148.3,
+   209.3
+  ],
+  "lampe_gier": 90,
+  "klarraum_min_cm": [
+   -390.0,
+   -310.0
+  ],
+  "klarraum_max_cm": [
+   310.0,
+   330.0
+  ]
+ },
+ "Elektrozaun": {
+  "datei": "TD_ConductorWall.blend",
+  "entfernt": 5,
+  "sockelteile": 122,
+  "versuche": [
+   1,
+   4
+  ],
+  "kasten_skala": 1.0,
+  "strom": [
+   -0.0,
+   -54.3,
+   98.0
+  ],
+  "strom_gier": -90,
+  "lampe": [
+   -380.0,
+   -44.3,
+   209.3
+  ],
+  "lampe_gier": -90,
+  "klarraum_min_cm": [
+   -410.0,
+   -60.0
+  ],
+  "klarraum_max_cm": [
+   410.0,
+   60.0
+  ]
+ },
+ "Lockfeuer": {
+  "datei": "TD_LureBeacon.blend",
+  "entfernt": 5,
+  "sockelteile": 108,
+  "versuche": [
+   1,
+   1
+  ],
+  "kasten_skala": 1.0,
+  "strom": [
+   -70.0,
+   -148.3,
+   98.0
+  ],
+  "strom_gier": -90,
+  "lampe": [
+   119.3,
+   100.0,
+   79.3
+  ],
+  "lampe_gier": 0,
+  "klarraum_min_cm": [
+   -200.0,
+   -150.0
+  ],
+  "klarraum_max_cm": [
+   140.0,
+   130.0
+  ]
+ },
+ "Oelschlick": {
+  "datei": "TD_SlickPlate.blend",
+  "entfernt": 5,
+  "sockelteile": 76,
+  "versuche": [
+   3,
+   4
+  ],
+  "kasten_skala": 1.0,
+  "strom": [
+   350.0,
+   143.3,
+   98.0
+  ],
+  "strom_gier": 90,
+  "lampe": [
+   380.0,
+   -133.3,
+   169.2
+  ],
+  "lampe_gier": -90,
+  "klarraum_min_cm": [
+   -410.0,
+   -410.0
+  ],
+  "klarraum_max_cm": [
+   510.0,
+   410.0
+  ]
+ },
+ "Tor": {
+  "datei": "TD_Gate.blend",
+  "entfernt": 3,
+  "sockelteile": 144,
+  "versuche": [
+   1,
+   0
+  ],
+  "kasten_skala": 1.0,
+  "strom": [
+   -300.0,
+   -112.3,
+   158.0
+  ],
+  "strom_gier": -90,
+  "lampe": [
+   0.0,
+   -0.0,
+   522.0
+  ],
+  "lampe_gier": 0,
+  "klarraum_min_cm": [
+   -420.0,
+   -160.0
+  ],
+  "klarraum_max_cm": [
+   420.0,
+   160.0
+  ]
+ }
+}

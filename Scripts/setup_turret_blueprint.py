@@ -1,6 +1,6 @@
 # Baut die Turm-Bauplaene (Kopien des Konstruktors, create_building.py) auf die eigenen Modelle um:
 # Sockelmodell auf den Instanz-Proxy, Konstruktor-Animation/Leiter/Standbeine/Betriebsleuchte entfernen, Ausgang versteckt in den Sockel,
-# Foerderband-Eingang an die Rueckseite (nur Tuerme mit Bandmunition), Stromanschluss auf den Isolator, Modelle fuer Drehteil/Kanzel.
+# Foerderband-Eingang an die Rueckseite (nur Tuerme mit Bandmunition), Stromanschluss an den Anschlusskasten, Modelle fuer Drehteil/Kanzel.
 # Effekt-Modelle (Muendungsfeuer, Blitz, Flamme) laedt der Code zur Laufzeit, damit das Hologramm sie nicht zeigt.
 # Nach create_building.py ausfuehren.
 import os
@@ -16,17 +16,16 @@ def mesh(turm, teil):
 # Turm -> Komponentenname -> Modell; Strom in MW; Band-Eingang ja/nein
 TUERME = {
     "BoltTurret": dict(modelle={"TurretYaw": mesh("BoltTurret", "Yaw"), "TurretHead": mesh("BoltTurret", "Head")}, strom=8.0, band=True,
-                       eingang=(-210.0, 0.0, 100.0), strom_ort=(0.0, -250.0, 130.0)),   # 0.9.3 Original-Anschluesse
+                       eingang=(-210.0, 0.0, 100.0)),   # 0.9.3 Original-Anschluesse
     "GunTurret": dict(modelle={"TurretYaw": mesh("GunTurret", "Yaw"), "TurretHead": mesh("GunTurret", "Head"),
                                "Laufbuendel": mesh("GunTurret", "Barrels")}, strom=12.0, band=True,
-                      eingang=(-235.0, 0.0, 100.0), strom_ort=(-85.0, -275.0, 82.0)),
+                      eingang=(-235.0, 0.0, 100.0)),
     # Teslaspule: Spule steht fest in TurretYaw, keine Kanzel; Strom fliesst nur beim Aufladen (= Produzieren)
-    "TeslaCoil": dict(modelle={"TurretYaw": mesh("TeslaCoil", "Coil")}, strom=75.0, band=False, strom_ort=(-45.0, -255.0, 49.0)),
+    "TeslaCoil": dict(modelle={"TurretYaw": mesh("TeslaCoil", "Coil")}, strom=75.0, band=False),
     # Flammenwerfer: Treibstoff ueber PipeInput (C++-Komponente) hinten am Sockel
-    "FlameTurret": dict(modelle={"TurretYaw": mesh("FlameTurret", "Yaw"), "TurretHead": mesh("FlameTurret", "Head")}, strom=6.0, band=False,
-                        strom_ort=(-45.0, -265.0, 82.0)),
+    "FlameTurret": dict(modelle={"TurretYaw": mesh("FlameTurret", "Yaw"), "TurretHead": mesh("FlameTurret", "Head")}, strom=6.0, band=False),
     "NobeliskLauncher": dict(modelle={"TurretYaw": mesh("NobeliskLauncher", "Yaw"), "TurretHead": mesh("NobeliskLauncher", "Head")}, strom=20.0, band=True,
-                             eingang=(-225.0, 0.0, 100.0), strom_ort=(-45.0, -265.0, 82.0)),
+                             eingang=(-225.0, 0.0, 100.0)),
     "Barrier": dict(modelle={}, strom=None, band=False),
     "RepairStation": dict(modelle={"TurretYaw": mesh("RepairStation", "Yaw")}, strom=10.0, band=True),
     # Abwehrkern: kein Strom, keine Anschluesse
@@ -34,28 +33,36 @@ TUERME = {
     # 0.81 passive Bauten P1: Tor (Aussichtsturm-Kopie, Teile laedt der Code), Lockfeuer und Oelschlick (Konstruktor-Kopien)
     "Gate": dict(modelle={}, strom=None, band=False, ohne_gemeinsam=True),
     "LureBeacon": dict(modelle={"TurretYaw": mesh("LureBeacon", "Horn")}, strom=5.0, band=True,
-                       eingang=(-160.0, 0.0, 100.0), strom_ort=(30.0, -190.0, 50.0)),
+                       eingang=(-160.0, 0.0, 100.0)),
     # 0.9.3 Drohnenplatz: Turm (Kontrollturm) als TurretYaw, Original-Anschluesse wie in Modelle\\td_drohnenplatz.py
     "DronePort": dict(modelle={"TurretYaw": mesh("DronePort", "Tower")}, strom=30.0, band=True,
-                      eingang=(-350.0, 0.0, 100.0), strom_ort=(150.0, 390.0, 60.0)),
-    "SlickPlate": dict(modelle={"TurretYaw": mesh("SlickPlate", "Valve")}, strom=2.0, band=False,
-                       strom_ort=(375.0, 205.0, 80.0), ausgang=(0.0, 0.0, 15.0)),
+                      eingang=(-350.0, 0.0, 100.0)),
+    "SlickPlate": dict(modelle={"TurretYaw": mesh("SlickPlate", "Valve")}, strom=2.0, band=False, ausgang=(0.0, 0.0, 15.0)),
     # 0.83 Bauten P2/P3: Lage der Anschluesse aus den Blender-Skripten (Stromdose, Band-Eingang hinten -X)
-    "ConductorWall": dict(modelle={"TurretYaw": mesh("ConductorWall", "Door0")}, strom=2.0, band=False,
-                          strom_ort=(0.0, -120.0, 80.0), ausgang=(0.0, 0.0, 40.0)),
-    "RadioMast": dict(modelle={"TurretYaw": mesh("RadioMast", "Dish")}, strom=15.0, band=False,
-                      strom_ort=(190.0, 30.0, 75.0), ausgang=(0.0, 0.0, 40.0)),
-    "ShieldGenerator": dict(modelle={"TurretYaw": mesh("ShieldGenerator", "Ring0")}, strom=60.0, band=False,
-                            strom_ort=(-200.0, -385.0, 110.0), ausgang=(0.0, 0.0, 30.0)),
+    "ConductorWall": dict(modelle={"TurretYaw": mesh("ConductorWall", "Door0")}, strom=2.0, band=False, ausgang=(0.0, 0.0, 40.0)),
+    "RadioMast": dict(modelle={"TurretYaw": mesh("RadioMast", "Dish")}, strom=15.0, band=False, ausgang=(0.0, 0.0, 40.0)),
+    "ShieldGenerator": dict(modelle={"TurretYaw": mesh("ShieldGenerator", "Ring0")}, strom=60.0, band=False, ausgang=(0.0, 0.0, 30.0)),
     "FlakTurret": dict(modelle={"TurretYaw": mesh("FlakTurret", "Yaw"), "TurretHead": mesh("FlakTurret", "Pitch")}, strom=25.0, band=True,
-                       eingang=(-210.0, 0.0, 100.0), strom_ort=(0.0, -250.0, 130.0)),
+                       eingang=(-210.0, 0.0, 100.0)),
     "FieldProjector": dict(modelle={"TurretYaw": mesh("FieldProjector", "Core")}, strom=80.0, band=True,
-                           eingang=(-210.0, 0.0, 100.0), strom_ort=(0.0, -250.0, 130.0)),
+                           eingang=(-210.0, 0.0, 100.0)),
     "SingularityLauncher": dict(modelle={"TurretYaw": mesh("SingularityLauncher", "Yaw"), "TurretHead": mesh("SingularityLauncher", "Pitch")},
-                                strom=150.0, band=True, eingang=(-350.0, 0.0, 100.0), strom_ort=(-240.0, -390.0, 75.0)),
+                                strom=150.0, band=True, eingang=(-350.0, 0.0, 100.0)),
     # Lager: Kugel laedt der Code, Band-Eingang am Kern-Anschluss hinten, Ausgang versteckt
     "DimensionalDepot": dict(modelle={}, strom=None, band=True, ohne_gemeinsam=True, eingang=(-220.0, 0.0, 70.0), ausgang=(0.0, 0.0, 40.0)),
 }
+# Optik-Durchgang 16.11.2026: Stromanschluss (Kappe des Anschlusskastens) aus dem Modell, eine Quelle:
+# Satisfactory\Modelle\Anbauten.json -> Scripts\erzeuge_anbauten.py -> Tests\Anbauten.json (Unreal cm). Der Code versetzt die
+# Komponente in BeginPlay ohnehin dorthin (ATDTurretBase::SetzeStromAnschluss); hier stimmt sie dann schon im Bauplan.
+ANBAU_SCHLUESSEL = {"BoltTurret": "Bolzen", "GunTurret": "Gewehr", "TeslaCoil": "Tesla", "FlameTurret": "Flamme", "NobeliskLauncher": "Nobelisk",
+                    "LureBeacon": "Lockfeuer", "DronePort": "Drohnenplatz", "SlickPlate": "Oelschlick", "ConductorWall": "Elektrozaun",
+                    "RadioMast": "Funkmast", "ShieldGenerator": "Schild", "FlakTurret": "Himmel", "FieldProjector": "Stoerfeld",
+                    "SingularityLauncher": "Singu"}
+import json as _json
+_ANBAU = _json.load(open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "Tests", "Anbauten.json"), encoding="utf-8"))
+for _t, _s in ANBAU_SCHLUESSEL.items():
+    if _t in TUERME and _s in _ANBAU and _ANBAU[_s].get("strom"):
+        TUERME[_t]["strom_ort"] = tuple(_ANBAU[_s]["strom"])
 _NUR = [n for n in os.environ.get("FICSITTD_NUR", "").split(",") if n]
 if _NUR:
     TUERME = {k: v for k, v in TUERME.items() if k in _NUR}
@@ -98,8 +105,10 @@ def richte_ein(turm, cfg):
             obj.set_editor_property("relative_location", unreal.Vector(*cfg.get("ausgang", (0.0, 0.0, 60.0))))
             obj.set_editor_property("relative_rotation", unreal.Rotator(roll=0.0, pitch=-90.0, yaw=0.0))
         elif c == "FGPowerConnectionComponent":
-            # Oben auf dem Isolator des Strom-Auslegers (wie beim Konstruktor)
-            obj.set_editor_property("relative_location", unreal.Vector(*cfg.get("strom_ort", (-160.0, -160.0, 301.0))))
+            # Kappe des Anschlusskastens (Tests/Anbauten.json); ohne Eintrag bleibt die Komponente, wo sie ist
+            if "strom_ort" in cfg:
+                obj.set_editor_property("relative_location", unreal.Vector(*cfg["strom_ort"]))
+                log(f"  Strom-Anschluss {n} -> {cfg['strom_ort']}")
         elif c == "FGPipeConnectionFactory":
             try:
                 obj.set_editor_property("mFluidBoxVolume", 4.0)
@@ -113,6 +122,11 @@ def richte_ein(turm, cfg):
         log(f"  entfernt ({geloescht}): {[n for _, n in weg]}")
     unreal.BlueprintEditorLibrary.compile_blueprint(bp)
     cdo = unreal.get_default_object(bp.generated_class())
+    # Optik-Durchgang 16.11.2026 (U1): geerbte Nebelflaechen des Spiel-Vorbilds stehen sonst frei neben dem Sockel
+    import sys
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from entferne_nebelflaechen import leere_nebelflaechen
+    leere_nebelflaechen(bp, log)
     if cfg["strom"] is not None:
         cdo.set_editor_property("mPowerConsumption", cfg["strom"])
         log(f"  Strom {cdo.get_editor_property('mPowerConsumption')} MW")

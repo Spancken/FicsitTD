@@ -15,7 +15,7 @@ from unittest import mock
 MOD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 QUELLE = os.path.join(MOD, "Source", "FicsitTD")
 SKRIPTE = os.path.join(MOD, "Scripts")
-SIMULATOR = r"D:\OneDrive\Claude\Claude Modding\Satisfactory\Werkzeuge\FicsitTD-Simulator\simulator.py"
+SIMULATOR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "Tools", "Simulator", "simulator.py")
 BALANCE_JSON = os.path.join(os.environ.get("LOCALAPPDATA", ""), "FactoryGame", "Saved", "FicsitTD", "Balance.json")
 AUSNAHMEN = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ausnahmen.json")
 
@@ -93,6 +93,9 @@ def pruefe_balance_schluessel(standard, forschung_ns):
             for k in re.findall(r'TDBalance::(?:Wert|Ganz)\(\s*TEXT\("([^"%]+)"\)', text):
                 benutzt.setdefault(k, d)
     for k, d in sorted(benutzt.items()):
+        # 17.11.: zusammengesetzte Schluessel ("Munition.SchussJeItem." + Rezept) - der Praefix selbst ist kein Schluessel
+        if k.endswith("."):
+            continue
         if k not in standard:
             FEHLER(f"Balance: Schluessel {k} (in {d}) fehlt in der Standardtabelle")
     # Freigabe-Wellen: TDForschung fragt Forschung.<Knoten>.AbWelle fuer jeden Knoten mit Welle > 0

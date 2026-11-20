@@ -21,12 +21,29 @@
 #include "TDWaveSubsystem.h"
 #include "WheeledVehicles/FGWheeledVehicle.h"
 #include "TDSprache.h"
+#include "TDAnbauten.inl"
 
 // Masse aus Modelle\td_tor.py (Blender m -> cm): Oeffnung 4 m, Fluegel je 2 m, Saeulen 2 m, Hoehe 5 m
 static constexpr float TorOeffnung = 400.f;
 static constexpr float TorFluegelZ = 11.f;
 static constexpr float TorLeuchteZ = 549.f;
 static constexpr float TorAnimIntervall = 1.f / 30.f;
+
+// Optik-Durchgang 16.11.2026: Statuslampe und Stromanschluss aus dem Modell (Modelle\Anbauten.json, Eintrag "Tor",
+// erzeugt nach TDAnbauten.inl). Rueckfall: alte Werte, falls der Eintrag fehlt.
+static const FTDAnbau* TorAnbau()
+{
+	for (const FTDAnbau& A : TDAnbauTabelle)
+	{
+		if (FCString::Strcmp(A.Turm, TEXT("Tor")) == 0)
+		{
+			return &A;
+		}
+	}
+	return nullptr;
+}
+static FVector TorStromOrt() { const FTDAnbau* A = TorAnbau(); return A ? A->Strom : FVector(-300.f, -180.f, 160.f); }
+static FVector TorLampenOrt() { const FTDAnbau* A = TorAnbau(); return A ? A->Lampe : FVector(0.f, 0.f, 525.f); }
 
 ATDGate::ATDGate()
 {
@@ -59,10 +76,10 @@ ATDGate::ATDGate()
 	mNavSperre->bDynamicObstacle = true;
 	mNavSperre->SetAreaClassOverride(UNavArea_Null::StaticClass());   // setzt auch bUseSystemDefaultObstacleAreaClass = false
 	mNavSperre->SetHiddenInGame(true);
-	// 0.9.3 Strom: Anschluss an der Original-Dose hinten an der linken Saeule (Modelle\Original_Anschluesse.json, Bau_Tor)
+	// Strom: Kappe des Anschlusskastens hinten an der linken Saeule (im Modell, Anbauten.json)
 	mStrom = CreateDefaultSubobject<UTDTorStromAnschluss>(TEXT("TorStrom"));
 	mStrom->SetupAttachment(RootComponent);
-	mStrom->SetRelativeLocation(FVector(-300.f, -180.f, 160.f));
+	mStrom->SetRelativeLocation(TorStromOrt());
 	mStromInfo = CreateDefaultSubobject<UFGPowerInfoComponent>(TEXT("TorStromInfo"));
 }
 
@@ -71,6 +88,7 @@ void ATDGate::PostInitializeComponents()
 	Super::PostInitializeComponents();
 	if (mStrom && mStromInfo)
 	{
+		mStrom->SetRelativeLocation(TorStromOrt());   // auch fuer Bauplaene, die den alten Ort gespeichert haben
 		mStrom->SetPowerInfo(mStromInfo);
 		mStromInfo->SetTargetConsumption(TDBalance::Wert(TEXT("Bauten.Tor.Strom"), 2.f));
 	}
@@ -90,21 +108,15 @@ void ATDGate::BeginPlay()
 	Modell(mFluegelR, TEXT("LeafR"));
 	Modell(mLeuchteL, TEXT("BeaconL"));
 	Modell(mLeuchteR, TEXT("BeaconR"));
-	// 0.9.3: Original-Stromdose und Statuslampe (gruen = Strom, rot = kein Strom, in der Welle offen)
+	// Statuslampe (gruen = Strom, rot = kein Strom, in der Welle offen) auf dem Lampensockel des Sturzes;
+	// der Anschlusskasten ist Teil von SM_TD_Gate_Base (Optik-Durchgang 16.11.2026, vorher Original-Wandmast)
 	if (!IsRunningDedicatedServer())
 	{
-		mStromDose = NewObject<UStaticMeshComponent>(this);
-		mStromDose->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, TDOriginal::Strom, nullptr, LOAD_NoWarn | LOAD_Quiet));
-		mStromDose->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		mStromDose->SetupAttachment(RootComponent);
-		mStromDose->SetRelativeLocation(FVector(-300.f, -90.f, 160.f));
-		mStromDose->SetRelativeRotation(FRotator(0.f, -90.f, 0.f));
-		mStromDose->RegisterComponent();
 		mStatusLampe = NewObject<UStaticMeshComponent>(this);
 		mStatusLampe->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, TEXT("/FicsitTD/Buildings/BoltTurret/Mesh/SM_TD_StatusLight.SM_TD_StatusLight"), nullptr, LOAD_NoWarn | LOAD_Quiet));
 		mStatusLampe->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		mStatusLampe->SetupAttachment(RootComponent);
-		mStatusLampe->SetRelativeLocation(FVector(0.f, 0.f, 525.f));
+		mStatusLampe->SetRelativeLocation(TorLampenOrt());
 		mStatusLampe->RegisterComponent();
 		if (mStatusLampe->GetStaticMesh() && mStatusLampe->GetNumMaterials() > 1)
 		{
@@ -202,7 +214,9 @@ void ATDGate::Animieren()
 void ATDGate::GetClearanceData_Implementation(TArray<FFGClearanceData>& out_data) const
 {
 	FFGClearanceData Data;
-	Data.ClearanceBox = FBox(FVector(-400.f, -80.f, 0.f), FVector(400.f, 80.f, 500.f));
+	const FTDAnbau* A = TorAnbau();
+	Data.ClearanceBox = A ? FBox(FVector(A->KlarraumMin.X, A->KlarraumMin.Y, 0.f), FVector(A->KlarraumMax.X, A->KlarraumMax.Y, 500.f))
+	                      : FBox(FVector(-400.f, -80.f, 0.f), FVector(400.f, 80.f, 500.f));
 	out_data.Add(Data);
 }
 
@@ -210,7 +224,7 @@ FText ATDGate::GetLookAtDecription_Implementation(AFGCharacterPlayer* byCharacte
 {
 	return FText::FromString(TDF(TEXT("Tor (%s)\nLebenspunkte %.0f / %.0f%s"), TEXT("Gate (%s)\nHealth %.0f / %.0f%s"),
 		*(mOffen > 0.95f ? TDT(TEXT("offen"), TEXT("open")) : mOffen < 0.05f ? TDT(TEXT("zu"), TEXT("closed")) : TDT(TEXT("bewegt sich"), TEXT("moving"))),
-		FMath::Max(mHealth, 0.f), GetTDMaxHealth(), *(mGegnerNah ? TDT(TEXT("\nGegner in der Naehe: bleibt zu"), TEXT("\nEnemies nearby: stays closed")) : FString())));
+		FMath::Max(mHealth, 0.f), GetTDMaxHealth(), *(mGegnerNah ? TDT(TEXT("\nGegner in der Nähe: bleibt zu"), TEXT("\nEnemies nearby: stays closed")) : FString())));
 }
 
 float ATDGate::TakeDamage(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser)

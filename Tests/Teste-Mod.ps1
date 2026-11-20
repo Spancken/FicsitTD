@@ -43,6 +43,15 @@ $ordner = Get-ChildItem (Join-Path $saved "SaveGames") -Directory | Where-Object
     Select-Object -First 1
 foreach ($p in $plaene) { if ($p.Quelle) { Copy-Item (Join-Path $Testspielstaende $p.Quelle) (Join-Path $ordner.FullName ($p.Spielstand + ".sav")) -Force } }
 
+# 18.11. (Marius: "Ja, einbauen"): ein offenes Absturzfenster eines frueheren Laufs blockiert den Steam-Start (Spiel gilt als laufend).
+# Das Fenster gehoert zu einem schon beendeten Spiel; der Absturzbericht liegt in Saved\Crashes und bleibt erhalten.
+$absturzFenster = Get-Process CrashReportClient -ErrorAction SilentlyContinue
+if ($absturzFenster -and -not (Get-Process $spielProzess -ErrorAction SilentlyContinue)) {
+    Write-Host "== Absturzfenster eines frueheren Laufs offen - wird geschlossen (Bericht bleibt in Saved\Crashes)"
+    $absturzFenster | Stop-Process -Force -ErrorAction SilentlyContinue
+    Start-Sleep 3
+}
+
 $laeuft = Get-Process $spielProzess -ErrorAction SilentlyContinue | Select-Object -First 1
 if ($laeuft -and -not $Weiter) { throw "Das Spiel laeuft schon - schliessen oder mit -Weiter an die Bereitschaft schicken." }
 if (-not $laeuft -and $Weiter) { throw "Kein Spiel in Bereitschaft - ohne -Weiter starten." }
@@ -67,10 +76,26 @@ if (-not $laeuft) {
 } else {
     Write-Host "== Auftrag an das offene Spiel (${name}: $($planNamen -join ', '))"
 }
-Write-Host "== warte auf das Ergebnis (hoechstens $max min)"
+Write-Host "== warte auf das Ergebnis (hoechstens $max min, Stillstand nach 12 min ohne Fortschritt)"
+# 15.11. (Endlos-Lang hing 2 h im falschen Modus, MaxMinuten war gross): Stillstandswaechter. Kommt 12 min lang
+# keine neue Autotest-/Wellen-Zeile ins Spiellog, wird das Spiel beendet und der Bericht nennt den Stillstand.
+$spielLog = Join-Path $env:LOCALAPPDATA "FactoryGame\Saved\Logs\FactoryGame.log"
+$fortschrittMuster = 'LogFicsitTD: (Autotest|Welle|Endlos|Lauf|Ansage)'
+$letzteZeile = ""; $letzterFortschritt = Get-Date; $stillstand = $false; $naechstePruefung = Get-Date
 while ((Get-Process -Id $laeuft.Id -ErrorAction SilentlyContinue) -and ((Get-Date) - $start).TotalMinutes -lt $max) {
     if ($auftrag.Bereitschaft -and (Test-Path $ergebnisDatei)) { break }
+    if ((Get-Date) -ge $naechstePruefung) {
+        $naechstePruefung = (Get-Date).AddSeconds(60)
+        $treffer = Get-Content $spielLog -Tail 3000 -ErrorAction SilentlyContinue | Select-String $fortschrittMuster | Select-Object -Last 1
+        $zeile = if ($treffer) { $treffer.Line } else { "" }
+        if ($zeile -ne $letzteZeile) { $letzteZeile = $zeile; $letzterFortschritt = Get-Date }
+        elseif (((Get-Date) - $letzterFortschritt).TotalMinutes -ge 12) { $stillstand = $true; break }
+    }
     Start-Sleep 5
+}
+if ($stillstand -and (Get-Process -Id $laeuft.Id -ErrorAction SilentlyContinue)) {
+    Write-Host "== Stillstand: 12 min kein Fortschritt im Log (letzte Zeile: $letzteZeile) - Spiel wird beendet"
+    Stop-Process -Id $laeuft.Id -Force
 }
 if ((Get-Process -Id $laeuft.Id -ErrorAction SilentlyContinue) -and -not $auftrag.Bereitschaft) {
     Write-Host "== Zeitlimit: Spiel wird beendet"
@@ -103,6 +128,7 @@ if (Test-Path $ergebnisDatei) {
     }
 } else {
     $zeilen += "**Kein Ergebnis** - der Test ist nicht bis zum Ende gekommen (Absturz, Spielstand nicht geladen oder Zeitlimit)."
+    if ($stillstand) { $zeilen += "", "**Stillstand:** 12 min kein Fortschritt im Log. Letzte Zeile: ``$letzteZeile``" }
 }
 # Bildschirmfotos (bei Marius 5120x1440, 12 MB) auf 1920 Breite als JPG verkleinern
 $bilder = Get-ChildItem (Join-Path $td "Autotest\Bilder") -Filter *.png -ErrorAction SilentlyContinue

@@ -43,7 +43,6 @@ ATDGunTurret::ATDGunTurret()
 	mSchadensart = ETDSchadensart::Kugel;
 	mDrehpunkt = FVector(0.f, 0.f, 310.f);   // 0.9.3: Sockel 165 cm hoeher
 	mNeigeachse = FVector(0.f, 0.f, 90.f);
-	mLampenOrt = FVector(-60.f, 205.f, 340.f);   // 0.9.3: Lampe oben auf dem Original-Statusmast
 	mMuendung = GewehrMuendung;
 	mRange = 4200.f;   // Test 0.24.1: Spucker blieben ausserhalb von 35 m, Gewehr kam in Welle 4 nicht zum Schuss
 	mTurnSpeed = 220.f;
@@ -64,8 +63,6 @@ ATDGunTurret::ATDGunTurret()
 	mMuendungsfeuer->SetVisibility(false);
 	// 0.9.3 Original-Anschluesse (Lagen aus Modelle\Original_Anschluesse.json)
 	OriginalTeil(TDOriginal::Eingang, FVector(-235.f, 0.f, 0.f), 90.f);
-	OriginalTeil(TDOriginal::Strom, FVector(-85.f, -185.f, 82.f), -90.f);
-	OriginalTeil(TDOriginal::Mast, FVector(-60.f, 205.f, 0.f), 180.f);
 
 }
 
@@ -112,17 +109,37 @@ FTDPatronenWerte ATDGunTurret::WerteFuer(const UClass* MunitionsKlasse)
 	return W;
 }
 
+int32 ATDGunTurret::MagazinGroesse() const
+{
+	return FMath::Max(1, FMath::RoundToInt(WerteFuer(AktuelleMunition()).Magazin * (1.f + LevelWert(TEXT("Magazin")))));   // Level 4: Magazin x2
+}
+
+int32 ATDGunTurret::AktionenJeZyklus() const
+{
+	return MagazinGroesse() * SchussJeItem();
+}
+
+float ATDGunTurret::ZyklusFaktor() const
+{
+	// 17.11. (P10, Marius: Rezeptdauer = Magazindauer): eine Ladung dauert so lange, wie die Schuesse daraus brauchen.
+	// Faktor auf die Rezeptdauer; Takt-Bonus teilt die Basis, Uebertakten die Spiel-Berechnung (wie die Feuerrate in Animieren)
+	const TSubclassOf<UFGRecipe> Rezept = GetCurrentRecipe();
+	const float Dauer = Rezept ? FMath::Max(0.01f, UFGRecipe::GetManufacturingDuration(Rezept)) : 1.f;
+	const float Rate = FMath::Max(0.01f, WerteFuer(AktuelleMunition()).SchussProSekunde);
+	return AktionenJeZyklus() / Rate / Dauer;
+}
+
 bool ATDGunTurret::BereitZumProduzieren(AFGCreature* Ziel) const
 {
-	// Nachladen erst bei leerem Magazin (ein Zyklus = ein Magazin). Level 5 Gurttrommel (0.64): schon ab halbem Magazin
-	// nachladen, das Magazin laeuft nie leer -> Dauerfeuer
-	const int32 Schwelle = GetLevel() >= 5 ? FMath::RoundToInt(WerteFuer(AktuelleMunition()).Magazin * (1.f + LevelWert(TEXT("Magazin"))) * 0.5f) : 0;
-	return mMagazin <= Schwelle && Super::BereitZumProduzieren(Ziel);
+	// 17.11. (P10): die Ladung laeuft waehrend des Feuerns, das Magazin fuellt sich anteilig - Dauerfeuer, solange Munition kommt.
+	// Kleiner Puffer (eine halbe Sekunde Schuesse), damit der Zyklus nicht ohne Ziel weiterlaeuft.
+	const int32 Puffer = FMath::Max(2, FMath::CeilToInt(WerteFuer(AktuelleMunition()).SchussProSekunde * 0.5f));
+	return mMagazin < Puffer && Super::BereitZumProduzieren(Ziel);
 }
 
 void ATDGunTurret::Feuern(AFGCreature* Ziel)
 {
-	mMagazin += FMath::RoundToInt(WerteFuer(AktuelleMunition()).Magazin * (1.f + LevelWert(TEXT("Magazin"))));   // Level 4: Magazin x2
+	++mMagazin;   // 17.11. (P10): eine Aktion = ein Schuss ins Magazin, geschossen wird in Animieren
 }
 
 void ATDGunTurret::Animieren(float DeltaSeconds, AFGCreature* Ziel)
@@ -203,5 +220,5 @@ void ATDGunTurret::Kampfwerte(TArray<FTDKennwert>& Out) const
 		: FString::Printf(TEXT("%.0f (%s)"), Schaden, *TDGewehrSchadensart(W.Art)), true });
 	Out.Add({ TDT(TEXT("Feuerrate"), TEXT("Fire rate")), TDF(TEXT("%.1f Schuss/s"), TEXT("%.1f shots/s"), Rate), true });
 	Out.Add({ TDT(TEXT("Schaden/s"), TEXT("Damage/s")), TDF(TEXT("%.0f (ein Ziel, Dauerfeuer)"), TEXT("%.0f (single target, sustained)"), Schaden * Rate), true });
-	Out.Add({ TDT(TEXT("Magazin"), TEXT("Magazine")), TDF(TEXT("%d / %d Schuss"), TEXT("%d / %d rounds"), mMagazin, FMath::RoundToInt(W.Magazin * (1.f + LevelWert(TEXT("Magazin"))))), true });
+	Out.Add({ TDT(TEXT("Magazin"), TEXT("Magazine")), TDF(TEXT("%d Schuss je Magazin, %d Magazin(e) je Stück"), TEXT("%d rounds per magazine, %d magazine(s) per item"), MagazinGroesse(), SchussJeItem()), true });
 }

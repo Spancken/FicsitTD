@@ -1,0 +1,293 @@
+{
+  "Name": "P12-E-R2-Misch-B",
+  "_Hinweis": "R2 (P12 Fenster 2): Referenz-Misch bis W30, danach Ausbau wie K5 bis W50, Kandidat B (Stufen.Normal.EliteAbWelle 16, Wellen.LPJeWelleAb31 0.6). Erzeugt von Tests\\erzeuge_p12e.py.",
+  "NeuesSpiel": {
+    "Startort": "Rocky Desert"
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 80,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warte": 15
+    },
+    {
+      "befehl": "td einsatz stop"
+    },
+    {
+      "befehl": "td kern stop"
+    },
+    {
+      "befehl": "td einsatz start normal 50"
+    },
+    {
+      "befehl": "td einsatz frei an"
+    },
+    {
+      "stromfrei": true
+    },
+    {
+      "versorgung": {
+        "Bolzenturm": 50,
+        "Gewehrturm": 25,
+        "Nobelisk-Werfer": 15,
+        "Flammenwerfer": 6000
+      }
+    },
+    {
+      "balance": {
+        "Stufen.Normal.EliteAbWelle": 16,
+        "Wellen.LPJeWelleAb31": 0.6
+      }
+    },
+    {
+      "erforsche": "Assembler"
+    },
+    {
+      "erforsche": "Kupfer"
+    },
+    {
+      "erforsche": "Durchschlagbolzen"
+    },
+    {
+      "erforsche": "Gewehrturm"
+    },
+    {
+      "erforsche": "Kohlekraft"
+    },
+    {
+      "erforsche": "Teslaspule"
+    },
+    {
+      "erforsche": "Giesserei"
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 2,
+      "level": 1,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "Referenz-Misch_W00"
+    },
+    {
+      "wellenlauf": 4,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 1,
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_Durchschlag"
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 1,
+      "level": 2,
+      "rezept": "Recipe_TD_Gun_Standard"
+    },
+    {
+      "wellenlauf": 8,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "NobeliskWerfer"
+    },
+    {
+      "erforsche": "Turmfertigung2"
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 1,
+      "level": 2,
+      "rezept": "Recipe_TD_Gun_Standard"
+    },
+    {
+      "baue": "Teslaspule",
+      "anzahl": 1,
+      "level": 2,
+      "rezept": "Recipe_TD_Tesla_Discharge"
+    },
+    {
+      "wellenlauf": 12,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Raffinerie"
+    },
+    {
+      "erforsche": "Flammenwerfer"
+    },
+    {
+      "baue": "Nobelisk-Werfer",
+      "anzahl": 1,
+      "level": 2,
+      "rezept": "Recipe_TD_Nobelisk_Explosive"
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 1,
+      "level": 3,
+      "rezept": "Recipe_TD_Gun_Standard"
+    },
+    {
+      "wellenlauf": 16,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Turmfertigung3"
+    },
+    {
+      "baue": "Flammenwerfer",
+      "anzahl": 2,
+      "level": 2,
+      "rezept": "Recipe_TD_Flame_Fuel",
+      "ring": "innen"
+    },
+    {
+      "baue": "Teslaspule",
+      "anzahl": 1,
+      "level": 3,
+      "rezept": "Recipe_TD_Tesla_Discharge"
+    },
+    {
+      "wellenlauf": 20,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "baue": "Nobelisk-Werfer",
+      "anzahl": 1,
+      "level": 3,
+      "rezept": "Recipe_TD_Nobelisk_Explosive"
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 2,
+      "level": 3,
+      "rezept": "Recipe_TD_Gun_Standard"
+    },
+    {
+      "wellenlauf": 25,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "baue": "Flammenwerfer",
+      "anzahl": 1,
+      "level": 3,
+      "rezept": "Recipe_TD_Flame_Fuel",
+      "ring": "innen"
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 1,
+      "level": 3,
+      "rezept": "Recipe_TD_Shoot_Durchschlag"
+    },
+    {
+      "wellenlauf": 30,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "P12-E-R2B_W30"
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 2,
+      "level": 4,
+      "rezept": "Recipe_TD_Gun_Standard"
+    },
+    {
+      "baue": "Teslaspule",
+      "anzahl": 1,
+      "level": 4,
+      "rezept": "Recipe_TD_Tesla_Discharge"
+    },
+    {
+      "wellenlauf": 35,
+      "zeitraffer": 4,
+      "max": 900
+    },
+    {
+      "baue": "Nobelisk-Werfer",
+      "anzahl": 1,
+      "level": 4,
+      "rezept": "Recipe_TD_Nobelisk_Explosive",
+      "ring": "innen"
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 1,
+      "level": 4,
+      "rezept": "Recipe_TD_Shoot_Durchschlag",
+      "ring": "innen"
+    },
+    {
+      "wellenlauf": 40,
+      "zeitraffer": 4,
+      "max": 900
+    },
+    {
+      "baue": "Flammenwerfer",
+      "anzahl": 1,
+      "level": 4,
+      "rezept": "Recipe_TD_Flame_Fuel",
+      "ring": "innen"
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 1,
+      "level": 4,
+      "rezept": "Recipe_TD_Gun_Standard",
+      "ring": "innen"
+    },
+    {
+      "wellenlauf": 45,
+      "zeitraffer": 4,
+      "max": 900
+    },
+    {
+      "baue": "Teslaspule",
+      "anzahl": 1,
+      "level": 4,
+      "rezept": "Recipe_TD_Tesla_Discharge",
+      "ring": "innen"
+    },
+    {
+      "wellenlauf": 50,
+      "zeitraffer": 4,
+      "max": 900
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "P12-E-R2B_W50"
+    },
+    {
+      "pruefe": "KernLebt",
+      "text": "Kern hat Welle 50 ueberstanden"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}

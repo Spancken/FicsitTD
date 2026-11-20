@@ -2,6 +2,8 @@
 // Voraussetzungen aus anderen MAM-Baeumen: Knoten -> noetiger Knoten (FicsitTDModule.cpp sperrt die Forschung)
 static const TPair<const TCHAR*, const TCHAR*> TDForschungVoraussetzungen[] = {
 	{ TEXT("/FicsitTD/Research/Logistik/Research_TD_BandMk3.Research_TD_BandMk3_C"), TEXT("/FicsitTD/Research/Produktion/Research_TD_Giesserei.Research_TD_Giesserei_C") },
+	{ TEXT("/FicsitTD/Research/Logistik/Research_TD_BandMk4.Research_TD_BandMk4_C"), TEXT("/FicsitTD/Research/Produktion/Research_TD_Schwerindustrie.Research_TD_Schwerindustrie_C") },
+	{ TEXT("/FicsitTD/Research/Logistik/Research_TD_MinerMk3.Research_TD_MinerMk3_C"), TEXT("/FicsitTD/Research/Produktion/Research_TD_Mischtechnik.Research_TD_Mischtechnik_C") },
 	{ TEXT("/FicsitTD/Research/Energie/Research_TD_Treibstoffkraft.Research_TD_Treibstoffkraft_C"), TEXT("/FicsitTD/Research/Energie/Research_TD_Kohlekraft.Research_TD_Kohlekraft_C") },
 	{ TEXT("/FicsitTD/Research/Ballistik/Research_TD_Durchschlagbolzen.Research_TD_Durchschlagbolzen_C"), TEXT("/FicsitTD/Research/Produktion/Research_TD_Assembler.Research_TD_Assembler_C") },
 	{ TEXT("/FicsitTD/Research/Ballistik/Research_TD_Gewehrturm.Research_TD_Gewehrturm_C"), TEXT("/FicsitTD/Research/Produktion/Research_TD_Assembler.Research_TD_Assembler_C") },
@@ -63,6 +65,10 @@ static const FTDForschungAbWelle TDForschungAbWelle[] = {
 	{ TEXT("/FicsitTD/Research/Produktion/Research_TD_Raffinerie.Research_TD_Raffinerie_C"), TEXT("Raffinerie"), 15 },
 	{ TEXT("/FicsitTD/Research/Energie/Research_TD_Treibstoffkraft.Research_TD_Treibstoffkraft_C"), TEXT("Treibstoffkraft"), 15 },
 	{ TEXT("/FicsitTD/Research/Logistik/Research_TD_BandMk3.Research_TD_BandMk3_C"), TEXT("BandMk3"), 10 },
+	{ TEXT("/FicsitTD/Research/Logistik/Research_TD_BandMk4.Research_TD_BandMk4_C"), TEXT("BandMk4"), 25 },
+	{ TEXT("/FicsitTD/Research/Logistik/Research_TD_BandMk5.Research_TD_BandMk5_C"), TEXT("BandMk5"), 30 },
+	{ TEXT("/FicsitTD/Research/Logistik/Research_TD_MinerMk2.Research_TD_MinerMk2_C"), TEXT("MinerMk2"), 20 },
+	{ TEXT("/FicsitTD/Research/Logistik/Research_TD_MinerMk3.Research_TD_MinerMk3_C"), TEXT("MinerMk3"), 35 },
 	{ TEXT("/FicsitTD/Research/Ballistik/Research_TD_Durchschlagbolzen.Research_TD_Durchschlagbolzen_C"), TEXT("Durchschlagbolzen"), 5 },
 	{ TEXT("/FicsitTD/Research/Ballistik/Research_TD_Gewehrturm.Research_TD_Gewehrturm_C"), TEXT("Gewehrturm"), 5 },
 	{ TEXT("/FicsitTD/Research/Chemie/Research_TD_NobeliskWerfer.Research_TD_NobeliskWerfer_C"), TEXT("NobeliskWerfer"), 10 },

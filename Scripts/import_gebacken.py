@@ -19,6 +19,11 @@ ELTERN_INSTANZ = "/Game/FactoryGame/Buildable/Factory/Blender/Material/MI_Blende
 ELTERN_KOMPONENTE = "/Game/FactoryGame/Buildable/Factory/BlueprintDesigner/Material/MI_BlueprintDesigner_Computer_01"
 ALTE_MATS = "/FicsitTD/Buildings/BoltTurret/Materials"   # Leucht- und Code-Materialien (M_TD_Emissive, M_TD_TeslaGlow ...)
 NUR = os.environ.get("TD_GEBACKEN_NUR", "")              # z. B. "GunTurret" fuer eine Probe
+FESTER_ORT = {"SM_TD_StatusLight": "/FicsitTD/Buildings/BoltTurret/Mesh"}   # Pfad kennt der Code fest (ATDTurretBase, TDGate)
+# Orte der vorher weggesicherten Modelle (JSON {Name: Pfad}); sonst fiele ein Modell ausserhalb des Turmordners an einen neuen Pfad
+if os.environ.get("TD_GEBACKEN_ORTE"):
+    import json
+    FESTER_ORT.update(json.load(open(os.environ["TD_GEBACKEN_ORTE"], encoding="utf-8-sig")))
 
 at = unreal.AssetToolsHelpers.get_asset_tools()
 EAL = unreal.EditorAssetLibrary
@@ -82,7 +87,8 @@ try:
             continue
         name = os.path.splitext(os.path.basename(fbx))[0]
         teil = name.replace("SM_TD_", "")
-        ziel = mesh_ort(name)
+        # feste Pfade zuerst: die alte .uasset wird vor dem Import weggesichert, mesh_ort faende sie dann nicht mehr
+        ziel = FESTER_ORT.get(name) or mesh_ort(name)
         if not ziel:
             # 0.9.3: neue Teile (Kanister des Himmelsturms, Stufenteile der Spezialtuerme) in den Mesh-Ordner des Turms
             ziel = f"/FicsitTD/Buildings/{ordner_export}/Mesh"

@@ -1,0 +1,5 @@
+﻿{
+  "Name": "FensterB3",
+  "_Hinweis": "Testfenster B Teil 3 (16.11. abends): Fabrik-Pruefstand F1 (Tuerme im Kreis), F3 Endlos, F4 Bohrung; dazu Bohrung nach F3/F6/F7/F9 und Spielersicht nach F10.",
+  "Plaene": ["Fabrik-F1", "Fabrik-F4-Bohrung", "Bohrung", "Spielersicht", "Fabrik-F3-Endlos"]
+}

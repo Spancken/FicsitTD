@@ -1,4 +1,5 @@
 #include "TDTurretBase.h"
+#include "FGRadioactivitySubsystem.h"
 #include "TDPionier.h"
 #include "TDGegnerHirn.h"
 #include "TDForschung.h"
@@ -35,6 +36,8 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include "TimerManager.h"
 #include "TDSprache.h"
+#include "FGPowerConnectionComponent.h"
+#include "TDAnbauten.inl"
 
 /** Anzeigename eines Turms fuer Spielertexte; mTurmName selbst bleibt deutscher Schluessel (Balance, Forschung, Statistik) */
 static FString TDTurmAnzeige(const FString& Turm)
@@ -113,6 +116,53 @@ void ATDTurretBase::PostInitProperties()
 	{
 		mRangeRing->SetRelativeScale3D(FVector(mRange / 100.f, mRange / 100.f, 1.f));
 	}
+	// Optik-Durchgang 16.11.2026: Lampe, Stromanschluss, Klarraum aus dem Modell (auch am Klassen-Standardobjekt fuer die Bauvorschau)
+	UebernimmAnbauDaten();
+}
+
+void ATDTurretBase::UebernimmAnbauDaten()
+{
+	mKlarraumMin = -mKlarraumHalb;
+	mKlarraumMax = mKlarraumHalb;
+	for (const FTDAnbau& A : TDAnbauTabelle)
+	{
+		if (mTurmName == A.Turm)
+		{
+			mHatAnbauDaten = true;
+			mLampenOrt = A.Lampe;
+			mStromOrt = A.Strom;
+			mKlarraumMin = A.KlarraumMin;
+			mKlarraumMax = A.KlarraumMax;
+			mKlarraumHalb = FVector2D(FMath::Max(-A.KlarraumMin.X, A.KlarraumMax.X), FMath::Max(-A.KlarraumMin.Y, A.KlarraumMax.Y));
+			// Original-Statusmast und Wand-Strommast sind durch Lampenkonsole und Anschlusskasten im Sockelmodell ersetzt
+			mOriginalTeile.RemoveAll([](const FTDOriginalTeil& T) { return T.Modell == TDOriginal::Strom || T.Modell == TDOriginal::Mast; });
+			return;
+		}
+	}
+}
+
+void ATDTurretBase::SetzeStromAnschluss()
+{
+	// Kabel rastet an der Kappe des Anschlusskastens ein (Lage aus dem Modell); der Bauplan kann noch den alten Ort des Wandmasts tragen
+	if (!mHatAnbauDaten)
+	{
+		return;
+	}
+	TInlineComponentArray<UFGPowerConnectionComponent*> Strom(this);
+	for (UFGPowerConnectionComponent* S : Strom)
+	{
+		if (S && !S->GetRelativeLocation().Equals(mStromOrt, 1.f))
+		{
+			S->SetRelativeLocation(mStromOrt);
+		}
+	}
+	static TSet<FString> Gemeldet;
+	if (!Gemeldet.Contains(mTurmName))
+	{
+		Gemeldet.Add(mTurmName);
+		UE_LOG(LogFicsitTD, Log, TEXT("Anbauten %s: Lampe %s, Strom %s (%d Anschluss), Klarraum %s..%s"), *mTurmName, *mLampenOrt.ToCompactString(),
+			*mStromOrt.ToCompactString(), Strom.Num(), *mKlarraumMin.ToString(), *mKlarraumMax.ToString());
+	}
 }
 
 void ATDTurretBase::SperreTakt()
@@ -164,7 +214,7 @@ void ATDTurretBase::ZeigeReichweite(bool bAn)
 void ATDTurretBase::GetClearanceData_Implementation(TArray<FFGClearanceData>& out_data) const
 {
 	FFGClearanceData Data;
-	Data.ClearanceBox = FBox(FVector(-mKlarraumHalb.X, -mKlarraumHalb.Y, 0.f), FVector(mKlarraumHalb.X, mKlarraumHalb.Y, mKlarraumHoehe));
+	Data.ClearanceBox = FBox(FVector(mKlarraumMin.X, mKlarraumMin.Y, 0.f), FVector(mKlarraumMax.X, mKlarraumMax.Y, mKlarraumHoehe));
 	out_data.Add(Data);
 }
 
@@ -252,6 +302,8 @@ struct FTDLevelStandard { const TCHAR* Turm; int32 Level; const TCHAR* Wert; flo
 static const FTDLevelStandard TDLevelStandards[] = {
 	{ TEXT("Gewehrturm"), 2, TEXT("Schaden"), 0.2f }, { TEXT("Gewehrturm"), 3, TEXT("Takt"), 0.3f },
 	{ TEXT("Gewehrturm"), 4, TEXT("Magazin"), 1.f }, { TEXT("Gewehrturm"), 4, TEXT("Reichweite"), 0.15f },
+	// 17.11. (Marius, P12-Entscheidung 5): Gurttrommel wirkte seit P10 nicht mehr zusaetzlich (Dauerfeuer ist Standard) -> +25 % Feuerrate
+	{ TEXT("Gewehrturm"), 5, TEXT("Takt"), 0.25f },
 	{ TEXT("Bolzenturm"), 2, TEXT("Schaden"), 0.2f }, { TEXT("Bolzenturm"), 3, TEXT("Takt"), 0.25f },
 	{ TEXT("Bolzenturm"), 4, TEXT("Reichweite"), 0.15f }, { TEXT("Bolzenturm"), 4, TEXT("Durchschlag"), 1.f },
 	{ TEXT("Nobelisk-Werfer"), 2, TEXT("Schaden"), 0.2f }, { TEXT("Nobelisk-Werfer"), 3, TEXT("Takt"), 0.25f },
@@ -347,7 +399,7 @@ FString ATDTurretBase::LevelDiffText(int32 Von, int32 Bis) const
 	// Level 5 = Meisterstufe mit eigener Faehigkeit je Turm (0.64, Marius: nicht ueberall ein zweiter Lauf)
 	if (Von < TurmMaxLevel && Bis >= TurmMaxLevel)
 	{
-		Teile.Add(mTurmName == TEXT("Gewehrturm") ? TDT(TEXT("Meisterstufe Gurttrommel: Dauerfeuer ohne Nachladen"), TEXT("Master Tier Belt Drum: continuous fire without reloading"))
+		Teile.Add(mTurmName == TEXT("Gewehrturm") ? TDT(TEXT("Meisterstufe Gurttrommel: schnellere Zuführung"), TEXT("Master Tier Ammo Drum: faster feed"))
 			: mTurmName == TEXT("Bolzenturm") ? TDT(TEXT("Meisterstufe Doppellauf: zwei Bolzen je Schuss"), TEXT("Master Tier Double Barrel: two bolts per shot"))
 			: mTurmName == TEXT("Nobelisk-Werfer") ? TDT(TEXT("Meisterstufe Salvenkopf: drei Nobelisken je Salve"), TEXT("Master Tier Salvo Head: three Nobelisks per salvo"))
 			: mTurmName == TEXT("Teslaspule") ? TDT(TEXT("Meisterstufe Spannungsfeld: bremst Gegner bis 10 m"), TEXT("Master Tier Voltage Field: slows enemies within 10 m"))
@@ -506,7 +558,33 @@ float ATDTurretBase::GetTDMaxHealth() const
 float ATDTurretBase::GetProductionCycleTime() const
 {
 	// 0.9.6 (Gesamtreview 12.11., C): kann auf dem Fabrik-Thread laufen -> nur den vom Spielschritt gesetzten Wert lesen
-	return Super::GetProductionCycleTime() / FMath::Max(mTaktBonusCache.load(), 0.01f);
+	// 17.11. (P10): eine Ladung (ein Item) dauert N Aktionen - so zeigt auch das Maschinenfenster den echten Verbrauch
+	return Super::GetProductionCycleTime() * FMath::Max(mZyklusFaktorCache.load(), 0.01f) / FMath::Max(mTaktBonusCache.load(), 0.01f);
+}
+
+int32 ATDTurretBase::SchussJeItem() const
+{
+	const TSubclassOf<UFGRecipe> Rezept = GetCurrentRecipe();
+	if (!Rezept)
+	{
+		return 1;
+	}
+	FString Name = Rezept->GetName();
+	Name.RemoveFromStart(TEXT("Recipe_TD_"));
+	Name.RemoveFromEnd(TEXT("_C"));
+	return FMath::Max(1, TDBalance::Ganz(TEXT("Munition.SchussJeItem.") + Name, 1));
+}
+
+float ATDTurretBase::VerbrauchProMinute() const
+{
+	const TSubclassOf<UFGRecipe> Rezept = GetCurrentRecipe();
+	const float Zyklus = Rezept ? GetProductionCycleTime() : 0.f;
+	if (Zyklus <= 0.f)
+	{
+		return 0.f;
+	}
+	const TArray<FItemAmount> Zutaten = UFGRecipe::GetIngredients(this, Rezept);
+	return Zutaten.Num() > 0 ? Zutaten[0].Amount * 60.f / Zyklus : 0.f;
 }
 
 FText ATDTurretBase::GetLookAtDecription_Implementation(AFGCharacterPlayer* byCharacter, const FUseState& state) const
@@ -526,7 +604,8 @@ FText ATDTurretBase::GetLookAtDecription_Implementation(AFGCharacterPlayer* byCh
 
 float ATDTurretBase::Zykluszeit() const
 {
-	return GetCurrentRecipe() ? GetProductionCycleTime() : 0.f;
+	// 17.11. (P10): Sekunden je Aktion (ein Zyklus traegt jetzt mehrere Aktionen)
+	return GetCurrentRecipe() ? GetProductionCycleTime() / FMath::Max(1, mAktionenCache) : 0.f;
 }
 
 void ATDTurretBase::Kennwerte(TArray<FTDKennwert>& Out) const
@@ -548,6 +627,18 @@ void ATDTurretBase::Kennwerte(TArray<FTDKennwert>& Out) const
 		Out.Add({ TDT(TEXT("Levelbonus"), TEXT("Level bonus")), LevelSumme() });
 	}
 	Out.Add({ TDT(TEXT("Munition"), TEXT("Ammo")), MunitionsText() });
+	// 17.11. (P10, Marius: transparent machen): Schuss je Stueck, Verbrauch bei Dauerfeuer und wie viele Tuerme ein Band traegt
+	if (const float Verbrauch = VerbrauchProMinute(); Verbrauch > 0.f && GetCurrentRecipe())
+	{
+		const TArray<FItemAmount> Zutaten = UFGRecipe::GetIngredients(this, GetCurrentRecipe());
+		const bool bFest = Zutaten.Num() > 0 && Zutaten[0].ItemClass && UFGItemDescriptor::GetForm(Zutaten[0].ItemClass) == EResourceForm::RF_SOLID;
+		if (bFest)
+		{
+			Out.Add({ TDT(TEXT("Verbrauch"), TEXT("Consumption")), TDF(TEXT("1 Stück = %d Schuss · %.1f Stück/min bei Dauerfeuer · Band Mk1 (60/min) trägt %.1f Türme"),
+				TEXT("1 item = %d shots · %.1f items/min sustained fire · a Mk1 belt (60/min) feeds %.1f turrets"),
+				SchussJeItem(), Verbrauch, 60.f / Verbrauch), true });
+		}
+	}
 	const FString Zusatz = ZusatzImPanel() ? ZusatzInfo() : FString();
 	if (!Zusatz.IsEmpty())
 	{
@@ -611,6 +702,7 @@ void ATDTurretBase::BeginPlay()
 	{
 		mHeadMesh->SetRelativeLocation(mNeigeachse);
 	}
+	SetzeStromAnschluss();   // vor Super::BeginPlay, damit Kabel am neuen Ort ankommen
 	Super::BeginPlay();
 	NachMaschinenStart();
 	SetzeModell(mYawMesh, mYawModell);
@@ -684,7 +776,8 @@ void ATDTurretBase::BeginPlay()
 		{
 			SetRecipe(Rezept);
 			// Startmunition (Test 0.55: bis die Produktion die ersten Bolzen bringt, stand der Turm zu lange)
-			const int32 Start = TDBalance::Ganz(BalanceTurm() + TEXT("Startmunition"), 0);
+			// 17.11. (P10, Marius: auf gleiche Schusszahl kuerzen): der Wert zaehlt Schuss, eingelegt werden Items
+			const int32 Start = FMath::DivideAndRoundUp(TDBalance::Ganz(BalanceTurm() + TEXT("Startmunition"), 0), SchussJeItem());
 			const TArray<FItemAmount> Zutaten = UFGRecipe::GetIngredients(this, Rezept);
 			if (Start > 0 && Zutaten.Num() > 0 && Zutaten[0].ItemClass && GetInputInventory())
 			{
@@ -1019,8 +1112,42 @@ bool ATDTurretBase::CanProduce_Implementation() const
 	return mBereit.load() && Super::CanProduce_Implementation();
 }
 
+float ATDTurretBase::FabrikTaktAnteil() const
+{
+	return mBilanz.Messzeit > 0.5f ? FMath::Clamp(mDiagFabrikDt / mBilanz.Messzeit, 0.f, 2.f) : 1.f;
+}
+
+int32 ATDTurretBase::MunitionStueck() const
+{
+	int32 Summe = 0;
+	if (const UFGInventoryComponent* Eingang = GetInputInventory())
+	{
+		TArray<FInventoryStack> Stapel;
+		Eingang->GetInventoryStacks(Stapel);
+		for (const FInventoryStack& S : Stapel)
+		{
+			Summe += S.NumItems;
+		}
+	}
+	return Summe;
+}
+
+void ATDTurretBase::Factory_Tick(float dt)
+{
+	mDiagFabrikDt += dt;
+	++mDiagFabrikTicks;
+	Super::Factory_Tick(dt);
+}
+
+void ATDTurretBase::Factory_TickProducing(float dt)
+{
+	mDiagProduktionDt += dt;
+	Super::Factory_TickProducing(dt);
+}
+
 void ATDTurretBase::Factory_ProductionCycleCompleted(float overProductionRate)
 {
+	++mDiagZyklen;
 	Super::Factory_ProductionCycleCompleted(overProductionRate);
 	// Das Produkt "Bolzenschuss" gibt es nur, damit die Rezeptauswahl die Rezepte zeigt - gleich wieder wegwerfen
 	if (UFGInventoryComponent* Ausgabe = GetOutputInventory())
@@ -1229,7 +1356,28 @@ void ATDTurretBase::Spielschritt()
 	TDLeistung::FUhr Uhr(TDLeistung::TurmZyklen);
 	// 0.9.6 (Gesamtreview 12.11., C): Takt-Bonus hier auf dem Spiel-Thread lesen (folgt auch /td balance neu)
 	mTaktBonusCache.store(TaktBonus());
+	// 17.11. (P10): Ladung je Item fuer den Fabrik-Thread vorbereiten
+	mZyklusFaktorCache.store(FMath::Max(0.01f, ZyklusFaktor()));
+	mAktionenCache = FMath::Max(1, AktionenJeZyklus());
 	ZeigeStufenTeile();
+	// 16.11. (Marius: Singularitaetswerfer strahlt): das Munitionslager der Tuerme ist abgeschirmt - radioaktive Munition (Ficsonium,
+	// Uran) strahlt nur beim Transport. Das Inventar meldet sich bei jeder Aenderung neu als Strahlungsquelle, deshalb je Sekunde entfernen.
+	mAbschirmUhr += TurmSchrittIntervall;
+	if (mAbschirmUhr >= 1.f && TDBalance::Wert(TEXT("Tuerme.Abgeschirmt"), 1.f) > 0.f)
+	{
+		mAbschirmUhr = 0.f;
+		if (AFGRadioactivitySubsystem* Strahlung = AFGRadioactivitySubsystem::Get(GetWorld()))
+		{
+			for (UFGInventoryComponent* Lager : { GetInputInventory(), GetOutputInventory() })
+			{
+				if (Lager)
+				{
+					Strahlung->RemoveEmitters(Lager);
+				}
+			}
+			Strahlung->RemoveEmitters(this);
+		}
+	}
 	// Forschung Munitionspuffer: Eingang fasst die doppelte Stapelgroesse (einmal je Munitionssorte setzen)
 	if (UFGInventoryComponent* Eingang = GetInputInventory())
 	{
@@ -1256,13 +1404,37 @@ void ATDTurretBase::Spielschritt()
 	mBilanz.ZeitOhneMunition += bMunition ? 0.f : TurmSchrittIntervall;
 	mBilanz.ZeitHungrig += Ziel && !bMunition ? TurmSchrittIntervall : 0.f;
 	mBilanz.ZeitOhneStrom += GetPowerInfo() && !HasPower() ? TurmSchrittIntervall : 0.f;
+	mBilanz.ZeitNichtAusgerichtet += Ziel && !mBereit.load() ? TurmSchrittIntervall : 0.f;
+	mBilanz.ZeitBereitOhneProduktion += mBereit.load() && bMunition && !IsProducing() ? TurmSchrittIntervall : 0.f;
+	if (mBilanz.LetztesBild != GFrameCounter)
+	{
+		mBilanz.LetztesBild = GFrameCounter;
+		++mBilanz.Bilder;
+	}
 	AktualisiereLampe();
 
-	// Abgeschlossene Produktionszyklen umsetzen (Zutat wurde dafuer bereits verbraucht)
+	// Abgeschlossene Produktionszyklen umsetzen (Zutat wurde dafuer bereits verbraucht). 17.11. (P10): ein Zyklus = eine Ladung
+	// mit mAktionenCache Aktionen - fertige Zyklen geben den Rest frei, der laufende Zyklus anteilig nach Fortschritt
+	const int32 Aktionen = FMath::Max(1, mAktionenCache);
 	int32 Offen = mOffeneZyklen.exchange(0);
 	while (Offen-- > 0)
 	{
-		Feuern(Ziel);
+		for (int32 k = mAktionenFreigegeben; k < Aktionen; ++k)
+		{
+			mBilanz.Fehlschuesse += Ziel ? 0 : 1;
+			Feuern(Ziel);
+		}
+		mAktionenFreigegeben = 0;
+	}
+	if (Aktionen > 1)
+	{
+		const int32 Faellig = FMath::Clamp(FMath::FloorToInt(GetProductionProgress() * Aktionen), 0, Aktionen - 1);
+		while (mAktionenFreigegeben < Faellig)
+		{
+			mBilanz.Fehlschuesse += Ziel ? 0 : 1;
+			Feuern(Ziel);
+			++mAktionenFreigegeben;
+		}
 	}
 }
 
@@ -1493,11 +1665,15 @@ FString ATDTurretBase::BilanzText(float Sekunden) const
 	}
 	const float Mess = FMath::Max(mBilanz.Messzeit, 0.1f);
 	return FString::Printf(TEXT("%s [%s] Level %d, Munition %s: %d Schuss, %d Treffer, %.0f Schaden, %.1f Schaden/s ueber %.0f s, %d Abschuesse gesamt; je Gegner: %s; ")
-		TEXT("Nenn %.0f DPS, Uptime %.0f %%, Overkill %.0f %%, Nebenziele %d, ohne Munition %.0f s (davon mit Ziel %.0f s), ohne Strom %.0f s"),
+		TEXT("Nenn %.0f DPS, Uptime %.0f %%, Overkill %.0f %%, Nebenziele %d, ohne Munition %.0f s (davon mit Ziel %.0f s), ohne Strom %.0f s, ")
+		TEXT("nicht ausgerichtet %.1f s, bereit ohne Produktion %.1f s, Fehlschuesse %d, %d Bilder (%.0f ms Spielzeit je Bild), ")
+		TEXT("Fabrik-Takt %.1f s in %d Takten, Produktion %.1f s, %d Zyklen, Zykluszeit %.2f s"),
 		*mTurmName, *GetName(), GetLevel(), *GetMunitionsName(), mBilanz.Schuesse + mSchuesse, mBilanz.Treffer, mBilanz.Schaden,
 		Sekunden > 0.f ? mBilanz.Schaden / Sekunden : 0.f, Sekunden, mKills, Arten.Num() ? *FString::Join(Arten, TEXT(", ")) : TEXT("-"),
 		NennDPS(), 100.f * mBilanz.ZeitMitZiel / Mess, mBilanz.Schaden > 0.f ? 100.f * mBilanz.Overkill / mBilanz.Schaden : 0.f, mBilanz.Nebentreffer,
-		mBilanz.ZeitOhneMunition, mBilanz.ZeitHungrig, mBilanz.ZeitOhneStrom);
+		mBilanz.ZeitOhneMunition, mBilanz.ZeitHungrig, mBilanz.ZeitOhneStrom, mBilanz.ZeitNichtAusgerichtet, mBilanz.ZeitBereitOhneProduktion,
+		mBilanz.Fehlschuesse, mBilanz.Bilder, mBilanz.Bilder > 0 ? 1000.f * mBilanz.Messzeit / mBilanz.Bilder : 0.f,
+		mDiagFabrikDt, mDiagFabrikTicks, mDiagProduktionDt, mDiagZyklen, GetCurrentRecipe() ? GetProductionCycleTime() : 0.f);
 }
 
 void ATDTurretBase::Treffer(AFGCreature* Ziel, float Schaden, const FVector& Richtung, float Betaeubung, float Verzoegerung)

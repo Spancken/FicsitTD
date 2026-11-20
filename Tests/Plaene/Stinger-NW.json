@@ -1,0 +1,107 @@
+{
+  "Name": "Stinger-NW",
+  "_Hinweis": "18.11. B16: Stinger-Abschnitt W13-22 an Fels-S8 (Front Nordwesten), Nachweis Spawnprobe im Netz der Kreaturgroesse. Ziel: 0 Versetzungen, Logzeilen 'Spawnprobe ... im Netz der Groesse'.",
+  "NeuesSpiel": {
+    "Startort": "Rocky Desert",
+    "Modus": 1,
+    "Stufe": 2
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 25,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warte": 15
+    },
+    {
+      "befehl": "td einsatz stop"
+    },
+    {
+      "befehl": "td kern stop"
+    },
+    {
+      "befehl": "td einsatz start normal 50"
+    },
+    {
+      "befehl": "td einsatz frei an"
+    },
+    {
+      "stromfrei": true
+    },
+    {
+      "versorgung": {
+        "Bolzenturm": 50,
+        "Gewehrturm": 25,
+        "Nobelisk-Werfer": 15,
+        "Flammenwerfer": 6000
+      }
+    },
+    {
+      "erforsche": "Assembler"
+    },
+    {
+      "erforsche": "Kupfer"
+    },
+    {
+      "erforsche": "Durchschlagbolzen"
+    },
+    {
+      "erforsche": "Gewehrturm"
+    },
+    {
+      "erforsche": "Kohlekraft"
+    },
+    {
+      "erforsche": "Teslaspule"
+    },
+    {
+      "erforsche": "Giesserei"
+    },
+    {
+      "erforsche": "NobeliskWerfer"
+    },
+    {
+      "erforsche": "Turmfertigung2"
+    },
+    {
+      "erforsche": "Raffinerie"
+    },
+    {
+      "erforsche": "Flammenwerfer"
+    },
+    {
+      "erforsche": "Turmfertigung3"
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 10,
+      "level": 3,
+      "rezept": "Recipe_TD_Gun_Standard"
+    },
+    {
+      "befehl": "td kern springe 13"
+    },
+    {
+      "wellenlauf": 22,
+      "zeitraffer": 4,
+      "max": 600
+    },
+    {
+      "pruefe": "KernLebt",
+      "text": "Kern hat Welle 22 ueberstanden"
+    },
+    {
+      "pruefe": "Sicherheitsnetze",
+      "text": "kein Sicherheitsnetz ausgeloest (Versetzen, Absturz, 0 LP)"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}

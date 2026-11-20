@@ -17,6 +17,10 @@ class FICSITTD_API UTDLaufProtokoll : public UWorldSubsystem
 {
 	GENERATED_BODY()
 public:
+	/** 17.11. (P16/A10): Spielstandsname je Sitzung, z. B. "Meine_Fabrik_TD_W12_Start" */
+	static FString StandName(const UObject* WorldContext, int32 Welle, bool bStart);
+private:
+public:
 	static UTDLaufProtokoll* Get(const UObject* WorldContext);
 
 	/** Lauf-Modus Balancing: Testsprung aus, Eingriffe werden laut gemeldet (am Kern gespeichert, hier gespiegelt) */

@@ -1,0 +1,252 @@
+{
+  "_Hinweis": "Stellschrauben des Balance-Kreislaufs (Notizen/Testplan-Balance-Kreislauf.md). Schluessel wie in Balance.json; 'Regler' = Sweep-Regler aus strategie_annahmen.json. min/max = erlaubter Bereich, schritt = Suchschritt (Anteil), Gruppe = ein System je Iteration.",
+  "Gruppen": {
+    "Wirtschaft": [
+      {
+        "Schluessel": "Einsatz.EP.Grund",
+        "min": 6,
+        "max": 16,
+        "schritt": 0.15
+      },
+      {
+        "Schluessel": "Einsatz.EP.JeWelle",
+        "min": 1.2,
+        "max": 2.5,
+        "schritt": 0.1
+      },
+      {
+        "Schluessel": "Einsatz.EP.KernVoll",
+        "min": 3,
+        "max": 8,
+        "schritt": 0.2
+      },
+      {
+        "Schluessel": "Einsatz.EP.BossBonus",
+        "min": 10,
+        "max": 30,
+        "schritt": 0.2
+      },
+      {
+        "Schluessel": "Einsatz.FP.JeWelle",
+        "min": 2,
+        "max": 3,
+        "schritt": 0.5
+      },
+      {
+        "Regler": "PreisFaktor",
+        "min": 0.8,
+        "max": 1.2,
+        "schritt": 0.1
+      }
+    ],
+    "Tesla": [
+      {
+        "Schluessel": "Munition.Tesla.Schaden",
+        "min": 150,
+        "max": 300,
+        "schritt": 0.15
+      },
+      {
+        "Schluessel": "Munition.Tesla.SprungFaktor",
+        "min": 0.2,
+        "max": 0.35,
+        "schritt": 0.15
+      },
+      {
+        "Regler": "TeslaLadenUeber",
+        "min": 75,
+        "max": 110,
+        "schritt": 0.15
+      }
+    ],
+    "Flamme": [
+      {
+        "Schluessel": "Munition.Treibstoff.Biotreibstoff.SchadenProSekunde",
+        "min": 35,
+        "max": 60,
+        "schritt": 0.15
+      },
+      {
+        "Schluessel": "Munition.Treibstoff.Treibstoff.SchadenProSekunde",
+        "min": 80,
+        "max": 130,
+        "schritt": 0.15
+      },
+      {
+        "Schluessel": "Munition.Treibstoff.Turbotreibstoff.SchadenProSekunde",
+        "min": 80,
+        "max": 130,
+        "schritt": 0.15
+      }
+    ],
+    "Laden": [
+      {
+        "Schluessel": "Einsatz.Laden.Assembler.Grundpreis",
+        "min": 5,
+        "max": 10,
+        "schritt": 0.2
+      },
+      {
+        "Schluessel": "Einsatz.Laden.Assembler.Aufschlag",
+        "min": 0.2,
+        "max": 0.5,
+        "schritt": 0.25
+      },
+      {
+        "Schluessel": "Einsatz.Laden.Konstruktor.Aufschlag",
+        "min": 0.15,
+        "max": 0.4,
+        "schritt": 0.25
+      },
+      {
+        "Schluessel": "Einsatz.Laden.Kohlekraftwerk.Aufschlag",
+        "min": 0.3,
+        "max": 0.7,
+        "schritt": 0.2
+      }
+    ],
+    "Wellen": [
+      {
+        "Schluessel": "Wellen.LPJeWelle",
+        "min": 0.15,
+        "max": 0.3,
+        "schritt": 0.15
+      },
+      {
+        "Schluessel": "Wellen.BudgetJeWelle",
+        "min": 3,
+        "max": 6,
+        "schritt": 0.15
+      },
+      {
+        "Schluessel": "Wellen.BudgetQuadrat",
+        "min": 0.08,
+        "max": 0.2,
+        "schritt": 0.15
+      },
+      {
+        "Schluessel": "Kern.Grundreparatur",
+        "min": 0.03,
+        "max": 0.1,
+        "schritt": 0.2
+      }
+    ],
+    "Linien": [
+      {
+        "Schluessel": "Munition.Bolzen.Durchschlagbolzen.Schaden",
+        "min": 32,
+        "max": 64,
+        "schritt": 0.2,
+        "ziehtMit": [
+          "Munition.Bolzen.Armierungsbolzen.Schaden"
+        ]
+      },
+      {
+        "Schluessel": "Munition.Patronen.Standard.Schaden",
+        "min": 12,
+        "max": 24,
+        "schritt": 0.2
+      },
+      {
+        "Schluessel": "Munition.Nobelisk.Nobelisk.Schaden",
+        "min": 150,
+        "max": 260,
+        "schritt": 0.2
+      },
+      {
+        "Schluessel": "Munition.Treibstoff.Treibstoff.SchadenProSekunde",
+        "min": 80,
+        "max": 160,
+        "schritt": 0.2,
+        "ziehtMit": [
+          "Munition.Treibstoff.Turbotreibstoff.SchadenProSekunde"
+        ]
+      }
+    ],
+    "Kosten": [
+      {
+        "Schluessel": "Einsatz.Laden.Teslaspule.Grundpreis",
+        "min": 10,
+        "max": 18,
+        "schritt": 0.2
+      },
+      {
+        "Schluessel": "Einsatz.Laden.Teslaspule.Aufschlag",
+        "min": 0.4,
+        "max": 0.8,
+        "schritt": 0.25
+      },
+      {
+        "Schluessel": "Einsatz.Laden.Bolzenturm.Grundpreis",
+        "min": 3,
+        "max": 5,
+        "schritt": 0.2
+      },
+      {
+        "Schluessel": "Einsatz.Laden.Gewehrturm.Grundpreis",
+        "min": 6,
+        "max": 8,
+        "schritt": 0.2
+      },
+      {
+        "Schluessel": "Munition.Bolzen.Durchschlagbolzen.Schaden",
+        "min": 32,
+        "max": 48,
+        "schritt": 0.15,
+        "ziehtMit": [
+          "Munition.Bolzen.Armierungsbolzen.Schaden"
+        ]
+      }
+    ]
+  },
+  "Logik": [
+    {
+      "Text": "EP steigen mit der Welle",
+      "Regel": "Einsatz.EP.JeWelle > 0"
+    },
+    {
+      "Text": "voller Kern wird mehr belohnt als 75 %",
+      "Regel": "Einsatz.EP.KernVoll >= Einsatz.EP.KernAb75"
+    },
+    {
+      "Text": "Assembler kostet mindestens so viel wie Konstruktor",
+      "Regel": "Einsatz.Laden.Assembler.Grundpreis >= Einsatz.Laden.Konstruktor.Grundpreis"
+    },
+    {
+      "Text": "jedes weitere Gebaeude kostet mehr",
+      "Regel": "Einsatz.Laden.Konstruktor.Aufschlag > 0 and Einsatz.Laden.Assembler.Aufschlag > 0"
+    },
+    {
+      "Text": "Treibstoff staerker als Biotreibstoff",
+      "Regel": "Munition.Treibstoff.Treibstoff.SchadenProSekunde > Munition.Treibstoff.Biotreibstoff.SchadenProSekunde"
+    },
+    {
+      "Text": "Turbotreibstoff mindestens so stark wie Treibstoff",
+      "Regel": "Munition.Treibstoff.Turbotreibstoff.SchadenProSekunde >= Munition.Treibstoff.Treibstoff.SchadenProSekunde"
+    },
+    {
+      "Text": "Tesla behaelt Spruenge als Profil",
+      "Regel": "Munition.Tesla.SprungFaktor >= 0.2"
+    },
+    {
+      "Text": "Gegner werden mit der Welle zäher",
+      "Regel": "Wellen.LPJeWelle > 0"
+    },
+    {
+      "Text": "Wellen werden mit der Welle größer",
+      "Regel": "Wellen.BudgetJeWelle > 0"
+    },
+    {
+      "Text": "Armierungsbolzen bleibt stärker als Durchschlagbolzen je Treffer",
+      "Regel": "Munition.Bolzen.Armierungsbolzen.Schaden >= Munition.Bolzen.Durchschlagbolzen.Schaden"
+    },
+    {
+      "Text": "Teslaspule kostet mehr als ein Gewehrturm",
+      "Regel": "Einsatz.Laden.Teslaspule.Grundpreis > Einsatz.Laden.Gewehrturm.Grundpreis"
+    },
+    {
+      "Text": "Bolzenturm bleibt der billigste Turm",
+      "Regel": "Einsatz.Laden.Bolzenturm.Grundpreis <= Einsatz.Laden.Gewehrturm.Grundpreis"
+    }
+  ]
+}

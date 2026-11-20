@@ -1,0 +1,51 @@
+{
+  "Name": "Vorbereitung",
+  "_Hinweis": "18.11.: Fortschrittsanzeige 'Einsatzort wird vorbereitet' nach dem Laden eines neuen Spiels, Fotos in kurzen Abstaenden.",
+  "NeuesSpiel": {
+    "Startort": "Rocky Desert"
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 3,
+  "MaxMinuten": 6,
+  "Schritte": [
+    {
+      "warte": 8
+    },
+    {
+      "foto": "Vorbereitung_1"
+    },
+    {
+      "warte": 8
+    },
+    {
+      "foto": "Vorbereitung_2"
+    },
+    {
+      "warte": 10
+    },
+    {
+      "foto": "Vorbereitung_3"
+    },
+    {
+      "warte": 15
+    },
+    {
+      "foto": "Vorbereitung_4"
+    },
+    {
+      "warte": 30
+    },
+    {
+      "foto": "Vorbereitung_5"
+    },
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}

@@ -1,0 +1,480 @@
+{
+ "Build_TD_Barrier": {
+  "sockel_min": [
+   -101,
+   -101,
+   0
+  ],
+  "sockel_max": [
+   101,
+   101,
+   186
+  ],
+  "anschluesse": {}
+ },
+ "Build_TD_BoltTurret": {
+  "sockel_min": [
+   -204,
+   -205,
+   0
+  ],
+  "sockel_max": [
+   204,
+   204,
+   296
+  ],
+  "anschluesse": {
+   "PowerInput": [
+    0,
+    -250,
+    130
+   ],
+   "Input0": [
+    -210,
+    0,
+    100
+   ],
+   "Output0": [
+    0,
+    0,
+    60
+   ]
+  }
+ },
+ "Build_TD_ConductorWall": {
+  "sockel_min": [
+   -409,
+   -52,
+   0
+  ],
+  "sockel_max": [
+   409,
+   52,
+   412
+  ],
+  "anschluesse": {
+   "PowerInput": [
+    0,
+    -120,
+    80
+   ],
+   "Output0": [
+    0,
+    0,
+    40
+   ]
+  }
+ },
+ "Build_TD_DefenseCore": {
+  "sockel_min": [
+   -820,
+   -820,
+   0
+  ],
+  "sockel_max": [
+   820,
+   820,
+   3090
+  ],
+  "anschluesse": {}
+ },
+ "Build_TD_DimensionalDepot": {
+  "sockel_min": [
+   -248,
+   -204,
+   0
+  ],
+  "sockel_max": [
+   204,
+   204,
+   420
+  ],
+  "anschluesse": {
+   "Output1": [
+    0,
+    0,
+    40
+   ],
+   "Input0": [
+    -220,
+    0,
+    70
+   ]
+  }
+ },
+ "Build_TD_DronePort": {
+  "sockel_min": [
+   -305,
+   -305,
+   0
+  ],
+  "sockel_max": [
+   305,
+   305,
+   305
+  ],
+  "anschluesse": {
+   "PowerInput": [
+    150,
+    390,
+    60
+   ],
+   "Input0": [
+    -350,
+    0,
+    100
+   ],
+   "Output0": [
+    0,
+    0,
+    60
+   ]
+  }
+ },
+ "Build_TD_FieldProjector": {
+  "sockel_min": [
+   -215,
+   -205,
+   0
+  ],
+  "sockel_max": [
+   215,
+   244,
+   758
+  ],
+  "anschluesse": {
+   "Input0": [
+    -210,
+    0,
+    100
+   ],
+   "Output0": [
+    0,
+    0,
+    60
+   ],
+   "PowerInput": [
+    0,
+    -250,
+    130
+   ]
+  }
+ },
+ "Build_TD_FlakTurret": {
+  "sockel_min": [
+   -204,
+   -205,
+   0
+  ],
+  "sockel_max": [
+   204,
+   204,
+   296
+  ],
+  "anschluesse": {
+   "PowerInput": [
+    0,
+    -250,
+    130
+   ],
+   "Input0": [
+    -210,
+    0,
+    100
+   ],
+   "Output0": [
+    0,
+    0,
+    60
+   ]
+  }
+ },
+ "Build_TD_FlameTurret": {
+  "sockel_min": [
+   -215,
+   -215,
+   0
+  ],
+  "sockel_max": [
+   215,
+   215,
+   318
+  ],
+  "anschluesse": {
+   "PowerInput": [
+    -45,
+    -265,
+    82
+   ],
+   "Output0": [
+    0,
+    0,
+    60
+   ],
+   "PipeInput": [
+    -175,
+    0,
+    120
+   ]
+  }
+ },
+ "Build_TD_Gate": {
+  "sockel_min": [
+   -411,
+   -150,
+   -3
+  ],
+  "sockel_max": [
+   411,
+   150,
+   549
+  ],
+  "anschluesse": {}
+ },
+ "Build_TD_GunTurret": {
+  "sockel_min": [
+   -203,
+   -203,
+   0
+  ],
+  "sockel_max": [
+   203,
+   203,
+   315
+  ],
+  "anschluesse": {
+   "PowerInput": [
+    -85,
+    -275,
+    82
+   ],
+   "Input0": [
+    -235,
+    0,
+    100
+   ],
+   "Output0": [
+    0,
+    0,
+    60
+   ]
+  }
+ },
+ "Build_TD_LureBeacon": {
+  "sockel_min": [
+   -116,
+   -125,
+   0
+  ],
+  "sockel_max": [
+   116,
+   125,
+   445
+  ],
+  "anschluesse": {
+   "Output0": [
+    0,
+    0,
+    60
+   ],
+   "Input0": [
+    -160,
+    0,
+    100
+   ],
+   "PowerInput": [
+    30,
+    -190,
+    50
+   ]
+  }
+ },
+ "Build_TD_NobeliskLauncher": {
+  "sockel_min": [
+   -215,
+   -215,
+   0
+  ],
+  "sockel_max": [
+   215,
+   215,
+   305
+  ],
+  "anschluesse": {
+   "Output0": [
+    0,
+    0,
+    60
+   ],
+   "Input0": [
+    -225,
+    0,
+    100
+   ],
+   "PowerInput": [
+    -45,
+    -265,
+    82
+   ]
+  }
+ },
+ "Build_TD_RadioMast": {
+  "sockel_min": [
+   -182,
+   -182,
+   0
+  ],
+  "sockel_max": [
+   182,
+   182,
+   1064
+  ],
+  "anschluesse": {
+   "PowerInput": [
+    190,
+    30,
+    75
+   ],
+   "Output0": [
+    0,
+    0,
+    40
+   ]
+  }
+ },
+ "Build_TD_RepairStation": {
+  "sockel_min": [
+   -204,
+   -205,
+   0
+  ],
+  "sockel_max": [
+   204,
+   204,
+   301
+  ],
+  "anschluesse": {
+   "PowerInput": [
+    -160,
+    -160,
+    301
+   ],
+   "Input0": [
+    -198,
+    0,
+    100
+   ],
+   "Output0": [
+    0,
+    0,
+    60
+   ]
+  }
+ },
+ "Build_TD_ShieldGenerator": {
+  "sockel_min": [
+   -303,
+   -306,
+   0
+  ],
+  "sockel_max": [
+   303,
+   306,
+   842
+  ],
+  "anschluesse": {
+   "Output0": [
+    0,
+    0,
+    30
+   ],
+   "PowerInput": [
+    -200,
+    -385,
+    110
+   ]
+  }
+ },
+ "Build_TD_SingularityLauncher": {
+  "sockel_min": [
+   -305,
+   -348,
+   0
+  ],
+  "sockel_max": [
+   302,
+   347,
+   330
+  ],
+  "anschluesse": {
+   "PowerInput": [
+    -240,
+    -390,
+    75
+   ],
+   "Input0": [
+    -350,
+    0,
+    100
+   ],
+   "Output0": [
+    0,
+    0,
+    60
+   ]
+  }
+ },
+ "Build_TD_SlickPlate": {
+  "sockel_min": [
+   -407,
+   -407,
+   0
+  ],
+  "sockel_max": [
+   495,
+   407,
+   235
+  ],
+  "anschluesse": {
+   "PowerInput": [
+    375,
+    205,
+    80
+   ],
+   "Output0": [
+    0,
+    0,
+    15
+   ],
+   "PipeInput": [
+    450,
+    0,
+    112
+   ]
+  }
+ },
+ "Build_TD_TeslaCoil": {
+  "sockel_min": [
+   -205,
+   -205,
+   0
+  ],
+  "sockel_max": [
+   205,
+   205,
+   356
+  ],
+  "anschluesse": {
+   "Output0": [
+    0,
+    0,
+    60
+   ],
+   "PowerInput": [
+    -45,
+    -255,
+    49
+   ]
+  }
+ }
+}

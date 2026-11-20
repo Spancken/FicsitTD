@@ -46,6 +46,102 @@ namespace
 		return Werte;
 	}
 
+	/** B21 (Marius 18.11.2026): deutsche Asset-Texte schreiben teils ae/oe/ue statt Umlaut. Die Assets selbst bleiben (ihre Texte sind
+	 *  die Schluessel der englischen Tabelle); bei deutscher Sprache werden diese Woerter beim Start ersetzt. Nur ganze Woerter. */
+	struct FTDWortPaar { const TCHAR* Alt; const TCHAR* Neu; };
+	static const FTDWortPaar GTDUmlautWoerter[] = {
+		{ TEXT("Aluminiumhuelse"), TEXT("Aluminiumhülse") },
+		{ TEXT("Betaeubung"), TEXT("Betäubung") },
+		{ TEXT("Duenenwueste"), TEXT("Dünenwüste") },
+		{ TEXT("Faehigkeiten"), TEXT("Fähigkeiten") },
+		{ TEXT("Faellt"), TEXT("Fällt") },
+		{ TEXT("Flaeche"), TEXT("Fläche") },
+		{ TEXT("Flaechenschaden"), TEXT("Flächenschaden") },
+		{ TEXT("Foerderbaender"), TEXT("Förderbänder") },
+		{ TEXT("Foerderband"), TEXT("Förderband") },
+		{ TEXT("Fuer"), TEXT("Für") },
+		{ TEXT("Gebaeude"), TEXT("Gebäude") },
+		{ TEXT("Gebaeuden"), TEXT("Gebäuden") },
+		{ TEXT("Gehaerteter"), TEXT("Gehärteter") },
+		{ TEXT("Kupferstaeben"), TEXT("Kupferstäben") },
+		{ TEXT("Laedt"), TEXT("Lädt") },
+		{ TEXT("Laeufe"), TEXT("Läufe") },
+		{ TEXT("Laeuft"), TEXT("Läuft") },
+		{ TEXT("Mauerstueck"), TEXT("Mauerstück") },
+		{ TEXT("Oeffnet"), TEXT("Öffnet") },
+		{ TEXT("Oeffnung"), TEXT("Öffnung") },
+		{ TEXT("Oel"), TEXT("Öl") },
+		{ TEXT("Oelschlick"), TEXT("Ölschlick") },
+		{ TEXT("Schwaerme"), TEXT("Schwärme") },
+		{ TEXT("Schweroelrueckstand"), TEXT("Schwerölrückstand") },
+		{ TEXT("Singularitaetswerfer"), TEXT("Singularitätswerfer") },
+		{ TEXT("Stahltraegern"), TEXT("Stahlträgern") },
+		{ TEXT("Stoerfeld"), TEXT("Störfeld") },
+		{ TEXT("Stueck"), TEXT("Stück") },
+		{ TEXT("Tuerme"), TEXT("Türme") },
+		{ TEXT("Tuermen"), TEXT("Türmen") },
+		{ TEXT("Ueber"), TEXT("Über") },
+		{ TEXT("Waehrend"), TEXT("Während") },
+		{ TEXT("Zeitzuender"), TEXT("Zeitzünder") },
+		{ TEXT("Zerstoert"), TEXT("Zerstört") },
+		{ TEXT("beschaedigte"), TEXT("beschädigte") },
+		{ TEXT("beschaedigten"), TEXT("beschädigten") },
+		{ TEXT("durchschlaegt"), TEXT("durchschlägt") },
+		{ TEXT("entlaedt"), TEXT("entlädt") },
+		{ TEXT("fuer"), TEXT("für") },
+		{ TEXT("hoechstens"), TEXT("höchstens") },
+		{ TEXT("laedt"), TEXT("lädt") },
+		{ TEXT("moeglich"), TEXT("möglich") },
+		{ TEXT("muessen"), TEXT("müssen") },
+		{ TEXT("naechste"), TEXT("nächste") },
+		{ TEXT("naechsten"), TEXT("nächsten") },
+		{ TEXT("ueber"), TEXT("über") },
+		{ TEXT("ueberspringt"), TEXT("überspringt") },
+		{ TEXT("waehlen"), TEXT("wählen") },
+		{ TEXT("waehrend"), TEXT("während") },
+		{ TEXT("zerstoeren"), TEXT("zerstören") },
+		{ TEXT("zerstoert"), TEXT("zerstört") },
+		{ TEXT("zurueck"), TEXT("zurück") },
+		{ nullptr, nullptr }
+	};
+	static bool GTDDeutschKorrektur = false;
+
+	FString KorrigiereUmlaute(const FString& S)
+	{
+		static TMap<FString, FString> Karte;
+		if (Karte.Num() == 0)
+		{
+			for (const FTDWortPaar& P : GTDUmlautWoerter)
+			{
+				if (P.Alt)
+				{
+					Karte.Add(P.Alt, P.Neu);
+				}
+			}
+		}
+		FString Aus;
+		Aus.Reserve(S.Len() + 8);
+		int32 i = 0;
+		while (i < S.Len())
+		{
+			if (!FChar::IsAlpha(S[i]))
+			{
+				Aus.AppendChar(S[i++]);
+				continue;
+			}
+			int32 j = i;
+			while (j < S.Len() && FChar::IsAlpha(S[j]))
+			{
+				++j;
+			}
+			const FString Wort = S.Mid(i, j - i);
+			const FString* Neu = Karte.Find(Wort);
+			Aus += Neu ? *Neu : Wort;
+			i = j;
+		}
+		return Aus;
+	}
+
 	/** einen Text ersetzen; ohne Uebersetzung landet er in Fehlend */
 	int32 ErsetzeText(FText& Text, TSet<FString>& Fehlend)
 	{
@@ -53,6 +149,16 @@ namespace
 		if (S.TrimStartAndEnd().IsEmpty())
 		{
 			return 0;
+		}
+		if (GTDDeutschKorrektur)
+		{
+			const FString K = KorrigiereUmlaute(S);
+			if (K.Equals(S, ESearchCase::CaseSensitive))
+			{
+				return 0;
+			}
+			Text = FText::FromString(K);
+			return 1;
 		}
 		if (const TCHAR* En = TDSprache::Nachschlagen(S))
 		{
@@ -141,7 +247,28 @@ int32 TDSprache::UebersetzeAssets()
 {
 	if (!Englisch())
 	{
-		return 0;
+		// B21: bei Deutsch nur die Umlaut-Woerter der Asset-Texte richtigstellen
+		IAssetRegistry& Registry = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry")).Get();
+		TArray<FAssetData> Assets;
+		Registry.GetAssetsByPath(FName(TEXT("/FicsitTD")), Assets, true);
+		for (const FAssetData& A : Assets)
+		{
+			A.GetAsset();
+		}
+		GTDDeutschKorrektur = true;
+		int32 Korrigiert = 0;
+		TSet<FString> Leer;
+		for (TObjectIterator<UObject> It(RF_NoFlags); It; ++It)
+		{
+			UObject* O = *It;
+			if (O && !O->IsA<UClass>() && !O->IsA<UPackage>() && O->GetPathName().StartsWith(TEXT("/FicsitTD/")))
+			{
+				Korrigiert += ErsetzeIn(O->GetClass(), O, 0, Leer);
+			}
+		}
+		GTDDeutschKorrektur = false;
+		UE_LOG(LogFicsitTD, Log, TEXT("Sprache: Deutsch, %d Asset-Texte auf Umlaute korrigiert"), Korrigiert);
+		return Korrigiert;
 	}
 	// alle Mod-Assets laden, damit auch erst spaeter benutzte Klassen (Gegenstaende, Gebaeude) ersetzt sind
 	IAssetRegistry& Registry = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry")).Get();

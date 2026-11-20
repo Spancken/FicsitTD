@@ -1,4 +1,8 @@
 ﻿#include "TDKernplatz.h"
+#include "TDSpielstand.h"
+#include "TDAutotest.h"
+#include "TDKernTerminal.h"
+#include "TDAda.h"
 #include "FicsitTDModule.h"
 #include "TDDefenseCore.h"
 #include "TDWaveSubsystem.h"
@@ -13,6 +17,8 @@
 #include "Resources/FGResourceNode.h"
 #include "Resources/FGItemDescriptor.h"
 #include "Misc/FileHelper.h"
+#include "Misc/CommandLine.h"
+#include "Misc/Variant.h"
 #include "Misc/Paths.h"
 #include "HAL/FileManager.h"
 #include "NavigationSystem.h"
@@ -85,9 +91,9 @@ static FString TDBiomAnzeige(int32 Stufe)
 	switch (FMath::Clamp(Stufe, 0, 3))
 	{
 	case 0: return TDT(TEXT("Grasfelder"), TEXT("Grass Fields"));
-	case 1: return TDT(TEXT("Felsenwueste"), TEXT("Rocky Desert"));
-	case 2: return TDT(TEXT("Noerdlicher Wald"), TEXT("Northern Forest"));
-	default: return TDT(TEXT("Duenenwueste"), TEXT("Dune Desert"));
+	case 1: return TDT(TEXT("Felsenwüste"), TEXT("Rocky Desert"));
+	case 2: return TDT(TEXT("Nördlicher Wald"), TEXT("Northern Forest"));
+	default: return TDT(TEXT("Dünenwüste"), TEXT("Dune Desert"));
 	}
 }
 /** Plattform 6 x 6 Fundamente zu 8 m: Raster 7 x 7 Messpunkte im Abstand von 8 m */
@@ -407,6 +413,10 @@ void UTDKernplatz::SucheBoden()
 		return;
 	}
 	Schuetze(true);
+	if (mBauen && mVersuche == 0)
+	{
+		Fortschritt(1);
+	}
 	FVector Grund;
 	bool bHindernis = false;
 	FString Was;
@@ -423,7 +433,7 @@ void UTDKernplatz::SucheBoden()
 	GetWorld()->GetTimerManager().ClearTimer(mTimer);
 	if (!bGefunden)
 	{
-		Melde(TDF(TEXT("%s: nach 30 s kein Boden gefunden - Gelaende nicht geladen oder Platz ueber Wasser."),
+		Melde(TDF(TEXT("%s: nach 30 s kein Boden gefunden - Gelände nicht geladen oder Platz über Wasser."),
 			TEXT("%s: no ground found after 30 s - terrain not loaded or site over water."), *mId));
 		if (mScanLaeuft && mScanPhase == 2)
 		{
@@ -458,6 +468,7 @@ void UTDKernplatz::SucheBoden()
 	if (mBauen)
 	{
 		Melde(TDF(TEXT("%s: Boden gefunden, baue in 2 s ..."), TEXT("%s: ground found, building in 2 s ..."), *mId));
+		Fortschritt(2);
 		GetWorld()->GetTimerManager().SetTimer(mTimer, this, &UTDKernplatz::BaueJetzt, 2.f, false);
 		return;
 	}
@@ -588,7 +599,7 @@ void UTDKernplatz::Auswerten()
 	mErgebnisNetz = Netz;
 	mErgebnisFronten = FString::Join(FrontText, TEXT(", "));
 	mErgebnisRohstoffe = FString::Join(RohText, TEXT("; "));
-	Melde(TEXT("Gefaellt dir der Platz: /td platz merken <grasfelder|felsenwueste|wald|duenen> [Notiz]"));
+	Melde(TEXT("Gefällt dir der Platz: /td platz merken <grasfelder|felsenwueste|wald|duenen> [Notiz]"));
 	EntferneInvoker();
 	if (!mScanLaeuft)
 	{
@@ -1040,12 +1051,12 @@ void UTDKernplatz::ScanBewerten()
 	FFileHelper::SaveStringToFile(Csv, *Datei, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
 	if (mScanTreffer.Num() == 0)
 	{
-		Melde(TEXT("Keine ebene freie Flaeche gefunden. /td platz zurueck"));
+		Melde(TEXT("Keine ebene freie Fläche gefunden. /td platz zurueck"));
 		StoppeScan();
 		return;
 	}
 	// Phase 2: die Treffer nacheinander voll pruefen (Netz, Fronten, Rohstoffe)
-	Melde(TEXT("Pruefe die Treffer jetzt einzeln mit Navigationsnetz und Fronten (je etwa 30-90 s) ..."));
+	Melde(TEXT("Prüfe die Treffer jetzt einzeln mit Navigationsnetz und Fronten (je etwa 30-90 s) ..."));
 	mScanPhase = 2;
 	mScanPruefIndex = 0;
 	ScanNaechstePruefung();
@@ -1315,9 +1326,9 @@ FString UTDKernplatz::BauePlatz(const FString& Biom, const FString& Nr, APawn* S
 		Figur->GetCharacterMovement()->SetMovementMode(MOVE_Flying);
 	}
 	GetWorld()->GetTimerManager().SetTimer(mTimer, this, &UTDKernplatz::SucheBoden, 1.f, true, 1.f);
-	return TDF(TEXT("Baue den Kernplatz %s (%s, Stufe %s, %d von %d Plaetzen): fliege hin und warte auf das Gelaende ..."),
+	return TDF(TEXT("Baue den Kernplatz %s (%s, Stufe %s, %d von %d Plätzen): fliege hin und warte auf das Gelände ..."),
 		TEXT("Building core site %s (%s, difficulty %s, %d of %d sites): flying there and waiting for the terrain ..."),
-		P->Id, *TDBiomAnzeige(Stufe), *TDStufeAnzeige(Stufe), Index + 1, Auswahl.Num());
+		P->Id, *TDBiomAnzeige(Stufe), *TDStufeAnzeige(GewaehlteStufe(this, Stufe)), Index + 1, Auswahl.Num());   // 16.11. (E7): gewaehlte Stufe
 }
 
 void UTDKernplatz::BaueJetzt()
@@ -1332,7 +1343,7 @@ void UTDKernplatz::BaueJetzt()
 	UClass* KernRezept = LoadClass<UFGRecipe>(nullptr, TDKernRezept);
 	if (!Bau || !Fundament || !KernKlasse)
 	{
-		Melde(TDT(TEXT("Bauen nicht moeglich: Fundament- oder Kernklasse nicht gefunden."), TEXT("Cannot build: foundation or core class not found.")));
+		Melde(TDT(TEXT("Bauen nicht möglich: Fundament- oder Kernklasse nicht gefunden."), TEXT("Cannot build: foundation or core class not found.")));
 		Schuetze(false);
 		return;
 	}
@@ -1362,7 +1373,7 @@ void UTDKernplatz::BaueJetzt()
 	}
 	if (Hoehen.Num() == 0)
 	{
-		Melde(TDT(TEXT("Bauen nicht moeglich: kein Boden unter der Plattform."), TEXT("Cannot build: no ground under the platform.")));
+		Melde(TDT(TEXT("Bauen nicht möglich: kein Boden unter der Plattform."), TEXT("Cannot build: no ground under the platform.")));
 		Schuetze(false);
 		return;
 	}
@@ -1588,7 +1599,7 @@ void UTDKernplatz::BaueJetzt()
 		}
 	}
 	Schuetze(false);
-	Melde(TDF(TEXT("%s: Plattform (6 x 6, bis %d uebereinander, %d Fundamente) mit %d Rampen, %d Eckstuecken und Abwehrkern gebaut, %d Pflanzen im Umkreis von 60 m geraeumt."),
+	Melde(TDF(TEXT("%s: Plattform (6 x 6, bis %d übereinander, %d Fundamente) mit %d Rampen, %d Eckstücken und Abwehrkern gebaut, %d Pflanzen im Umkreis von 60 m geräumt."),
 		TEXT("%s: platform (6 x 6, up to %d stacked, %d foundations) built with %d ramps, %d corner pieces and the Defense Core, %d plants cleared within 60 m."),
 		*mId, Stapel, Gesetzt, Rampen, Ecken, Geraeumt));
 	mNeuerKern = Cast<ATDDefenseCore>(Kern);
@@ -1600,6 +1611,7 @@ void UTDKernplatz::BaueJetzt()
 		return;
 	}
 	Melde(TDT(TEXT("Warte auf das Navigationsnetz um den Kern, dann startet der Einsatz ..."), TEXT("Waiting for the navigation mesh around the Core, then the operation starts ...")));
+	Fortschritt(3);
 	GetWorld()->GetTimerManager().SetTimer(mTimer, this, &UTDKernplatz::WarteNetzFuerEinsatz, 2.f, true, 2.f);
 }
 
@@ -1651,11 +1663,25 @@ void UTDKernplatz::WarteNetzFuerEinsatz()
 		Waves->VerwerfeFronten();   // Fronten mit dem fertigen Netz neu suchen
 	}
 	TArray<FString> Meldungen;
-	Einsatz->Starte(Kern, mStufe, TDBalance::Ganz(TEXT("Einsatz.WellenStandard"), 50), mSpieler.Get(), Meldungen);   // 0.77 Marius: 50 Wellen Standard
+	// 0.77 Marius: 50 Wellen Standard; 0.11 Endlos-Wellen: 0 = ohne Ende (Countdown und eine Front setzt Starte)
+	// 0.11 (Gegencheck Einsatz, Marius 16.11.): Stufe aus der Auswahl "Stufe", Standard nach Startort
+	const int32 Stufe = GewaehlteStufe(this, mStufe);
+	if (Stufe != mStufe)
+	{
+		UE_LOG(LogFicsitTD, Log, TEXT("Kernplatz: Stufe %s gewaehlt (Startort waere %s)"), TDStufenNamen[Stufe], TDStufenNamen[FMath::Clamp(mStufe, 0, 3)]);
+	}
+	if (Stufe >= 2)
+	{
+		Meldungen.Add(TDF(TEXT("Stufe %s ist noch ungetestet: nur in der Simulation eingestellt, ein ganzer Lauf im Spiel steht aus. Rückmeldungen helfen!"),
+			TEXT("Difficulty %s is still untested: only tuned in the simulation, a full run in the game is still missing. Feedback helps!"), *TDStufeAnzeige(Stufe)));
+	}
+	Kern->mLaufPlatz = mId;
+	Einsatz->Starte(Kern, Stufe, IstEndlos(this) ? 0 : TDBalance::Ganz(TEXT("Einsatz.WellenStandard"), 50), mSpieler.Get(), Meldungen);
 	for (const FString& M : Meldungen)
 	{
 		Melde(M);
 	}
+	Fortschritt(4);
 	SpieleBegruessung(this, mSpieler.Get());
 }
 
@@ -1683,6 +1709,7 @@ bool UTDKernplatz::SpieleBegruessung(const UObject* WorldContext, APawn* Spieler
 		: TEXT("/FicsitTD/Audio/SW_TD_Begruessung_en.SW_TD_Begruessung_en")))
 	{
 		UGameplayStatics::PlaySound2D(World ? World : Spieler->GetWorld(), Ton, 1.f, 1.f, 0.f, nullptr, nullptr, true);
+		TDAda::Belege(World ? World : Spieler->GetWorld(), Ton->GetDuration());   // 16.11.: Ansagen warten auf das Ende der Begruessung
 		UE_LOG(LogFicsitTD, Log, TEXT("ADA-Begruessung: Ton %s (%.1f s) ueber Unreal-Audio"), *Ton->GetName(), Ton->GetDuration());
 	}
 	UE_LOG(LogFicsitTD, Log, TEXT("ADA-Begruessung abgespielt (%d Untertitel)"), Nachricht->GetSubtitles().Num());
@@ -1733,8 +1760,98 @@ bool UTDKernplatz::TowerDefenseAn(const UObject* WorldContext)
 	UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
 	const USessionSettingsManager* Einstellungen = World ? World->GetSubsystem<USessionSettingsManager>() : nullptr;
 	// 0.10.1: Auswahl "Spielmodus" (FicsitTD.ModusInt); die alte Ankreuzbox zaehlt weiter, falls ein Stand sie noch traegt
-	return Einstellungen && (Einstellungen->GetIntOptionValue(UTDGameInstanceModule::ModusId) == ETDModus::Einsatz
-		|| Einstellungen->GetBoolOptionValue(UTDGameInstanceModule::TowerDefenseId));
+	// 0.11: Endlos-Wellen (2) ist ebenfalls ein TD-Spiel
+	if (!Einstellungen)
+	{
+		return false;
+	}
+	const int32 Modus = Einstellungen->GetIntOptionValue(UTDGameInstanceModule::ModusId);
+	return Modus == ETDModus::Einsatz || Modus == ETDModus::Endlos || Einstellungen->GetBoolOptionValue(UTDGameInstanceModule::TowerDefenseId);
+}
+
+bool UTDKernplatz::IstEndlos(const UObject* WorldContext)
+{
+	UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
+	const USessionSettingsManager* Einstellungen = World ? World->GetSubsystem<USessionSettingsManager>() : nullptr;
+	return Einstellungen && Einstellungen->GetIntOptionValue(UTDGameInstanceModule::ModusId) == ETDModus::Endlos;
+}
+
+bool UTDKernplatz::IstAbwehr(const UObject* WorldContext)
+{
+	UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
+	const USessionSettingsManager* Einstellungen = World ? World->GetSubsystem<USessionSettingsManager>() : nullptr;
+	return Einstellungen && Einstellungen->GetIntOptionValue(UTDGameInstanceModule::ModusId) == ETDModus::Abwehr;
+}
+
+bool UTDKernplatz::SetzeModusAbwehr(const UObject* WorldContext)
+{
+	UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
+	USessionSettingsManager* Einstellungen = World ? World->GetSubsystem<USessionSettingsManager>() : nullptr;
+	if (!Einstellungen)
+	{
+		return false;
+	}
+	Einstellungen->ForceSetOptionValue(UTDGameInstanceModule::ModusId, FVariant(static_cast<int32>(ETDModus::Abwehr)), Einstellungen);
+	const bool bOk = Einstellungen->GetIntOptionValue(UTDGameInstanceModule::ModusId) == ETDModus::Abwehr;
+	UE_LOG(LogFicsitTD, Log, TEXT("Spielmodus nachtraeglich auf Freies Spiel mit Abwehr gesetzt: %s"), bOk ? TEXT("ok") : TEXT("FEHLGESCHLAGEN"));
+	return bOk;
+}
+
+static bool GTDSpielersicht = false;
+
+bool UTDKernplatz::Entwicklermodus()
+{
+	static const bool bEntwickler = FParse::Param(FCommandLine::Get(), TEXT("TDEntwickler"))
+		|| FPaths::FileExists(FPaths::ProjectSavedDir() / TEXT("FicsitTD") / TEXT("Entwickler.txt"));
+	return bEntwickler && !GTDSpielersicht;
+}
+
+void UTDKernplatz::SetzeSpielersicht(bool bAn)
+{
+	GTDSpielersicht = bAn;
+	UE_LOG(LogFicsitTD, Log, TEXT("Spielersicht %s: Entwicklermodus jetzt %s"), bAn ? TEXT("an") : TEXT("aus"), Entwicklermodus() ? TEXT("an") : TEXT("aus"));
+}
+
+bool UTDKernplatz::IstSpielersicht()
+{
+	return GTDSpielersicht;
+}
+
+int32 UTDKernplatz::GewaehlteStufe(const UObject* WorldContext, int32 OrtStufe)
+{
+	UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
+	const USessionSettingsManager* Einstellungen = World ? World->GetSubsystem<USessionSettingsManager>() : nullptr;
+	const int32 Wahl = Einstellungen ? Einstellungen->GetIntOptionValue(UTDGameInstanceModule::StufeId) : 0;
+	return Wahl >= 1 && Wahl <= 4 ? Wahl - 1 : FMath::Clamp(OrtStufe, 0, 3);
+}
+
+bool UTDKernplatz::ModAktiv(const UObject* WorldContext)
+{
+	if (TowerDefenseAn(WorldContext) || IstAbwehr(WorldContext))
+	{
+		return true;
+	}
+	// von Hand gestartet (nur Entwicklermodus: /td einsatz start, /td kern start; Selbsttests) - Spieler kommen in Modus 0
+	// nicht dorthin, weil der Knopf "Einsatz starten" und das Kern-Rezept ohne Modus fehlen
+	UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
+	const UTDEinsatzSubsystem* Einsatz = World ? World->GetSubsystem<UTDEinsatzSubsystem>() : nullptr;
+	const UTDWaveSubsystem* Waves = World ? World->GetSubsystem<UTDWaveSubsystem>() : nullptr;
+	return (Einsatz && Einsatz->IstAktiv()) || (Waves && Waves->LaeuftKernVerteidigung());
+}
+
+bool UTDKernplatz::SetzeModusEinsatz(const UObject* WorldContext)
+{
+	UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
+	USessionSettingsManager* Einstellungen = World ? World->GetSubsystem<USessionSettingsManager>() : nullptr;
+	if (!Einstellungen)
+	{
+		return false;
+	}
+	// ForceSet: ohne Apply-Zyklus; SML schreibt den Wert in die GameMode-Optionen (OnOptionUpdated), damit er mitgespeichert wird
+	Einstellungen->ForceSetOptionValue(UTDGameInstanceModule::ModusId, FVariant(static_cast<int32>(ETDModus::Einsatz)), Einstellungen);
+	const bool bOk = Einstellungen->GetIntOptionValue(UTDGameInstanceModule::ModusId) == ETDModus::Einsatz;
+	UE_LOG(LogFicsitTD, Log, TEXT("Spielmodus nachtraeglich auf Einsatz gesetzt: %s"), bOk ? TEXT("ok") : TEXT("FEHLGESCHLAGEN"));
+	return bOk;
 }
 
 void UTDKernplatz::OnWorldBeginPlay(UWorld& InWorld)
@@ -1765,6 +1882,42 @@ void UTDKernplatz::PruefeTDStart()
 	{
 		return;
 	}
+	// 16.11. (Nachpruefung E1, Marius): nach "Einsatz beenden" kein neuer Kernplatz, auch wenn der Kern abgerissen ist
+	if (const ATDSpielstand* Stand = ATDSpielstand::Get(this))
+	{
+		if (Stand->mEinsatzBeendet)
+		{
+			World->GetTimerManager().ClearTimer(mStartTimer);
+			UE_LOG(LogFicsitTD, Log, TEXT("Kernplatz: Einsatz in diesem Spielstand beendet - kein neuer Kernplatz"));
+			return;
+		}
+	}
+	// 18.11. (Standard Einsatz): eine bestehende Welt ohne Abwehrkern (Spielstand ohne gespeicherten Modus, z. B. die Fabrik eines
+	// Spielers, der den Mod gerade installiert hat) bekommt sonst den Standard Einsatz - HUB gesperrt, Plattform in der Fabrik.
+	// Merkmal: schon Bauten des Spielers in der Welt (ein neues Spiel hat hier noch keine). Dann Modus Aus und Hinweis.
+	if (TDBalance::Wert(TEXT("Spielmodus.BestehendeWeltAus"), 1.f) > 0.f)
+	{
+		int32 Bauten = 0;
+		for (TActorIterator<AFGBuildable> It(World); It && Bauten < 3; ++It)
+		{
+			if (!It->GetClass()->GetPathName().StartsWith(TEXT("/FicsitTD/")))
+			{
+				++Bauten;
+			}
+		}
+		if (Bauten > 0)
+		{
+			World->GetTimerManager().ClearTimer(mStartTimer);
+			if (USessionSettingsManager* Einstellungen = World->GetSubsystem<USessionSettingsManager>())
+			{
+				Einstellungen->ForceSetOptionValue(UTDGameInstanceModule::ModusId, FVariant(static_cast<int32>(ETDModus::Aus)), Einstellungen);
+			}
+			UE_LOG(LogFicsitTD, Log, TEXT("Kernplatz: bestehende Welt ohne Abwehrkern (Bauten vorhanden) - Spielmodus auf Aus gesetzt"));
+			Melde(TDT(TEXT("FICSIT Tower Defense ist in diesem Spielstand aus (bestehende Welt ohne Abwehrkern). Für einen Einsatz ein neues Spiel starten. Nur Türme und Abwehr ohne Wellen: /td modus abwehr"),
+				TEXT("FICSIT Tower Defense is off in this save (existing world without a Defense Core). Start a new game for an operation. Turrets and defense without waves only: /td modus abwehr")));
+			return;
+		}
+	}
 	const APlayerController* PC = World->GetFirstPlayerController();
 	APawn* Spieler = PC ? PC->GetPawn() : nullptr;
 	const ACharacter* Figur = Cast<ACharacter>(Spieler);
@@ -1773,6 +1926,21 @@ void UTDKernplatz::PruefeTDStart()
 	{
 		mStehtSeit = 0;
 		return;
+	}
+	// 18.11. (Startfenster): vor dem ersten Kernplatz Spielmodus und Stufe im eigenen Fenster waehlen lassen - nicht im Selbsttest
+	// (der Plan setzt beides ueber die Sitzungseinstellungen), nicht wenn schon gewaehlt. Sobald der Spieler zu Fuss ist (ohne die 6 s).
+	if (TDBalance::Wert(TEXT("Spielmodus.Startfenster"), 1.f) > 0.f)
+	{
+		const UTDAutotest* Test = World->GetGameInstance() ? World->GetGameInstance()->GetSubsystem<UTDAutotest>() : nullptr;
+		const ATDSpielstand* Stand = ATDSpielstand::Get(this);
+		if (!(Test && Test->LaeuftPlan()) && Stand && !Stand->mModusGewaehlt)
+		{
+			if (!mStartfenster)
+			{
+				OeffneStartfenster();
+			}
+			return;
+		}
 	}
 	if (++mStehtSeit < 3)
 	{
@@ -1794,8 +1962,95 @@ void UTDKernplatz::PruefeTDStart()
 	}
 	UE_LOG(LogFicsitTD, Log, TEXT("Kernplatz: Tower-Defense-Spielstand ohne Kern, Startort %s (%.0f m vom Startgebiet), baue den Kernplatz"), Biome[Bestes], Abstand / 100.f);
 	Melde(TDT(TEXT("FICSIT Tower Defense: Dein Einsatzort wird vorbereitet ..."), TEXT("FICSIT Tower Defense: preparing your operation site ...")));
+	Fortschritt(0);
 	// 0.83.1: der Selbsttest gibt den Platz vor (sonst zufaellig), gilt nur fuer diesen einen Bau
 	const FString Nr = sVorgabePlatz;
 	sVorgabePlatz.Reset();
 	Melde(BauePlatz(Biome[Bestes], Nr, Spieler));
+}
+
+// ---------------------------------------------------------------------------------------------------------------------------
+// 18.11.: Startfenster (Spielmodus und Stufe nach der Landung waehlen)
+
+void UTDKernplatz::OeffneStartfenster(bool bOhnePruefung)
+{
+	UWorld* World = GetWorld();
+	APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
+	if (!PC || mStartfenster)
+	{
+		return;
+	}
+	mStartfenster = CreateWidget<UTDStartfenster>(PC, UTDStartfenster::StaticClass());
+	if (mStartfenster)
+	{
+		mStartfenster->mKernplatz = this;
+		mStartfenster->AddToViewport(50);
+		UE_LOG(LogFicsitTD, Log, TEXT("Startfenster: geoeffnet%s"), bOhnePruefung ? TEXT(" (Befehl)") : TEXT(""));
+	}
+}
+
+void UTDKernplatz::StartfensterGewaehlt(int32 Modus, int32 Stufe)
+{
+	UWorld* World = GetWorld();
+	if (USessionSettingsManager* Einstellungen = World ? World->GetSubsystem<USessionSettingsManager>() : nullptr)
+	{
+		Einstellungen->ForceSetOptionValue(UTDGameInstanceModule::ModusId, FVariant(Modus), Einstellungen);
+		Einstellungen->ForceSetOptionValue(UTDGameInstanceModule::StufeId, FVariant(Stufe), Einstellungen);
+	}
+	if (ATDSpielstand* Stand = ATDSpielstand::Get(this))
+	{
+		Stand->mModusGewaehlt = true;
+	}
+	if (mStartfenster)
+	{
+		mStartfenster->RemoveFromParent();
+		mStartfenster = nullptr;
+	}
+	mStehtSeit = 3;   // 18.11.: nach der Wahl sofort bauen (der Spieler steht ja schon)
+	UE_LOG(LogFicsitTD, Log, TEXT("Startfenster: Spielmodus %d, Stufe %d gewaehlt"), Modus, Stufe);
+	if (Modus == ETDModus::Aus)
+	{
+		Melde(TDT(TEXT("FICSIT Tower Defense ist in diesem Spiel aus. Viel Spaß mit normalem Satisfactory!"), TEXT("FICSIT Tower Defense is off in this game. Enjoy regular Satisfactory!")));
+	}
+	else if (Modus == ETDModus::Abwehr)
+	{
+		Melde(TDT(TEXT("Freies Spiel mit Abwehr: Türme und Abwehr-Forschung findest du im MAM. Eine Bohrung startest du mit einem Abwehrkern neben einem Rohstoffknoten."),
+			TEXT("Free play with defense: turrets and defense research are in the MAM. Start a drilling with a Defense Core next to a resource node.")));
+	}
+}
+
+void UTDKernplatz::Fortschritt(int32 Schritt)
+{
+	if (TDBalance::Wert(TEXT("Spielmodus.Fortschritt"), 1.f) <= 0.f)
+	{
+		return;
+	}
+	UWorld* World = GetWorld();
+	APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
+	if (!mVorbereitung && PC && Schritt < 4)
+	{
+		mVorbereitung = CreateWidget<UTDVorbereitung>(PC, UTDVorbereitung::StaticClass());
+		if (mVorbereitung)
+		{
+			mVorbereitung->AddToViewport(40);
+		}
+	}
+	if (mVorbereitung)
+	{
+		mVorbereitung->SetzeSchritt(Schritt);
+		UE_LOG(LogFicsitTD, Log, TEXT("Vorbereitung: Schritt %d"), Schritt);
+	}
+	if (Schritt >= 4 && World)
+	{
+		FTimerHandle Zu;
+		TWeakObjectPtr<UTDKernplatz> Selbst(this);
+		World->GetTimerManager().SetTimer(Zu, FTimerDelegate::CreateLambda([Selbst]()
+		{
+			if (Selbst.IsValid() && Selbst->mVorbereitung)
+			{
+				Selbst->mVorbereitung->RemoveFromParent();
+				Selbst->mVorbereitung = nullptr;
+			}
+		}), 3.f, false);
+	}
 }

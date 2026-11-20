@@ -1,4 +1,5 @@
 #include "TDPionier.h"
+#include "TDKernplatz.h"
 #include "TDGegnerHirn.h"
 #include "FicsitTDModule.h"
 #include "TDBalance.h"
@@ -29,7 +30,7 @@
 namespace TDPionierWerte
 {
 	// Waffen (nicht Zweige): Ergebnis von UTDPionier::Waffe
-	static constexpr int32 Armierpistole = 0, Gewehr = 1, Nobelisk = 2;
+	static constexpr int32 Armierpistole = 0, Gewehr = 1, Nobelisk = 2, Nahkampf = 3;   // 18.11. (B22): Xeno-Zapper, Xeno-Basher
 	static const TCHAR* Keys[] = { TEXT("Schuetze"), TEXT("Kommandant"), TEXT("Techniker"), TEXT("Jaeger") };
 }
 
@@ -114,7 +115,23 @@ void UTDPionier::OnWorldBeginPlay(UWorld& InWorld)
 ATDDefenseCore* UTDPionier::Kern() const
 {
 	const UTDEinsatzSubsystem* Einsatz = GetWorld() ? GetWorld()->GetSubsystem<UTDEinsatzSubsystem>() : nullptr;
-	return Einsatz && Einsatz->IstAktiv() ? Einsatz->GetKern() : nullptr;
+	if (Einsatz && Einsatz->IstAktiv())
+	{
+		return Einsatz->GetKern();
+	}
+	// 0.12-dev Freies Spiel mit Abwehr: Rang und Talente am Kern der Bohrung, sonst am ersten Abwehrkern der Welt
+	if (UTDKernplatz::IstAbwehr(this))
+	{
+		if (Einsatz && Einsatz->GetKern())
+		{
+			return Einsatz->GetKern();
+		}
+		for (TActorIterator<ATDDefenseCore> It(GetWorld()); It; ++It)
+		{
+			return *It;
+		}
+	}
+	return nullptr;
 }
 
 int32 UTDPionier::GetXP() const
@@ -177,7 +194,10 @@ int32 UTDPionier::FreiePunkte() const
 	{
 		Vergeben += GetStufe(i);
 	}
-	return FMath::Max(0, GetRang() - 1 - Vergeben);
+	const ATDDefenseCore* K = Kern();
+	// 16.11. (Nachpruefung F8, Marius): Rang und Bohrung zusammen hoechstens 15 Punkte - die Bohrung bringt sie nur frueher
+	const int32 Gesamt = FMath::Min(GetRang() - 1 + (K ? K->mPionierBonusPunkte : 0), TDBalance::Ganz(TEXT("Pionier.MaxPunkte"), 15));
+	return FMath::Max(0, Gesamt - Vergeben);
 }
 
 FString UTDPionier::Lerne(int32 Zweig)
@@ -691,7 +711,8 @@ void UTDPionier::Nachschub(AFGCharacterPlayer* Spieler)
 		{
 			continue;
 		}
-		const int32 Hat = FMath::Min(Inventar->GetNumItems(Sorte), Menge);
+		// 17.11. (P10): Menge zaehlt Schuss - bei Munition mit mehreren Schuss je Item entsprechend weniger Items
+		const int32 Hat = FMath::Min(Inventar->GetNumItems(Sorte), FMath::DivideAndRoundUp(Menge, Turm->SchussJeItem()));
 		if (Hat <= 0)
 		{
 			continue;
@@ -750,7 +771,7 @@ void UTDPionier::Zusatzschaden(AActor* Getroffen, AActor* Verursacher, int32 W, 
 	const FVector Ort = Getroffen->GetActorLocation();
 	TArray<TPair<TWeakObjectPtr<AFGCreature>, float>> Opfer;
 	// Stufe 3 Durchschlag: der naechste Gegner hinter dem Ziel (Schussrichtung, bis 6 m), halber Schaden
-	if (S >= 3 && W != TDPionierWerte::Nobelisk)
+	if (S >= 3 && (W == TDPionierWerte::Armierpistole || W == TDPionierWerte::Gewehr))
 	{
 		const APawn* Spieler = Verursacher ? Verursacher->GetInstigator() : nullptr;
 		const FVector Von = Spieler ? Spieler->GetActorLocation() : Verursacher ? Verursacher->GetActorLocation() : Ort;
@@ -837,6 +858,15 @@ float UTDPionier::HandFaktor(int32 W, const AActor* Verursacher, const AActor* G
 		if (Klassen.Contains(TEXT("Smart")) || Klassen.Contains(TEXT("Homing")))  { Schluessel = TEXT("Munition.Patronen.Zielsuch.Schaden"); }
 		else if (Klassen.Contains(TEXT("Chaos")) || Klassen.Contains(TEXT("Turbo"))) { Schluessel = TEXT("Munition.Patronen.Turbo.Schaden"); }
 	}
+	else if (W == TDPionierWerte::Nahkampf)
+	{
+		// 18.11. (B22, Marius: "schwaecher, nur Notwehr"): Stromschaden als Anteil des Armierungsbolzens (Pionier.Nahkampf.Anteil,
+		// Standard 0,35), waechst wie die anderen Handwaffen mit den Wellen. Spielwert: Xeno-Zapper 10, Xeno-Basher 30 (Log je Treffer pruefen)
+		Waffe = Klassen.Contains(TEXT("StunSpear")) ? TEXT("XenoBasher") : TEXT("XenoZapper");
+		Spielwert = Klassen.Contains(TEXT("StunSpear")) ? 30.f : 10.f;
+		Art = ETDSchadensart::Strom;
+		Schluessel = TEXT("Munition.Bolzen.Armierungsbolzen.Schaden");
+	}
 	else
 	{
 		Waffe = TEXT("Nobelisk");
@@ -848,8 +878,8 @@ float UTDPionier::HandFaktor(int32 W, const AActor* Verursacher, const AActor* G
 		else if (Klassen.Contains(TEXT("Shockwave")) || Klassen.Contains(TEXT("Pulse"))) { Schluessel = TEXT("Munition.Nobelisk.Puls.Schaden"); }
 		else if (Klassen.Contains(TEXT("Nuke")))                                   { Schluessel = TEXT("Munition.Nobelisk.Nuke.Schaden"); }
 	}
-	OutMunition = FString(Schluessel).Replace(TEXT("Munition."), TEXT("")).Replace(TEXT(".Schaden"), TEXT(""));
-	const float Tabelle = TDBalance::Wert(Schluessel, 0.f);
+	OutMunition = W == TDPionierWerte::Nahkampf ? FString(Waffe) : FString(Schluessel).Replace(TEXT("Munition."), TEXT("")).Replace(TEXT(".Schaden"), TEXT(""));
+	const float Tabelle = TDBalance::Wert(Schluessel, 0.f) * (W == TDPionierWerte::Nahkampf ? TDBalance::Wert(TEXT("Pionier.Nahkampf.Anteil"), 0.35f) : 1.f);
 	// Spielwert je Waffe (Wiki, im Log je Treffer nachpruefen): Verhaeltnis statt Ersatz, damit Kopftreffer und Fallabfall erhalten bleiben
 	Spielwert = TDBalance::Wert(FString::Printf(TEXT("Pionier.Spielwert.%s"), Waffe), Spielwert);
 	const UTDWaveSubsystem* Waves = GetWorld() ? GetWorld()->GetSubsystem<UTDWaveSubsystem>() : nullptr;
@@ -906,7 +936,9 @@ int32 UTDPionier::Waffe(const AActor* Verursacher)
 	for (const AActor* A = Verursacher; A; A = A->GetOwner())
 	{
 		const FString Name = A->GetClass()->GetName();
-		const int32 W = Name.Contains(TEXT("Rebar")) ? 0 : (Name.Contains(TEXT("Rifle")) || Name.Contains(TEXT("Cartridge"))) ? 1 : Name.Contains(TEXT("Nobelisk")) ? 2 : -1;
+		// 18.11. (B22, Handspiel Marius: Taser zaehlte kaum): Xeno-Zapper (ShockShank) und Xeno-Basher (StunSpear) als Nahkampf
+		const int32 W = Name.Contains(TEXT("Rebar")) ? 0 : (Name.Contains(TEXT("Rifle")) || Name.Contains(TEXT("Cartridge"))) ? 1 : Name.Contains(TEXT("Nobelisk")) ? 2
+			: (Name.Contains(TEXT("ShockShank")) || Name.Contains(TEXT("StunSpear")) || Name.Contains(TEXT("Xeno"))) ? 3 : -1;
 		if (!mGemeldeteKlassen.Contains(Name))
 		{
 			mGemeldeteKlassen.Add(Name);

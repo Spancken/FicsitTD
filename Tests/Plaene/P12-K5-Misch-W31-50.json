@@ -1,0 +1,247 @@
+{
+  "Name": "P12-K5-Misch-W31-50",
+  "_Hinweis": "K5 (P12): Mischbasis wie Referenz-Misch mit Ausbau fuer Phase 4-5 (Level 4), Stand W30 sofort gebaut, Sprung auf W31, Wellen 31-50. Prueft das kalibrierte Modell, wird nicht gefittet. Erzeugt von Tests\\erzeuge_p12k.py.",
+  "NeuesSpiel": {
+    "Startort": "Rocky Desert",
+    "Modus": 1,
+    "Stufe": 2
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 60,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warte": 15
+    },
+    {
+      "befehl": "td einsatz stop"
+    },
+    {
+      "befehl": "td kern stop"
+    },
+    {
+      "befehl": "td einsatz start normal 50"
+    },
+    {
+      "befehl": "td einsatz frei an"
+    },
+    {
+      "stromfrei": true
+    },
+    {
+      "versorgung": {
+        "Bolzenturm": 50,
+        "Gewehrturm": 25,
+        "Nobelisk-Werfer": 15,
+        "Flammenwerfer": 6000
+      }
+    },
+    {
+      "erforsche": "Assembler"
+    },
+    {
+      "erforsche": "Kupfer"
+    },
+    {
+      "erforsche": "Durchschlagbolzen"
+    },
+    {
+      "erforsche": "Gewehrturm"
+    },
+    {
+      "erforsche": "Kohlekraft"
+    },
+    {
+      "erforsche": "Teslaspule"
+    },
+    {
+      "erforsche": "Giesserei"
+    },
+    {
+      "erforsche": "NobeliskWerfer"
+    },
+    {
+      "erforsche": "Turmfertigung2"
+    },
+    {
+      "erforsche": "Raffinerie"
+    },
+    {
+      "erforsche": "Flammenwerfer"
+    },
+    {
+      "erforsche": "Turmfertigung3"
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 2,
+      "level": 1,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 1,
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_Durchschlag"
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 1,
+      "level": 2,
+      "rezept": "Recipe_TD_Gun_Standard"
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 1,
+      "level": 2,
+      "rezept": "Recipe_TD_Gun_Standard"
+    },
+    {
+      "baue": "Teslaspule",
+      "anzahl": 1,
+      "level": 2,
+      "rezept": "Recipe_TD_Tesla_Discharge"
+    },
+    {
+      "baue": "Nobelisk-Werfer",
+      "anzahl": 1,
+      "level": 2,
+      "rezept": "Recipe_TD_Nobelisk_Explosive"
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 1,
+      "level": 3,
+      "rezept": "Recipe_TD_Gun_Standard"
+    },
+    {
+      "baue": "Flammenwerfer",
+      "anzahl": 2,
+      "level": 2,
+      "rezept": "Recipe_TD_Flame_Fuel",
+      "ring": "innen"
+    },
+    {
+      "baue": "Teslaspule",
+      "anzahl": 1,
+      "level": 3,
+      "rezept": "Recipe_TD_Tesla_Discharge"
+    },
+    {
+      "baue": "Nobelisk-Werfer",
+      "anzahl": 1,
+      "level": 3,
+      "rezept": "Recipe_TD_Nobelisk_Explosive"
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 2,
+      "level": 3,
+      "rezept": "Recipe_TD_Gun_Standard"
+    },
+    {
+      "baue": "Flammenwerfer",
+      "anzahl": 1,
+      "level": 3,
+      "rezept": "Recipe_TD_Flame_Fuel",
+      "ring": "innen"
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 1,
+      "level": 3,
+      "rezept": "Recipe_TD_Shoot_Durchschlag"
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 2,
+      "level": 4,
+      "rezept": "Recipe_TD_Gun_Standard"
+    },
+    {
+      "baue": "Teslaspule",
+      "anzahl": 1,
+      "level": 4,
+      "rezept": "Recipe_TD_Tesla_Discharge"
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "P12-K5_W30"
+    },
+    {
+      "befehl": "td kern springe 31"
+    },
+    {
+      "wellenlauf": 35,
+      "zeitraffer": 4,
+      "max": 900
+    },
+    {
+      "baue": "Nobelisk-Werfer",
+      "anzahl": 1,
+      "level": 4,
+      "rezept": "Recipe_TD_Nobelisk_Explosive",
+      "ring": "innen"
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 1,
+      "level": 4,
+      "rezept": "Recipe_TD_Shoot_Durchschlag",
+      "ring": "innen"
+    },
+    {
+      "wellenlauf": 40,
+      "zeitraffer": 4,
+      "max": 900
+    },
+    {
+      "baue": "Flammenwerfer",
+      "anzahl": 1,
+      "level": 4,
+      "rezept": "Recipe_TD_Flame_Fuel",
+      "ring": "innen"
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 1,
+      "level": 4,
+      "rezept": "Recipe_TD_Gun_Standard",
+      "ring": "innen"
+    },
+    {
+      "wellenlauf": 45,
+      "zeitraffer": 4,
+      "max": 900
+    },
+    {
+      "baue": "Teslaspule",
+      "anzahl": 1,
+      "level": 4,
+      "rezept": "Recipe_TD_Tesla_Discharge",
+      "ring": "innen"
+    },
+    {
+      "wellenlauf": 50,
+      "zeitraffer": 4,
+      "max": 900
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "P12-K5_W50"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}

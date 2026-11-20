@@ -1,0 +1,5 @@
+{
+  "Name": "Fotos",
+  "_Hinweis": "18.11.: Bilder fuer Posts und Mod-Seite (freie Kamera, kamera frei). Kein Pruefpaket. Aufruf: Teste-Mod.ps1 -Paket Fotos -Sprache en",
+  "Plaene": ["Fotos-Release"]
+}

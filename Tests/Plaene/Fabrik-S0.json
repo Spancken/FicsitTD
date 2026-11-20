@@ -1,0 +1,87 @@
+{
+  "Name": "Fabrik-S0",
+  "_Hinweis": "Fabrik-Pruefstand S0 (P11, Konzept-Fabrik-Strom-2026-11-17.md, Marius 17.11.: Strom essenziell, Kosten wie in echt). Wie F1, aber ohne 'stromfrei' und ohne 'td einsatz frei': jeder Bau kauft Kontingent mit Coupons und nimmt das Baumaterial aus dem Inventar. Strom aus 2 Biomassebrennern, Lager mit Band (Biomasse aus dem Inventar), Masten und echte Kabel. Sicherung wird nach Test.SicherungZurueck (20 s) zurueckgesetzt und gezaehlt. Fragen: reicht der Strom fuer Linie + 4 Tuerme, wie oft fliegt die Sicherung, wie viele Kabel nur unsichtbar (Ziel 0)? 17.11. (Befund Schrittweite): Wellen in Echtzeit - bei Zeitraffer x4 und niedriger Bildrate verlieren die Tuerme messbar Wirkung.",
+  "NeuesSpiel": {
+    "Startort": "Grass Fields",
+    "Modus": 1,
+    "Stufe": 2
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 90,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warteBis": "EinsatzAktiv",
+      "max": 120
+    },
+    {
+      "gib": "/Game/FactoryGame/Resource/Parts/ResourceSinkCoupon/Desc_ResourceSinkCoupon.Desc_ResourceSinkCoupon_C",
+      "anzahl": 1500
+    },
+    {
+      "gib": "/Game/FactoryGame/Resource/Parts/GenericBiomass/Desc_GenericBiomass.Desc_GenericBiomass_C",
+      "anzahl": 800
+    },
+    {
+      "kosten": "echt"
+    },
+    {
+      "fabrik": "Bolzen",
+      "tuerme": 4,
+      "level": 2,
+      "band": 1
+    },
+    {
+      "strom": "Biomasse",
+      "anzahl": 2
+    },
+    {
+      "netz": true
+    },
+    {
+      "warte": 180
+    },
+    {
+      "fabrikbericht": true
+    },
+    {
+      "foto": "Fabrik_S0"
+    },
+    {
+      "wellenlauf": 10,
+      "zeitraffer": 1
+    },
+    {
+      "fabrikbericht": true
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Strom Biomasse:",
+      "min": 1,
+      "text": "Kraftwerk gebaut (Bericht im Log)"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "nicht gebaut",
+      "min": 0,
+      "max": 0,
+      "text": "alle Bauten bezahlt und gesetzt"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "not enough spline points",
+      "min": 0,
+      "max": 0,
+      "text": "alle Baender und Rohre mit echter Route (keine Ersatz-Splines)"
+    }
+  ]
+}

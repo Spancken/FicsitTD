@@ -1,4 +1,13 @@
 #include "TDEinsatz.h"
+#include "TDSpielZugriff.h"
+#include "FGGameState.h"
+#include "TDSpielstand.h"
+#include "TDKernplatz.h"
+#include "Serialization/JsonSerializer.h"
+#include "Serialization/JsonReader.h"
+#include "Dom/JsonObject.h"
+#include "Misc/Paths.h"
+#include "Misc/FileHelper.h"
 #include "Hologram/FGBlueprintHologram.h"
 #include "TDGate.h"
 #include "TDDimensionalDepot.h"
@@ -50,6 +59,7 @@
 #include "FGChatManager.h"
 #include "FGRecipe.h"
 #include "FGRecipeManager.h"
+#include "Buildables/FGBuildablePowerStorage.h"
 #include "FGResearchManager.h"
 #include "FGResearchTree.h"
 #include "FGSchematicManager.h"
@@ -78,6 +88,8 @@ static const TPair<const TCHAR*, int32> StartRessourcen[] = {
 	{ TEXT("/Game/FactoryGame/Resource/Parts/GenericBiomass/Desc_Leaves.Desc_Leaves_C"), 200 },
 	{ TEXT("/Game/FactoryGame/Resource/Parts/GenericBiomass/Desc_Wood.Desc_Wood_C"), 100 },
 	{ TEXT("/Game/FactoryGame/Resource/Parts/GenericBiomass/Desc_GenericBiomass.Desc_GenericBiomass_C"), 300 },   // Test 0.27: Strom fuer HUB-Brenner (~30 min)
+	// 18.11. (B23, Handspiel Marius: "wirkt am Anfang sehr langsam"): Klingenlaeufer von Anfang an; im Laden bleiben sie als Ersatz
+	{ TEXT("/Game/FactoryGame/Resource/Equipment/JumpingStilts/BP_EquipmentDescriptorJumpingStilts.BP_EquipmentDescriptorJumpingStilts_C"), 1 },
 };
 
 /** Laden (Einsatz-Konzept Abschnitt 4): Preis = Grundpreis x (1 + Aufschlag x bisher gekauft); Paket = Gebaeude je Kauf;
@@ -99,6 +111,8 @@ static const FTDLadenEintrag LadenListe[] = {
 	{ TEXT("Biomassegenerator"), 6, 0.4f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_GeneratorBiomass_Automated.Recipe_GeneratorBiomass_Automated_C") },
 	{ TEXT("Kohlekraftwerk"), 14, 0.6f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_GeneratorCoal.Recipe_GeneratorCoal_C") },
 	{ TEXT("Wasserpumpe"), 4, 0.3f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_WaterPump.Recipe_WaterPump_C") },
+	// 17.11. (P11, Marius: Akku ins Laden-Sortiment): Stromspeicher gegen Lastspitzen, mit der Forschung Kohlekraft
+	{ TEXT("Akku"), 10, 0.4f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_PowerStorageMk1.Recipe_PowerStorageMk1_C") },
 	{ TEXT("Lager"), 4, 0.5f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_StorageContainerMk1.Recipe_StorageContainerMk1_C") },
 	{ TEXT("Bolzenturm"), 5, 0.3f, 1, TEXT("/FicsitTD/Buildings/BoltTurret/Recipe_TD_BoltTurret.Recipe_TD_BoltTurret_C") },
 	{ TEXT("Gewehrturm"), 8, 0.3f, 1, TEXT("/FicsitTD/Buildings/GunTurret/Recipe_TD_GunTurret.Recipe_TD_GunTurret_C") },
@@ -140,6 +154,10 @@ static const FTDLadenEintrag LadenListe[] = {
 	{ TEXT("Klingenläufer"), 8, 0.f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_AssemblerMk1.Recipe_AssemblerMk1_C") },
 	{ TEXT("Gewehr"), 10, 0.f, 1, TEXT("/FicsitTD/Buildings/GunTurret/Recipe_TD_GunTurret.Recipe_TD_GunTurret_C") },
 	{ TEXT("Nobelisken-Zünder"), 12, 0.f, 1, TEXT("/FicsitTD/Buildings/NobeliskLauncher/Recipe_TD_NobeliskLauncher.Recipe_TD_NobeliskLauncher_C") },
+	// 18.11. (Marius: Bewegung spaeter kaufen): Jetpack erst mit Oel (Raffinerie im MAM, der Jetpack fliegt mit Treibstoff), danach das
+	// Hover-Pack mit dem Fertiger (spaetes Spiel, braucht Stromleitungen in der Naehe)
+	{ TEXT("Jetpack"), 16, 0.f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_OilRefinery.Recipe_OilRefinery_C") },
+	{ TEXT("Hover-Pack"), 24, 0.f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_ManufacturerMk1.Recipe_ManufacturerMk1_C") },
 	// Kern reparieren (Marius 03.11.2026, 0.57): teuer und mit jedem Kauf teurer; Paket = Prozent der Kern-LP
 	{ TEXT("Kernreparatur"), 15, 0.5f, 25, TEXT("/FicsitTD/Buildings/DefenseCore/Recipe_TD_DefenseCore.Recipe_TD_DefenseCore_C") },
 };
@@ -161,6 +179,8 @@ static const FTDSpielerPosten SpielerPosten[] = {
 	{ TEXT("Klingenläufer"), 0, 1, TEXT("/Game/FactoryGame/Resource/Equipment/JumpingStilts/BP_EquipmentDescriptorJumpingStilts.BP_EquipmentDescriptorJumpingStilts_C") },
 	{ TEXT("Gewehr"), 0, 1, TEXT("/Game/FactoryGame/Resource/Equipment/Rifle/BP_EquipmentDescriptorRifle.BP_EquipmentDescriptorRifle_C") },
 	{ TEXT("Nobelisken-Zünder"), 0, 1, TEXT("/Game/FactoryGame/Resource/Equipment/NobeliskDetonator/BP_EquipmentDescriptorNobeliskDetonator.BP_EquipmentDescriptorNobeliskDetonator_C") },
+	{ TEXT("Jetpack"), 0, 1, TEXT("/Game/FactoryGame/Resource/Equipment/JetPack/BP_EquipmentDescriptorJetPack.BP_EquipmentDescriptorJetPack_C") },
+	{ TEXT("Hover-Pack"), 0, 1, TEXT("/Game/FactoryGame/Resource/Equipment/HoverPack/BP_EquipmentDescriptorHoverPack.BP_EquipmentDescriptorHoverPack_C") },
 	{ TEXT("Kernreparatur"), 3, 0, TEXT("/Game/FactoryGame/Resource/Parts/IronPlateReinforced/Desc_IronPlateReinforced.Desc_IronPlateReinforced_C") },
 };
 static const FTDSpielerPosten* SpielerFuer(const FString& Key)
@@ -264,7 +284,7 @@ static FString TDAnzeige(const FString& Key)
 		{ TEXT("Fertiger"), TEXT("Manufacturer") }, { TEXT("Mischer"), TEXT("Blender") }, { TEXT("Abfueller"), TEXT("Packager") },
 		{ TEXT("Foerderanlage"), TEXT("Resource Well") }, { TEXT("Fluessigkeitspuffer"), TEXT("Fluid Buffer") },
 		{ TEXT("Teslaspule"), TEXT("Tesla Coil") }, { TEXT("Nobelisk-Werfer"), TEXT("Nobelisk Launcher") }, { TEXT("Reparaturstation"), TEXT("Repair Station") }, { TEXT("Drohnenplatz"), TEXT("Drone Pad") },
-		{ TEXT("Lockfeuer"), TEXT("Lure Fire") }, { TEXT("Oelschlick"), TEXT("Oil Slick Field") }, { TEXT("Wasserpumpe"), TEXT("Water Extractor") },
+		{ TEXT("Lockfeuer"), TEXT("Lure Fire") }, { TEXT("Oelschlick"), TEXT("Oil Slick Field") }, { TEXT("Wasserpumpe"), TEXT("Water Extractor") }, { TEXT("Akku"), TEXT("Power Storage") },
 		{ TEXT("Oelpumpe"), TEXT("Oil Extractor") }, { TEXT("Foerderanlage"), TEXT("Extractor") }, { TEXT("Kohlekraftwerk"), TEXT("Coal-Powered Generator") },
 		{ TEXT("Treibstoffkraftwerk"), TEXT("Fuel-Powered Generator") }, { TEXT("Atomkraftwerk"), TEXT("Nuclear Power Plant") }, { TEXT("Kraftwerk"), TEXT("Power Generator") },
 		{ TEXT("Giesserei"), TEXT("Foundry") }, { TEXT("Assembler"), TEXT("Assembler") }, { TEXT("Fertiger"), TEXT("Manufacturer") },
@@ -272,6 +292,7 @@ static FString TDAnzeige(const FString& Key)
 		{ TEXT("Fabrik"), TEXT("Factory") }, { TEXT("Fluessigkeitspuffer"), TEXT("Fluid Buffer") }, { TEXT("Inventarplätze"), TEXT("Inventory Slots") },
 		{ TEXT("Handplatz"), TEXT("Hand Slot") }, { TEXT("Armierpistole"), TEXT("Rebar Gun") }, { TEXT("Klingenläufer"), TEXT("Blade Runners") },
 		{ TEXT("Gewehr"), TEXT("Rifle") }, { TEXT("Nobelisken-Zünder"), TEXT("Nobelisk Detonator") }, { TEXT("Kernreparatur"), TEXT("Core Repair") },
+		{ TEXT("Jetpack"), TEXT("Jetpack") }, { TEXT("Hover-Pack"), TEXT("Hover Pack") },
 	};
 	const FString* Gefunden = En.Find(Key);
 	return Gefunden ? *Gefunden : Key;
@@ -299,6 +320,28 @@ UTDCDSinkGesperrt::UTDCDSinkGesperrt()
 	mDisqfualifyingText = TDTextSinkGesperrt();
 }
 
+static FText TDTextAbrissSperre() { return TDTX(TEXT("Während der Welle ist Abreißen am Kern gesperrt"), TEXT("Dismantling near the Core is locked during a wave")); }
+
+UTDCDAbrissSperre::UTDCDAbrissSperre()
+{
+	mDisqfualifyingText = TDTextAbrissSperre();
+}
+
+bool TDAbrissInWelleGesperrt(const AActor* Bau)
+{
+	UWorld* World = Bau ? Bau->GetWorld() : nullptr;
+	UTDEinsatzSubsystem* Einsatz = World ? World->GetSubsystem<UTDEinsatzSubsystem>() : nullptr;
+	return Einsatz && Einsatz->SperrGrund(Bau->GetClass(), Bau->GetActorLocation(), 0) == TEXT("Welle");
+}
+
+void TDAbrissSperreGruende(const AActor* Bau, TArray<TSubclassOf<UFGConstructDisqualifier>>& Out)
+{
+	if (TDAbrissInWelleGesperrt(Bau))
+	{
+		Out.AddUnique(UTDCDAbrissSperre::StaticClass());
+	}
+}
+
 UTDCDWellenSperre::UTDCDWellenSperre()
 {
 	mDisqfualifyingText = TDTextWellenSperre();
@@ -321,6 +364,7 @@ static void TDAktualisiereSperrTexte()
 	Feld->SetPropertyValue_InContainer(GetMutableDefault<UTDCDKontingent>(), TDTextKontingent());
 	Feld->SetPropertyValue_InContainer(GetMutableDefault<UTDCDSinkGesperrt>(), TDTextSinkGesperrt());
 	Feld->SetPropertyValue_InContainer(GetMutableDefault<UTDCDWellenSperre>(), TDTextWellenSperre());
+	Feld->SetPropertyValue_InContainer(GetMutableDefault<UTDCDAbrissSperre>(), TDTextAbrissSperre());
 	Feld->SetPropertyValue_InContainer(GetMutableDefault<UTDCDBlaupause>(), TDTextBlaupause());
 }
 
@@ -565,6 +609,7 @@ FString UTDEinsatzSubsystem::Schluessel(const UClass* BauKlasse)
 	}
 	if (BauKlasse->IsChildOf(AFGBuildableStorage::StaticClass())) return TEXT("Lager");
 	if (BauKlasse->IsChildOf(AFGBuildablePipeReservoir::StaticClass())) return TEXT("Fluessigkeitspuffer");
+	if (BauKlasse->IsChildOf(AFGBuildablePowerStorage::StaticClass())) return TEXT("Akku");
 	return FString();   // Logistik, Fundamente, Mauern des Spiels, MAM ...: frei
 }
 
@@ -597,6 +642,15 @@ void UTDEinsatzSubsystem::WelleBeendet(int32 Welle, float KernAnteil)
 	{
 		return;
 	}
+	const UTDWaveSubsystem* AbrechnungWaves = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
+	// 17.11. (Marius: Chatflut reduzieren - nur das Wichtigste + ADA, Details im Kern-Menue): Sammelzeile auch im Einsatz
+	const bool bSammelzeile = AbrechnungWaves && AbrechnungWaves->Sammelzeile();
+	int32 ZerstoertZahl = 0;
+	for (const TPair<FString, int32>& Z : mZerstoert)
+	{
+		ZerstoertZahl += Z.Value;
+	}
+	mStill = bSammelzeile;
 	// EP = Grundwert + Welle x Steigerung + Kernbonus; Bosswelle doppelt (Stellschrauben, spaeter Balance-Datei)
 	int32 Punkte = TDBalance::Ganz(TEXT("Einsatz.EP.Grund"), 8) + FMath::RoundToInt(TDBalance::Wert(TEXT("Einsatz.EP.JeWelle"), 2.f) * Welle)
 		+ (KernAnteil >= 99.5f ? TDBalance::Ganz(TEXT("Einsatz.EP.KernVoll"), 5) : KernAnteil >= 75.f ? TDBalance::Ganz(TEXT("Einsatz.EP.KernAb75"), 2) : 0);
@@ -614,11 +668,11 @@ void UTDEinsatzSubsystem::WelleBeendet(int32 Welle, float KernAnteil)
 		{
 			Teile.Add(FString::Printf(TEXT("%d %s"), Z.Value, *TDAnzeige(Z.Key)));
 		}
-		Melde(TDF(TEXT("Zerstoert in dieser Welle: %s. Das Baumaterial liegt im Inventar (oder wartet am Kern) - Kontingent ist wieder frei."),
+		Melde(TDF(TEXT("Zerstört in dieser Welle: %s. Das Baumaterial liegt im Inventar (oder wartet am Kern) - Kontingent ist wieder frei."),
 			TEXT("Destroyed this wave: %s. The building materials are in your inventory (or waiting at the Core) - the quota is free again."), *FString::Join(Teile, TEXT(", "))));
 		mZerstoert.Reset();
 	}
-	Melde(TDF(TEXT("+%d FICSIT-Coupons%s (Konto %d Coupons%s). Ausgeben im Kern-Menue (E am Kern)."),
+	Melde(TDF(TEXT("+%d FICSIT-Coupons%s (Konto %d Coupons%s). Ausgeben im Kern-Menü (E am Kern)."),
 		TEXT("+%d FICSIT Coupons%s (balance %d Coupons%s). Spend them in the Core Menu (E at the Core)."), Punkte,
 		Welle % 10 == 0 ? *TDT(TEXT(" inkl. Boss-Bonus"), TEXT(" incl. boss bonus")) : TEXT(""), Konto(),
 		Kern->mEinsatzPunkte > 0 ? *TDF(TEXT(", %d warten am Kern, Inventar voll"), TEXT(", %d waiting at the Core, inventory full"), Kern->mEinsatzPunkte) : TEXT("")));
@@ -634,7 +688,7 @@ void UTDEinsatzSubsystem::WelleBeendet(int32 Welle, float KernAnteil)
 		{
 			// Test 0.53: bei vollem Inventar verfiel die Biomasse, danach fehlte der Strom - jetzt wartet der Rest am Kern
 			const FString Text = GibMaterial({ { Biomasse, Bio } });
-			Melde(TDF(TEXT("Biomasse fuer die Brenner: %s."), TEXT("Biomass for the burners: %s."), *Text));
+			Melde(TDF(TEXT("Biomasse für die Brenner: %s."), TEXT("Biomass for the burners: %s."), *Text));
 		}
 	}
 	// Forschungspunkte (Schritt B): je Welle, Bonus bei gutem Kern und nach dem Boss; als Item ins Inventar (MAM-Kosten)
@@ -663,6 +717,16 @@ void UTDEinsatzSubsystem::WelleBeendet(int32 Welle, float KernAnteil)
 			Melde(TDF(TEXT("Notreparatur: Kern +%.0f LP."), TEXT("Emergency repair: Core +%.0f HP."), Geheilt));
 		}
 	}
+	if (bSammelzeile)
+	{
+		mStill = false;
+		const FString Bilanz = AbrechnungWaves ? AbrechnungWaves->GetLetzteWellenZeile() : FString();
+		Melde(TDF(TEXT("Welle %d geschafft: +%d Coupons (Konto %d), +%d Festplatten, Kern %.0f %%.%s%s Details: Kern-Menü, Statistik."),
+			TEXT("Wave %d done: +%d Coupons (balance %d), +%d Hard Drives, Core %.0f %%.%s%s Details: Core Menu, Statistics."),
+			Welle, Punkte, Konto(), FP, 100.f * Kern->GetTDHealth() / FMath::Max(Kern->GetTDMaxHealth(), 1.f),
+			ZerstoertZahl > 0 ? *TDF(TEXT(" %d Bauten zerstört, Material im Inventar."), TEXT(" %d buildings destroyed, materials in your inventory."), ZerstoertZahl) : TEXT(""),
+			Bilanz.IsEmpty() ? TEXT("") : *(TEXT(" ") + Bilanz)));
+	}
 	// Warnung: der Kern ist knapp (Marius hat die Kernreparatur im Laden nicht gefunden)
 	if (KernAnteil < TDBalance::Wert(TEXT("Kern.Warnung"), 50.f))
 	{
@@ -687,6 +751,22 @@ void UTDEinsatzSubsystem::SammleBaumaterial(const FString& Key, int32 Anzahl, TM
 {
 	const FTDLadenEintrag* E = LadenFuer(Key);
 	UClass* Rezept = E ? LoadClass<UFGRecipe>(nullptr, E->Rezept) : nullptr;
+	// 17.11. (P10, Marius: Miner-Stufen wie im Spiel): das Kontingent Miner liefert das Material der hoechsten freigeschalteten Stufe
+	if (Key == TEXT("Miner"))
+	{
+		if (AFGRecipeManager* Rezepte = AFGRecipeManager::Get(GetWorld()))
+		{
+			for (const TCHAR* Pfad : { TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_MinerMk3.Recipe_MinerMk3_C"), TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_MinerMk2.Recipe_MinerMk2_C") })
+			{
+				UClass* Hoeher = LoadClass<UFGRecipe>(nullptr, Pfad);
+				if (Hoeher && Rezepte->IsRecipeAvailable(Hoeher))
+				{
+					Rezept = Hoeher;
+					break;
+				}
+			}
+		}
+	}
 	if (!Rezept || Anzahl <= 0)
 	{
 		return;
@@ -758,7 +838,10 @@ int32 UTDEinsatzSubsystem::GibOffenesMaterial()
 void UTDEinsatzSubsystem::GebaeudeZerstoert(const UClass* BauKlasse)
 {
 	const FString Key = Schluessel(BauKlasse);
-	if (!mAktiv || Key.IsEmpty())
+	// 16.11. (Nachpruefung F2): auch in der Bohrung (Freies Spiel mit Abwehr) - wer verliert, verliert nur den Ertrag
+	const UTDWaveSubsystem* WavesZ = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
+	const bool bBohrung = WavesZ && WavesZ->IstBohrung();
+	if ((!mAktiv && !bBohrung) || Key.IsEmpty())
 	{
 		return;
 	}
@@ -867,7 +950,10 @@ static void NimmCoupons(const UWorld* World, ATDDefenseCore* Kern, int32 Preis)
 	{
 		Inventar->Remove(Coupon, AusInventar);
 	}
-	Kern->mEinsatzPunkte = FMath::Max(0, Kern->mEinsatzPunkte - (Preis - AusInventar));
+	if (Kern)
+	{
+		Kern->mEinsatzPunkte = FMath::Max(0, Kern->mEinsatzPunkte - (Preis - AusInventar));
+	}
 }
 
 static bool RezeptVerfuegbar(UWorld* World, const TCHAR* Pfad)
@@ -900,12 +986,15 @@ int32 UTDEinsatzSubsystem::Konto() const
 FString UTDEinsatzSubsystem::ZahleEP(int32 Preis, const FString& Posten, bool bAuchInWelle)
 {
 	ATDDefenseCore* Kern = mKern.Get();
-	if (!mAktiv || !Kern)
+	// 0.12-dev (Marius 15.11.): im Freien Spiel mit Abwehr bezahlt man Turmlevel mit Coupons aus dem AWESOME-Sink
+	const bool bAbwehr = !mAktiv && UTDKernplatz::IstAbwehr(this);
+	if (!bAbwehr && (!mAktiv || !Kern))
 	{
 		return TDT(TEXT("Nur im Einsatz."), TEXT("Only during an operation."));
 	}
 	const UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
-	if (!bAuchInWelle && Waves && Waves->LaeuftWelle())
+	// 16.11. (Nachpruefung, Marius): im Endlos-Modus gibt es keine Bausperre - Turmlevel auch in der Welle
+	if (!bAuchInWelle && Waves && Waves->LaeuftWelle() && !Waves->IstEndlos())
 	{
 		return TDT(TEXT("Nur in der Bauphase."), TEXT("Only in the build phase."));
 	}
@@ -1214,9 +1303,10 @@ FString UTDEinsatzSubsystem::Kaufe(const FString& Name, int32 Anzahl)
 		return TDT(TEXT("Kein Einsatz aktiv."), TEXT("No operation active."));
 	}
 	const UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
-	if (Waves && Waves->LaeuftWelle())
+	// 16.11. (Nachpruefung, Marius): im Endlos-Modus ist der Laden auch in der Welle offen
+	if (Waves && Waves->LaeuftWelle() && !Waves->IstEndlos())
 	{
-		return TDT(TEXT("Waehrend der Welle ist der Laden geschlossen."), TEXT("The shop is closed during a wave."));
+		return TDT(TEXT("Während der Welle ist der Laden geschlossen."), TEXT("The shop is closed during a wave."));
 	}
 	// erst der genaue Name, dann der Anfang (Test 0.56: "Gewehr" traf zuerst "Gewehrturm" - drei Gewehrtuerme statt der Waffe)
 	const FTDLadenEintrag* E = nullptr;
@@ -1250,6 +1340,11 @@ FString UTDEinsatzSubsystem::Kaufe(const FString& Name, int32 Anzahl)
 	if (SP && SpielerMax(*SP) > 0 && Bisher >= SpielerMax(*SP))
 	{
 		return TDF(TEXT("%s: schon %d von %d gekauft."), TEXT("%s: already bought %d of %d."), *TDAnzeige(E->Key), Bisher, SpielerMax(*SP));
+	}
+	// 0.11 (Gegencheck Einsatz A7): nach der Niederlage kostete die Reparatur Coupons und heilte nichts
+	if (SP && SP->Art == 3 && (Kern->mLaufEnde != 0 || Kern->GetTDHealth() <= 0.f))
+	{
+		return TDT(TEXT("Der Lauf ist vorbei - der Kern lässt sich nicht mehr reparieren."), TEXT("The run is over - the Core can no longer be repaired."));
 	}
 	if (SP && SP->Art == 3 && Kern->GetTDHealth() >= Kern->GetTDMaxHealth() - 1.f)
 	{
@@ -1289,7 +1384,7 @@ FString UTDEinsatzSubsystem::Kaufe(const FString& Name, int32 Anzahl)
 	TMap<UClass*, int32> Material;
 	SammleBaumaterial(E->Key, Gekauft * LadenPaket(*E), Material);
 	const FString MaterialText = Material.Num() ? GibMaterial(Material) : FString();
-	return TDF(TEXT("Gekauft: %s +%d fuer %d Coupons. Jetzt %d/%d, Konto %d Coupons.%s"), TEXT("Bought: %s +%d for %d Coupons. Now %d/%d, balance %d Coupons.%s"),
+	return TDF(TEXT("Gekauft: %s +%d für %d Coupons. Jetzt %d/%d, Konto %d Coupons.%s"), TEXT("Bought: %s +%d for %d Coupons. Now %d/%d, balance %d Coupons.%s"),
 		*TDAnzeige(E->Key), Gekauft * LadenPaket(*E), Kosten,
 		Belegt(E->Key), Grenze(E->Key), Konto(), MaterialText.IsEmpty() ? TEXT("") : *(TDT(TEXT(" Material: "), TEXT(" Materials: ")) + MaterialText));
 }
@@ -1302,7 +1397,8 @@ FString UTDEinsatzSubsystem::KaufeKorb(const TMap<FString, int32>& Korb)
 		return TDT(TEXT("Kein Einsatz aktiv."), TEXT("No operation active."));
 	}
 	const UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
-	if (Waves && Waves->LaeuftWelle())
+	// 16.11. (Nachpruefung, Marius): im Endlos-Modus ist der Laden auch in der Welle offen
+	if (Waves && Waves->LaeuftWelle() && !Waves->IstEndlos())
 	{
 		return TDT(TEXT("Während der Welle ist der Laden geschlossen."), TEXT("The shop is closed during a wave."));
 	}
@@ -1486,7 +1582,7 @@ void UTDEinsatzSubsystem::AktualisiereToDo()
 		}
 		else if (Waves && Waves->LaeuftKernVerteidigung())
 		{
-			Welle = TDF(TEXT("Welle %d/%d bereit"), TEXT("Wave %d/%d ready"), Waves->GetWelle() + 1, Waves->mWellenGesamt);
+			Welle = Waves->GetBereitText(true);
 		}
 		TArray<FString> Block;
 		Block.Add(Anfang);
@@ -1611,7 +1707,8 @@ FString UTDEinsatzSubsystem::SperrGrund(UClass* BauKlasse, const FVector& Ort, i
 	// Bausperre im Verteidigungsfeld waehrend einer Welle
 	const ATDDefenseCore* Kern = mKern.Get();
 	const UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
-	if (Waves && Waves->LaeuftWelle() && Kern && FVector::Dist2D(Ort, Kern->GetActorLocation()) < EinsatzFeldRadius)
+	// 0.11 (Marius 15.11.): im Endlos-Modus gibt es keine Bausperre - die Uhr laeuft ohnehin weiter
+	if (Waves && Waves->LaeuftWelle() && !Waves->IstEndlos() && Kern && FVector::Dist2D(Ort, Kern->GetActorLocation()) < EinsatzFeldRadius)
 	{
 		return TEXT("Welle");
 	}
@@ -1625,6 +1722,10 @@ FString UTDEinsatzSubsystem::SperrGrund(UClass* BauKlasse, const FVector& Ort, i
 void UTDEinsatzSubsystem::Melde(const FString& Text) const
 {
 	UE_LOG(LogFicsitTD, Log, TEXT("Einsatz: %s"), *Text);
+	if (mStill)
+	{
+		return;
+	}
 	if (AFGChatManager* Chat = AFGChatManager::Get(GetWorld()))
 	{
 		FChatMessageStruct Nachricht;
@@ -1753,14 +1854,29 @@ void UTDEinsatzSubsystem::Starte(ATDDefenseCore* Kern, int32 Stufe, int32 Wellen
 		Meldungen.Add(TDT(TEXT("Startkit: "), TEXT("Starter kit: ")) + GibMaterial(Kit));
 		// 0.84: Wellen je Einsatz verschieden (Option, Standard aus); einmal je Einsatz gewuerfelt und im Kern gespeichert
 		Kern->mLaufSaat = TDBalance::Wert(TEXT("Wellen.VariationJeEinsatz"), 0.f) > 0.f ? (FMath::Rand() | 1) : 0;
+		Kern->mLaufEingriffe = 0;   // 0.11: neuer Lauf, neue Wertung
+		Kern->mKernBonusStufen = 0;
+		Kern->mBonusOffen = 0;
+		Kern->mEndlosBonusOffen = false;
 		UE_LOG(LogFicsitTD, Log, TEXT("Einsatz: Wellensaat %d (%s)"), Kern->mLaufSaat, Kern->mLaufSaat ? TEXT("Wellen je Einsatz verschieden") : TEXT("Wellen je Kernplatz fest"));
 	}
 	if (UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>())
 	{
-		Waves->SetManuell(true);
-		if (!Waves->StarteKernVerteidigung(Kern, Wellen, -1.f, -1.f, Stufe))
+		// 0.11 (Marius 15.11.): Endlos-Wellen - Wellen kommen auf Zeit (kein Anhalten), ohne Ende, aus einer Front
+		const bool bEndlos = UTDKernplatz::IstEndlos(this);
+		Waves->SetManuell(!bEndlos);
+		Waves->SetEndlos(bEndlos);
+		Kern->mEndlosBonusOffen = false;
+		// Gegencheck 15.11. (Marius: Abstand je Stufe): Erkundung 600/240, Normal 480/180, Hart 420/165, Albtraum 360/150 s
+		static const TCHAR* EndlosStufen[] = { TEXT("Erkundung"), TEXT("Normal"), TEXT("Hart"), TEXT("Albtraum") };
+		static const float ErsteStandard[] = { 600.f, 480.f, 420.f, 360.f };
+		static const float AbstandStandard[] = { 240.f, 220.f, 165.f, 150.f };   // 16.11. (P2): Normal 180 -> 220
+		const int32 Si = FMath::Clamp(Stufe, 0, 3);
+		const float Erster = bEndlos ? TDBalance::Wert(*FString::Printf(TEXT("Endlos.%s.ErsteWelle"), EndlosStufen[Si]), ErsteStandard[Si]) : -1.f;
+		const float Abstand = bEndlos ? TDBalance::Wert(*FString::Printf(TEXT("Endlos.%s.Abstand"), EndlosStufen[Si]), AbstandStandard[Si]) : -1.f;
+		if (!Waves->StarteKernVerteidigung(Kern, bEndlos ? 0 : Wellen, Erster, Abstand, Stufe))
 		{
-			Meldungen.Add(TDT(TEXT("Es laeuft schon eine Kern-Verteidigung - erst /td kern stop."), TEXT("A Core defense is already running - use /td kern stop first.")));
+			Meldungen.Add(TDT(TEXT("Es läuft schon eine Kern-Verteidigung - erst /td kern stop."), TEXT("A Core defense is already running - use /td kern stop first.")));
 		}
 	}
 	mBelegtZeit = -1.f;
@@ -1779,7 +1895,8 @@ void UTDEinsatzSubsystem::Beende()
 	{
 		Kern->mEinsatzAktiv = false;
 		Kern->mEinsatzFrei = false;
-		Kern->mEinsatzStartkit = false;
+		// 0.11 (Gegencheck Einsatz A5): Startkit-Merkmal bleibt - "beenden" und "starten" gab es sonst erneut.
+		// Zugleich das Zeichen "an diesem Kern lief schon ein Einsatz" fuer den Start von Hand (Kern-Menue).
 		Kern->mEinsatzPunkte = 0;
 		Kern->mKontingentGekauft.Reset();
 	}
@@ -1787,6 +1904,7 @@ void UTDEinsatzSubsystem::Beende()
 	{
 		Waves->SetManuell(false);
 		Waves->StoppeLauf(TDT(TEXT("Einsatz beendet."), TEXT("Operation ended.")));
+		Waves->SetEndlos(false);
 	}
 	AktualisiereToDo();
 	StelleRezepteWiederHer();
@@ -1805,12 +1923,18 @@ FString UTDEinsatzSubsystem::WiederholeWelle(APlayerController* Spieler)
 	{
 		return TDT(TEXT("Wiederholen geht nur nach einer Niederlage."), TEXT("Retry is only possible after a defeat."));
 	}
-	const FString Name = FString::Printf(TEXT("FicsitTD_W%02d_Start"), Kern->mLaufEndWelle);
+	if (Kern->mLaufEndlos)
+	{
+		return TDT(TEXT("Ein Endlos-Lauf endet mit dem Kern - der nächste Lauf ist ein neues Spiel."), TEXT("An endless run ends with the Core - the next run is a new game."));
+	}
+	// 17.11. (P16/A10, Marius: Sitzungsname im Spielstandsnamen): nur Staende dieses Spiels, nie die eines anderen Spiels
+	const FString Name = UTDLaufProtokoll::StandName(this, Kern->mLaufEndWelle, true);
 	UFGSaveSystem* Speicher = UFGSaveSystem::Get(GetWorld());
 	FSaveHeader Kopf;
-	if (!Speicher || !Speicher->LoadSaveGameHeaderSync(Name, Kopf))
+	const AFGGameState* Zustand = GetWorld()->GetGameState<AFGGameState>();
+	if (!Speicher || !Speicher->LoadSaveGameHeaderSync(Name, Kopf) || (Zustand && Kopf.SessionName != TDSitzungsName(Zustand)))
 	{
-		return TDF(TEXT("Kein Spielstand vom Start der Welle %d gefunden (%s)."), TEXT("No save from the start of wave %d found (%s)."), Kern->mLaufEndWelle, *Name);
+		return TDF(TEXT("Kein Spielstand dieses Spiels vom Start der Welle %d gefunden (%s)."), TEXT("No save of this game from the start of wave %d found (%s)."), Kern->mLaufEndWelle, *Name);
 	}
 	UE_LOG(LogFicsitTD, Log, TEXT("Einsatz: Welle %d wiederholen, lade %s"), Kern->mLaufEndWelle, *Name);
 	FLoadSaveFileParameters Parameter;
@@ -1845,13 +1969,18 @@ FString UTDEinsatzSubsystem::BeendeNachEnde()
 {
 	ATDDefenseCore* Kern = mKern.Get();
 	Beende();
+	if (ATDSpielstand* Stand = ATDSpielstand::Get(this))
+	{
+		Stand->mEinsatzBeendet = true;   // 16.11. (Nachpruefung E1): kein neuer Einsatz in diesem Spielstand
+		UE_LOG(LogFicsitTD, Log, TEXT("Einsatz beendet: Spielstand frei, kein neuer Einsatz"));
+	}
 	if (Kern)
 	{
 		Kern->Aufladen();
 		Kern->mLaufEnde = 0;
 	}
-	return TDT(TEXT("Einsatz beendet: keine Kontingente und Sperren mehr. Der Kern lässt sich jetzt abreißen."),
-		TEXT("Operation ended: no more quotas or locks. The Core can now be dismantled."));
+	return TDT(TEXT("Einsatz beendet: keine Kontingente und Sperren mehr, die Welt bleibt frei zum Weiterbauen. Der Kern lässt sich abreißen, ein neuer Einsatz beginnt mit einem neuen Spiel."),
+		TEXT("Operation ended: no more quotas or locks, the world stays free to keep building. The Core can be dismantled, a new operation starts with a new game."));
 }
 
 void UTDEinsatzSubsystem::Lade(ATDDefenseCore* Kern)
@@ -1859,6 +1988,12 @@ void UTDEinsatzSubsystem::Lade(ATDDefenseCore* Kern)
 	mKern = Kern;
 	mAktiv = Kern && Kern->mEinsatzAktiv;
 	mFrei = Kern && Kern->mEinsatzFrei;
+	// 0.11 (Gegencheck Einsatz A3, Marius 16.11.): Freies Bauen nur im Entwicklermodus - alte Staende schalten es ab
+	if (mFrei && !UTDKernplatz::Entwicklermodus())
+	{
+		SetzeFrei(false);
+		UE_LOG(LogFicsitTD, Log, TEXT("Einsatz geladen: Freies Bauen war an, ohne Entwicklermodus abgeschaltet"));
+	}
 	mBelegtZeit = -1.f;
 	if (mAktiv)
 	{
@@ -1927,7 +2062,7 @@ TArray<FString> UTDEinsatzSubsystem::StatusText()
 	}
 	Zeilen.Add(mFrei ? TDT(TEXT("Einsatz aktiv - FREIES BAUEN (Kontingente und Bausperre aus, /td einsatz frei aus)"),
 			TEXT("Operation active - FREE BUILD (quotas and build lock off, /td einsatz frei aus)"))
-		: TDT(TEXT("Einsatz aktiv - Kontingente gelten, Bauen waehrend der Welle gesperrt (/td einsatz frei an)"),
+		: TDT(TEXT("Einsatz aktiv - Kontingente gelten, Bauen während der Welle gesperrt (/td einsatz frei an)"),
 			TEXT("Operation active - quotas apply, building is locked during a wave (/td einsatz frei an)")));
 	ZaehleNeu();
 	TArray<FString> Teile;
@@ -1954,7 +2089,9 @@ TArray<FString> UTDEinsatzSubsystem::StatusText()
 
 void UTDEinsatzSubsystem::HeileVerteidigung()
 {
-	if (!mAktiv)
+	// 16.11. (Nachpruefung F2): auch zu Beginn jeder Bohrwelle
+	const UTDWaveSubsystem* WavesH = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
+	if (!mAktiv && !(WavesH && WavesH->IstBohrung()))
 	{
 		return;
 	}
@@ -1977,4 +2114,289 @@ void UTDEinsatzSubsystem::HeileVerteidigung()
 		}
 	}
 	UE_LOG(LogFicsitTD, Log, TEXT("Einsatz: %d Verteidigungsanlagen zu Wellenbeginn auf 100 %%"), Geheilt);
+}
+
+// ---- 0.11 Endlos-Wellen (Marius 15.11. nach dem Gegencheck) ----
+
+void UTDEinsatzSubsystem::GibEndlosCoupons(int32 Anzahl, const FString& Grund)
+{
+	ATDDefenseCore* Kern = mKern.Get();
+	if (!mAktiv || !Kern || Anzahl <= 0)
+	{
+		return;
+	}
+	Kern->mEinsatzPunkte += Anzahl;
+	GibOffeneCoupons();
+	Melde(TDF(TEXT("%s: +%d Coupons (Konto %d)."), TEXT("%s: +%d Coupons (balance %d)."), *Grund, Anzahl, Konto()));
+}
+
+void UTDEinsatzSubsystem::BieteEndlosBonusAn(int32 Welle)
+{
+	ATDDefenseCore* Kern = mKern.Get();
+	if (!mAktiv || !Kern)
+	{
+		return;
+	}
+	Kern->mEndlosBonusOffen = false;
+	Kern->mBonusOffen = FMath::Max(0, Kern->mBonusOffen) + 1;   // 16.11. (E5): offene Wahlen sammeln sich
+	const UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
+	const bool bEndlos = Waves && Waves->IstEndlos();
+	UE_LOG(LogFicsitTD, Log, TEXT("%s: Bonuswahl nach Bosswelle %d angeboten"), bEndlos ? TEXT("Endlos") : TEXT("Einsatz"), Welle);
+	Melde(bEndlos ? TDF(TEXT("Bosswelle %d geschafft! Lange Pause - wähle im Kern-Menü (E am Kern) einen Bonus: %s, %s oder %s."),
+		TEXT("Boss wave %d done! Long break - pick a bonus in the Core Menu (E at the Core): %s, %s or %s."), Welle,
+		*EndlosBonusName(0), *EndlosBonusName(1), *EndlosBonusName(2))
+		: TDF(TEXT("Phase geschafft! Wähle im Kern-Menü (E am Kern) einen Bonus: %s, %s oder %s."),
+		TEXT("Phase complete! Pick a bonus in the Core Menu (E at the Core): %s, %s or %s."),
+		*EndlosBonusName(0), *EndlosBonusName(1), *EndlosBonusName(2)));
+}
+
+bool UTDEinsatzSubsystem::EndlosBonusOffen() const
+{
+	const ATDDefenseCore* Kern = mKern.Get();
+	return mAktiv && Kern && (Kern->mBonusOffen > 0 || Kern->mEndlosBonusOffen);
+}
+
+FString UTDEinsatzSubsystem::EndlosBonusName(int32 Nr)
+{
+	switch (Nr)
+	{
+	case 0: return TDF(TEXT("+%d Coupons"), TEXT("+%d Coupons"), TDBalance::Ganz(TEXT("Endlos.Bonus.Coupons"), 80));
+	case 1: return TDF(TEXT("Kern-LP dauerhaft +%.0f %%"), TEXT("Core HP permanently +%.0f %%"), 100.f * TDBalance::Wert(TEXT("Einsatz.Bonus.KernMax"), 0.1f));
+	default: return TDF(TEXT("+%d Festplatten"), TEXT("+%d Hard Drives"), TDBalance::Ganz(TEXT("Endlos.Bonus.Festplatten"), 5));
+	}
+}
+
+FString UTDEinsatzSubsystem::WaehleEndlosBonus(int32 Nr)
+{
+	ATDDefenseCore* Kern = mKern.Get();
+	if (!EndlosBonusOffen() || !Kern)
+	{
+		return TDT(TEXT("Gerade ist kein Bonus offen."), TEXT("No bonus available right now."));
+	}
+	// 16.11. (Nachpruefung E4): nicht mitten in der Welle (sonst Notheilung, obwohl der Laden zu ist)
+	const UTDWaveSubsystem* WavesB = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
+	if (WavesB && WavesB->LaeuftWelle())
+	{
+		return TDT(TEXT("Den Bonus wählst du zwischen den Wellen - er bleibt offen."), TEXT("Pick the bonus between waves - it stays available."));
+	}
+	if (Kern->mEndlosBonusOffen && Kern->mBonusOffen <= 0)
+	{
+		Kern->mBonusOffen = 1;   // alter Stand mit Ja/Nein-Merkmal
+	}
+	Kern->mEndlosBonusOffen = false;
+	Kern->mBonusOffen = FMath::Max(0, Kern->mBonusOffen - 1);
+	FString Text;
+	if (Nr == 0)
+	{
+		const int32 N = TDBalance::Ganz(TEXT("Endlos.Bonus.Coupons"), 80);
+		Kern->mEinsatzPunkte += N;
+		GibOffeneCoupons();
+		Text = TDF(TEXT("Bonus: +%d Coupons (Konto %d)."), TEXT("Bonus: +%d Coupons (balance %d)."), N, Konto());
+	}
+	else if (Nr == 1)
+	{
+		// 16.11. (Nachpruefung E4, Marius): dauerhaft mehr Kern-LP statt Heilung (die liess sich fuer 15 Coupons kaufen)
+		const float Vorher = Kern->GetTDMaxHealth();
+		++Kern->mKernBonusStufen;
+		const float Mehr = Kern->GetTDMaxHealth() - Vorher;
+		Kern->HealTD(Mehr);
+		Text = TDF(TEXT("Bonus: Kern-LP dauerhaft +%.0f (jetzt %.0f)."), TEXT("Bonus: Core HP permanently +%.0f (now %.0f)."), Mehr, Kern->GetTDMaxHealth());
+	}
+	else
+	{
+		const int32 N = TDBalance::Ganz(TEXT("Endlos.Bonus.Festplatten"), 5);
+		Kern->mFPOffen += N;
+		GibOffeneFP();
+		Text = TDF(TEXT("Bonus: +%d Festplatten, jetzt %d im Inventar."), TEXT("Bonus: +%d Hard Drives, now %d in your inventory."), N, FPImInventar());
+	}
+	UE_LOG(LogFicsitTD, Log, TEXT("Bonus %d gewaehlt"), Nr);
+	Melde(Text);
+	return Text;
+}
+
+static FString TDBestwertDatei()
+{
+	return FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("FicsitTD"), TEXT("Bestwerte.json"));
+}
+
+int32 UTDEinsatzSubsystem::EndlosBestwert(int32 Stufe)
+{
+	FString Inhalt;
+	TSharedPtr<FJsonObject> Obj;
+	if (!FFileHelper::LoadFileToString(Inhalt, *TDBestwertDatei()) || !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Inhalt), Obj) || !Obj.IsValid())
+	{
+		return 0;
+	}
+	double Wert = 0.0;
+	return Obj->TryGetNumberField(FString::Printf(TEXT("Endlos.Stufe%d"), FMath::Clamp(Stufe, 0, 3)), Wert) ? FMath::RoundToInt(Wert) : 0;
+}
+
+FString UTDEinsatzSubsystem::WerteEndlosAus(int32 ErreichteWelle, int32 Stufe)
+{
+	// 16.11. (Nachpruefung E8): wie im Einsatz - Eingriffe und erweiterte Spieleinstellungen: ohne Wertung
+	const ATDDefenseCore* KernW = mKern.Get();
+	const AFGGameState* SpielW = GetWorld()->GetGameState<AFGGameState>();
+	if ((KernW && KernW->mLaufEingriffe > 0) || (SpielW && TDKreativModusAn(SpielW)))
+	{
+		UE_LOG(LogFicsitTD, Log, TEXT("Endlos: Lauf beendet, %d Wellen, ohne Wertung (Eingriffe oder erweiterte Spieleinstellungen)"), ErreichteWelle);
+		return TDF(TEXT("%d Wellen geschafft - ohne Wertung (Eingriffe oder erweiterte Spieleinstellungen)."), TEXT("%d waves done - not ranked (interventions or advanced game settings)."), ErreichteWelle);
+	}
+	const int32 Alt = EndlosBestwert(Stufe);
+	const bool bNeu = ErreichteWelle > Alt;
+	if (bNeu)
+	{
+		FString Inhalt;
+		TSharedPtr<FJsonObject> Obj;
+		if (!FFileHelper::LoadFileToString(Inhalt, *TDBestwertDatei()) || !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Inhalt), Obj) || !Obj.IsValid())
+		{
+			Obj = MakeShared<FJsonObject>();
+		}
+		Obj->SetNumberField(FString::Printf(TEXT("Endlos.Stufe%d"), FMath::Clamp(Stufe, 0, 3)), ErreichteWelle);
+		FString Neu;
+		FJsonSerializer::Serialize(Obj.ToSharedRef(), TJsonWriterFactory<>::Create(&Neu));
+		FFileHelper::SaveStringToFile(Neu, *TDBestwertDatei(), FFileHelper::EEncodingOptions::ForceUTF8);
+	}
+	UE_LOG(LogFicsitTD, Log, TEXT("Endlos: Lauf beendet, %d Wellen geschafft (Stufe %d, Bestwert vorher %d%s)"), ErreichteWelle, Stufe, Alt, bNeu ? TEXT(", neuer Bestwert") : TEXT(""));
+	return bNeu ? TDF(TEXT("%d Wellen geschafft - NEUER BESTWERT (vorher %d)!"), TEXT("%d waves done - NEW BEST (before %d)!"), ErreichteWelle, Alt)
+		: TDF(TEXT("%d Wellen geschafft, Bestwert %d."), TEXT("%d waves done, best %d."), ErreichteWelle, Alt);
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// 0.11 (Gegencheck Einsatz, Marius 16.11.): Phasenabschluss alle 10 Wellen, Abschlussbericht und Bestwert je Kernplatz und Stufe
+
+TArray<FString> UTDEinsatzSubsystem::PhasenBericht(int32 Von, int32 Bis) const
+{
+	TArray<FString> Zeilen;
+	const ATDDefenseCore* Kern = mKern.Get();
+	if (!Kern)
+	{
+		return Zeilen;
+	}
+	float Tief = 100.f;
+	int32 Gegner = 0, Coupons = 0, Platten = 0, Wellen = 0;
+	TMap<FString, float> Schaden;
+	for (const FTDWellenStat& W : Kern->mStatistik)
+	{
+		if (W.Welle < Von || W.Welle > Bis)
+		{
+			continue;
+		}
+		++Wellen;
+		Tief = FMath::Min(Tief, W.KernEnde);
+		Gegner += W.Gegner;
+		Coupons += W.EP;
+		Platten += W.FP;
+		for (const FTDTurmStat& T : W.Tuerme)
+		{
+			Schaden.FindOrAdd(T.Art) += T.Schaden;
+		}
+	}
+	if (Wellen == 0)
+	{
+		return Zeilen;
+	}
+	Zeilen.Add(TDF(TEXT("Wellen %d–%d: %d Gegner abgewehrt, tiefster Kernstand %.0f %%, %d Coupons, %d Festplatten."),
+		TEXT("Waves %d–%d: %d enemies repelled, lowest Core %.0f %%, %d Coupons, %d Hard Drives."), Von, Bis, Gegner, Tief, Coupons, Platten));
+	float Summe = 0.f;
+	for (const TPair<FString, float>& P : Schaden)
+	{
+		Summe += P.Value;
+	}
+	if (Summe > 0.f)
+	{
+		Schaden.ValueSort([](float A, float B) { return A > B; });
+		TArray<FString> Teile;
+		for (const TPair<FString, float>& P : Schaden)
+		{
+			if (Teile.Num() >= 4)
+			{
+				break;
+			}
+			Teile.Add(FString::Printf(TEXT("%s %.0f %%"), *TDAnzeige(P.Key), 100.f * P.Value / Summe));
+		}
+		Zeilen.Add(TDF(TEXT("Schaden je Turmart: %s."), TEXT("Damage by turret type: %s."), *FString::Join(Teile, TEXT(", "))));
+	}
+	return Zeilen;
+}
+
+void UTDEinsatzSubsystem::Phasenabschluss(int32 Welle)
+{
+	if (!mAktiv || !mKern.IsValid())
+	{
+		return;
+	}
+	const int32 Phase = Welle / 10;
+	Melde(TDF(TEXT("PHASE %d ABGESCHLOSSEN"), TEXT("PHASE %d COMPLETE"), Phase));
+	for (const FString& Z : PhasenBericht(Welle - 9, Welle))
+	{
+		Melde(Z);
+		UE_LOG(LogFicsitTD, Log, TEXT("Phasenabschluss %d: %s"), Phase, *Z);
+	}
+	BieteEndlosBonusAn(Welle);
+}
+
+FString UTDEinsatzSubsystem::WerteEinsatzAus(bool bSieg, int32 Welle, float KernAnteil)
+{
+	ATDDefenseCore* Kern = mKern.Get();
+	const UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
+	if (!Kern || !Waves)
+	{
+		return FString();
+	}
+	const int32 Stufe = FMath::Clamp(Waves->GetLaufStufe(), 0, 3);
+	const FString Platz = Kern->mLaufPlatz.IsEmpty() ? FString(TEXT("Platz")) : Kern->mLaufPlatz;
+	// Abschlussbericht: der ganze Lauf aus der Wellenstatistik
+	Melde(bSieg ? TDT(TEXT("ABSCHLUSSBERICHT – Sieg"), TEXT("FINAL REPORT – Victory")) : TDT(TEXT("ABSCHLUSSBERICHT – Niederlage"), TEXT("FINAL REPORT – Defeat")));
+	for (const FString& Z : PhasenBericht(1, Welle))
+	{
+		Melde(Z);
+		UE_LOG(LogFicsitTD, Log, TEXT("Abschlussbericht: %s"), *Z);
+	}
+	const int32 Erreicht = bSieg ? Welle : FMath::Max(0, Welle - 1);
+	const int32 Wertung = Erreicht * 1000 + (bSieg ? FMath::Clamp(FMath::RoundToInt(KernAnteil), 1, 100) : 0);
+	// 16.11. (Nachpruefung E3, Marius): erweiterte Spieleinstellungen des Spiels machen den Lauf zum Lauf ohne Wertung
+	if (const AFGGameState* Spiel = GetWorld()->GetGameState<AFGGameState>())
+	{
+		if (TDKreativModusAn(Spiel))
+		{
+			UE_LOG(LogFicsitTD, Log, TEXT("Einsatz: Lauf %s Stufe %d ohne Wertung (erweiterte Spieleinstellungen)"), *Platz, Stufe);
+			return TDT(TEXT("Ohne Wertung: erweiterte Spieleinstellungen sind an."), TEXT("Not ranked: advanced game settings are on."));
+		}
+	}
+	if (Kern->mLaufEingriffe > 0)
+	{
+		UE_LOG(LogFicsitTD, Log, TEXT("Einsatz: Lauf %s Stufe %d ohne Wertung (%d Eingriffe)"), *Platz, Stufe, Kern->mLaufEingriffe);
+		return TDF(TEXT("Ohne Wertung: %d Eingriffe in diesem Lauf."), TEXT("Not ranked: %d interventions in this run."), Kern->mLaufEingriffe);
+	}
+	const FString Schluessel = FString::Printf(TEXT("Einsatz.%s.Stufe%d"), *Platz, Stufe);
+	FString Inhalt;
+	TSharedPtr<FJsonObject> Obj;
+	if (!FFileHelper::LoadFileToString(Inhalt, *TDBestwertDatei()) || !FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(Inhalt), Obj) || !Obj.IsValid())
+	{
+		Obj = MakeShared<FJsonObject>();
+	}
+	double AltWert = 0.0;
+	Obj->TryGetNumberField(Schluessel, AltWert);
+	const int32 Alt = FMath::RoundToInt(AltWert);
+	// Sieg traegt den Kern-Rest (1..100) in den letzten drei Stellen, eine Niederlage 0
+	auto Text = [](int32 W) -> FString
+	{
+		return W % 1000 > 0 ? TDF(TEXT("Sieg mit Kern %d %%"), TEXT("victory with Core %d %%"), W % 1000)
+			: TDF(TEXT("%d Wellen"), TEXT("%d waves"), W / 1000);
+	};
+	const bool bNeu = Wertung > Alt;
+	if (bNeu)
+	{
+		Obj->SetNumberField(Schluessel, Wertung);
+		FString Neu;
+		FJsonSerializer::Serialize(Obj.ToSharedRef(), TJsonWriterFactory<>::Create(&Neu));
+		FFileHelper::SaveStringToFile(Neu, *TDBestwertDatei(), FFileHelper::EEncodingOptions::ForceUTF8);
+	}
+	UE_LOG(LogFicsitTD, Log, TEXT("Einsatz: Lauf %s Stufe %d gewertet %d (vorher %d%s)"), *Platz, Stufe, Wertung, Alt, bNeu ? TEXT(", neuer Bestwert") : TEXT(""));
+	if (bNeu && Alt > 0)
+	{
+		return TDF(TEXT("NEUER BESTWERT an diesem Kernplatz: %s (vorher %s)."), TEXT("NEW BEST at this core site: %s (before %s)."), *Text(Wertung), *Text(Alt));
+	}
+	return bNeu ? TDF(TEXT("Erster Bestwert an diesem Kernplatz: %s."), TEXT("First best at this core site: %s."), *Text(Wertung))
+		: TDF(TEXT("Bestwert an diesem Kernplatz: %s."), TEXT("Best at this core site: %s."), *Text(Alt));
 }

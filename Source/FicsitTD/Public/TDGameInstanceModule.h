@@ -21,11 +21,15 @@ public:
 	static const TCHAR* TowerDefenseId;
 	/** Schluessel der Modus-Auswahl */
 	static const TCHAR* ModusId;
+	/** 0.11 (Gegencheck Einsatz, Marius 16.11.): Auswahl "Stufe" - 0 nach Startort, 1..4 Erkundung..Albtraum */
+	static const TCHAR* StufeId;
 private:
 	/** Anzeigetexte der Auswahl in der Spielsprache (das Asset kennt nur einen Text) */
 	void SetzeTexte();
 	UPROPERTY()
 	TObjectPtr<USMLSessionSetting> mModus;
+	UPROPERTY()
+	TObjectPtr<USMLSessionSetting> mStufe;
 };
 
 /** Spielmodi der Auswahl "Spielmodus" (Wert der Sitzungseinstellung FicsitTD.ModusInt) */
@@ -33,4 +37,8 @@ namespace ETDModus
 {
 	constexpr int32 Aus = 0;
 	constexpr int32 Einsatz = 1;
+	/** 0.11 (Marius 15.11.): Wellen auf Zeit, endlos, eine Front */
+	constexpr int32 Endlos = 2;
+	/** 0.12-dev (Marius 15.11.): normales Satisfactory mit HUB, dazu Tuerme, Mauern und die Bohrung auf Knopfdruck */
+	constexpr int32 Abwehr = 3;
 }

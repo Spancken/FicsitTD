@@ -1,5 +1,6 @@
 #include "FicsitTDModule.h"
 #include "TDPionier.h"
+#include "TDKernplatz.h"
 #include "AI/FGCreatureController.h"
 #include "Patching/NativeHookManager.h"
 #include "Misc/CommandLine.h"
@@ -218,14 +219,16 @@ static bool SpeichernGesperrt(const UObject* Kontext, bool bMelden)
 	UWorld* World = Kontext ? Kontext->GetWorld() : nullptr;
 	const UTDWaveSubsystem* Waves = World ? World->GetSubsystem<UTDWaveSubsystem>() : nullptr;
 	const UTDEinsatzSubsystem* Einsatz = World ? World->GetSubsystem<UTDEinsatzSubsystem>() : nullptr;
-	if (!Waves || !Einsatz || !Waves->LaeuftWelle() || !Einsatz->IstAktiv() || TDBalance::Wert(TEXT("Einsatz.SpeichernInWelle"), 0.f) > 0.f)
+	// 0.12-dev (Marius 15.11.: Speichersperre bleibt): auch in einer Welle der Bohrung
+	if (!Waves || !Einsatz || !Waves->LaeuftWelle() || !(Einsatz->IstAktiv() || Waves->IstBohrung()) || TDBalance::Wert(TEXT("Einsatz.SpeichernInWelle"), 0.f) > 0.f)
 	{
 		return false;
 	}
 	if (bMelden)
 	{
-		Einsatz->Melde(TDT(TEXT("Während einer Welle kann nicht gespeichert werden. Nach der Welle speichert der Einsatz selbst."),
-			TEXT("You cannot save during a wave. The operation saves on its own after the wave.")));
+		// 16.11. (Nachpruefung F10): neutral - gilt auch fuer Bohrung und Endlos (dort speichert der Mod nicht selbst)
+		Einsatz->Melde(TDT(TEXT("Während einer Welle kann nicht gespeichert werden - nach der Welle wieder."),
+			TEXT("You cannot save during a wave - you can again once it is over.")));
 	}
 	return true;
 }
@@ -255,7 +258,8 @@ static bool MeilensteinGesperrt(const UObject* Kontext, TSubclassOf<UFGSchematic
 /** Freigabe je Phase (Wellen-Progression 7): Knoten erst ab Welle N (Forschung.<Knoten>.AbWelle), gezaehlt wird die naechste Welle */
 static bool WelleZuFrueh(const AFGResearchManager* Forschung, UClass* Schematic)
 {
-	if (!Forschung || !Schematic)
+	// 0.12-dev: im Freien Spiel mit Abwehr gibt es keine Wellennummer - keine Freigabe "ab Welle"
+	if (!Forschung || !Schematic || UTDKernplatz::IstAbwehr(Forschung))
 	{
 		return false;
 	}
@@ -268,7 +272,7 @@ static bool WelleZuFrueh(const AFGResearchManager* Forschung, UClass* Schematic)
 		}
 		const int32 Ab = TDBalance::Ganz(FString::Printf(TEXT("Forschung.%s.AbWelle"), E.Schluessel), E.Welle);
 		const UTDWaveSubsystem* Waves = Forschung->GetWorld() ? Forschung->GetWorld()->GetSubsystem<UTDWaveSubsystem>() : nullptr;
-		const int32 Naechste = Waves ? Waves->GetWelle() + 1 : 1;
+		const int32 Naechste = Waves ? Waves->GetFreigabeWelle() : 1;
 		if (Naechste < Ab)
 		{
 			MeldeForschungGesperrt(Forschung, Schematic, TDF(TEXT("%s ist erst ab Welle %d erforschbar (nächste Welle: %d)."),
@@ -311,7 +315,7 @@ static bool VoraussetzungFehlt(const AFGResearchManager* Forschung, UClass* Sche
  *  (eigene Funktion: die Kommas der Liste vertragen sich nicht mit dem Hook-Makro) */
 static void PruefeEingriff(const AChatCommandSubsystem* Self, const FString& Zeile)
 {
-	static const TCHAR* Eingriffe[] = { TEXT("gib "), TEXT("td fuellen"), TEXT("td füllen"), TEXT("td freischalten"), TEXT("td einsatz frei"), TEXT("td kern tempo") };
+	static const TCHAR* Eingriffe[] = { TEXT("gib "), TEXT("td fuellen"), TEXT("td füllen"), TEXT("td freischalten"), TEXT("td einsatz frei"), TEXT("td kern tempo"), TEXT("td kern springe") };
 	const FString Befehl = Zeile.TrimStartAndEnd().ToLower().Replace(TEXT("/"), TEXT(""));
 	for (const TCHAR* E : Eingriffe)
 	{
@@ -373,9 +377,23 @@ static bool IstAktiverKoeder(const AActor* Actor)
 	return Decoy && Decoy->GetActiveTarget() != nullptr;
 }
 
+/** 16.11. (Nachpruefung F3): im Freien Spiel mit Abwehr greifen nur Wellengegner der Bohrung die Koeder an - Wildtiere nicht
+ *  ("nichts greift an, was du nicht eingeschaltet hast"). Im Einsatz bleibt es wie bisher. */
+static bool KoederFuer(const AFGCreatureController* Self, const AActor* Actor)
+{
+	if (!IstAktiverKoeder(Actor))
+	{
+		return false;
+	}
+	const APawn* Selbst = Self ? Self->GetPawn() : nullptr;
+	return IstWellenKreatur(Selbst) || !UTDKernplatz::IstAbwehr(Self);
+}
+
 void FFicsitTDModule::StartupModule()
 {
 	UE_LOG(LogFicsitTD, Log, TEXT("FICSIT Tower Defense geladen"));
+	// 19.11.2026: Diagnose Spielupdate 1.2.5.1 - Header-Layout gegen das laufende Spiel pruefen (TDLayoutDiagnose.cpp)
+	{ extern void TDLayoutPruefen(); TDLayoutPruefen(); }
 
 #if !WITH_EDITOR
 	// Die Kreatur-KI soll Koeder wie Spieler behandeln: gueltiges Ziel, Feindschaft, Bedrohung
@@ -384,9 +402,13 @@ void FFicsitTDModule::StartupModule()
 	// Test 0.43 (Marius): Gegner griffen sich gegenseitig an - Wellengegner sind fuer keine Kreatur Ziel, Feind oder Bedrohung
 	SUBSCRIBE_METHOD_VIRTUAL(AFGCreatureController::IsValidTarget, Sample, [](auto& Scope, const AFGCreatureController* Self, const AActor* Actor)
 	{
-		if (IstAktiverKoeder(Actor))
+		if (KoederFuer(Self, Actor))
 		{
 			Scope.Override(true);
+		}
+		else if (IstAktiverKoeder(Actor))
+		{
+			Scope.Override(false);   // 16.11. (F3): Wildtier im Freien Spiel
 		}
 		else if (IstWellenKreatur(Actor) || IstWellenKreatur(Self ? Self->GetPawn() : nullptr))
 		{
@@ -395,9 +417,13 @@ void FFicsitTDModule::StartupModule()
 	});
 	SUBSCRIBE_METHOD_VIRTUAL(AFGCreatureController::CanBeHostileTowards, Sample, [](auto& Scope, const AFGCreatureController* Self, const AActor* Actor)
 	{
-		if (IstAktiverKoeder(Actor))
+		if (KoederFuer(Self, Actor))
 		{
 			Scope.Override(true);
+		}
+		else if (IstAktiverKoeder(Actor))
+		{
+			Scope.Override(false);   // 16.11. (F3): Wildtier im Freien Spiel
 		}
 		else if (IstWellenKreatur(Actor) || IstWellenKreatur(Self ? Self->GetPawn() : nullptr))
 		{
@@ -406,9 +432,13 @@ void FFicsitTDModule::StartupModule()
 	});
 	SUBSCRIBE_METHOD_VIRTUAL(AFGCreatureController::IsActorConsideredThreat_Implementation, Sample, [](auto& Scope, const AFGCreatureController* Self, const AActor* Actor)
 	{
-		if (IstAktiverKoeder(Actor))
+		if (KoederFuer(Self, Actor))
 		{
 			Scope.Override(true);
+		}
+		else if (IstAktiverKoeder(Actor))
+		{
+			Scope.Override(false);   // 16.11. (F3): Wildtier im Freien Spiel
 		}
 		else if (IstWellenKreatur(Actor))
 		{

@@ -1,0 +1,351 @@
+{
+  "Name": "Endlos-Lang",
+  "_Hinweis": "0.11 (Marius 15.11.): Langlauf Endlos-Wellen. Basis wie Strat-Gewehr-Tesla (Simulator-Strategie), aber Spielmodus 2: Wellen auf Zeit (aufZeit, kein Vorziehen), eine Front, schrumpfender Abstand. Kennzahlen je Welle im Pruefstand-Abschnitt des Berichts. Ziel: sehen, wie weit die Basis kommt und wo der Druck kippt. 16.11. (Fenster B2): Pruefung \"Kern hat Welle 30 ueberstanden\" entfernt - sie mass den Kern am Ende des Laufs (im Endlos-Modus immer 0); die Pruefung \"Welle 30 abgewehrt\" deckt es ab.",
+  "NeuesSpiel": {
+    "Startort": "Rocky Desert",
+    "Modus": 2
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 150,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warteBis": "EinsatzAktiv",
+      "max": 180
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Endlos-Wellen gestartet",
+      "min": 1,
+      "text": "Endlos: Lauf mit Countdown gestartet (nicht manuell)"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Einsatz gestartet (Stufe",
+      "min": 1,
+      "text": "Endlos: Einsatz automatisch gestartet"
+    },
+    {
+      "befehl": "td einsatz frei an"
+    },
+    {
+      "stromfrei": true
+    },
+    {
+      "versorgung": {
+        "Bolzenturm": 50,
+        "Gewehrturm": 25,
+        "Nobelisk-Werfer": 15,
+        "Flammenwerfer": 6000
+      }
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 1,
+      "level": 1,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "Strat-Gewehr-Tesla_W00"
+    },
+    {
+      "wellenlauf": 1,
+      "zeitraffer": 6,
+      "max": 900,
+      "aufZeit": true
+    },
+    {
+      "erforsche": "Assembler"
+    },
+    {
+      "aufwerten": "Bolzenturm",
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 1,
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "wellenlauf": 2,
+      "zeitraffer": 6,
+      "max": 900,
+      "aufZeit": true
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Endlos: Welle 1 abgewehrt, naechste in",
+      "min": 1,
+      "text": "Endlos: nach Welle 1 Abstand ab Wellenbeginn"
+    },
+    {
+      "erforsche": "Kupfer"
+    },
+    {
+      "wellenlauf": 3,
+      "zeitraffer": 6,
+      "max": 900,
+      "aufZeit": true
+    },
+    {
+      "erforsche": "Giesserei"
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 2,
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "wellenlauf": 4,
+      "zeitraffer": 6,
+      "max": 900,
+      "aufZeit": true
+    },
+    {
+      "erforsche": "Gewehrturm"
+    },
+    {
+      "wellenlauf": 8,
+      "zeitraffer": 6,
+      "max": 900,
+      "aufZeit": true
+    },
+    {
+      "erforsche": "Kohlekraft"
+    },
+    {
+      "erforsche": "Panzerbrechend"
+    },
+    {
+      "erforsche": "Schwefel"
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 2,
+      "level": 2,
+      "rezept": "Recipe_TD_Gun_Standard"
+    },
+    {
+      "wellenlauf": 12,
+      "zeitraffer": 6,
+      "max": 900,
+      "aufZeit": true
+    },
+    {
+      "erforsche": "KernNotrep"
+    },
+    {
+      "erforsche": "KernPanzer"
+    },
+    {
+      "erforsche": "Kettenblitz"
+    },
+    {
+      "erforsche": "Teslaspule"
+    },
+    {
+      "erforsche": "Turmfertigung2"
+    },
+    {
+      "aufwerten": "Gewehrturm",
+      "level": 3,
+      "rezept": "Recipe_TD_Gun_Panzer"
+    },
+    {
+      "baue": "Teslaspule",
+      "anzahl": 1,
+      "level": 2,
+      "rezept": "Recipe_TD_Tesla_Discharge"
+    },
+    {
+      "wellenlauf": 16,
+      "zeitraffer": 6,
+      "max": 900,
+      "aufZeit": true
+    },
+    {
+      "erforsche": "Brandmunition"
+    },
+    {
+      "erforsche": "DoktrinGewehr"
+    },
+    {
+      "erforsche": "KernSchild"
+    },
+    {
+      "aufwerten": "Gewehrturm",
+      "level": 3,
+      "rezept": "Recipe_TD_Gun_Brand"
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 1,
+      "level": 3,
+      "rezept": "Recipe_TD_Gun_Brand"
+    },
+    {
+      "aufwerten": "Teslaspule",
+      "level": 3,
+      "rezept": "Recipe_TD_Tesla_Discharge"
+    },
+    {
+      "baue": "Teslaspule",
+      "anzahl": 1,
+      "level": 3,
+      "rezept": "Recipe_TD_Tesla_Discharge"
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "Strat-Gewehr-Tesla_W16"
+    },
+    {
+      "wellenlauf": 20,
+      "zeitraffer": 6,
+      "max": 900,
+      "aufZeit": true
+    },
+    {
+      "erforsche": "Akkubank"
+    },
+    {
+      "erforsche": "BandMk2"
+    },
+    {
+      "erforsche": "Munitionspuffer"
+    },
+    {
+      "erforsche": "Raffinerie"
+    },
+    {
+      "erforsche": "Turmfertigung3"
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 2,
+      "level": 3,
+      "rezept": "Recipe_TD_Gun_Brand"
+    },
+    {
+      "aufwerten": "Teslaspule",
+      "level": 4,
+      "rezept": "Recipe_TD_Tesla_Discharge"
+    },
+    {
+      "baue": "Teslaspule",
+      "anzahl": 2,
+      "level": 4,
+      "rezept": "Recipe_TD_Tesla_Discharge"
+    },
+    {
+      "wellenlauf": 25,
+      "zeitraffer": 6,
+      "max": 900,
+      "aufZeit": true
+    },
+    {
+      "erforsche": "Bauxit"
+    },
+    {
+      "erforsche": "Turbomunition"
+    },
+    {
+      "aufwerten": "Gewehrturm",
+      "level": 5,
+      "rezept": "Recipe_TD_Gun_Turbo"
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 1,
+      "level": 5,
+      "rezept": "Recipe_TD_Gun_Turbo"
+    },
+    {
+      "baue": "Teslaspule",
+      "anzahl": 1,
+      "level": 4,
+      "rezept": "Recipe_TD_Tesla_Discharge"
+    },
+    {
+      "wellenlauf": 30,
+      "zeitraffer": 6,
+      "max": 900,
+      "aufZeit": true
+    },
+    {
+      "wellenlauf": 40,
+      "zeitraffer": 6,
+      "max": 900,
+      "aufZeit": true
+    },
+    {
+      "foto": "Endlos-Lang_W40"
+    },
+    {
+      "wellenlauf": 50,
+      "zeitraffer": 6,
+      "max": 900,
+      "aufZeit": true
+    },
+    {
+      "foto": "Endlos-Lang_W50"
+    },
+    {
+      "wellenlauf": 60,
+      "zeitraffer": 6,
+      "max": 900,
+      "aufZeit": true
+    },
+    {
+      "foto": "Endlos-Lang_W60"
+    },
+    {
+      "wellenlauf": 80,
+      "zeitraffer": 6,
+      "max": 900,
+      "aufZeit": true
+    },
+    {
+      "foto": "Endlos-Lang_W80"
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "Strat-Gewehr-Tesla_W30"
+    },
+    {
+      "pruefe": "Sicherheitsnetze",
+      "text": "kein Sicherheitsnetz ausgelöst (Versetzen, Absturz, 0 LP)"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Endlos: Welle 30 abgewehrt",
+      "min": 1,
+      "text": "Endlos: Welle 30 erreicht und abgewehrt"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "ACHTUNG: Ab Welle",
+      "min": 0,
+      "max": 0,
+      "text": "Endlos: nie eine zweite Front"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}

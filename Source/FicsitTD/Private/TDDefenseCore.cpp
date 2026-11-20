@@ -145,7 +145,8 @@ void ATDDefenseCore::BeginPlay()
 
 float ATDDefenseCore::GetTDMaxHealth() const
 {
-	return mMaxHealth * (TDForschung::Hat(this, TEXT("KernPanzer")) ? TDBalance::Wert(TEXT("Forschung.KernPanzer.Faktor"), 1.3f) : 1.f);
+	return mMaxHealth * (TDForschung::Hat(this, TEXT("KernPanzer")) ? TDBalance::Wert(TEXT("Forschung.KernPanzer.Faktor"), 1.3f) : 1.f)
+		* (1.f + mKernBonusStufen * TDBalance::Wert(TEXT("Einsatz.Bonus.KernMax"), 0.1f));
 }
 
 void ATDDefenseCore::LadeSchild()

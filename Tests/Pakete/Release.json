@@ -1,6 +1,6 @@
 {
   "Name": "Release",
-  "_Hinweis": "Pruefstufe G2 (Regression) vor jeder Veroeffentlichung, Deutsch. Je Bereich ein Plan: Grundtest (Welle, Tuerme), Neustart (neues Spiel, Speichern/Laden), MAM, Baender, Spezialisierung, Bausperren, Bauten, Review-Funde, Wege/Fronten, Pionier P2/P3, Fehler melden. Neue Funktionen bekommen hier ihren Plan. Ablauf: Satisfactory/Notizen/Release-Prozess.md. Stand 0.10.1 (15.11.2026, mit Plaenen Waehrung und Netzumbau).",
+  "_Hinweis": "Pruefstufe G2 (Regression) vor jeder Veroeffentlichung, Deutsch. Je Bereich ein Plan: Grundtest (Welle, Tuerme), Neustart (neues Spiel, Speichern/Laden), MAM, Baender, Spezialisierung, Bausperren, Bauten, Review-Funde, Wege/Fronten, Pionier P2/P3, Fehler melden. Neue Funktionen bekommen hier ihren Plan. Ablauf: Satisfactory/Notizen/Release-Prozess.md. Stand 0.10.1 (15.11.2026, mit Plaenen Waehrung und Netzumbau). 16.11.: dazu Spielersicht (ohne Entwicklermodus) und EinsatzPhase.",
   "Plaene": [
     "Grundtest",
     "Waehrung",
@@ -15,6 +15,8 @@
     "Netzumbau",
     "Pionier-P3",
     "Pionier-P2",
-    "Melden"
+    "Melden",
+    "Spielersicht",
+    "EinsatzPhase"
   ]
 }

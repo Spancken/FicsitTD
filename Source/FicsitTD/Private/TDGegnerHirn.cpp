@@ -605,6 +605,17 @@ void UTDGegnerHirn::TickComponent(float DeltaTime, ELevelTick TickType, FActorCo
 					Kapsel->IgnoreActorWhenMoving(A, true);
 				}
 			}
+			// 18.11.: Nussbuesche, Krabbennester, Erz und Steinknoten im Netz - der Weg fuehrt um sie herum, wer die Kante streift, laeuft durch
+			if (TDBalance::Wert(TEXT("Gegner.HindernisseDurchlaufen"), 1.f) > 0.f)
+			{
+				for (const TWeakObjectPtr<AActor>& Teil : Wellen->GetWeltHindernisse())
+				{
+					if (AActor* A = Teil.Get())
+					{
+						Kapsel->IgnoreActorWhenMoving(A, true);
+					}
+				}
+			}
 		}
 	}
 	// Weg alle 10 s neu (Mauern koennen gebaut oder gefallen sein), nicht waehrend eine Mauer angegriffen wird
@@ -714,6 +725,17 @@ void UTDGegnerHirn::SetzeBlockade(const AFGCreature* Kreatur, ATDDecoy* Mauer, c
 	mAnlaufStill = 0.f;
 	UE_LOG(LogFicsitTD, Log, TEXT("Hirn: %s greift %s an (%s)"), *Kreatur->GetClass()->GetName(),
 		Mauer && Mauer->GetActiveTarget() ? *Mauer->GetActiveTarget()->GetName() : TEXT("?"), Grund);
+}
+
+bool UTDGegnerHirn::PlaneNachNetzumbau()
+{
+	const AFGCreature* Kreatur = Cast<AFGCreature>(GetOwner());
+	if (!Kreatur || GetPhase() != ETDHirnPhase::Marsch)
+	{
+		return false;
+	}
+	NeuerWeg(Kreatur);
+	return true;
 }
 
 void UTDGegnerHirn::NeuerWeg(const AFGCreature* Kreatur)
@@ -1062,7 +1084,27 @@ void UTDGegnerHirn::Marschiere(AFGCreature* Kreatur, float DeltaTime)
 				Wellen->SperreKlippe(KapselKlippe);
 			}
 		}
-		const FString Zustand = Diagnose() + TEXT(" | vorn: ") + Vorn + TEXT(" | Antrieb: ") + Antrieb + TEXT(" | Kapsel: ") + Kapselprobe;
+		// 18.11. (Diagnose, 9 Faelle seit 17.11.: grosse Stinger am Startpunkt Nordwesten, MOVE_NavWalking, Tempo voll, Boden nicht begehbar):
+		// warum bleiben sie im NavWalking, obwohl die Pflege jede Sekunde auf Walking schaltet? Engine verlaesst NavWalking nur, wenn
+		// FindTeleportSpot einen freien Platz findet (TryToLeaveNavWalking). Dazu: welches Netz gilt fuer die Groesse, liegt darunter Netz?
+		FString NavDiag;
+		if (UCharacterMovementComponent* NB = Kreatur->GetCharacterMovement(); NB && NB->MovementMode == MOVE_NavWalking)
+		{
+			FVector Frei = Vorher;
+			const bool bFrei = GetWorld()->FindTeleportSpot(Kreatur, Frei, Kreatur->GetActorRotation());
+			NB->SetMovementMode(MOVE_Walking);
+			const FString Danach = UEnum::GetValueAsString(NB->MovementMode.GetValue());
+			const FNavAgentProperties& Agent = Kreatur->GetNavAgentPropertiesRef();
+			UNavigationSystemV1* NS = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
+			const ANavigationData* ND = NS ? NS->GetNavDataForProps(Agent, Vorher) : nullptr;
+			FNavLocation Unter;
+			const bool bUnter = ND && NS->ProjectPointToNavigation(Vorher, Unter, FVector(100.f, 100.f, 300.f), ND);
+			NavDiag = FString::Printf(TEXT(" | NavWalking: freier Platz %s (%.0f cm entfernt), nach Umschalten %s, Agent Radius %.0f Hoehe %.0f, Netz %s, darunter Netz %s%s"),
+				bFrei ? TEXT("ja") : TEXT("NEIN"), FVector::Dist(Frei, Vorher), *Danach, Agent.AgentRadius, Agent.AgentHeight,
+				ND ? *ND->GetName() : TEXT("-"), bUnter ? TEXT("ja") : TEXT("NEIN"),
+				bUnter ? *FString::Printf(TEXT(" (%.0f cm tiefer)"), Vorher.Z - Unter.Location.Z) : TEXT(""));
+		}
+		const FString Zustand = Diagnose() + TEXT(" | vorn: ") + Vorn + TEXT(" | Antrieb: ") + Antrieb + TEXT(" | Kapsel: ") + Kapselprobe + NavDiag;
 		// 0.78.1 (Pruefstand: versetzte Gegner fielen bis -100 km): nur auf echten Boden versetzen - von 5 m ueber dem Wegpunkt
 		// nach unten suchen; ohne Boden in 20 m bleibt er stehen und wird beim naechsten Mal weiter vorn versucht
 		FHitResult Boden;

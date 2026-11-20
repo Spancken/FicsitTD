@@ -5,6 +5,7 @@
 #include "Buildables/FGBuildableManufacturer.h"
 #include "FGClearanceData.h"
 #include "TDDamageable.h"
+#include "TDAbrissSperre.h"
 #include "TDTurretBase.generated.h"
 
 class AFGCreature;
@@ -76,6 +77,12 @@ class FICSITTD_API ATDTurretBase : public AFGBuildableManufacturer, public ITDDa
 {
 	GENERATED_BODY()
 public:
+	// 17.11. (P16/A12, Marius: kein Abriss waehrend der Welle) - TDAbrissSperre.h
+	virtual bool CanDismantle_Implementation() const override { return !TDAbrissInWelleGesperrt(this) && Super::CanDismantle_Implementation(); }
+	virtual bool SupportsDismantleDisqualifiers_Implementation() const override { return true; }
+	virtual void GetDismantleDisqualifiers_Implementation(TArray<TSubclassOf<UFGConstructDisqualifier>>& Out, const TArray<AActor*>& Alle) const override { TDAbrissSperreGruende(this, Out); }
+private:
+public:
 	ATDTurretBase();
 
 	/** 0.9.6 (Gesamtreview 12.11.): Reichweitenring der Bauvorschau auf mRange der Unterklasse setzen (der Konstruktor kennt nur 45 m) */
@@ -106,6 +113,9 @@ public:
 
 	/** Munition im Eingang (Stueck bzw. bei Fluessigkeiten Liter) */
 	virtual int32 GetAmmo() const;
+	/** 17.11. (P12, Metriken): Anteil der Spielzeit, die der Fabrik-Takt seit Bilanzstart bekam (B20), und Munition im Eingang in Stueck */
+	float FabrikTaktAnteil() const;
+	int32 MunitionStueck() const;
 	int32 GetShotsFired() const { return mSchuesse; }
 	int32 GetKills() const { return mKills; }
 	/** Turmlevel 1-5 (0.63, Marius 04.11.2026): nur per Upgrade im Turmfenster, sichtbar an den Anbauteilen _S<n> */
@@ -195,13 +205,20 @@ public:
 		/** Ziel da, aber keine Munition: die Fabrik kommt nicht nach */
 		float ZeitHungrig = 0.f;
 		float ZeitOhneStrom = 0.f;
+		/** 17.11. (B20 Schrittweite): Ziel da, aber nicht ausgerichtet / freigegeben, aber das Spiel produziert nicht;
+		 *  Aktionen ohne Ziel (verfallen); Bilder mit Turm-Takt und Spielzeit je Bild */
+		float ZeitNichtAusgerichtet = 0.f;
+		float ZeitBereitOhneProduktion = 0.f;
+		int32 Fehlschuesse = 0;
+		int32 Bilder = 0;
+		uint64 LetztesBild = 0;
 	};
 	const FBilanz& GetBilanz() const { return mBilanz; }
 	ETDSchadensart GetSchadensart() const { return mSchadensart; }
 	/** Nenn-Schaden pro Sekunde gegen ein Einzelziel mit der eingelegten Munition (wie "Schaden/s" im Werte-Panel),
 	 *  Grundlage der Abwehrkapazitaet K in der Druckquote Q */
 	virtual float NennDPS() const { return 0.f; }
-	void StarteBilanz() { mBilanz = FBilanz(); mBilanz.Schuesse = -mSchuesse; }
+	void StarteBilanz() { mBilanz = FBilanz(); mBilanz.Schuesse = -mSchuesse; mDiagFabrikDt = 0.f; mDiagProduktionDt = 0.f; mDiagFabrikTicks = 0; mDiagZyklen = 0; }
 	/** Eine Logzeile: Schuesse, Treffer, Schaden, Schaden/s, je Gegnerart mit wirksamem Faktor */
 	FString BilanzText(float Sekunden) const;
 
@@ -223,9 +240,21 @@ protected:
 
 	virtual bool CanProduce_Implementation() const override;
 	virtual void Factory_ProductionCycleCompleted(float overProductionRate) override;
+	/** 17.11. (B20 Schrittweite, Messung): Zeit, die der Fabrik-Takt dem Turm gibt, und Produktionszeit (Fabrik-Thread) */
+	virtual void Factory_Tick(float dt) override;
+	virtual void Factory_TickProducing(float dt) override;
+	float mDiagFabrikDt = 0.f;
+	float mDiagProduktionDt = 0.f;
+	int32 mDiagFabrikTicks = 0;
+	int32 mDiagZyklen = 0;
 
-	/** Ein Produktionszyklus ist fertig (Spiel-Thread). Ziel kann nullptr sein, wenn es inzwischen verschwunden ist. */
+	/** Eine Aktion (Schuss, Wurf, Drohneneinsatz …; Spiel-Thread). Ziel kann nullptr sein, wenn es inzwischen verschwunden ist.
+	 *  17.11. (P10 Munition je Item): ein Zyklus = eine Ladung = AktionenJeZyklus() Aktionen, verteilt ueber den Zyklus. */
 	virtual void Feuern(AFGCreature* Ziel) {}
+	/** Aktionen je Zyklus (= je verbrauchtem Item). Standard: SchussJeItem() der eingelegten Munition */
+	virtual int32 AktionenJeZyklus() const { return SchussJeItem(); }
+	/** Faktor auf die Rezeptdauer: so lange dauert eine Ladung. Standard: SchussJeItem() (Gewehr: Magazindauer) */
+	virtual float ZyklusFaktor() const { return static_cast<float>(SchussJeItem()); }
 	/** ~30 Mal pro Sekunde fuer Animationen und Dauereffekte */
 	virtual void Animieren(float DeltaSeconds, AFGCreature* Ziel) {}
 	/** Stufen-Optik (0.62): Komponente, an die die Anbauteile eines Teils gehaengt werden (Base, Yaw, Head; Unterklassen z. B. Barrels) */
@@ -235,6 +264,11 @@ protected:
 	/** Kommt die Kreatur als Ziel in Frage (zusaetzlich zu Reichweite und freier Sicht)? */
 	virtual bool ZielErlaubt(const AFGCreature* Ziel, float Abstand) const { return true; }
 public:
+	/** 17.11. (P10, Marius: Munition je Item): Aktionen je Item der eingelegten Munition, Balance `Munition.SchussJeItem.<Rezept>`
+	 *  (Rezeptname ohne „Recipe_TD_“), Standard 1 */
+	int32 SchussJeItem() const;
+	/** Verbrauch der eingelegten Munition in Items pro Minute bei Dauerfeuer (Takt, Level, Uebertakten), 0 ohne Rezept */
+	float VerbrauchProMinute() const;
 	/** Hat der Turm Munition fuer den naechsten Zyklus? (Teslaspule: immer) */
 	virtual bool HatMunition() const { return GetAmmo() > 0; }
 	/** 0.10.0 (Marius 14.11.: Rolle sichtbar machen): Pionier-Faehigkeit am Turm zeigen.
@@ -296,8 +330,18 @@ protected:
 	FVector mLampenOrt = FVector(150.f, -150.f, 225.f);
 	/** Freiraum-Hoehe in cm */
 	float mKlarraumHoehe = 560.f;
-	/** Halbe Grundflaeche des Freiraums in cm (0.81: Lockfeuer 2 x 2 m, Oelschlick 8 x 8 m) */
+	/** Halbe Grundflaeche des Freiraums in cm (0.81: Lockfeuer 2 x 2 m, Oelschlick 8 x 8 m); Rueckfall ohne Eintrag in TDAnbauten.inl */
 	FVector2D mKlarraumHalb = FVector2D(205.f, 205.f);
+	/** Optik-Durchgang 16.11.2026: Werte aus TDAnbauten.inl (Blender-Modell, Modelle/td_anbauten.py) - Klarraum asymmetrisch
+	 *  (nur die Seite mit dem Original-Eingang waechst), Stromanschluss am Anschlusskasten im Sockel. Gesetzt in PostInitProperties. */
+	bool mHatAnbauDaten = false;
+	FVector2D mKlarraumMin = FVector2D(-205.f, -205.f);
+	FVector2D mKlarraumMax = FVector2D(205.f, 205.f);
+	FVector mStromOrt = FVector::ZeroVector;
+	/** Lampe, Stromort und Klarraum aus der Tabelle TDAnbauten.inl nach mTurmName uebernehmen */
+	void UebernimmAnbauDaten();
+	/** Stromanschluss-Komponente(n) an den Anschlusskasten setzen (BeginPlay) */
+	void SetzeStromAnschluss();
 	float mNeigungMin = -30.f;   // 0.64.1: vorher -10, Tuerme auf Felsen kamen nicht an Gegner direkt darunter
 	float mNeigungMax = 40.f;
 	/** false = feststehender Turm (Teslaspule): kein Drehen/Neigen, immer ausgerichtet */
@@ -398,10 +442,17 @@ private:
 	/** 0.9.6 (Gesamtreview 12.11., Abschnitt C): TaktBonus vom Spiel-Thread (Spielschritt), GetProductionCycleTime liest nur das.
 	 *  Vorher lief TDBalance::Wert (ohne Sperre) auf dem Fabrik-Thread, parallel zu /td balance neu. */
 	std::atomic<float> mTaktBonusCache{ 1.f };
+	/** 17.11. (P10): Faktor auf die Rezeptdauer (Ladung = N Aktionen), vom Spiel-Thread gesetzt */
+	std::atomic<float> mZyklusFaktorCache{ 1.f };
+	/** Aktionen je Zyklus und davon im laufenden Zyklus schon ausgefuehrt (Spiel-Thread) */
+	int32 mAktionenCache = 1;
+	int32 mAktionenFreigegeben = 0;
 	/** 0.9.8 P4 Uebersteuern (Weltzeit; nicht gespeichert, gilt nur fuer die laufende Sitzung) */
 	float mUebersteuernBis = -1.f;
 	float mUebersteuernPauseBis = -1.f;
 	FTimerHandle mSpielTimer;
+	/** 16.11.: Abschirmung des Munitionslagers (Strahlungsquellen je Sekunde entfernen) */
+	float mAbschirmUhr = 0.f;
 	FTimerHandle mZielTimer;
 	/** T2f: seit der letzten Drehung vergangene Zeit (Drehtakt) */
 	float mDrehZeit = 0.f;
@@ -427,7 +478,8 @@ private:
 	/** Stufen-Optik (Marius 04.11.2026: Level am Turm sichtbar): Anbauteile SM_TD_<Turm>_<Teil>_S<n>, sichtbar ab Level n */
 	void BaueStufenTeile();
 protected:
-	/** 0.9.3 Original-Anschluesse des Spiels (Bandeingang, Rohreingang, Wand-Stromanschluss, Statusmast): per Pfad geladen, nicht mitgeliefert */
+	/** 0.9.3 Original-Anschluesse des Spiels (Bandeingang, Rohreingang): per Pfad geladen, nicht mitgeliefert.
+	 *  Seit dem Optik-Durchgang 16.11.2026 keine Wand-Strommasten und Statusmasten mehr (Anschlusskasten und Lampenkonsole im Sockel). */
 	void BaueOriginalTeile();
 	void OriginalTeil(const TCHAR* Modell, const FVector& Ort, float Gier) { mOriginalTeile.Add({ Modell, Ort, Gier }); }
 	struct FTDOriginalTeil { FString Modell; FVector Ort; float Gier = 0.f; };

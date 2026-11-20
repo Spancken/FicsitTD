@@ -7,7 +7,7 @@
  * Deutsch bei deutscher Spielsprache, sonst Englisch.
  *
  * C++-Texte stehen in beiden Sprachen direkt am Aufruf:
- *   TDT(TEXT("Kern zerstoert"), TEXT("Core destroyed"))                -> FString
+ *   TDT(TEXT("Kern zerstört"), TEXT("Core destroyed"))                -> FString
  *   TDF(TEXT("Welle %d"), TEXT("Wave %d"), Nr)                          -> FString (beide Formate vom Compiler geprueft)
  *   TDTX(...) / TDFX(...)                                               -> FText
  * Asset-Texte (Forschung, Rezepte, Gegenstaende, Gebaeude) sind deutsch erzeugt; bei englischer Spielsprache ersetzt

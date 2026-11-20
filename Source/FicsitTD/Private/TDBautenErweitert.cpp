@@ -68,10 +68,7 @@ ATDConductorWall::ATDConductorWall()
 	mDrehpunkt = ZaunTuer0;
 	mMuendung = FVector::ZeroVector;
 	mHalbmasse = FVector(400.f, 30.f, 200.f);
-	mLampenOrt = FVector(-60.f, -75.f, 340.f);   // 0.9.3: Mauer weg, Original-Mast hinten
 	// 0.9.3 Original-Anschluesse (Modelle\Original_Anschluesse.json, Gebaeude-Review)
-	OriginalTeil(TDOriginal::Strom, FVector(0.f, -30.f, 80.f), -90.f);
-	OriginalTeil(TDOriginal::Mast, FVector(-60.f, -75.f, 0.f), 0.f);
 
 	mKlarraumHoehe = 420.f;
 	mKlarraumHalb = FVector2D(400.f, 30.f);
@@ -137,10 +134,7 @@ ATDRadioMast::ATDRadioMast()
 	mDrehpunkt = FVector(0.f, 0.f, 1064.f);
 	mMuendung = FVector::ZeroVector;
 	mHalbmasse = FVector(200.f, 200.f, 60.f);
-	mLampenOrt = FVector(-60.f, 140.f, 352.f);
 	// 0.9.3 Original-Anschluesse (Modelle\Original_Anschluesse.json, Gebaeude-Review)
-	OriginalTeil(TDOriginal::Strom, FVector(100.f, 30.f, 75.f), 0.f);
-	OriginalTeil(TDOriginal::Mast, FVector(-60.f, 140.f, 12.f), 180.f);
 
 	mKlarraumHoehe = 1250.f;
 	mKlarraumHalb = FVector2D(205.f, 205.f);
@@ -371,10 +365,7 @@ ATDShieldGenerator::ATDShieldGenerator()
 	mDrehpunkt = FVector(0.f, 0.f, 290.f);
 	mMuendung = FVector::ZeroVector;
 	mHalbmasse = FVector(280.f, 280.f, 60.f);
-	mLampenOrt = FVector(-260.f, 260.f, 400.f);
 	// 0.9.3 Original-Anschluesse (Modelle\Original_Anschluesse.json, Gebaeude-Review)
-	OriginalTeil(TDOriginal::Strom, FVector(-200.f, -295.f, 110.f), -90.f);
-	OriginalTeil(TDOriginal::Mast, FVector(-260.f, 260.f, 60.f), 180.f);
 
 	mKlarraumHoehe = 620.f;
 	mKlarraumHalb = FVector2D(300.f, 300.f);
@@ -552,10 +543,7 @@ ATDFlakTurret::ATDFlakTurret()
 	mRange = 6000.f;
 	mDrehpunkt = FVector(0.f, 0.f, 290.f);   // 0.9.3: Bolzensockel 65 cm hoeher
 	mNeigeachse = FVector(0.f, 0.f, 208.f);
-	mLampenOrt = FVector(-90.f, 205.f, 340.f);
 	OriginalTeil(TDOriginal::Eingang, FVector(-210.f, 0.f, 0.f), 90.f);
-	OriginalTeil(TDOriginal::Strom, FVector(0.f, -160.f, 130.f), -90.f);
-	OriginalTeil(TDOriginal::Mast, FVector(-90.f, 205.f, 0.f), 180.f);
 	mMuendung = FVector(172.f, 0.f, 0.f);
 	mNeigungMin = -5.f;
 	mNeigungMax = 80.f;
@@ -737,11 +725,8 @@ ATDFieldProjector::ATDFieldProjector()
 	mDreht = false;
 	mRange = 1500.f;
 	mDrehpunkt = FVector(0.f, 0.f, 525.f);   // 0.9.3: Bolzensockel 65 cm hoeher
-	mLampenOrt = FVector(-90.f, 205.f, 340.f);
 	// 0.9.3 Original-Anschluesse (Modelle\Original_Anschluesse.json, Gebaeude-Review)
 	OriginalTeil(TDOriginal::Eingang, FVector(-210.f, 0.f, 0.f), 90.f);
-	OriginalTeil(TDOriginal::Strom, FVector(0.f, -160.f, 130.f), -90.f);
-	OriginalTeil(TDOriginal::Mast, FVector(-90.f, 205.f, 0.f), 180.f);
 
 	mMuendung = FVector::ZeroVector;
 	mBaseMaxHealth = 3500.f;
@@ -828,10 +813,7 @@ ATDSingularityLauncher::ATDSingularityLauncher()
 	mNeigeachse = FVector(0.f, 0.f, 230.f);
 	mMuendung = FVector(230.f, 0.f, 0.f);
 	mHalbmasse = FVector(300.f, 300.f, 55.f);
-	mLampenOrt = FVector(-150.f, 305.f, 340.f);   // 0.9.3: Lampe auf dem Original-Statusmast
 	OriginalTeil(TDOriginal::Eingang, FVector(-350.f, 0.f, 0.f), 90.f);
-	OriginalTeil(TDOriginal::Strom, FVector(-240.f, -300.f, 75.f), -90.f);
-	OriginalTeil(TDOriginal::Mast, FVector(-150.f, 305.f, 0.f), 180.f);
 	mKlarraumHoehe = 620.f;
 	mKlarraumHalb = FVector2D(305.f, 305.f);
 	mBaseMaxHealth = 5000.f;
@@ -944,10 +926,7 @@ ATDDronePort::ATDDronePort()
 	mKlarraumHoehe = 500.f;
 	mKlarraumHalb = FVector2D(305.f, 305.f);
 	mBaseMaxHealth = 4000.f;
-	mLampenOrt = FVector(-150.f, 345.f, 340.f);
 	OriginalTeil(TDOriginal::Eingang, FVector(-350.f, 0.f, 0.f), 90.f);
-	OriginalTeil(TDOriginal::Strom, FVector(150.f, 300.f, 60.f), 90.f);   // Dose an der Unreal-+Y-Seite, ragt nach aussen
-	OriginalTeil(TDOriginal::Mast, FVector(-150.f, 345.f, 0.f), 180.f);
 	mYawModell = TDErw::Modell(TEXT("DronePort"), TEXT("Tower"));
 	mStandardRezept = TDErw::Rezept(TEXT("DronePort"), TEXT("Drohne_Reparatur"));
 }
@@ -1186,7 +1165,7 @@ FString ATDDronePort::ZusatzInfo() const
 	{
 		Unterwegs += D.Zustand != 0 ? 1 : 0;
 	}
-	return TDF(TEXT("%s: %d von %d Drohnen unterwegs, %d Einsaetze"), TEXT("%s: %d of %d drones out, %d sorties"),
+	return TDF(TEXT("%s: %d von %d Drohnen unterwegs, %d Einsätze"), TEXT("%s: %d of %d drones out, %d sorties"),
 		*(IstKampf() ? TDT(TEXT("Kampfdrohnen"), TEXT("Combat drones")) : TDT(TEXT("Reparaturdrohnen"), TEXT("Repair drones"))), Unterwegs, mDrohnen.Num(), mEinsaetze);
 }
 

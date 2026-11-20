@@ -1,0 +1,33 @@
+{
+  "Name": "Spielersicht",
+  "_Hinweis": "16.11. (Nachpruefung B14): Was sieht ein Spieler ohne Entwicklerdatei? Der Schritt 'spielersicht' schaltet den Entwicklermodus zur Laufzeit ab. Geprueft: keine Entwickler-Knoepfe im Kern-Menue (Freies Bauen, Neu starten, Einsatz starten, Testsprung), Entwicklerbefehle abgelehnt, Spielerbefehl geht, nach der Niederlage kein 'Neu starten'.",
+  "NeuesSpiel": {
+    "Startort": "Grass Fields",
+    "Modus": 1
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 12,
+  "Schritte": [
+    { "pruefe": "Version", "soll": "{VERSION}", "text": "richtige Mod-Version geladen" },
+    { "warteBis": "EinsatzAktiv", "max": 120 },
+    { "spielersicht": true },
+    { "oeffne": "Kern" },
+    { "warte": 2 },
+    { "pruefe": "TestKnoepfe", "soll": "", "text": "keine Entwickler-Knoepfe im Kern-Menue" },
+    { "foto": "Spielersicht_Kern" },
+    { "schliesse": true },
+    { "befehl": "td kern springe 5", "antwortEnthaelt": "Entwicklermodus", "text": "Testsprung per Befehl abgelehnt" },
+    { "befehl": "td einsatz frei an", "antwortEnthaelt": "Entwicklermodus", "text": "Freies Bauen per Befehl abgelehnt" },
+    { "befehl": "td kern status" },
+    { "kernfaellt": true },
+    { "warte": 3 },
+    { "oeffne": "Kern" },
+    { "warte": 2 },
+    { "pruefe": "TestKnoepfe", "soll": "", "text": "nach der Niederlage kein Neu starten" },
+    { "foto": "Spielersicht_Niederlage" },
+    { "schliesse": true },
+    { "spielersicht": false },
+    { "pruefe": "KeineWarnungen", "text": "keine Warnungen oder Fehler des Mods im Log" }
+  ]
+}

@@ -63,7 +63,7 @@ BAEUME = [
     ("Industrie", "FICSIT-Abwehr: Industrie", "Was deine Fabrik herstellen kann: Teile, Stahl, Öl, Strom und schnellere Bänder. Hier wird nichts ausgeschlossen.", f"{P}/IronPlateReinforced/Desc_IronPlateReinforced", [
         ("Kohlekraft", "Kohlekraftwerk", "Kohlekraftwerk (75 MW statt 30 MW), Wasserextraktor und Rohre. Voraussetzung für Teslaspule und Flammenwerfer.",
          (0, 0), [], [], ZEIT,
-         [f"{R}/Buildings/Recipe_GeneratorCoal", f"{R}/Buildings/Recipe_WaterPump", f"{R}/Buildings/Recipe_Pipeline", f"{R}/Buildings/Recipe_PipeSupport", f"{R}/Buildings/Recipe_PipelineJunction_Cross"], KOHLE),
+         [f"{R}/Buildings/Recipe_GeneratorCoal", f"{R}/Buildings/Recipe_WaterPump", f"{R}/Buildings/Recipe_Pipeline", f"{R}/Buildings/Recipe_PipeSupport", f"{R}/Buildings/Recipe_PipelineJunction_Cross", f"{R}/Buildings/Recipe_PowerStorageMk1"], KOHLE),
         ("Assembler", "Assembler und Eisenteile", "Assembler, Eisenplatten, Schrauben, verstärkte Eisenplatten und Rotoren. Grundlage für fast jede bessere Munition.",
          (1, 0), [], [], ZEIT, EISEN2, f"{P}/IronPlateReinforced/Desc_IronPlateReinforced"),
         ("Kupfer", "Kupferverarbeitung", "Kupferbarren, Draht, Kabel und Kupferblech: der zweite Rohstoff. Für Gewehrmunition, Schockbolzen und Stromtechnik.",
@@ -101,6 +101,15 @@ BAEUME = [
          (1, 5), ["Schwerindustrie"], [], ZEIT,
          [f"{R}/Buildings/Recipe_Blender", f"{R}/Buildings/Recipe_Packager", f"{R}/Buildings/Recipe_FrackingSmasher", f"{R}/Buildings/Recipe_FrackingExtractor",
           f"{R}/Blender/Recipe_FusedModularFrame", f"{R}/Assembler/Recipe_SAMFluctuator"], f"{P}/ModularFrameFused/Desc_ModularFrameFused"),
+        # 17.11. (P10, Marius: Miner Mk2/Mk3 und alle Bandstufen wie im Spiel; Band Mk6 braucht Ficsit und Zeitkristalle, die es in TD nicht gibt)
+        ("BandMk4", "Förderband Mk4", "Bänder und Lifte mit 480 Teilen pro Minute (Baumaterial: Stahlbeton-Träger). Alle Bänder und Lifte werden automatisch aufgerüstet.",
+         (3, 3), ["BandMk3"], [], ZEIT, [f"{R}/Buildings/Recipe_ConveyorBeltMk4", f"{R}/Buildings/Recipe_ConveyorLiftMk4"], f"{P}/SteelPlateReinforced/Desc_SteelPlateReinforced"),
+        ("BandMk5", "Förderband Mk5", "Bänder und Lifte mit 780 Teilen pro Minute (Baumaterial: Aluminiumblech und Stahlbeton-Träger). Alle Bänder und Lifte werden automatisch aufgerüstet.",
+         (3, 4), ["BandMk4"], [], ZEIT, [f"{R}/Buildings/Recipe_ConveyorBeltMk5", f"{R}/Buildings/Recipe_ConveyorLiftMk5"], f"{P}/AluminumPlate/Desc_AluminumPlate"),
+        ("MinerMk2", "Miner Mk2", "Miner mit doppeltem Abbau: 120 statt 60 Erz pro Minute auf einem normalen Knoten. Gekauft wird weiter das Kontingent Miner, das Baumaterial kommt passend zur höchsten Miner-Stufe mit.",
+         (4, 4), ["BandMk4"], [], ZEIT, [f"{R}/Buildings/Recipe_MinerMk2"], f"{G}/Resource/RawResources/OreIron/Desc_OreIron"),
+        ("MinerMk3", "Miner Mk3", "Miner mit vierfachem Abbau: 240 Erz pro Minute auf einem normalen Knoten (Band Mk3 oder schneller nötig). Gekauft wird das Kontingent Miner.",
+         (4, 5), ["MinerMk2"], [], ZEIT, [f"{R}/Buildings/Recipe_MinerMk3"], f"{G}/Resource/RawResources/OreIron/Desc_OreIron"),
     ]),
     # 0.73 Spezialisierung, 0.78.3 schmaler (Marius: MAM scrollt nicht nach rechts): Bolzenturm 0-2 | Gewehrturm 3-5 | Nobelisk-Werfer 0-2 ab Zeile 3
     ("Ballistik", "FICSIT-Abwehr: Ballistik", "Türme und Munition, die Projektile verschießen: Bolzenturm, Gewehrturm, Nobelisk-Werfer. Jede Linie hat eine Gabelung.", BOLZEN, [
@@ -218,7 +227,7 @@ BAEUME = [
          (3, 5), ["Turmfertigung2"], [], ZEIT, [], DRAHT),
         ("DoktrinFlamme", "Doktrin: Flammenwerfer", DOKTRIN + "Flammenwerfer machen 25 % mehr Schaden, ihre Level kosten 25 % weniger Coupons und Level 5 gibt es schon mit Turmfertigung III.",
          (4, 5), ["Turmfertigung2"], [], ZEIT, [], f"{P}/BioFuel/Desc_LiquidBiofuel"),
-        ("Turmfertigung4", "Turmfertigung IV: Meisterstufe", "Alle Türme können auf Level 5 gebracht werden (40 Coupons je Turm). Jeder bekommt eine eigene Fähigkeit: Bolzenturm Doppellauf, Gewehrturm Gurttrommel (Dauerfeuer ohne Nachladen), Nobelisk-Werfer Salvenkopf (drei Nobelisken je Salve), Teslaspule Spannungsfeld, Flammenwerfer Feuerteppich, Himmelsturm Sperrfeuer, Singularitätswerfer Ereignishorizont.",
+        ("Turmfertigung4", "Turmfertigung IV: Meisterstufe", "Alle Türme können auf Level 5 gebracht werden (40 Coupons je Turm). Jeder bekommt eine eigene Fähigkeit: Bolzenturm Doppellauf, Gewehrturm Gurttrommel (+25 % Feuerrate), Nobelisk-Werfer Salvenkopf (drei Nobelisken je Salve), Teslaspule Spannungsfeld, Flammenwerfer Feuerteppich, Himmelsturm Sperrfeuer, Singularitätswerfer Ereignishorizont.",
          (5, 6), ["Turmfertigung3"], [], ZEIT, [], f"{P}/ModularFrame/Desc_ModularFrame"),
         # 0.81 passive Bauten P1 (Konzept-Rohstoffe-Tuerme-Bauten-2026-11-07)
         ("Tor", "Tor", "Neues Gebäude: Tor für die Mauerlinie (8 m breit, Öffnung 4 x 4 m). Öffnet sich für dich und Fahrzeuge, Gegner kommen nie durch und greifen es wie eine Mauer an. Ein Förderband passt unten durch. Kombination Engstelle: am Tor laufen Gegner in einer Reihe, Bolzen durchschlagen dort einen Gegner mehr.",
@@ -248,7 +257,7 @@ for _o, _ks in {
     "Chemie": ["NobeliskWerfer", "GasNobelisk", "PulsNobelisk", "StreuNobelisk", "Himmelsturm", "Singularitaet"],
     "Upgrades": ["Turmfertigung2", "Turmfertigung3", "Turmfertigung4"],
     "Kern": ["KernPanzer", "KernNotrep", "KernSchild", "KernGeschuetz"],
-    "Logistik": ["Munitionspuffer", "BandMk3", "MauerMk2", "Stachelmauer"],
+    "Logistik": ["Munitionspuffer", "BandMk3", "BandMk4", "BandMk5", "MinerMk2", "MinerMk3", "MauerMk2", "Stachelmauer"],
 }.items():
     for _k in _ks:
         ORDNER[_k] = _o
@@ -257,7 +266,8 @@ for _o, _ks in {
 KURZ = {
     "Kohlekraft": "Kohlekraftwerk 75 MW", "Assembler": "Assembler, Eisenplatten, Rotoren", "Kupfer": "Kupfer, Draht, Kabel",
     "BandMk2": "Bänder Mk2 (120/min), Umbau automatisch", "Munitionspuffer": "Turmeingang fasst doppelt", "Giesserei": "Gießerei und Stahl",
-    "BandMk3": "Bänder Mk3 (270/min), Umbau automatisch", "Raffinerie": "Ölpumpe, Raffinerie, Kunststoff", "Treibstoffkraft": "Treibstoffkraftwerk 150 MW",
+    "BandMk3": "Bänder Mk3 (270/min), Umbau automatisch", "BandMk4": "Bänder Mk4 (480/min), Umbau automatisch", "BandMk5": "Bänder Mk5 (780/min), Umbau automatisch",
+    "MinerMk2": "Miner Mk2: doppelter Abbau", "MinerMk3": "Miner Mk3: vierfacher Abbau", "Raffinerie": "Ölpumpe, Raffinerie, Kunststoff", "Treibstoffkraft": "Treibstoffkraftwerk 150 MW",
     "Durchschlagbolzen": "Bolzen St. 2: trifft 3 in Reihe", "Gewehrturm": "Neuer Turm: Dauerfeuer", "Explosivbolzen": "Bolzen St. 3: großer Flächenschaden",
     "Streubolzen": "Bolzen St. 2: 3 Splitter (Quarz)", "Zielsuchmunition": "Gewehr St. 2: trifft immer (Caterium)", "Schockbolzen": "Bolzen St. 2: Strom, betäubt 3 s (Caterium)",
     "Schwefel": "Schwefel: Schwarzpulver, Kompaktkohle", "Quarz": "Quarzkristall", "Caterium": "Caterium, Turbodraht", "Bauxit": "Aluminiumgehäuse", "Schwerindustrie": "Fertiger, Computer, Schwere Rahmen", "Mischtechnik": "Mischer, Abfüller, Stickstoff",
@@ -283,7 +293,7 @@ KURZ = {
 # Gegen = wofuer der Knoten gut ist. "Ab Welle" und "Braucht" ergaenzt das Skript selbst.
 LADEN = {
     "Assembler": "Assembler", "Giesserei": "Gießerei", "Raffinerie": "Ölpumpe, Raffinerie, Flüssigkeitspuffer", "Schwerindustrie": "Fertiger", "Mischtechnik": "Mischer, Abfüller, Ressourcenbrunnen", "Gewehrturm": "Gewehrturm",
-    "Kohlekraft": "Kohlekraftwerk, Wasserpumpe", "Teslaspule": "Teslaspule", "Treibstoffkraft": "Treibstoffkraftwerk",
+    "Kohlekraft": "Kohlekraftwerk, Wasserpumpe, Akku", "Teslaspule": "Teslaspule", "Treibstoffkraft": "Treibstoffkraftwerk",
     "Reparaturdrohnen": "Drohnenplatz", "Kampfdrohnen": "Drohnenplatz", "Flammenwerfer": "Flammenwerfer", "NobeliskWerfer": "Nobelisk-Werfer",
     "Tor": "Tor", "Lockfeuer": "Lockfeuer", "Oelschlick": "Ölschlick-Feld",
     "Elektrozaun": "Elektrozaun", "Funkmast": "Funkmast", "Schildgenerator": "Schildgenerator", "Stoerfeld": "Störfeld-Projektor",
@@ -311,6 +321,8 @@ BAUM_VORAUSSETZUNG = {}
 # Voraussetzungen ausserhalb der Eltern im Baum: (Baum, Knoten) -> [(Baum, Knoten)]. Der Knoten bleibt verborgen, bis sie erforscht sind.
 VORAUSSETZUNGEN = {
     ("Industrie", "BandMk3"): [("Industrie", "Giesserei")],
+    ("Industrie", "BandMk4"): [("Industrie", "Schwerindustrie")], ("Industrie", "MinerMk2"): [],
+    ("Industrie", "MinerMk3"): [("Industrie", "Mischtechnik")],
     ("Industrie", "Treibstoffkraft"): [("Industrie", "Kohlekraft")],
     ("Ballistik", "Durchschlagbolzen"): [("Industrie", "Assembler")],
     ("Ballistik", "Gewehrturm"): [("Industrie", "Assembler"), ("Industrie", "Kupfer")],
@@ -360,6 +372,7 @@ AB_WELLE = {
     ("Industrie", "Raffinerie"): 15,
     ("Industrie", "Treibstoffkraft"): 15,
     ("Industrie", "BandMk3"): 10,
+    ("Industrie", "BandMk4"): 25, ("Industrie", "BandMk5"): 30, ("Industrie", "MinerMk2"): 20, ("Industrie", "MinerMk3"): 35,
     ("Ballistik", "Durchschlagbolzen"): 5,
     ("Ballistik", "Gewehrturm"): 5,
     ("Ballistik", "NobeliskWerfer"): 10,   # 0.73: Artillerie-Linie vor der Doktrin waehlbar
@@ -740,6 +753,13 @@ for b_key, b_name, b_text, b_icon, knoten in BAEUME:
             log(f"  Baum {b_key} erscheint nach {baum_vor}")
         else:
             cdo.set_editor_property("mUnlockDependencies", [])
+        # 0.11 (Modus Aus): Baum nur sichtbar und nutzbar, wenn FicsitTD in der Welt aktiv ist (siehe setze_modus_abhaengigkeit.py)
+        modus_klasse = unreal.load_class(None, "/Script/FicsitTD.TDModusAbhaengigkeit")
+        if modus_klasse is not None:
+            cdo.set_editor_property("mVisibilityDependencies", [unreal.new_object(modus_klasse, outer=cdo)])
+            cdo.set_editor_property("mUnlockDependencies", list(cdo.get_editor_property("mUnlockDependencies")) + [unreal.new_object(modus_klasse, outer=cdo)])
+        else:
+            log("  WARNUNG: TDModusAbhaengigkeit fehlt (Editor nicht gebaut) - Baum ohne Modus-Bedingung")
         baum_pinsel = cdo.get_editor_property("mResearchTreeIcon")
         baum_pinsel.set_editor_property("resource_object", icon_von(b_icon))
         cdo.set_editor_property("mResearchTreeIcon", baum_pinsel)

@@ -28,11 +28,8 @@ ATDBoltTurret::ATDBoltTurret()
 	mYawModell = TEXT("/FicsitTD/Buildings/BoltTurret/Mesh/SM_TD_BoltTurret_Yaw.SM_TD_BoltTurret_Yaw");
 	mHeadModell = TEXT("/FicsitTD/Buildings/BoltTurret/Mesh/SM_TD_BoltTurret_Head.SM_TD_BoltTurret_Head");
 	mStandardRezept = TEXT("/FicsitTD/Buildings/BoltTurret/Recipe_TD_Shoot_SpikedRebar.Recipe_TD_Shoot_SpikedRebar_C");
-	mLampenOrt = FVector(-90.f, 205.f, 340.f);   // 0.9.3: Lampe oben auf dem Original-Statusmast
 	// 0.9.3 Original-Anschluesse (Lagen aus Modelle\Original_Anschluesse.json)
 	OriginalTeil(TDOriginal::Eingang, FVector(-210.f, 0.f, 0.f), 90.f);
-	OriginalTeil(TDOriginal::Strom, FVector(0.f, -160.f, 130.f), -90.f);
-	OriginalTeil(TDOriginal::Mast, FVector(-90.f, 205.f, 0.f), 180.f);
 
 }
 

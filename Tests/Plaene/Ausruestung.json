@@ -1,0 +1,56 @@
+{
+  "Name": "Ausruestung",
+  "_Hinweis": "18.11.: Klingenlaeufer im Startkit, Jetpack erst nach Raffinerie, Hover-Pack nach Schwerindustrie (Laden).",
+  "NeuesSpiel": {
+    "Startort": "Rocky Desert"
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 6,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warte": 10
+    },
+    {
+      "gib": "/Game/FactoryGame/Resource/Parts/ResourceSinkCoupon/Desc_ResourceSinkCoupon.Desc_ResourceSinkCoupon_C",
+      "anzahl": 100
+    },
+    {
+      "befehl": "td kaufe Jetpack",
+      "text": "Jetpack vor der Raffinerie (soll abgelehnt werden)"
+    },
+    {
+      "erforsche": "Raffinerie"
+    },
+    {
+      "warte": 2
+    },
+    {
+      "befehl": "td kaufe Jetpack",
+      "text": "Jetpack nach der Raffinerie"
+    },
+    {
+      "befehl": "td kaufe Hover-Pack",
+      "text": "Hover-Pack vor Schwerindustrie (soll abgelehnt werden)"
+    },
+    {
+      "erforsche": "Schwerindustrie"
+    },
+    {
+      "warte": 2
+    },
+    {
+      "befehl": "td kaufe Hover-Pack",
+      "text": "Hover-Pack nach Schwerindustrie"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}

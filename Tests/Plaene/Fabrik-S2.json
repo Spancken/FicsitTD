@@ -1,0 +1,132 @@
+{
+  "Name": "Fabrik-S2",
+  "_Hinweis": "Fabrik-Pruefstand S2 (P11, Marius 17.11.: Treibstoff-Strom mit einbauen, laengere Wege wie im echten Spiel). Wie S1 (Biomasse, ab W6 Kohle), dazu mit echten Festplatten Assembler und Giesserei frueh, ab W15 Raffinerie und Treibstoffkraft; dann am naechsten Oelknoten (bis 2 km) Oelpumpe, 1 Raffinerie mit Harzlager, 2 Treibstoffkraftwerke und lange Leitung ans Netz. Fragen: Oelknoten-Entfernung und Leitungslaenge, reichen die Festplatten (22 fuer die Kette), baut das Spiel Rohre und Kabel im entfernten Gebiet, fliegt die Sicherung? 17.11. nach Fenster1117b: drei Ketten (45 Bolzen/min) - mit einer Kette fiel der Kern vor Welle 6 an Munitionsnot, die Strom-Strecke wurde nie erreicht. 4 Biomassebrenner (120 MW): zwei reichten fuer drei Ketten + 4 Tuerme nicht. 17.11. (Befund Schrittweite): Wellen in Echtzeit - bei Zeitraffer x4 und niedriger Bildrate verlieren die Tuerme messbar Wirkung. 17.11. abends: 2 voll ausgebaute Knoten (120 Bolzen/min) fuer 8 Tuerme, damit W15 (Treibstoff-Forschung) erreicht wird.",
+  "NeuesSpiel": {
+    "Startort": "Grass Fields",
+    "Modus": 1,
+    "Stufe": 2
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 240,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warteBis": "EinsatzAktiv",
+      "max": 120
+    },
+    {
+      "gib": "/Game/FactoryGame/Resource/Parts/ResourceSinkCoupon/Desc_ResourceSinkCoupon.Desc_ResourceSinkCoupon_C",
+      "anzahl": 4000
+    },
+    {
+      "gib": "/Game/FactoryGame/Resource/Parts/GenericBiomass/Desc_GenericBiomass.Desc_GenericBiomass_C",
+      "anzahl": 800
+    },
+    {
+      "kosten": "echt"
+    },
+    {
+      "fabrik": "Bolzen",
+      "tuerme": 8,
+      "level": 2,
+      "band": 1,
+      "ketten": 2,
+      "ausbau": 4
+    },
+    {
+      "strom": "Biomasse",
+      "anzahl": 4
+    },
+    {
+      "netz": true
+    },
+    {
+      "wellenlauf": 6,
+      "zeitraffer": 1
+    },
+    {
+      "erforsche": "Kohlekraft",
+      "echt": true
+    },
+    {
+      "strom": "Kohle",
+      "anzahl": 2
+    },
+    {
+      "fabrikbericht": true
+    },
+    {
+      "wellenlauf": 10,
+      "zeitraffer": 1
+    },
+    {
+      "erforsche": "Assembler",
+      "echt": true
+    },
+    {
+      "erforsche": "Giesserei",
+      "echt": true
+    },
+    {
+      "wellenlauf": 15,
+      "zeitraffer": 1
+    },
+    {
+      "erforsche": "Raffinerie",
+      "echt": true
+    },
+    {
+      "erforsche": "Treibstoffkraft",
+      "echt": true
+    },
+    {
+      "strom": "Treibstoff",
+      "anzahl": 2
+    },
+    {
+      "warte": 180
+    },
+    {
+      "fabrikbericht": true
+    },
+    {
+      "foto": "Fabrik_S2"
+    },
+    {
+      "wellenlauf": 20,
+      "zeitraffer": 1
+    },
+    {
+      "fabrikbericht": true
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Strom Treibstoff:",
+      "min": 1,
+      "text": "Treibstoffkraftwerk gebaut (Bericht im Log)"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "nicht gebaut",
+      "min": 0,
+      "max": 0,
+      "text": "alle Bauten bezahlt und gesetzt"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "not enough spline points",
+      "min": 0,
+      "max": 0,
+      "text": "alle Baender und Rohre mit echter Route (keine Ersatz-Splines)"
+    }
+  ]
+}

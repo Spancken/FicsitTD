@@ -1,0 +1,8 @@
+{
+  "Name": "Fenster1117c",
+  "_Hinweis": "17.11.: Verteilbaum (Marius: gleichmaessig aufteilen). F1-3K4T misst die Verteilung ohne Stromfrage (Neubewertung B18), S1 mit echtem Strom, 3 Ketten, 4 Brennern.",
+  "Plaene": [
+    "Fabrik-F1-3K4T",
+    "Fabrik-S1"
+  ]
+}

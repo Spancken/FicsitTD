@@ -19,7 +19,14 @@
 #include "TDEinsatz.h"
 #include "TDBalance.h"
 #include "TDWaveSubsystem.h"
+#include "TDAda.h"
+#include "FGRecipe.h"
+#include "Buildables/FGBuildable.h"
+#include "FGBuildableSubsystem.h"
+#include "Resources/FGResourceDescriptor.h"
+#include "Resources/FGResourceNode.h"
 #include "TDKernplatz.h"
+#include "Resources/FGResourceDeposit.h"
 #include "TDSzenario.h"
 #include "TDBandUpgrade.h"
 #include "Buildables/FGBuildablePipeReservoir.h"
@@ -55,7 +62,7 @@ static void Antwort(UCommandSender* Sender, const FString& Text)
 /** Hilfetext in der Spielsprache (0.85); auch bei falscher Eingabe neu gesetzt, falls die Sprache nach dem Start wechselt */
 static FText TDUsage()
 {
-	return TDTX(TEXT("/td umgebung|instanzen [Radius_m] - Objekte bzw. Instanzen um dich auflisten | /td koeder - alle Koeder entfernen | /td reichweite [an|aus] - Reichweitenkreise | /td turmlevel <1-5> - naechsten Turm auf Level setzen (Test) | /td teil [Name] - Turmteil ein-/ausblenden | /td probe gewehr|flamme|weg - Effekt-Vorschau | /td fuellen [art] [m3] - Puffer/Flammenwerfer fuellen | /td kern start [erkundung|normal|hart|albtraum] [Wellen] [Min] [Min]|weiter|stop|status|fronten [neu]|wege [aus]|stufen|tempo [Faktor]|stress [N ...] [lp=20] [s=20] [mix|art=<Gegner>] [anim=immer|sichtbar] [kollision=an|aus] [ragdoll=an|aus] [tuerme=aus] [geschoss=aus] [angriff=aus] [drehen=aus] [schatten=aus] [effekte=aus] [df=aus] [drehtakt=N] [toeten=N/s]|stress stop - Kern-Verteidigung | /td test [karte|gegner|marsch] - automatischer Test | /td einsatz start [stufe] [wellen]|frei [an|aus]|status|stop - Einsatz mit Kontingenten | /td laden, /td kaufe <Gebaeude> [n] - Laden | /td freischalten - alles frei | /td balance - Balance-Datei neu lesen | /td platz [liste|scan <Biom>|scan stop|pruefen <Id|S1..S8|hier [Biom]>|merken <Biom> [Notiz]|gemerkt|zurueck|bauen <Biom> [1-3]] - Kernplaetze suchen, pruefen, merken und bauen | /td szenario [liste|<1-5>|pruefen [Nr]|fertig|leeren] - Testszenarien | /td ada [bank] - ADA-Begruessung | /td baender <2-6>|pruefen|reparieren - alle Baender aufruesten, offene Band-Enden pruefen oder verbinden"),
+	return TDTX(TEXT("/td umgebung|instanzen [Radius_m] - Objekte bzw. Instanzen um dich auflisten | /td koeder - alle Köder entfernen | /td reichweite [an|aus] - Reichweitenkreise | /td turmlevel <1-5> - naechsten Turm auf Level setzen (Test) | /td teil [Name] - Turmteil ein-/ausblenden | /td probe gewehr|flamme|weg - Effekt-Vorschau | /td fuellen [art] [m3] - Puffer/Flammenwerfer füllen | /td kern start [erkundung|normal|hart|albtraum] [Wellen] [Min] [Min]|weiter|stop|status|fronten [neu]|wege [aus]|stufen|tempo [Faktor]|stress [N ...] [lp=20] [s=20] [mix|art=<Gegner>] [anim=immer|sichtbar] [kollision=an|aus] [ragdoll=an|aus] [tuerme=aus] [geschoss=aus] [angriff=aus] [drehen=aus] [schatten=aus] [effekte=aus] [df=aus] [drehtakt=N] [töten=N/s]|stress stop - Kern-Verteidigung | /td test [karte|gegner|marsch] - automatischer Test | /td einsatz start [stufe] [wellen]|frei [an|aus]|status|stop - Einsatz mit Kontingenten | /td laden, /td kaufe <Gebäude> [n] - Laden | /td freischalten - alles frei | /td balance - Balance-Datei neu lesen | /td platz [liste|scan <Biom>|scan stop|prüfen <Id|S1..S8|hier [Biom]>|merken <Biom> [Notiz]|gemerkt|zurück|bauen <Biom> [1-3]] - Kernplätze suchen, prüfen, merken und bauen | /td szenario [liste|<1-5>|pruefen [Nr]|fertig|leeren] - Testszenarien | /td ada [bank] - ADA-Begrüßung | /td baender <2-6>|pruefen|reparieren - alle Bänder aufrüsten, offene Band-Enden prüfen oder verbinden"),
 		TEXT("/td umgebung|instanzen [radius_m] - list objects or instances around you | /td koeder - remove all decoys | /td reichweite [an|aus] - range circles | /td turmlevel <1-5> - set the nearest turret to a level (test) | /td teil [name] - show/hide a turret part | /td probe gewehr|flamme|weg - effect preview | /td fuellen [type] [m3] - fill buffer/flamethrower | /td kern start [erkundung|normal|hart|albtraum] [waves] [min] [min]|weiter|stop|status|fronten [neu]|wege [aus]|stufen|tempo [factor]|stress [N ...] [lp=20] [s=20] [mix|art=<enemy>] [anim=immer|sichtbar] [kollision=an|aus] [ragdoll=an|aus] [tuerme=aus] [geschoss=aus] [angriff=aus] [drehen=aus] [schatten=aus] [effekte=aus] [df=aus] [drehtakt=N] [toeten=N/s]|stress stop - core defense | /td test [karte|gegner|marsch] - automatic test | /td einsatz start [level] [waves]|frei [an|aus]|status|stop - Operation with quotas | /td laden, /td kaufe <building> [n] - Shop | /td freischalten - unlock everything | /td balance - reload the balance file | /td platz [liste|scan <biome>|scan stop|pruefen <Id|S1..S8|hier [biome]>|merken <biome> [note]|gemerkt|zurueck|bauen <biome> [1-3]] - find, check, save and build core sites | /td szenario [liste|<1-5>|pruefen [no]|fertig|leeren] - test scenarios | /td ada [bank] - ADA greeting | /td baender <2-6>|pruefen|reparieren - upgrade all belts, check or connect open belt ends"));
 }
 
@@ -74,22 +81,92 @@ EExecutionStatus ATDDebugCommand::ExecuteCommand_Implementation(UCommandSender* 
 	// 0.9.0 Alpha: Entwickler- und Testbefehle nur mit Saved/FicsitTD/Entwickler.txt (oder -TDEntwickler); Spieler haben
 	// /td ada, /td kern status|weiter, /td baender pruefen|reparieren und die Hilfe
 	{
-		static int32 Entwickler = -1;
-		if (Entwickler < 0)
-		{
-			Entwickler = (FParse::Param(FCommandLine::Get(), TEXT("TDEntwickler"))
-				|| FPaths::FileExists(FPaths::ProjectSavedDir() / TEXT("FicsitTD") / TEXT("Entwickler.txt"))) ? 1 : 0;
-		}
+		// 16.11.: eine Quelle fuer den Entwicklermodus (UTDKernplatz), damit der Selbsttest "Spielersicht" ihn abschalten kann
+		const int32 Entwickler = UTDKernplatz::Entwicklermodus() ? 1 : 0;
 		const FString Befehl = Arguments.Num() > 0 ? Arguments[0].ToLower() : FString();
 		const FString Unter = Arguments.Num() > 1 ? Arguments[1].ToLower() : FString();
 		const bool bSpieler = Befehl == TEXT("ada") || Befehl == TEXT("baender") || Befehl == TEXT("hilfe") || Befehl == TEXT("help")
-			|| (Befehl == TEXT("kern") && (Unter == TEXT("status") || Unter == TEXT("weiter")));
+			|| (Befehl == TEXT("kern") && (Unter == TEXT("status") || Unter == TEXT("weiter"))) || Befehl == TEXT("modus");
 		if (Entwickler == 0 && !bSpieler)
 		{
-			Antwort(Sender, TDT(TEXT("Dieser Befehl ist nur im Entwicklermodus verfuegbar. Spielerbefehle: /td ada, /td kern status, /td kern weiter, /td baender reparieren."),
-				TEXT("This command is only available in developer mode. Player commands: /td ada, /td kern status, /td kern weiter, /td baender reparieren.")));
+			Antwort(Sender, TDT(TEXT("Dieser Befehl ist nur im Entwicklermodus verfügbar. Spielerbefehle: /td ada, /td kern status, /td kern weiter, /td baender reparieren, /td modus einsatz, /td modus abwehr."),
+				TEXT("This command is only available in developer mode. Player commands: /td ada, /td kern status, /td kern weiter, /td baender reparieren, /td modus einsatz, /td modus abwehr.")));
 			return EExecutionStatus::COMPLETED;
 		}
+	}
+	// 0.11 (Modus Aus, Marius 15.11.: nur der Spielmodus zaehlt): alte Staende, in denen der Einsatz ohne Spielmodus "Einsatz"
+	// lief (Start per /td oder Kern-Menue), stellen den Modus einmal nach. Ohne Argument: aktuellen Modus zeigen.
+	// 18.11.: /td startfenster - Startfenster oeffnen (Selbsttest, Foto); /td startfenster waehle <modus 0-3> <stufe 0-4>
+	if (Arguments[0].Equals(TEXT("startfenster"), ESearchCase::IgnoreCase))
+	{
+		UTDKernplatz* Platz = GetWorld() ? GetWorld()->GetSubsystem<UTDKernplatz>() : nullptr;
+		if (!Platz)
+		{
+			return EExecutionStatus::COMPLETED;
+		}
+		if (Arguments.Num() >= 4 && Arguments[1].Equals(TEXT("waehle"), ESearchCase::IgnoreCase))
+		{
+			Platz->StartfensterGewaehlt(FCString::Atoi(*Arguments[2]), FCString::Atoi(*Arguments[3]));
+			Antwort(Sender, TEXT("Startfenster: Wahl uebernommen."));
+		}
+		else
+		{
+			Platz->OeffneStartfenster(true);
+			Antwort(Sender, TEXT("Startfenster geoeffnet."));
+		}
+		return EExecutionStatus::COMPLETED;
+	}
+	if (Arguments[0].Equals(TEXT("modus"), ESearchCase::IgnoreCase))
+	{
+		// Gegencheck 15.11. (F4): ein Endlos-Spiel darf der Befehl nicht auf Einsatz kippen (sonst mehrere Fronten, fester Abstand)
+		const UTDWaveSubsystem* ModusWaves = GetWorld() ? GetWorld()->GetSubsystem<UTDWaveSubsystem>() : nullptr;
+		const bool bEndlosSpiel = UTDKernplatz::IstEndlos(this) || (ModusWaves && ModusWaves->IstEndlos());
+		const UTDEinsatzSubsystem* ModusEinsatz = GetWorld() ? GetWorld()->GetSubsystem<UTDEinsatzSubsystem>() : nullptr;
+		if (Arguments.Num() > 1 && Arguments[1].Equals(TEXT("abwehr"), ESearchCase::IgnoreCase) && ModusEinsatz && ModusEinsatz->IstAktiv() && !bEndlosSpiel)
+		{
+			Antwort(Sender, TDT(TEXT("In diesem Spiel läuft ein Einsatz - erst im Kern-Menü beenden, dann /td modus abwehr."), TEXT("An operation is running in this game - end it in the Core menu first, then /td modus abwehr.")));
+		}
+		else if (Arguments.Num() > 1 && (Arguments[1].Equals(TEXT("einsatz"), ESearchCase::IgnoreCase) || Arguments[1].Equals(TEXT("abwehr"), ESearchCase::IgnoreCase)) && bEndlosSpiel)
+		{
+			Antwort(Sender, TDT(TEXT("Dieses Spiel läuft im Spielmodus \"Endlos-Wellen\" - es bleibt dabei."), TEXT("This game runs in Game Mode \"Endless waves\" - it stays that way.")));
+		}
+		else if (Arguments.Num() > 1 && Arguments[1].Equals(TEXT("abwehr"), ESearchCase::IgnoreCase))
+		{
+			// 0.12-dev (Marius 15.11.): bestehende Spielstaende ins Freie Spiel mit Abwehr holen
+			const bool bOk = UTDKernplatz::SetzeModusAbwehr(this);
+			Antwort(Sender, bOk ? TDT(TEXT("Spielmodus auf \"Freies Spiel mit Abwehr\" gestellt. Speichere jetzt, damit es im Spielstand bleibt; Türme und Abwehr-Forschung erscheinen in wenigen Sekunden."),
+					TEXT("Game Mode set to \"Free play with defense\". Save now so it stays in your save; turrets and defense research appear within a few seconds."))
+				: TDT(TEXT("Spielmodus konnte nicht gesetzt werden (Sitzungseinstellungen nicht gefunden)."), TEXT("Could not set the Game Mode (session settings not found).")));
+			if (bOk)
+			{
+				if (UTDEinsatzSubsystem* Einsatz = GetWorld() ? GetWorld()->GetSubsystem<UTDEinsatzSubsystem>() : nullptr)
+				{
+					Einsatz->AktualisiereToDo();
+				}
+			}
+		}
+		else if (Arguments.Num() > 1 && Arguments[1].Equals(TEXT("einsatz"), ESearchCase::IgnoreCase))
+		{
+			const bool bOk = UTDKernplatz::SetzeModusEinsatz(this);
+			Antwort(Sender, bOk ? TDT(TEXT("Spielmodus auf \"Einsatz\" gestellt. Speichere jetzt, damit es im Spielstand bleibt; TD-Rezepte und MAM-Bäume erscheinen in wenigen Sekunden."),
+					TEXT("Game Mode set to \"Operation\". Save now so it stays in your save; TD recipes and MAM trees appear within a few seconds."))
+				: TDT(TEXT("Spielmodus konnte nicht gesetzt werden (Sitzungseinstellungen nicht gefunden)."), TEXT("Could not set the Game Mode (session settings not found).")));
+			if (bOk)
+			{
+				if (UTDEinsatzSubsystem* Einsatz = GetWorld() ? GetWorld()->GetSubsystem<UTDEinsatzSubsystem>() : nullptr)
+				{
+					Einsatz->AktualisiereToDo();   // prueft die Forschungsbaeume sofort neu
+				}
+			}
+		}
+		else
+		{
+			const int32 Aktuell = bEndlosSpiel ? 2 : UTDKernplatz::IstAbwehr(this) ? 3 : UTDKernplatz::TowerDefenseAn(this) ? 1 : 0;
+			UE_LOG(LogFicsitTD, Log, TEXT("Spielmodus aktuell: %d"), Aktuell);
+			Antwort(Sender, TDF(TEXT("Spielmodus: %s. Alte Stände ohne Modus: /td modus einsatz oder /td modus abwehr"), TEXT("Game Mode: %s. Old saves without a mode: /td modus einsatz or /td modus abwehr"),
+				Aktuell == 3 ? *TDT(TEXT("Freies Spiel mit Abwehr"), TEXT("Free play with defense")) : Aktuell == 2 ? *TDT(TEXT("Endlos-Wellen"), TEXT("Endless waves")) : Aktuell == 1 ? *TDT(TEXT("Einsatz"), TEXT("Operation")) : *TDT(TEXT("Aus"), TEXT("Off"))));
+		}
+		return EExecutionStatus::COMPLETED;
 	}
 	// /td optik: Knochen (mit Lage in der Grundhaltung), Sockel, Materialien und ihre Parameter aller Gegnerarten -
 	// Grundlage fuer Anbauteile aus Blender und fuer das Einfaerben (T4). Je Art eine Datei unter Saved/FicsitTD/Optik/.
@@ -444,7 +521,108 @@ EExecutionStatus ATDDebugCommand::ExecuteCommand_Implementation(UCommandSender* 
 		{
 			Waves->SchalteSandkastenFrei();
 		}
-		Antwort(Sender, TDT(TEXT("Alle FicsitTD-Gebaeude und -Rezepte freigeschaltet."), TEXT("All FicsitTD buildings and recipes unlocked.")));
+		Antwort(Sender, TDT(TEXT("Alle FicsitTD-Gebäude und -Rezepte freigeschaltet."), TEXT("All FicsitTD buildings and recipes unlocked.")));
+		return EExecutionStatus::COMPLETED;
+	}
+	// 0.12-dev Freies Spiel mit Abwehr: /td bohrung [info|platz|leicht|mittel|schwer|abbrechen] (Selbsttests; Spieler nutzen das Kern-Menue)
+	if (Arguments[0].Equals(TEXT("bohrung"), ESearchCase::IgnoreCase))
+	{
+		UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
+		const FString Was = Arguments.Num() > 1 ? Arguments[1].ToLower() : TEXT("info");
+		if (!Waves)
+		{
+			return EExecutionStatus::UNCOMPLETED;
+		}
+		if (Was == TEXT("platz"))
+		{
+			// naechster fester Rohstoffknoten zum Spieler, Kern 12 m daneben auf ebenem Boden
+			AFGResourceNode* Knoten = nullptr;
+			float Best = TNumericLimits<float>::Max();
+			for (TActorIterator<AFGResourceNode> It(GetWorld()); It; ++It)
+			{
+				const TSubclassOf<UFGResourceDescriptor> Art = It->GetResourceClass();
+				const float D = Pawn ? FVector::DistSquared(It->GetActorLocation(), Pawn->GetActorLocation()) : 0.f;
+				// 16.11. (Fenster B1: Testkern stand an einem Kalkstein-Brocken, die Bohrung lehnte ab): dieselbe Regel wie die Bohrung -
+				// nur echte Knoten, keine Rohstoffbrocken
+				if (Art && UFGItemDescriptor::GetForm(Art) == EResourceForm::RF_SOLID && !It->IsA<AFGResourceDeposit>() && D < Best)
+				{
+					Best = D;
+					Knoten = *It;
+				}
+			}
+			AFGBuildableSubsystem* Bau = AFGBuildableSubsystem::Get(GetWorld());
+			UClass* KernKlasse = LoadClass<AFGBuildable>(nullptr, TEXT("/FicsitTD/Buildings/DefenseCore/Build_TD_DefenseCore.Build_TD_DefenseCore_C"));
+			UClass* KernRezept = LoadClass<UFGRecipe>(nullptr, TEXT("/FicsitTD/Buildings/DefenseCore/Recipe_TD_DefenseCore.Recipe_TD_DefenseCore_C"));
+			bool bGesetzt = false;
+			if (Knoten && Bau && KernKlasse)
+			{
+				for (int32 w = 0; w < 8 && !bGesetzt; ++w)
+				{
+					const FVector Mitte = Knoten->GetActorLocation() + FRotator(0.f, w * 45.f, 0.f).Vector() * 1200.f;
+					FHitResult Treffer;
+					FCollisionQueryParams Q;
+					Q.AddIgnoredActor(Knoten);
+					if (Pawn)
+					{
+						Q.AddIgnoredActor(Pawn);
+					}
+					if (GetWorld()->LineTraceSingleByChannel(Treffer, Mitte + FVector(0.f, 0.f, 2000.f), Mitte - FVector(0.f, 0.f, 4000.f), ECC_WorldStatic, Q)
+						&& Treffer.ImpactNormal.Z > 0.9f)
+					{
+						if (AFGBuildable* K = Bau->BeginSpawnBuildable(KernKlasse, FTransform(FRotator::ZeroRotator, Treffer.ImpactPoint)))
+						{
+							K->SetBuiltWithRecipe(KernRezept);
+							K->FinishSpawning(FTransform(FRotator::ZeroRotator, Treffer.ImpactPoint));
+							bGesetzt = true;
+							UE_LOG(LogFicsitTD, Log, TEXT("Bohrung: Testkern gesetzt bei %s neben %s"), *Treffer.ImpactPoint.ToCompactString(),
+								*UFGItemDescriptor::GetItemName(Knoten->GetResourceClass()).ToString());
+						}
+					}
+				}
+			}
+			Antwort(Sender, bGesetzt ? TEXT("Abwehrkern neben dem naechsten Rohstoffknoten gesetzt.") : TEXT("Kein Platz fuer den Testkern gefunden."));
+			return EExecutionStatus::COMPLETED;
+		}
+		ATDDefenseCore* Kern = nullptr;
+		float Best = TNumericLimits<float>::Max();
+		for (TActorIterator<ATDDefenseCore> It(GetWorld()); It; ++It)
+		{
+			const float D = Pawn ? FVector::DistSquared(It->GetActorLocation(), Pawn->GetActorLocation()) : 0.f;
+			if (D < Best)
+			{
+				Best = D;
+				Kern = *It;
+			}
+		}
+		if (Was == TEXT("abbrechen"))
+		{
+			Antwort(Sender, Waves->BrecheBohrungAb());
+		}
+		else if (Was == TEXT("abriss"))
+		{
+			// Selbsttest: Erstlohn und Rang gehoeren zum Spielstand, nicht zum Kern - naechsten Kern entfernen
+			if (Kern && !Waves->IstBohrung())
+			{
+				UE_LOG(LogFicsitTD, Log, TEXT("Bohrung: Testkern %s abgerissen (%d Bohr-Erfolge am Kern)"), *Kern->GetName(), Kern->mBohrErfolge.Num());
+				Kern->Destroy();
+				Antwort(Sender, TEXT("Abwehrkern entfernt."));
+			}
+		}
+		else if (Was == TEXT("leicht") || Was == TEXT("mittel") || Was == TEXT("schwer"))
+		{
+			FString Meldung;
+			const bool bOk = Waves->StarteBohrung(Kern, Was == TEXT("leicht") ? 0 : Was == TEXT("mittel") ? 1 : 2, Meldung);
+			UE_LOG(LogFicsitTD, Log, TEXT("Bohrung per Befehl: %s - %s"), bOk ? TEXT("gestartet") : TEXT("abgelehnt"), *Meldung);
+			Antwort(Sender, Meldung);
+		}
+		else
+		{
+			for (const FString& Zeile : Waves->BohrInfo(Kern))
+			{
+				UE_LOG(LogFicsitTD, Log, TEXT("Bohrung Info: %s"), *Zeile);
+				Antwort(Sender, Zeile);
+			}
+		}
 		return EExecutionStatus::COMPLETED;
 	}
 	if (Arguments[0].Equals(TEXT("kern"), ESearchCase::IgnoreCase))
@@ -470,7 +648,7 @@ EExecutionStatus ATDDebugCommand::ExecuteCommand_Implementation(UCommandSender* 
 		{
 			if (!Kern)
 			{
-				Antwort(Sender, TEXT("Kein Abwehrkern gebaut (Baumenue: Verteidigung)."));
+				Antwort(Sender, TEXT("Kein Abwehrkern gebaut (Baumenü: Verteidigung)."));
 			}
 			// /td kern start [Stufe] [Wellen] [Minuten bis Welle 1] [Minuten zwischen den Wellen]; Stufe als Wort an beliebiger Stelle
 			else
@@ -496,7 +674,7 @@ EExecutionStatus ATDDebugCommand::ExecuteCommand_Implementation(UCommandSender* 
 					Zahlen.Num() > 1 ? Zahlen[1] * 60.f : -1.f,
 					Zahlen.Num() > 2 ? Zahlen[2] * 60.f : -1.f, Stufe))
 				{
-					Antwort(Sender, TEXT("Es laeuft schon eine Kern-Verteidigung (/td kern stop)."));
+					Antwort(Sender, TEXT("Es läuft schon eine Kern-Verteidigung (/td kern stop)."));
 				}
 			}
 		}
@@ -657,7 +835,7 @@ EExecutionStatus ATDDebugCommand::ExecuteCommand_Implementation(UCommandSender* 
 		UClass* Fluessigkeit = Pfad ? LoadClass<UFGItemDescriptor>(nullptr, **Pfad) : nullptr;
 		if (!Fluessigkeit || !Pawn)
 		{
-			Antwort(Sender, TEXT("/td fuellen [treibstoff|bio|turbo|rakete|ionisiert|wasser] [m3] - auf einen Fluessigkeitspuffer oder Flammenwerfer schauen"));
+			Antwort(Sender, TEXT("/td fuellen [treibstoff|bio|turbo|rakete|ionisiert|wasser] [m3] - auf einen Flüssigkeitspuffer oder Flammenwerfer schauen"));
 			return EExecutionStatus::BAD_ARGUMENTS;
 		}
 		const float Menge = Arguments.Num() > 2 ? FMath::Max(1.f, FCString::Atof(*Arguments[2])) : 10000.f;
@@ -792,7 +970,7 @@ EExecutionStatus ATDDebugCommand::ExecuteCommand_Implementation(UCommandSender* 
 			return EExecutionStatus::COMPLETED;
 		}
 		UTDBandUpgrade* Upgrade = UTDBandUpgrade::Get(this);
-		Antwort(Sender, Upgrade ? Upgrade->RuesteUm(FMath::Clamp(Arguments.Num() > 1 ? FCString::Atoi(*Arguments[1]) : 2, 2, 6)) : TDT(TEXT("nicht verfuegbar"), TEXT("not available")));
+		Antwort(Sender, Upgrade ? Upgrade->RuesteUm(FMath::Clamp(Arguments.Num() > 1 ? FCString::Atoi(*Arguments[1]) : 2, 2, 6)) : TDT(TEXT("nicht verfügbar"), TEXT("not available")));
 		return EExecutionStatus::COMPLETED;
 	}
 	// /td szenario [liste|<1-5>|pruefen [Nr]|leeren]: Testszenarien (Konzept-Kernplaetze S5, 0.70)
@@ -829,13 +1007,25 @@ EExecutionStatus ATDDebugCommand::ExecuteCommand_Implementation(UCommandSender* 
 	// /td ada: ADA-Begruessung erneut abspielen (0.69.4)
 	if (Arguments[0].Equals(TEXT("ada"), ESearchCase::IgnoreCase))
 	{
+		// 0.12-dev: /td ada liste | /td ada <Schluessel> (Ansagen bei neuen Gegnern und Bossen pruefen)
+		if (Arguments.Num() > 1 && Arguments[1].Equals(TEXT("liste"), ESearchCase::IgnoreCase))
+		{
+			Antwort(Sender, FString::Join(TDAda::Schluessel(), TEXT(", ")));
+			return EExecutionStatus::COMPLETED;
+		}
+		if (Arguments.Num() > 1 && TDAda::Schluessel().ContainsByPredicate([&](const FString& K) { return K.Equals(Arguments[1], ESearchCase::IgnoreCase); }))
+		{
+			const FString Key = TDAda::Schluessel().FindByPredicate([&](const FString& K) { return K.Equals(Arguments[1], ESearchCase::IgnoreCase); })[0];
+			TDAda::Sage(this, nullptr, Key);
+			return EExecutionStatus::COMPLETED;
+		}
 		if (Arguments.Num() > 1 && Arguments[1].Equals(TEXT("bank"), ESearchCase::IgnoreCase))
 		{
 			Antwort(Sender, UTDKernplatz::PruefeWwiseInitBank());
 			return EExecutionStatus::COMPLETED;
 		}
-		Antwort(Sender, UTDKernplatz::SpieleBegruessung(this, Pawn) ? TDT(TEXT("ADA spielt die Begruessung ab."), TEXT("ADA is playing the greeting."))
-			: TDT(TEXT("Begruessung nicht moeglich (siehe Log)."), TEXT("Greeting not possible (see log).")));
+		Antwort(Sender, UTDKernplatz::SpieleBegruessung(this, Pawn) ? TDT(TEXT("ADA spielt die Begrüßung ab."), TEXT("ADA is playing the greeting."))
+			: TDT(TEXT("Begrüßung nicht möglich (siehe Log)."), TEXT("Greeting not possible (see log).")));
 		return EExecutionStatus::COMPLETED;
 	}
 	// /td platz pruefen <G1..D3|hier> | zurueck | liste: Kandidaten fuer feste Kernplaetze (Konzept-Kernplaetze.md, S1)
@@ -887,7 +1077,7 @@ EExecutionStatus ATDDebugCommand::ExecuteCommand_Implementation(UCommandSender* 
 			{
 				Antwort(Sender, FString::Printf(TEXT("%s: %s bei x %.0f / y %.0f"), K.Id, K.Biom, K.X, K.Y));
 			}
-			Antwort(Sender, TEXT("/td platz pruefen hier <grasfelder|felsenwueste|wald|duenen> - deinen Standort pruefen (du stehst auf der Kernmitte), /td platz merken <Biom> [Notiz] - speichern, /td platz gemerkt - Liste, /td platz pruefen <Id> - Kandidat anfliegen, /td platz zurueck. Ergebnisse in Saved/FicsitTD/Kernplaetze.csv"));
+			Antwort(Sender, TEXT("/td platz pruefen hier <grasfelder|felsenwueste|wald|duenen> - deinen Standort prüfen (du stehst auf der Kernmitte), /td platz merken <Biom> [Notiz] - speichern, /td platz gemerkt - Liste, /td platz pruefen <Id> - Kandidat anfliegen, /td platz zurueck. Ergebnisse in Saved/FicsitTD/Kernplätze.csv"));
 		}
 		return EExecutionStatus::COMPLETED;
 	}

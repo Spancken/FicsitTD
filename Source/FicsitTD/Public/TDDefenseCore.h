@@ -57,6 +57,10 @@ public:
 	int32 mLaufWellenGesamt = 30;
 	UPROPERTY(SaveGame)
 	float mLaufCountdown = 0.f;
+	/** 17.11. (P16/A9): Welle, die der Stand vom Wellenstart wiederholt - vor dem Speichern gesetzt, damit der Stand nicht von der
+	 *  Reihenfolge Speichern/Hochzaehlen abhaengt (0 = keine Angabe, alte Staende) */
+	UPROPERTY(SaveGame)
+	int32 mLaufWiederholWelle = 0;
 	UPROPERTY(SaveGame)
 	float mLaufZwischen = 600.f;
 	UPROPERTY(SaveGame)
@@ -64,12 +68,42 @@ public:
 	/** Wellen nur auf Befehl (Einsatz: Planung ohne Zeitdruck) */
 	UPROPERTY(SaveGame)
 	bool mLaufManuell = false;
+	/** 0.11 (Gegencheck 15.11.): Lauf im Spielmodus Endlos-Wellen - am Kern gemerkt, damit ein spaeterer Moduswechsel ihn nicht kippt */
+	UPROPERTY(SaveGame)
+	bool mLaufEndlos = false;
+	/** 0.11 (Marius 15.11.): nach einer Endlos-Bosswelle wartet eine Bonuswahl (Coupons, Kernreparatur, Festplatten) */
+	UPROPERTY(SaveGame)
+	bool mEndlosBonusOffen = false;
+	/** 16.11. (Nachpruefung E5): Zahl der offenen Bonuswahlen - ein nicht abgeholter Bonus geht nicht mehr verloren */
+	UPROPERTY(SaveGame)
+	int32 mBonusOffen = 0;
+	/** 16.11. (Nachpruefung E4, Marius): gewaehlte Boni "Kern" - je Wahl dauerhaft +10 % Kern-LP fuer diesen Lauf */
+	UPROPERTY(SaveGame)
+	int32 mKernBonusStufen = 0;
+	/** 0.12-dev Freies Spiel mit Abwehr: laeuft am Kern gerade eine Bohrung (wird nach dem Laden ohne Strafe beendet) */
+	UPROPERTY(SaveGame)
+	bool mLaufBohrung = false;
+	/** 0.12-dev: ADA-Ansagen, die in diesem Lauf schon kamen (TDAda) */
+	UPROPERTY(SaveGame)
+	TArray<FString> mAdaGesagt;
+	/** Erste Erfolge der Bohrung je Rohstoff und Stufe ("<Rohstoff-Klassenpfad>|<Stufe>") - Erstlohn nur einmal */
+	UPROPERTY(SaveGame)
+	TArray<FString> mBohrErfolge;
+	/** Talentpunkte aus Erstlohn der Bohrung (zusaetzlich zu den Punkten aus dem Rang) */
+	UPROPERTY(SaveGame)
+	int32 mPionierBonusPunkte = 0;
 	/** 0.9.6 (Gesamtreview 12.11.: nach Sieg oder Niederlage kein Ausweg): Ende des letzten Durchgangs - 0 offen, 1 Sieg, 2 Niederlage,
 	 *  dazu die Welle. Das Kern-Menue bietet dann Welle wiederholen, neu starten oder Einsatz beenden. */
 	UPROPERTY(SaveGame)
 	int32 mLaufEnde = 0;
 	UPROPERTY(SaveGame)
 	int32 mLaufEndWelle = 0;
+	/** 0.11 (Gegencheck Einsatz, Marius 16.11.: Bestwert je Kernplatz und Stufe): Kernplatz des Laufs ("" bei alten Staenden) */
+	UPROPERTY(SaveGame)
+	FString mLaufPlatz;
+	/** Eingriffe in diesem Lauf (Testsprung, /gib, Freies Bauen ...): ein Lauf mit Eingriffen bekommt keinen Bestwert */
+	UPROPERTY(SaveGame)
+	int32 mLaufEingriffe = 0;
 	/** Einsatz-Modus (TDEinsatz.h): aktiv, freies Bauen (Test), Startkit schon ausgegeben */
 	UPROPERTY(SaveGame)
 	bool mEinsatzAktiv = false;

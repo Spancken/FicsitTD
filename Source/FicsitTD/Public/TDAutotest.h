@@ -79,6 +79,10 @@ private:
 
 	EPhase mPhase = EPhase::Aus;
 	TSharedPtr<FJsonObject> mPlan;
+public:
+	/** 18.11.: laeuft gerade ein Selbsttest-Plan (das Startfenster bleibt dann zu, der Plan setzt Modus und Stufe selbst) */
+	bool LaeuftPlan() const { return mPlan.IsValid(); }
+private:
 	TSharedPtr<FJsonObject> mPaket;
 	TArray<TSharedPtr<FJsonValue>> mPlaene;
 	TArray<TSharedPtr<FJsonValue>> mPlanErgebnisse;
@@ -115,4 +119,20 @@ private:
 	UPROPERTY()
 	TObjectPtr<UTDAutotestSender> mSender;
 	class FTDAutotestLog* mLog = nullptr;
+	/** 16.11. Fabrik-Pruefstand: gebaute Linie fuer den Bericht */
+	TArray<TWeakObjectPtr<class AFGBuildable>> mFabrik;
+	/** 16.11. (B19): Sekunden, die der Wellenlauf schon auf den Start der naechsten Welle wartet */
+	float mStartWarteUhr = 0.f;
+	/** 17.11. (P11): Pruefstand-Netz wird ueberwacht (Sicherung zuruecksetzen) */
+	bool mStromAktiv = false;
+	/** 17.11. (B20): gewuenschter Zeitraffer, gleitende Bildzeit (echt) und wie oft gedeckelt wurde */
+	float mZeitrafferWunsch = 1.f;
+	float mZeitrafferIst = 1.f;
+	float mBildMittel = 0.016f;
+	/** 17.11. (P12, Marius: Referenzpause 195 s): Spielzeit seit Wellenende im Wellenlauf */
+	float mPauseSpiel = 0.f;
+	int32 mRafferGedeckelt = 0;
+	/** Zeitraffer setzen; tatsaechlich hoechstens so viel, dass ein Rechenschritt Test.MaxSchritt (1/30 s) nicht uebersteigt */
+	void SetzeZeitraffer(class UWorld* World, float Wunsch);
+	void PasseZeitrafferAn(class UWorld* World);
 };

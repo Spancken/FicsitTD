@@ -32,6 +32,25 @@ public:
 	virtual void OnWorldBeginPlay(UWorld& InWorld) override;
 	/** 0.69.1 (S4): ist die Spieleinstellung "FICSIT Tower Defense" an? */
 	static bool TowerDefenseAn(const UObject* WorldContext);
+	/** 0.11 (Modus Aus, Marius 15.11.: nur der Spielmodus zaehlt): ist FicsitTD in dieser Welt aktiv? Spielmodus "Einsatz",
+	 *  oder ein von Hand (Entwicklermodus, Selbsttests) gestarteter Einsatz bzw. Kern-Verteidigung. Ein gebauter Kern allein zaehlt nicht. */
+	static bool ModAktiv(const UObject* WorldContext);
+	/** 0.11 (Marius 15.11.): Spielmodus "Endlos-Wellen" (Wellen auf Zeit, endlos, eine Front) */
+	static bool IstEndlos(const UObject* WorldContext);
+	/** 0.12-dev: Spielmodus 3 "Freies Spiel mit Abwehr" (HUB normal, Tuerme, Bohrung) */
+	static bool IstAbwehr(const UObject* WorldContext);
+	/** /td modus abwehr: alte Staende auf Modus 3 stellen (bleibt im Spielstand) */
+	static bool SetzeModusAbwehr(const UObject* WorldContext);
+	/** Entwicklermodus: Saved/FicsitTD/Entwickler.txt oder -TDEntwickler */
+	static bool Entwicklermodus();
+	/** 16.11. (Nachpruefung B14): Selbsttest "Spielersicht" - schaltet den Entwicklermodus zur Laufzeit ab, damit ein Plan
+	 *  prueft, was ein Spieler ohne Entwicklerdatei sieht. Nur der Autotest setzt das; nicht gespeichert. */
+	static void SetzeSpielersicht(bool bAn);
+	static bool IstSpielersicht();
+	/** 0.11 (Gegencheck Einsatz, Marius 16.11.): Stufe aus der Auswahl "Stufe"; 0 = nach Startort -> OrtStufe */
+	static int32 GewaehlteStufe(const UObject* WorldContext, int32 OrtStufe);
+	/** 0.11: Spielmodus nachtraeglich auf "Einsatz" stellen (alte Staende ohne Modus 1); true, wenn gesetzt */
+	static bool SetzeModusEinsatz(const UObject* WorldContext);
 	/** 0.69.4 (Marius: Begruessung durch ADA): ADA-Nachricht "Einsatzbeginn" abspielen (Nachrichtensystem des Spiels, Untertitel) */
 	static bool SpieleBegruessung(const UObject* WorldContext, class APawn* Spieler);
 	/** 0.69.7: Projekt-ID der Init-Bank des Spiels ins Log (eigene Soundbanks brauchen sie im Kopf, sonst Fehler 92) */
@@ -78,6 +97,19 @@ private:
 	void PruefeTDStart();
 	FTimerHandle mStartTimer;
 	int32 mStehtSeit = 0;
+public:
+	/** 18.11. (Marius: Modus-Wahl im Menue fuer Tester kaum zu finden): Startfenster nach der Landung oeffnen (bOhnePruefung: Befehl /td startfenster) */
+	void OeffneStartfenster(bool bOhnePruefung = false);
+	/** Aus dem Startfenster: Spielmodus und Stufe uebernehmen; Einsatz/Endlos bauen danach den Kernplatz */
+	void StartfensterGewaehlt(int32 Modus, int32 Stufe);
+	UPROPERTY()
+	TObjectPtr<class UTDStartfenster> mStartfenster;
+	/** 18.11. (Marius: nach der Landung und nach der Wahl passiert lange sichtbar nichts): Fortschritt der Vorbereitung zeigen.
+	 *  0 Platz anfliegen, 1 Gelaende laden, 2 Plattform bauen, 3 Wege der Gegner berechnen, 4 bereit (schliesst nach 3 s) */
+	void Fortschritt(int32 Schritt);
+	UPROPERTY()
+	TObjectPtr<class UTDVorbereitung> mVorbereitung;
+private:
 	/** 0.9.6: automatische Kernplatz-Versuche (scheitert die Bodensuche, kommt ein anderer Platz dran) */
 	int32 mStartVersuche = 0;
 	/** 0.69.1: Einsatz erst starten, wenn das Navigationsnetz um den neuen Kern steht (Test 0.69.0: Ansage "0 von 16") */

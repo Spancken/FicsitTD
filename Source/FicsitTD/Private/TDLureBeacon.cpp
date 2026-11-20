@@ -22,11 +22,8 @@ ATDLureBeacon::ATDLureBeacon()
 	mDrehpunkt = FVector(0.f, 0.f, 215.f);        // 0.9.3: Horn dreht um die Mastmitte (Pivot TD_Horn)
 	mMuendung = FVector(0.f, 0.f, 0.f);
 	mHalbmasse = FVector(100.f, 100.f, 45.f);
-	mLampenOrt = FVector(45.f, 125.f, 340.f);   // 0.9.3: Lampe auf dem Original-Statusmast
 	// 0.9.3 Original-Anschluesse (Modelle\Original_Anschluesse.json, Gebaeude-Review)
 	OriginalTeil(TDOriginal::Eingang, FVector(-160.f, 0.f, 0.f), 90.f);
-	OriginalTeil(TDOriginal::Strom, FVector(30.f, -100.f, 50.f), -90.f);
-	OriginalTeil(TDOriginal::Mast, FVector(45.f, 125.f, 0.f), 180.f);
 
 	mKlarraumHoehe = 450.f;
 	mKlarraumHalb = FVector2D(105.f, 105.f);

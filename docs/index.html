@@ -89,7 +89,7 @@ footer { padding-block: 28px; color: var(--muted); font-size: .86rem; border-top
 <body>
 <header class="top"><div class="wrap">
   <a class="brand" href="#top"><img src="img/modicon.png" alt=""><span>FICSIT <b>TD</b></span></a>
-  <a class="ver" href="#versions" title="Version history">v0.10.2 · Alpha</a>
+  <a class="ver" href="#versions" title="Version history">v0.11.0 · Alpha</a>
   <nav class="toc">
     <a href="#start"><span class="en">Start</span><span class="de">Start</span></a>
     <a href="#operation"><span class="en">Operation</span><span class="de">Einsatz</span></a>
@@ -130,9 +130,9 @@ footer { padding-block: 28px; color: var(--muted); font-size: .86rem; border-top
 <section id="start"><div class="wrap">
   <h2><span class="en">Quick start</span><span class="de">Schnellstart</span></h2>
   <div class="steps">
-    <div><span class="en"><b>Install</b> with the Satisfactory Mod Manager (SMM). Back up your saves first, this is an alpha.</span><span class="de"><b>Installieren</b> mit dem Satisfactory Mod Manager (SMM). Sichere vorher deine Spielstände, es ist eine Alpha.</span></div>
-    <div><span class="en">Start a <b>new game</b>. In the session settings, category <b>FICSIT Tower Defense</b>, set <b>Game Mode</b> to <b>Operation</b>. The help text at the bottom explains each mode.</span><span class="de">Starte ein <b>neues Spiel</b>. In den Sitzungseinstellungen, Kategorie <b>FICSIT Tower Defense</b>, stellst du den <b>Spielmodus</b> auf <b>Einsatz</b>. Der Hilfetext unten erklärt jeden Modus.</span></div>
-    <div><span class="en">After landing, the mod builds a platform with the <b>Defense Core</b> near your start, and ADA briefs you. You get a starter kit.</span><span class="de">Nach der Landung baut der Mod nahe deinem Start eine Plattform mit dem <b>Abwehrkern</b>, und ADA weist dich ein. Du bekommst ein Startkit.</span></div>
+    <div><span class="en"><b>Install</b> with the Satisfactory Mod Manager (SMM). Back up your saves first, this is an alpha. Version 0.11.0 needs Satisfactory 1.2.5.1 (older mod versions crash on it).</span><span class="de"><b>Installieren</b> mit dem Satisfactory Mod Manager (SMM). Sichere vorher deine Spielstände, es ist eine Alpha. Version 0.11.0 braucht Satisfactory 1.2.5.1 (ältere Mod-Versionen stürzen damit ab).</span></div>
+    <div><span class="en">Start a <b>new game</b>. In the session settings, category <b>FICSIT Tower Defense</b>, Right after landing, a window asks <b>how you want to play</b>: <b>Operation</b> (50 waves), <b>Endless waves</b>, <b>Free play with defense</b> or <b>Off</b>, plus the difficulty. You choose once per game. Existing worlds without a Defense Core stay regular Satisfactory.</span><span class="de">Starte ein <b>neues Spiel</b>. In den Sitzungseinstellungen, Kategorie <b>FICSIT Tower Defense</b>, Direkt nach der Landung fragt ein Fenster, <b>wie du spielen willst</b>: <b>Einsatz</b> (50 Wellen), <b>Endlos-Wellen</b>, <b>Freies Spiel mit Abwehr</b> oder <b>Aus</b>, dazu die Stufe. Du wählst einmal je Spiel. Bestehende Welten ohne Abwehrkern bleiben normales Satisfactory.</span></div>
+    <div><span class="en">After landing, the mod builds a platform with the <b>Defense Core</b> near your start, and ADA briefs you. You get a starter kit. ADA also warns you before a wave with a new enemy species or a boss.</span><span class="de">Nach der Landung baut der Mod nahe deinem Start eine Plattform mit dem <b>Abwehrkern</b>, und ADA weist dich ein. Du bekommst ein Startkit. ADA warnt dich außerdem vor einer Welle mit neuer Gegnerart oder einem Boss.</span></div>
     <div><span class="en">Build miners, smelters and constructors, then a <b>Bolt Turret</b>. Feed it rebar by conveyor and connect power.</span><span class="de">Baue Miner, Schmelzofen und Konstruktor, dann einen <b>Bolzenturm</b>. Versorge ihn per Band mit Armierungsbolzen und schließe Strom an.</span></div>
     <div><span class="en">Press <b>E</b> at the Core and hit <b>“Start wave”</b> when you are ready. There is no timer.</span><span class="de">Drücke <b>E</b> am Kern und starte mit <b>„Welle starten“</b>, wenn du bereit bist. Es gibt keinen Zeitdruck.</span></div>
   </div>
@@ -144,64 +144,66 @@ footer { padding-block: 28px; color: var(--muted); font-size: .86rem; border-top
     <div>
       <h3><span class="en">Build phase</span><span class="de">Aufbauphase</span></h3>
       <ul class="en">
-        <li>No time pressure. You start the next wave yourself; the Core checks first that every turret has ammo and power.</li>
+        <li>No time pressure. You start the next wave yourself; the Core then lists turrets without ammo or power in the chat (it does not hold the wave).</li>
         <li><b>Quotas</b>: production and defense buildings are limited per type. Logistics is free: belts, lifts, pipes, power lines, foundations. Splitters, mergers, storage containers and fluid buffers count as buildings and are bought in the shop.</li>
         <li><b>FICSIT Coupons</b> from the Core land in your inventory as the game's Coupon item (if it is full, they wait at the Core). They buy more quota in the shop, plus gear and core repairs. Turret levels are bought in the turret window.</li>
-        <li>New technology only comes from the <b>MAM</b> (Hard Drives from waves). HUB milestones and blueprints are locked during an operation (unless you switch on <b>Free Build</b> in the Core Menu, which lifts quotas and locks for testing).</li>
+        <li>New technology only comes from the <b>MAM</b> (Hard Drives from waves). HUB milestones and blueprints are locked during an operation.</li>
       </ul>
       <ul class="de">
-        <li>Ohne Zeitdruck. Die nächste Welle startest du selbst; vorher prüft der Kern, ob jeder Turm Munition und Strom hat.</li>
+        <li>Ohne Zeitdruck. Die nächste Welle startest du selbst; der Kern nennt dann im Chat Türme ohne Munition oder Strom (er hält die Welle nicht an).</li>
         <li><b>Kontingente</b>: Produktions- und Verteidigungsgebäude sind je Typ begrenzt. Logistik ist frei: Bänder, Lifte, Rohre, Stromleitungen, Fundamente. Splitter, Verbinder, Lager und Flüssigkeitspuffer zählen wie Gebäude und werden im Laden gekauft.</li>
         <li><b>FICSIT-Coupons</b> vom Kern landen als Coupon-Item des Spiels im Inventar (ist es voll, warten sie am Kern). Sie kaufen im Laden mehr Kontingent, Ausrüstung und Kernreparatur. Turmlevel kauft man im Turmfenster.</li>
-        <li>Neue Technik gibt es nur im <b>MAM</b> (Festplatten aus den Wellen). Meilensteine am HUB und Blaupausen sind im Einsatz gesperrt (außer mit <b>Freies Bauen</b> im Kern-Menü, das Kontingente und Sperren zum Ausprobieren aufhebt).</li>
+        <li>Neue Technik gibt es nur im <b>MAM</b> (Festplatten aus den Wellen). Meilensteine am HUB und Blaupausen sind im Einsatz gesperrt.</li>
       </ul>
     </div>
     <div>
       <h3><span class="en">Wave</span><span class="de">Welle</span></h3>
       <ul class="en">
         <li>Enemies walk real paths from 1–3 fronts to the Core. All defenses heal to 100 % when a wave starts.</li>
-        <li>Inside the defense zone you cannot place quota buildings while a wave runs. Logistics and power still work.</li>
+        <li>Inside the defense zone you cannot place quota buildings while a wave runs, and turrets and defenses cannot be dismantled there (0.11). Logistics and power still work.</li>
         <li>You cannot save during a wave. The mod saves before and after every wave.</li>
         <li>After the wave: Coupons and Hard Drives in your inventory, biomass and a small core repair. The report shows your best turrets and your own damage share.</li>
       </ul>
       <ul class="de">
         <li>Gegner laufen echte Wege aus 1–3 Fronten zum Kern. Zu Beginn heilen alle Verteidigungsbauten auf 100 %.</li>
-        <li>Im Verteidigungsfeld kannst du während der Welle keine Kontingent-Gebäude setzen. Logistik und Strom gehen weiter.</li>
+        <li>Im Verteidigungsfeld kannst du während der Welle keine Kontingent-Gebäude setzen, und Türme und Abwehrbauten lassen sich dort nicht abreißen (0.11). Logistik und Strom gehen weiter.</li>
         <li>In der Welle kann nicht gespeichert werden. Der Mod speichert vor und nach jeder Welle.</li>
         <li>Nach der Welle: Coupons und Festplatten im Inventar, Biomasse und eine kleine Kernreparatur. Der Bericht zeigt die besten Türme und deinen eigenen Schadensanteil.</li>
       </ul>
     </div>
   </div>
   <h3 style="margin-top:14px"><span class="en">Victory and defeat</span><span class="de">Sieg und Niederlage</span></h3>
-  <p class="en">The difficulty depends on your start biome (Exploration, Normal, Hard, Nightmare): it sets Core health, when elites appear and when new fronts open. An operation has <b>50 waves</b> in five phases, with a boss every tenth wave. Losing never deletes your factory. If the Core falls, the Core Menu offers <b>Retry wave</b> (loads the save from the start of that wave), <b>Restart</b> (wave 1 at the same site, factory stays) or <b>End operation</b> (no more quotas, the Core can be dismantled).</p>
-  <p class="de">Die Schwierigkeit hängt an deinem Startbiom (Erkundung, Normal, Hart, Albtraum): Sie bestimmt Kern-LP, ab wann Eliten kommen und wann neue Fronten öffnen. Ein Einsatz hat <b>50 Wellen</b> in fünf Phasen, jede zehnte Welle mit Boss. Eine Niederlage löscht nie deine Fabrik. Fällt der Kern, bietet das Kern-Menü <b>Welle wiederholen</b> (lädt den Stand vom Start dieser Welle), <b>Neu starten</b> (Welle 1 am selben Ort, die Fabrik bleibt) oder <b>Einsatz beenden</b> (keine Kontingente mehr, der Kern lässt sich abreißen).</p>
-  <figure class="shot"><img src="img/niederlage.jpg" alt="Core Menu after a defeat with Retry, Restart and End buttons" loading="lazy">
-    <figcaption><span class="en">After a defeat: retry the wave, restart or end the operation.</span><span class="de">Nach einer Niederlage: Welle wiederholen, neu starten oder Einsatz beenden.</span></figcaption></figure>
+  <p class="en">Pick the difficulty under <b>Difficulty</b> in the session settings (Exploration, Normal, Hard, Nightmare); by default it follows your start biome. It sets Core health, when elites appear and when new fronts open. Hard and Nightmare are still untested. An operation has <b>50 waves</b> in five phases, with a boss every tenth wave. After waves 10, 20, 30 and 40 you get a short phase report and pick a bonus at the Core: Coupons, permanently more Core HP or Hard Drives. Losing never deletes your factory. If the Core falls, the Core Menu offers <b>Retry wave</b> (loads the save from the start of that wave) or <b>End operation</b> (no more quotas, the world stays free to keep building and no new operation starts in this save). After victory or defeat a final report shows the whole run, and your best result per core site and difficulty is saved. A new run is a new game.</p>
+  <p class="de">Die Schwierigkeit wählst du in den Sitzungseinstellungen unter <b>Stufe</b> (Erkundung, Normal, Hart, Albtraum); Standard ist dein Startbiom. Sie bestimmt Kern-LP, ab wann Eliten kommen und wann neue Fronten öffnen. Hart und Albtraum sind noch ungetestet. Ein Einsatz hat <b>50 Wellen</b> in fünf Phasen, jede zehnte Welle mit Boss. Nach Welle 10, 20, 30 und 40 gibt es einen kurzen Phasenbericht und am Kern einen Bonus zur Wahl: Coupons, dauerhaft mehr Kern-LP oder Festplatten. Eine Niederlage löscht nie deine Fabrik. Fällt der Kern, bietet das Kern-Menü <b>Welle wiederholen</b> (lädt den Stand vom Start dieser Welle) oder <b>Einsatz beenden</b> (keine Kontingente mehr, die Welt bleibt frei zum Weiterbauen, in diesem Spielstand startet kein neuer Einsatz). Nach Sieg oder Niederlage zeigt ein Abschlussbericht den ganzen Lauf, und dein bestes Ergebnis je Kernplatz und Stufe wird gespeichert. Ein neuer Lauf ist ein neues Spiel.</p>
+  <figure class="shot"><img src="img/niederlage.jpg" alt="Core Menu after a defeat with Retry and End buttons" loading="lazy">
+    <figcaption><span class="en">After a defeat: retry the wave or end the operation (the picture still shows the old Restart button).</span><span class="de">Nach einer Niederlage: Welle wiederholen oder Einsatz beenden (das Bild zeigt noch den alten Knopf „Neu starten“).</span></figcaption></figure>
 </div></section>
 
 <section id="turrets"><div class="wrap">
   <h2><span class="en">Turrets</span><span class="de">Türme</span></h2>
+  <p class="en"><b>Ammo per item (0.11):</b> one item lasts for several actions – basic ammo 4 shots, tier 2 three, tier 3 two; rifle ammo 3/2/1 magazines per item. The turret window shows the consumption per minute and how many turrets a Mk.1 belt feeds. A full Mk.1 iron node feeds 4–5 bolt turrets with basic bolts; Miner Mk.2/Mk.3 and belts up to Mk.5 come from the MAM (Industry). New in the shop with Coal Power research: <b>Power Storage</b> against load peaks (e.g. Tesla Coils charging).</p>
   <p class="en">Turrets are machines: you pick the ammo recipe in the machine window, and each production cycle is one action (shot, magazine, discharge or one second of flame). Every line has an ammo ladder: each step needs one more ingredient and does more. Levels 1–5 are bought with Coupons in the turret window and are visible on the model; level 5 unlocks a master ability.</p>
+  <p class="de"><b>Munition je Stück (0.11):</b> Ein Stück reicht für mehrere Aktionen – Grundmunition 4 Schuss, Stufe 2 drei, Stufe 3 zwei; Gewehrmunition 3/2/1 Magazine je Stück. Das Turmfenster zeigt den Verbrauch pro Minute und wie viele Türme ein Band Mk1 versorgt. Ein voller Mk1-Eisenknoten versorgt 4–5 Bolzentürme mit Armierungsbolzen; Miner Mk2/Mk3 und Bänder bis Mk5 gibt es im MAM (Industrie). Neu im Laden mit der Forschung Kohlekraft: der <b>Akku</b> gegen Lastspitzen (z. B. ladende Teslaspulen).</p>
   <p class="de">Türme sind Maschinen: Im Maschinenfenster wählst du das Munitionsrezept, und jeder Produktionszyklus ist eine Aktion (Schuss, Magazin, Entladung oder eine Sekunde Flamme). Jede Linie hat eine Munitionsleiter: Jede Stufe braucht eine Zutat mehr und kann mehr. Level 1–5 kaufst du mit Coupons im Turmfenster, sie sind am Modell zu sehen; Level 5 schaltet eine Meisterfähigkeit frei.</p>
   <div class="grid">
-    <div class="card"><img src="img/BoltTurret.png" alt=""><span class="tag">Piercing</span><h3><span class="en">Bolt Turret</span><span class="de">Bolzenturm</span></h3>
+    <div class="card"><img src="img/BoltTurret.png" alt=""><span class="tag"><span class="en">Piercing</span><span class="de">Durchschlag</span></span><h3><span class="en">Bolt Turret</span><span class="de">Bolzenturm</span></h3>
       <ul class="en"><li>Rebar bolt (40) → piercing bolt (hits up to 2 more)</li><li>Branch: shrapnel bolt (splits) <i>or</i> stun bolt (electric, 3 s stun)</li><li>Late: explosive bolt</li><li>Master: twin barrel</li></ul>
       <ul class="de"><li>Armierungsbolzen (40) → Durchschlagbolzen (trifft bis zu 2 weitere)</li><li>Gabelung: Streubolzen (zerfällt) <i>oder</i> Schockbolzen (Strom, 3 s betäubt)</li><li>Spät: Explosivbolzen</li><li>Meister: Doppellauf</li></ul></div>
-    <div class="card"><img src="img/GunTurret.png" alt=""><span class="tag">Bullet</span><h3><span class="en">Rifle Turret</span><span class="de">Gewehrturm</span></h3>
-      <ul class="en"><li>Rifle ammo (12 per shot, continuous fire)</li><li>Branch: homing <i>or</i> armor-piercing</li><li>Incendiary ammo → turbo ammo (double fire rate)</li><li>Master: belt drum, no reloading</li></ul>
-      <ul class="de"><li>Gewehrmunition (12 je Schuss, Dauerfeuer)</li><li>Gabelung: Zielsuch <i>oder</i> panzerbrechend</li><li>Brandmunition → Turbomunition (doppelte Feuerrate)</li><li>Meister: Gurttrommel, ohne Nachladen</li></ul></div>
-    <div class="card"><img src="img/NobeliskLauncher.png" alt=""><span class="tag">Explosion</span><h3><span class="en">Nobelisk Launcher</span><span class="de">Nobelisk-Werfer</span></h3>
+    <div class="card"><img src="img/GunTurret.png" alt=""><span class="tag"><span class="en">Bullet</span><span class="de">Kugel</span></span><h3><span class="en">Rifle Turret</span><span class="de">Gewehrturm</span></h3>
+      <ul class="en"><li>Rifle ammo (12 per shot, continuous fire)</li><li>Branch: homing <i>or</i> armor-piercing</li><li>Incendiary ammo → turbo ammo (double fire rate)</li><li>Master: belt drum, +25% fire rate</li></ul>
+      <ul class="de"><li>Gewehrmunition (12 je Schuss, Dauerfeuer)</li><li>Gabelung: Zielsuch <i>oder</i> panzerbrechend</li><li>Brandmunition → Turbomunition (doppelte Feuerrate)</li><li>Meister: Gurttrommel, +25 % Feuerrate</li></ul></div>
+    <div class="card"><img src="img/NobeliskLauncher.png" alt=""><span class="tag"><span class="en">Explosion</span><span class="de">Explosion</span></span><h3><span class="en">Nobelisk Launcher</span><span class="de">Nobelisk-Werfer</span></h3>
       <ul class="en"><li>Nobelisk (150, area damage, lobbed)</li><li>Branch: gas cloud (poison) <i>or</i> pulse (2 s stun)</li><li>Late: cluster nobelisk</li><li>Master: salvo of three</li></ul>
       <ul class="de"><li>Nobelisk (150, Flächenschaden, im Bogen)</li><li>Gabelung: Gaswolke (Gift) <i>oder</i> Puls (2 s betäubt)</li><li>Spät: Streu-Nobelisk</li><li>Meister: Salve aus drei</li></ul></div>
-    <div class="card"><img src="img/TeslaCoil.png" alt=""><span class="tag">Electric</span><h3><span class="en">Tesla Coil</span><span class="de">Teslaspule</span></h3>
+    <div class="card"><img src="img/TeslaCoil.png" alt=""><span class="tag"><span class="en">Electric</span><span class="de">Strom</span></span><h3><span class="en">Tesla Coil</span><span class="de">Teslaspule</span></h3>
       <ul class="en"><li>No ammo, needs power: 15 MW idle, 125 MW while charging</li><li>Chain lightning to 3 more enemies</li><li>Branch: bigger chain <i>or</i> overload (×2.5 on one target)</li><li>Battery bank, high voltage; master: voltage field</li></ul>
       <ul class="de"><li>Keine Munition, braucht Strom: 15 MW Grundlast, 125 MW beim Aufladen</li><li>Kettenblitz auf 3 weitere Gegner</li><li>Gabelung: längere Kette <i>oder</i> Überlast (×2,5 auf ein Ziel)</li><li>Akkubank, Hochspannung; Meister: Spannungsfeld</li></ul></div>
-    <div class="card"><img src="img/FlameTurret.png" alt=""><span class="tag">Fire</span><h3><span class="en">Flamethrower</span><span class="de">Flammenwerfer</span></h3>
+    <div class="card"><img src="img/FlameTurret.png" alt=""><span class="tag"><span class="en">Fire</span><span class="de">Feuer</span></span><h3><span class="en">Flamethrower</span><span class="de">Flammenwerfer</span></h3>
       <ul class="en"><li>Fuel by pipe: 80 damage/s in a cone, afterburn</li><li>Turbofuel 120 → rocket fuel 140 → ionized fuel 160 (electric)</li><li>Afterburn stacks while the flame stays on target</li><li>Master: fire carpet</li></ul>
       <ul class="de"><li>Treibstoff per Rohr: 80 Schaden/s im Kegel, Nachbrennen</li><li>Turbotreibstoff 120 → Raketentreibstoff 140 → ionisierter Treibstoff 160 (Strom)</li><li>Nachbrennen stapelt, solange die Flamme auf dem Ziel bleibt</li><li>Meister: Feuerteppich</li></ul></div>
-    <div class="card"><img src="img/FlakTurret.png" alt=""><span class="tag">Air</span><h3><span class="en">Sky Tower and Singularity</span><span class="de">Himmelsturm und Singularität</span></h3>
-      <p class="en" style="font-size:.94rem">Late turrets: the Sky Tower fires flak at flying enemies (flyers are still in development). The Singularity Launcher holds and crushes groups; it unlocks after wave 50, so only in Endless mode.</p>
-      <p class="de" style="font-size:.94rem">Späte Türme: Der Himmelsturm schießt Flak auf fliegende Gegner (die Flieger sind noch in Arbeit). Der Singularitätswerfer hält Gruppen fest und zerdrückt sie; er wird erst nach Welle 50 frei, also nur im Endlos-Modus.</p></div>
+    <div class="card"><img src="img/FlakTurret.png" alt=""><span class="tag"><span class="en">Air</span><span class="de">Luft</span></span><h3><span class="en">Sky Tower and Singularity</span><span class="de">Himmelsturm und Singularität</span></h3>
+      <p class="en" style="font-size:.94rem">Late turrets: the Sky Tower fires flak at flying enemies (flyers are still in development). The Singularity Launcher holds and crushes groups; it unlocks after wave 50, so only in Endless mode. Its ammo, Ficsonium, is radioactive: turrets shield their ammo storage, but carrying it exposes you – the research also unlocks the Hazmat Suit and Iodine Filters.</p>
+      <p class="de" style="font-size:.94rem">Späte Türme: Der Himmelsturm schießt Flak auf fliegende Gegner (die Flieger sind noch in Arbeit). Der Singularitätswerfer hält Gruppen fest und zerdrückt sie; er wird erst nach Welle 50 frei, also nur im Endlos-Modus. Seine Munition Ficsonium ist radioaktiv: Türme schirmen ihr Munitionslager ab, beim Tragen strahlt sie aber – die Forschung schaltet deshalb auch Hazmat-Anzug und Iod-Filter frei.</p></div>
   </div>
   <h3 style="margin-top:22px"><span class="en">Combos</span><span class="de">Kombos</span></h3>
   <div class="scroll"><table>
@@ -247,22 +249,22 @@ footer { padding-block: 28px; color: var(--muted); font-size: .86rem; border-top
   <div class="scroll"><table>
     <thead><tr><th><span class="en">Phase</span><span class="de">Phase</span></th><th><span class="en">Waves</span><span class="de">Wellen</span></th><th><span class="en">New enemies</span><span class="de">Neue Gegner</span></th></tr></thead>
     <tbody class="en">
-      <tr><td>1 Herd</td><td>1–10</td><td>Hog, Alpha Hog (5), Cliff Hog (7)</td></tr>
-      <tr><td>2 Swarm</td><td>11–20</td><td>Small Stinger (13), Stinger (15)</td></tr>
-      <tr><td>3 Forest</td><td>21–30</td><td>Spitter (21), Red Spitter (25), Alpha Spitter (28)</td></tr>
-      <tr><td>4 Desert and Water</td><td>31–40</td><td>Desert and Water Spitters, Elite Stinger (38)</td></tr>
-      <tr><td>5 Finale</td><td>41–50</td><td>Nuclear Hog (41), Johnny (46)</td></tr>
+      <tr><td>1 The Herd</td><td>1–10</td><td>Hog, Alpha Hog (5), Cliff Hog (7)</td></tr>
+      <tr><td>2 The Swarm</td><td>11–20</td><td>Small Stinger (13), Stinger (15)</td></tr>
+      <tr><td>3 Acid</td><td>21–30</td><td>Spitter (21), Red Spitter (25), Alpha Spitter (28)</td></tr>
+      <tr><td>4 Foreign Biomes</td><td>31–40</td><td>Red Alpha Spitter (34), Desert and Water Spitters, Elite Stinger (38)</td></tr>
+      <tr><td>5 Radiation</td><td>41–50</td><td>Nuclear Hog (41), Johnny (46)</td></tr>
     </tbody>
     <tbody class="de">
-      <tr><td>1 Herde</td><td>1–10</td><td>Hog, Alpha-Hog (5), Klippen-Hog (7)</td></tr>
-      <tr><td>2 Schwarm</td><td>11–20</td><td>Kleiner Stinger (13), Stinger (15)</td></tr>
-      <tr><td>3 Wald</td><td>21–30</td><td>Spucker (21), Roter Spucker (25), Alpha-Spucker (28)</td></tr>
-      <tr><td>4 Wüste und Wasser</td><td>31–40</td><td>Wüsten- und Wasserspucker, Elite-Stinger (38)</td></tr>
-      <tr><td>5 Finale</td><td>41–50</td><td>Nuklear-Hog (41), Johnny (46)</td></tr>
+      <tr><td>1 Die Herde</td><td>1–10</td><td>Hog, Alpha-Hog (5), Klippen-Hog (7)</td></tr>
+      <tr><td>2 Der Schwarm</td><td>11–20</td><td>Kleiner Stinger (13), Stinger (15)</td></tr>
+      <tr><td>3 Säure</td><td>21–30</td><td>Spucker (21), Roter Spucker (25), Alpha-Spucker (28)</td></tr>
+      <tr><td>4 Fremde Biome</td><td>31–40</td><td>Roter Alpha-Spucker (34), Wüsten- und Wasserspucker, Elite-Stinger (38)</td></tr>
+      <tr><td>5 Strahlung</td><td>41–50</td><td>Nuklear-Hog (41), Johnny (46)</td></tr>
     </tbody>
   </table></div>
-  <p style="margin-top:12px" class="en">Every tenth wave is a boss fight. Elites have 2.5× health and are tinted. Wave enemies never attack the player, only your defenses and the Core.</p>
-  <p style="margin-top:12px" class="de">Jede zehnte Welle ist ein Bosskampf. Eliten haben 2,5-fache Lebenspunkte und sind eingefärbt. Wellengegner greifen nie den Spieler an, nur deine Verteidigung und den Kern.</p>
+  <p style="margin-top:12px" class="en">Every tenth wave is a boss fight. Elites have 2.5× health and are tinted; they appear from wave 16 on Normal (Exploration 18, Hard 7, Nightmare 5). Wave enemies never attack the player, only your defenses and the Core.</p>
+  <p style="margin-top:12px" class="de">Jede zehnte Welle ist ein Bosskampf. Eliten haben 2,5-fache Lebenspunkte und sind eingefärbt; sie kommen auf Normal ab Welle 16 (Erkundung 18, Hart 7, Albtraum 5). Wellengegner greifen nie den Spieler an, nur deine Verteidigung und den Kern.</p>
   <h3 style="margin-top:18px"><span class="en">Resistances (damage factor)</span><span class="de">Resistenzen (Schadensfaktor)</span></h3>
   <div class="scroll"><table>
     <thead><tr><th></th><th><span class="en">Piercing</span><span class="de">Durchschlag</span></th><th><span class="en">Bullet</span><span class="de">Kugel</span></th><th><span class="en">Fire</span><span class="de">Feuer</span></th><th><span class="en">Electric</span><span class="de">Strom</span></th><th>Explosion</th><th><span class="en">Poison</span><span class="de">Gift</span></th></tr></thead>
@@ -307,9 +309,9 @@ footer { padding-block: 28px; color: var(--muted); font-size: .86rem; border-top
           <figcaption><span class="en">Engineer: the green beam is field repair with Iron Plates.</span><span class="de">Techniker: der grüne Strahl ist die Feldreparatur mit Eisenplatten.</span></figcaption></figure>
       </div>
       <ul class="en">
-        <li>The shop sells inventory slots, hand slots, Rebar Gun, Blade Runners, Rifle, Nobelisk Detonator and Core repairs.</li>
-        <li>Your hand weapons use the same ammo values as the turrets and grow with the waves. Resistances apply.</li>
-        <li><b>Ranks and talents:</b> waves and your own performance (damage share, repairs, kills, assists) give XP. Every rank gives one talent point, up to 15 points per mission, and every third rank adds +10 HP and +3 % running speed.</li>
+        <li>You start with Blade Runners. The shop sells inventory slots, hand slots, Rebar Gun, Blade Runners, Rifle, Nobelisk Detonator, the Jetpack (after Refinery research), the Hover Pack (after Heavy Industry) and Core repairs.</li>
+        <li>Your hand weapons use the same ammo values as the turrets and grow with the waves. Resistances apply. Xeno-Zapper and Xeno-Basher are for self-defense: electric damage at about a third of a rebar bolt, also growing with the waves.</li>
+        <li><b>Ranks and talents:</b> waves and your own performance (damage share, repairs, kills, assists) give XP. Every rank gives one talent point, up to 15 points; rank and talents belong to the save, and every third rank adds +10 HP and +3 % running speed.</li>
         <li>Four roles with five steps each, every step a new ability. Take two roles fully or three halfway:
           <b>Marksman</b> (headshots, fast reload, pierce, ammo saving, explosive rounds),
           <b>Commander</b> (target marking, +15 % turret damage on marked enemies, marking jumps on, rally order, overdrive for all turrets nearby),
@@ -320,9 +322,9 @@ footer { padding-block: 28px; color: var(--muted); font-size: .86rem; border-top
         <li>The Pioneer tab in the Core Menu shows rank, XP, the four roles and what each role did in the last wave.</li>
       </ul>
       <ul class="de">
-        <li>Der Laden verkauft Inventarplätze, Handplätze, Armierpistole, Klingenläufer, Gewehr, Nobelisken-Zünder und Kernreparatur.</li>
-        <li>Deine Handwaffen nutzen dieselben Munitionswerte wie die Türme und wachsen mit den Wellen. Resistenzen gelten.</li>
-        <li><b>Rang und Talente:</b> Wellen und deine eigene Leistung (Anteil am Schaden, Reparaturen, Abschüsse, Assists) bringen XP. Jeder Rang bringt einen Talentpunkt, höchstens 15 je Einsatz, und jeder dritte Rang +10 LP und +3 % Lauftempo.</li>
+        <li>Klingenläufer hast du von Anfang an. Der Laden verkauft Inventarplätze, Handplätze, Armierpistole, Klingenläufer, Gewehr, Nobelisken-Zünder, das Jetpack (nach der Forschung Raffinerie), das Hover-Pack (nach Schwerindustrie) und Kernreparatur.</li>
+        <li>Deine Handwaffen nutzen dieselben Munitionswerte wie die Türme und wachsen mit den Wellen. Resistenzen gelten. Xeno-Zapper und Xeno-Basher sind für die Notwehr: Stromschaden von etwa einem Drittel eines Armierungsbolzens, ebenfalls mit den Wellen wachsend.</li>
+        <li><b>Rang und Talente:</b> Wellen und deine eigene Leistung (Anteil am Schaden, Reparaturen, Abschüsse, Assists) bringen XP. Jeder Rang bringt einen Talentpunkt, höchstens 15; Rang und Talente gehören zum Spielstand, und jeder dritte Rang +10 LP und +3 % Lauftempo.</li>
         <li>Vier Rollen mit je fünf Stufen, jede Stufe eine neue Fähigkeit. Zwei Rollen ganz oder drei zur Hälfte:
           <b>Schütze</b> (Kopftreffer, Schnellladen, Durchschlag, Munition sparen, Sprengmantel),
           <b>Kommandant</b> (Zielmarkierung, +15 % Turmschaden an Markierten, Markierung springt weiter, Sammelbefehl, Übersteuern für alle Türme in der Nähe),
@@ -338,9 +340,13 @@ footer { padding-block: 28px; color: var(--muted); font-size: .86rem; border-top
 
 <section id="versions" class="versions"><div class="wrap">
   <h2><span class="en">Versions &amp; changes</span><span class="de">Versionen &amp; Änderungen</span></h2>
-  <p class="en">Current version: <b>0.10.2 (alpha)</b>, released on 15.11.2026. SMM shows your installed version in the mod list. All uploads: <a href="https://ficsit.app/mod/FicsitTD">ficsit.app → View Versions</a>.</p>
-  <p class="de">Aktuelle Version: <b>0.10.2 (Alpha)</b>, veröffentlicht am 15.11.2026. Die installierte Version zeigt SMM in der Mod-Liste. Alle Uploads: <a href="https://ficsit.app/mod/FicsitTD">ficsit.app → View Versions</a>.</p>
-  <details open><summary>0.10.2 <span class="en">– Small fixes</span><span class="de">– Kleine Korrekturen</span><small>15.11.2026</small></summary>
+  <p class="en">Current version: <b>0.11.0 (alpha)</b>, released on 20.11.2026. SMM shows your installed version in the mod list. All uploads: <a href="https://ficsit.app/mod/FicsitTD">ficsit.app → View Versions</a>.</p>
+  <p class="de">Aktuelle Version: <b>0.11.0 (Alpha)</b>, veröffentlicht am 20.11.2026. Die installierte Version zeigt SMM in der Mod-Liste. Alle Uploads: <a href="https://ficsit.app/mod/FicsitTD">ficsit.app → View Versions</a>.</p>
+  <details open><summary>0.11.0 <span class="en">– Game modes: Endless waves and Free play with defense</span><span class="de">– Spielmodi: Endlos-Wellen und Freies Spiel mit Abwehr</span><small>20.11.2026</small></summary>
+    <ul class="en"><li><b>Needs Satisfactory 1.2.5.1</b> (multiplayer patch of 18.11.) – 0.10.2 crashes on it</li><li>New: Game Mode <b>Endless waves</b> – timed waves from one direction that never stop, a break and a bonus pick after every boss wave, a best result per difficulty (see FAQ)</li><li>New: Game Mode <b>Free play with defense</b> – regular Satisfactory plus turrets and an optional drilling challenge at resource nodes (see FAQ)</li><li>New: an operation runs in five phases – a short report and a bonus pick after every tenth wave, a final report and a best result per core site and difficulty</li><li>New: ammo lasts longer – one item fires several shots (basic 4, advanced 3, special 2; rifle ammo 3/2/1 magazines); the turret window shows consumption and how many turrets a Mk.1 belt feeds</li><li>New in the MAM: Conveyor Belt Mk.4/Mk.5, Miner Mk.2/Mk.3; Power Storage in the shop after Coal Power; turrets shield their ammo storage, the Singularity research unlocks Hazmat Suit and Iodine Filters; ADA comments on new enemies and bosses</li><li>Changed: difficulty in the session settings (Hard and Nightmare still untested); elites from wave 16 on Normal (was 13) and 18 on Exploration (was 15); Rifle Turret master tier +25 % fire rate; Game Mode “Off” is plain Satisfactory; test jump, Free Build and Restart are developer tools; one chat line per wave</li><li>Fixed: enemies no longer get stuck on ore deposits, rock nodes, crab nests and bushes, less often at cliff overhangs; every core site has fixed enemy fronts, so it always plays the same; the wave panel fits on screen in large waves; floating lamps, black panels and flickering surfaces on towers removed; wave saves carry the session name; German texts use proper umlauts</li></ul>
+    <ul class="de"><li><b>Braucht Satisfactory 1.2.5.1</b> (Multiplayer-Patch vom 18.11.) – 0.10.2 stürzt damit ab</li><li>Neu: Spielmodus <b>Endlos-Wellen</b> – Wellen auf Zeit aus einer Richtung ohne Ende, nach jeder Bosswelle Pause und Bonuswahl, Bestwert je Stufe (siehe FAQ)</li><li>Neu: Spielmodus <b>Freies Spiel mit Abwehr</b> – normales Satisfactory mit Türmen und Bohrung auf Knopfdruck an Rohstoffknoten (siehe FAQ)</li><li>Neu: Ein Einsatz läuft in fünf Phasen – nach jeder zehnten Welle Kurzbericht und Bonuswahl, am Ende Abschlussbericht und Bestwert je Kernplatz und Stufe</li><li>Neu: Munition hält länger – ein Stück reicht für mehrere Schuss (Grund 4, besser 3, Spezial 2; Gewehrmunition 3/2/1 Magazine); das Turmfenster zeigt Verbrauch und wie viele Türme ein Band Mk1 versorgt</li><li>Neu im MAM: Förderband Mk4/Mk5, Miner Mk2/Mk3; Akku im Laden nach Kohlekraft; Türme schirmen ihre Munition ab, die Forschung Singularität schaltet Hazmat-Anzug und Iod-Filter frei; ADA kommentiert neue Gegner und Bosse</li><li>Geändert: Stufe in den Sitzungseinstellungen (Hart und Albtraum weiter ungetestet); Eliten auf Normal ab Welle 16 (vorher 13), auf Erkundung ab 18 (vorher 15); Gewehrturm-Meisterstufe +25 % Feuerrate; Spielmodus „Aus“ ist reines Satisfactory; Testsprung, Freies Bauen und Neu starten nur noch für Entwickler; eine Chatzeile je Welle</li><li>Behoben: Gegner bleiben nicht mehr an Erzvorkommen, Steinknoten, Krabbennestern und Büschen hängen, seltener an Felsüberhängen; jeder Kernplatz hat feste Gegnerfronten und spielt sich immer gleich; die Wellenleiste passt auch in großen Wellen ins Bild; schwebende Lampen, schwarze Platten und Flimmern an Türmen entfernt; Wellen-Spielstände tragen den Spielnamen; deutsche Texte mit echten Umlauten</li></ul>
+  </details>
+  <details><summary>0.10.2 <span class="en">– Small fixes</span><span class="de">– Kleine Korrekturen</span><small>15.11.2026</small></summary>
     <ul class="en"><li>Fixed: the Core and Tank Trap look-at text shows the real maximum health (including research) and is now translated</li><li>Fixed: chat messages point to the <b>Start wave</b> button at the Core instead of a chat command</li><li>Fixed: the shop text no longer lists the removed Tank Trap</li><li>Performance: diagnostic tick measurements only run in developer mode</li></ul>
     <ul class="de"><li>Behoben: Der Blicktext von Kern und Panzersperre zeigt die echten maximalen LP (mit Forschung) und ist übersetzt</li><li>Behoben: Chatmeldungen verweisen auf den Knopf <b>Welle starten</b> am Kern statt auf einen Chatbefehl</li><li>Behoben: Die Laden-Ausgabe nennt die gestrichene Panzersperre nicht mehr</li><li>Leistung: Diagnose-Messungen der Ticks laufen nur noch im Entwicklermodus</li></ul>
   </details>
@@ -360,48 +366,52 @@ footer { padding-block: 28px; color: var(--muted); font-size: .86rem; border-top
 </div></section>
 
 <section id="issues"><div class="wrap">
-  <h2><span class="en">Known issues (0.10.2)</span><span class="de">Bekannte Fehler (0.10.2)</span></h2>
+  <h2><span class="en">Known issues (0.11.0)</span><span class="de">Bekannte Fehler (0.11.0)</span></h2>
   <ul class="en">
-    <li><b>Stuck enemies:</b> enemies can still get stuck on cliff pillars or terrain. The mod blocks that cliff for following enemies and relocates stuck ones after a while. Please report the spot with your log.</li>
+    <li><b>Stuck enemies:</b> now and then an enemy still gets stuck at a cliff or right at a front's start point. The mod blocks that cliff for following enemies and moves stuck ones back onto their path after a few seconds. Please report the spot with your log.</li>
+    <li><b>Hard and Nightmare</b> are not fully balanced yet.</li>
     <li><b>Sky Tower:</b> there are no flying enemies yet, so it never finds a target. Don't build it yet.</li>
     <li><b>Singularity Launcher:</b> unlocks after wave 50, so only in Endless mode.</li>
     <li><b>Tesla Coils and power:</b> each coil draws 125 MW while charging. Several coils can trip the fuse and silence every turret on that grid without a warning. Keep a power reserve or a separate grid.</li>
     <li><b>Multiplayer:</b> not supported, and the mod does not warn when you host a session.</li>
-    <li><b>Retry wave</b> after a defeat is not yet tested in real play. If the wave-start save is missing, you get a message instead; use “Restart” or load <code>FicsitTD_Wxx_Start</code> yourself.</li>
-    <li><b>Many saves:</b> the mod saves before and after every wave and keeps them, up to 100 saves per operation. Delete old <code>FicsitTD_Wxx_*</code> saves by hand.</li>
+    <li><b>Retry wave</b> after a defeat is not yet tested in real play. If the wave-start save is missing, you get a message instead; load <code>&lt;session&gt;_TD_Wxx_Start</code> yourself.</li>
+    <li><b>Many saves:</b> the mod saves before and after every wave and keeps them, up to 100 saves per operation. Saves carry the session name (<code>&lt;session&gt;_TD_Wxx_*</code>); delete old ones by hand, including <code>FicsitTD_Wxx_*</code> from older versions. Endless mode and drilling do not save per wave.</li>
     <li><b>MAM texts</b> of Gate, Electric Fence and Radio Mast are outdated (power and radar details are missing). This guide is correct.</li>
     <li><b>Electric Fence</b> may shock rarely, enemies tend to walk around a single fence. Connect it to walls or place it across the path.</li>
     <li>With more than about 100 enemies the frame rate can drop.</li>
     <li>Balance is work in progress; the Core's remaining health varies a lot between runs.</li>
-    <li>Chat messages after a wave briefly cover the Core Menu if you open it right away.</li>
+    <li>The chat line after a wave briefly covers the Core Menu if you open it right away.</li>
     <li>FICSIT Coupons are the game's Coupon item since 0.10: they stay in your inventory after an operation ends and count for the next one.</li>
   </ul>
   <ul class="de">
-    <li><b>Hängende Gegner:</b> Gegner können noch an Felspfeilern oder im Gelände hängen bleiben. Die Mod sperrt die Klippe für nachfolgende Gegner und versetzt hängende nach einer Weile. Bitte die Stelle mit Log melden.</li>
+    <li><b>Hängende Gegner:</b> Gelegentlich bleibt ein Gegner noch an einer Klippe oder direkt am Startpunkt einer Front hängen. Die Mod sperrt die Klippe für nachfolgende Gegner und setzt hängende nach einigen Sekunden auf ihren Weg zurück. Bitte die Stelle mit Log melden.</li>
+    <li><b>Hart und Albtraum</b> sind noch nicht fertig eingestellt.</li>
     <li><b>Himmelsturm:</b> Es gibt noch keine fliegenden Gegner, er findet nie ein Ziel. Vorerst nicht bauen.</li>
     <li><b>Singularitätswerfer:</b> wird erst nach Welle 50 frei, also nur im Endlos-Modus.</li>
     <li><b>Teslaspulen und Strom:</b> Jede Spule zieht beim Laden 125 MW. Mehrere Spulen können die Sicherung auslösen und alle Türme im Netz ohne Warnung verstummen lassen. Stromreserve oder eigenes Netz einplanen.</li>
     <li><b>Mehrspieler:</b> nicht unterstützt, die Mod warnt beim Hosten nicht.</li>
-    <li><b>Welle wiederholen</b> nach einer Niederlage ist im echten Spiel noch nicht getestet. Fehlt der Stand vom Wellenstart, kommt eine Meldung; dann „Neu starten“ oder <code>FicsitTD_Wxx_Start</code> selbst laden.</li>
-    <li><b>Viele Spielstände:</b> Die Mod speichert vor und nach jeder Welle und behält sie, bis zu 100 je Einsatz. Alte <code>FicsitTD_Wxx_*</code>-Stände von Hand löschen.</li>
+    <li><b>Welle wiederholen</b> nach einer Niederlage ist im echten Spiel noch nicht getestet. Fehlt der Stand vom Wellenstart, kommt eine Meldung; dann <code>&lt;Sitzung&gt;_TD_Wxx_Start</code> selbst laden.</li>
+    <li><b>Viele Spielstände:</b> Die Mod speichert vor und nach jeder Welle und behält sie, bis zu 100 je Einsatz. Die Stände tragen den Namen des Spiels (<code>&lt;Sitzung&gt;_TD_Wxx_*</code>); alte von Hand löschen, auch <code>FicsitTD_Wxx_*</code> aus älteren Versionen. Endlos und Bohrung speichern nicht je Welle.</li>
     <li><b>MAM-Texte</b> von Tor, Elektrozaun und Funkmast sind veraltet (Strom- und Radar-Angaben fehlen). Dieses Handbuch stimmt.</li>
     <li><b>Elektrozaun</b> schlägt eventuell selten zu, Gegner laufen eher um einen einzelnen Zaun herum. Mit Mauern verbinden oder quer zum Weg stellen.</li>
     <li>Mit mehr als etwa 100 Gegnern kann die Bildrate einbrechen.</li>
     <li>Die Balance ist in Arbeit, die Kern-LP am Ende schwanken stark von Lauf zu Lauf.</li>
-    <li>Chatmeldungen nach einer Welle liegen kurz über dem Kern-Menü, wenn man es sofort öffnet.</li>
+    <li>Die Chatzeile nach einer Welle liegt kurz über dem Kern-Menü, wenn man es sofort öffnet.</li>
     <li>FICSIT-Coupons sind seit 0.10 das Coupon-Item des Spiels: Nach einem Einsatz bleiben sie im Inventar und zählen beim nächsten mit.</li>
   </ul>
 </div></section>
 
 <section id="faq"><div class="wrap">
   <h2>FAQ</h2>
-  <details><summary><span class="en">Does it work with my existing save?</span><span class="de">Geht es mit meinem bestehenden Spielstand?</span></summary><p class="en">The operation is meant for a new game with Game Mode “Operation”. Turrets and research also appear in existing worlds, but quotas and waves start only through the Core.</p><p class="de">Der Einsatz ist für ein neues Spiel mit dem Spielmodus „Einsatz“ gedacht. Türme und Forschung erscheinen auch in bestehenden Welten, Kontingente und Wellen starten aber nur über den Kern.</p></details>
+  <details><summary><span class="en">What is “Endless waves”? (from 0.11)</span><span class="de">Was ist „Endlos-Wellen“? (ab 0.11)</span></summary><p class="en">A third Game Mode: like an operation (core site, quotas, Coupons, Hard Drives, MAM), but the waves arrive on a timer, never end and always come from one direction. On Normal the first wave comes after 8 minutes, then one about every 3½ minutes counted from the start of the previous wave, a little faster each time (down to 90 seconds; Exploration is slower, Hard and Nightmare faster). If you clear a wave early, the rest is your break (at least 30 s). If you are too slow, the next wave comes on top. You can build, use the shop and level turrets at any time, even during a wave. The mod makes no saves per wave here. “Bring wave forward” pays 1 Coupon per 10 seconds you skip. After every boss wave you get a 5-minute break and pick a bonus at the Core: Coupons, permanently more Core HP or Hard Drives. From wave 60 on, waves get more enemies and more elites. When the Core falls, the run is over – your best wave per starting area is saved. How far can you get?</p><p class="de">Ein dritter Spielmodus: wie ein Einsatz (Kernplatz, Kontingente, Coupons, Festplatten, MAM), aber die Wellen kommen auf Zeit, enden nie und kommen immer aus einer Richtung. Auf Normal kommt die erste Welle nach 8 Minuten, danach etwa alle 3½ Minuten ab Beginn der vorigen Welle, jedes Mal etwas schneller (bis 90 Sekunden; Erkundung langsamer, Hart und Albtraum schneller). Bist du früher fertig, ist der Rest deine Pause (mindestens 30 s). Bist du zu langsam, kommt die nächste Welle obendrauf. Bauen, den Laden und Turmlevel nutzt du jederzeit, auch während der Welle. Spielstände je Welle legt die Mod hier nicht an. „Welle vorziehen“ bringt 1 Coupon je 10 übersprungene Sekunden. Nach jeder Bosswelle gibt es 5 Minuten Pause und am Kern einen Bonus zur Wahl: Coupons, dauerhaft mehr Kern-LP oder Festplatten. Ab Welle 60 kommen mehr Gegner und mehr Eliten. Fällt der Kern, ist der Lauf vorbei – deine beste Welle je Startgebiet wird gespeichert. Wie weit kommst du?</p></details>
+  <details><summary><span class="en">What is “Free play with defense”? (from 0.11)</span><span class="de">Was ist „Freies Spiel mit Abwehr“? (ab 0.11)</span></summary><p class="en">A fourth Game Mode for a relaxed game: regular Satisfactory with HUB and milestones, plus turrets, walls and defense research in the MAM, paid with Coupons from the AWESOME Sink. Nothing attacks unless you switch it on. Place a Defense Core as a deep drill next to an ore, coal or limestone node and start a drilling in its menu (Easy, Medium, Hard). A few waves attack the drill; every wave you hold gives ore from the node, and the first success per resource and level also gives Hard Drives (on Hard a Talent Point). You can abort at any time without penalty, and if the Core falls only the run ends – the drill repairs itself. Existing saves: type <code>/td modus abwehr</code> in the chat and save.</p><p class="de">Ein vierter Spielmodus für ein gemütliches Spiel: normales Satisfactory mit HUB und Meilensteinen, dazu Türme, Mauern und Abwehr-Forschung im MAM, bezahlt mit Coupons aus dem AWESOME-Sink. Nichts greift an, was du nicht einschaltest. Stell einen Abwehrkern als Tiefbohrer neben einen Erz-, Kohle- oder Kalkknoten und starte in seinem Menü eine Bohrung (Leicht, Mittel, Schwer). Ein paar Wellen greifen den Bohrer an; jede gehaltene Welle bringt Erz des Knotens, der erste Erfolg je Rohstoff und Stufe zusätzlich Festplatten (auf Schwer einen Talentpunkt). Abbrechen geht jederzeit ohne Strafe, und fällt der Kern, endet nur der Lauf – der Bohrer repariert sich. Bestehende Spielstände: <code>/td modus abwehr</code> im Chat eingeben und speichern.</p></details>
+  <details><summary><span class="en">Does it work with my existing save?</span><span class="de">Geht es mit meinem bestehenden Spielstand?</span></summary><p class="en">The operation is meant for a new game with Game Mode “Operation”. From 0.11, a world with Game Mode “Off” stays regular Satisfactory: no turret recipes, no FICSIT Defense research trees. If your save ran an operation without the Game Mode (started before 0.10.1), type <code>/td modus einsatz</code> in the chat once and save – recipes and research come back and the mode stays in your save.</p><p class="de">Der Einsatz ist für ein neues Spiel mit dem Spielmodus „Einsatz“ gedacht. Ab 0.11 bleibt eine Welt mit Spielmodus „Aus“ normales Satisfactory: keine Turm-Rezepte, keine FICSIT-Defense-Forschungsbäume. Lief in deinem Spielstand ein Einsatz ohne Spielmodus (vor 0.10.1 gestartet), gib einmal <code>/td modus einsatz</code> im Chat ein und speichere – Rezepte und Forschung sind wieder da, und der Modus bleibt im Spielstand.</p></details>
   <details><summary><span class="en">Multiplayer or dedicated server?</span><span class="de">Mehrspieler oder dedizierter Server?</span></summary><p class="en">Not supported yet. Single-player only.</p><p class="de">Noch nicht unterstützt. Nur Einzelspieler.</p></details>
   <details><summary><span class="en">Enemies get stuck on terrain</span><span class="de">Gegner bleiben im Gelände hängen</span></summary><p class="en">The mod blocks the obstacle for the following enemies and moves stuck ones after a while. Please report the spot with your log file.</p><p class="de">Der Mod sperrt das Hindernis für die folgenden Gegner und versetzt hängende nach einer Weile. Bitte melde die Stelle mit deiner Logdatei.</p></details>
   <details><summary><span class="en">How do I report a bug or suggest an idea?</span><span class="de">Wie melde ich einen Fehler oder schlage etwas vor?</span></summary><p class="en">In the Core Menu, press <b>Report bug / idea</b>, choose bug or suggestion and describe it. The mod opens a prefilled GitHub issue in your browser (version, wave and language are added) and a folder with your log and a screenshot to drag into the issue. The mod itself sends nothing.</p><p class="de">Im Kern-Menü auf <b>Fehler melden / Idee</b> drücken, Fehler oder Vorschlag wählen und beschreiben. Die Mod öffnet im Browser ein ausgefülltes GitHub-Issue (Version, Welle und Sprache stehen schon drin) und einen Ordner mit Log und Bildschirmfoto zum Hineinziehen. Die Mod selbst sendet nichts.</p></details>
   <details><summary><span class="en">Where is the log?</span><span class="de">Wo liegt das Log?</span></summary><p><code>%LOCALAPPDATA%\FactoryGame\Saved\Logs\FactoryGame.log</code></p></details>
   <details><summary><span class="en">Which languages?</span><span class="de">Welche Sprachen?</span></summary><p class="en">English and German, following the game language.</p><p class="de">Englisch und Deutsch, je nach Spielsprache.</p></details>
-  <div class="note"><span class="en"><b>Status: alpha (0.10.2).</b> Balance is work in progress. Feedback and bug reports are very welcome on GitHub.</span><span class="de"><b>Stand: Alpha (0.10.2).</b> Die Balance ist in Arbeit. Rückmeldungen und Fehlerberichte sind auf GitHub sehr willkommen.</span></div>
+  <div class="note"><span class="en"><b>Status: alpha (0.11.0).</b> Balance is work in progress. Feedback and bug reports are very welcome on GitHub.</span><span class="de"><b>Stand: Alpha (0.11.0).</b> Die Balance ist in Arbeit. Rückmeldungen und Fehlerberichte sind auf GitHub sehr willkommen.</span></div>
 </div></section>
 </main>
 
