@@ -25,7 +25,7 @@ Mod: https://ficsit.app/mod/FicsitTD · Guide: https://spancken.github.io/Ficsit
 
 ## Reddit (r/SatisfactoryGame)
 
-**Regeln vorher selbst prüfen:** Reddit war für mich nicht lesbar (Abruf von reddit.com gesperrt), die Regeln konnte ich **nicht** verifizieren. Vor dem Posten bitte prüfen:
+**Regeln (von Marius kopiert, geprüft 20.11.):** Englisch (1), kein Betteln – kein Ko-fi-Link im Post (4), eigene Mod zeigen ist ausdrücklich erlaubt (6), kein Low-Effort, KI-Hilfe offen nennen (7), vorher auf angepinnten Megathread prüfen (8), höchstens ein Eigenwerbungs-Post pro Woche (9), Screenshots nur aus dem Spiel (12), nicht doppelt posten (13). Noch selbst prüfen:
 - Seitenleiste bzw. „About“ → Regeln: Eigenwerbung/Mods erlaubt? Wie oft?
 - Im Post-Formular: Pflicht-Flair (vermutlich etwas wie „Mod“ / „Modding“) auswählen.
 - Links zu ficsit.app/GitHub im Text oder als Kommentar – was die Regeln verlangen.
@@ -41,7 +41,7 @@ FICSIT Tower Defense 0.11: defend a Defense Core with turrets fed by your own pr
 
 **Text:**
 
-Hi pioneers! For a few weeks I've been building **FICSIT Tower Defense**, a single-player mod for Satisfactory 1.2.
+Hi pioneers! For a few weeks I've been building **FICSIT Tower Defense**, a single-player mod for Satisfactory 1.2.5.1.
 
 The idea: you land, FICSIT drops a **Defense Core**, and waves of local wildlife try to destroy it. Your turrets don't have magic ammo – **every bolt, bullet, Nobelisk and drop of fuel comes from your own factory**. So between waves you're doing what you always do: mining, belts, splitters, power – just with a deadline.
 
@@ -54,6 +54,8 @@ What's in it:
 New in 0.11: Endless waves, Free play with defense, a start window after landing, fixed fronts per core site, ammo that lasts several shots per item, Blade Runners from the start, Jetpack/Hover Pack in the shop.
 
 It's still an **alpha** – balancing on Hard/Nightmare isn't done, and now and then an enemy gets stuck at a cliff. Feedback is very welcome, in-game via Core Menu → *Report bug / idea*.
+
+Full disclosure: I designed, tested and balanced it myself, but a lot of the code was written with AI help (Claude) – the mod page says so too.
 
 Download (Satisfactory Mod Manager): https://ficsit.app/mod/FicsitTD
 Player guide: https://spancken.github.io/FicsitTD/
