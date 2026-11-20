@@ -64,7 +64,7 @@ Take two roles fully or three halfway. Your strongest role shows as a badge in t
 - **English and German**, following the game language.
 
 ## Screenshots
-[![A wave of hogs reaches the turret line](https://spancken.github.io/FicsitTD/img/klein/fight.jpg)](https://spancken.github.io/FicsitTD/img/fight.jpg) [![Pioneer tab: four roles with five abilities each](https://spancken.github.io/FicsitTD/img/klein/pioneer-tab.jpg)](https://spancken.github.io/FicsitTD/img/pioneer-tab.jpg) [![Wave preview: who comes next and from where](https://spancken.github.io/FicsitTD/img/klein/wave-preview.jpg)](https://spancken.github.io/FicsitTD/img/wave-preview.jpg)
+[![A wave of hogs heads for the Defense Core](https://spancken.github.io/FicsitTD/img/klein/wave-rolling-in.jpg)](https://spancken.github.io/FicsitTD/img/wave-rolling-in.jpg) [![Flamethrower Turret against a hog](https://spancken.github.io/FicsitTD/img/klein/flamethrower-vs-hog.jpg)](https://spancken.github.io/FicsitTD/img/flamethrower-vs-hog.jpg) [![A Stinger swarm crossing the desert](https://spancken.github.io/FicsitTD/img/klein/stinger-swarm.jpg)](https://spancken.github.io/FicsitTD/img/stinger-swarm.jpg)
 
 *Click a picture for full size.*
 
