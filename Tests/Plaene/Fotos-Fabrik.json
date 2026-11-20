@@ -1,6 +1,6 @@
 {
   "Name": "Fotos-Fabrik",
-  "_Hinweis": "18.11. (Marius: Bilder einer realistischen Partie, Tuerme mit Foerderbaendern verbunden): echte Bolzenlinie wie Fabrik-S2 (2 Ketten, voller Ausbau, 8 Bolzentuerme L2, Band Mk1, Biomassestrom) auf Grass Fields, Fotos mit kamera frei (Punkte fabrik/tuerme). Kein Pruefplan. Aufruf: Teste-Mod.ps1 -Paket Fotos-Fabrik -Sprache en",
+  "_Hinweis": "18.11. (Marius: Bilder einer realistischen Partie, Tuerme mit Foerderbaendern verbunden): echte Bolzenlinie wie Fabrik-S2 (2 Ketten, voller Ausbau, 8 Bolzentuerme L2, Band Mk1, Biomassestrom) auf Grass Fields, Fotos mit kamera frei (Punkte fabrik/tuerme). Kein Pruefplan. Aufruf: Teste-Mod.ps1 -Paket Fotos-Fabrik -Sprache en 20.11. (Marius): nur Vogelperspektive und erhoehte Sicht, je Foto auch eine Fassung mit HUD; Nahaufnahmen vor Tuermen gestrichen. Aufruf mit -Sprache en -Kultur en. 20.11. mittags: 4 Brenner (120 MW) reichten nicht (Fabrik ~85 MW + 8 Tuerme x 8 MW), Sicherung flog beim Wellenstart -> 6 Brenner.",
   "NeuesSpiel": {
     "Startort": "Grass Fields",
     "Modus": 1,
@@ -11,6 +11,11 @@
   "MaxMinuten": 60,
   "Schritte": [
     {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
       "warteBis": "EinsatzAktiv",
       "max": 120
     },
@@ -20,7 +25,7 @@
     },
     {
       "gib": "/Game/FactoryGame/Resource/Parts/GenericBiomass/Desc_GenericBiomass.Desc_GenericBiomass_C",
-      "anzahl": 800
+      "anzahl": 1200
     },
     {
       "kosten": "echt"
@@ -35,7 +40,7 @@
     },
     {
       "strom": "Biomasse",
-      "anzahl": 4
+      "anzahl": 6
     },
     {
       "netz": true
@@ -65,6 +70,9 @@
       "ohneHUD": true
     },
     {
+      "foto": "Fab_A_Overview_HUD"
+    },
+    {
       "kamera": "frei",
       "ort": "fabrik",
       "richtungZu": "kern",
@@ -81,6 +89,9 @@
     {
       "foto": "Fab_B_Side",
       "ohneHUD": true
+    },
+    {
+      "foto": "Fab_B_Side_HUD"
     },
     {
       "kamera": "frei",
@@ -101,22 +112,7 @@
       "ohneHUD": true
     },
     {
-      "kamera": "frei",
-      "ort": "fabrik",
-      "richtungZu": "tuerme",
-      "richtung": 30,
-      "abstand": -14,
-      "hoehe": 6,
-      "blick": "fabrik",
-      "blickhoehe": 2,
-      "fov": 80
-    },
-    {
-      "warte": 1
-    },
-    {
-      "foto": "Fab_D_Machines",
-      "ohneHUD": true
+      "foto": "Fab_C_BeltsToTurrets_HUD"
     },
     {
       "kamera": "frei",
@@ -137,22 +133,7 @@
       "ohneHUD": true
     },
     {
-      "kamera": "frei",
-      "ort": "tuerme",
-      "richtungZu": "kern",
-      "richtung": 140,
-      "abstand": 12,
-      "hoehe": 5,
-      "blick": "tuerme",
-      "blickhoehe": 2,
-      "fov": 80
-    },
-    {
-      "warte": 1
-    },
-    {
-      "foto": "Fab_F_Turrets",
-      "ohneHUD": true
+      "foto": "Fab_E_Base_HUD"
     },
     {
       "kamera": "erste"
@@ -170,24 +151,6 @@
       "max": 150
     },
     {
-      "kamera": "frei",
-      "ort": "gegner",
-      "richtungZu": "kern",
-      "abstand": -12,
-      "seite": 6,
-      "hoehe": 4,
-      "blick": "kern",
-      "blickhoehe": 6,
-      "fov": 70
-    },
-    {
-      "warte": 1
-    },
-    {
-      "foto": "FW6_A_Hero",
-      "ohneHUD": true
-    },
-    {
       "warteGegner": 40,
       "max": 90
     },
@@ -195,12 +158,12 @@
       "kamera": "frei",
       "ort": "tuerme",
       "richtungZu": "gegner",
-      "abstand": -14,
+      "abstand": -22,
       "seite": 5,
-      "hoehe": 7,
+      "hoehe": 16,
       "blick": "gegner",
       "blickhoehe": 1,
-      "fov": 80
+      "fov": 75
     },
     {
       "warte": 1
@@ -208,6 +171,9 @@
     {
       "foto": "FW6_B_TurretsFire",
       "ohneHUD": true
+    },
+    {
+      "foto": "FW6_B_TurretsFire_HUD"
     },
     {
       "kamera": "frei",
@@ -236,24 +202,6 @@
       "max": 60
     },
     {
-      "kamera": "frei",
-      "ort": "tuerme",
-      "richtungZu": "gegner",
-      "richtung": -40,
-      "abstand": 8,
-      "hoehe": 3,
-      "blick": "gegner",
-      "blickhoehe": 1,
-      "fov": 85
-    },
-    {
-      "warte": 1
-    },
-    {
-      "foto": "FW6_D_Close",
-      "ohneHUD": true
-    },
-    {
       "kamera": "erste"
     },
     {
@@ -269,24 +217,6 @@
       "max": 150
     },
     {
-      "kamera": "frei",
-      "ort": "gegner",
-      "richtungZu": "kern",
-      "abstand": -12,
-      "seite": 6,
-      "hoehe": 4,
-      "blick": "kern",
-      "blickhoehe": 6,
-      "fov": 70
-    },
-    {
-      "warte": 1
-    },
-    {
-      "foto": "FW10_A_Hero",
-      "ohneHUD": true
-    },
-    {
       "warteGegner": 40,
       "max": 90
     },
@@ -294,12 +224,12 @@
       "kamera": "frei",
       "ort": "tuerme",
       "richtungZu": "gegner",
-      "abstand": -14,
+      "abstand": -22,
       "seite": 5,
-      "hoehe": 7,
+      "hoehe": 16,
       "blick": "gegner",
       "blickhoehe": 1,
-      "fov": 80
+      "fov": 75
     },
     {
       "warte": 1
@@ -307,6 +237,9 @@
     {
       "foto": "FW10_B_TurretsFire",
       "ohneHUD": true
+    },
+    {
+      "foto": "FW10_B_TurretsFire_HUD"
     },
     {
       "kamera": "frei",
@@ -333,24 +266,6 @@
     {
       "warteGegner": 22,
       "max": 60
-    },
-    {
-      "kamera": "frei",
-      "ort": "tuerme",
-      "richtungZu": "gegner",
-      "richtung": -40,
-      "abstand": 8,
-      "hoehe": 3,
-      "blick": "gegner",
-      "blickhoehe": 1,
-      "fov": 85
-    },
-    {
-      "warte": 1
-    },
-    {
-      "foto": "FW10_D_Close",
-      "ohneHUD": true
     },
     {
       "kamera": "erste"
