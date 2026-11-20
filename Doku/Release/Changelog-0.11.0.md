@@ -1,6 +1,6 @@
-# Changelog 0.11.0 (Entwurf)
+# Changelog 0.11.0
 
-> Stand 18.11.2026, aus den Änderungszetteln in `Aenderungen\` (sichtbar: ja). Der englische Teil geht als `changelog.md` zu ficsit.app; die ersten Zeilen erscheinen im Discord-Kanal `#mod-updates`. Vor dem Upload prüfen: offene Punkte unten, Version, bekannte Probleme.
+> Stand 20.11.2026 (Release), aus den Änderungszetteln in `Aenderungen\` (sichtbar: ja). Der englische Teil geht als `changelog.md` zu ficsit.app; die ersten Zeilen erscheinen im Discord-Kanal `#mod-updates`. Vor dem Upload prüfen: offene Punkte unten, Version, bekannte Probleme.
 
 ## English (ficsit.app)
 
