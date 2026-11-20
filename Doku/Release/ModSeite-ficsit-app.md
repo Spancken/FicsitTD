@@ -67,6 +67,8 @@ Take two roles fully or three halfway. Your strongest role shows as a badge in t
 *Click a picture for full size.*
 
 ## Status: Alpha (0.11.0)
+
+**Requires Satisfactory 1.2.5.1** (build 520140). Older versions of the mod (0.10.2 and before) crash on this game version.
 - Steam and Epic, Windows. **Single-player only**; multiplayer and dedicated servers are not supported.
 - Balance is work in progress; the target length is 50 waves.
 - Hard and Nightmare are not fully balanced yet.

@@ -18,6 +18,8 @@
 
 Also new: a start window right after landing (pick mode + difficulty), fixed enemy fronts per core site, ammo that lasts several shots per item, Belts Mk.4/5 and Miners Mk.2/3, Blade Runners from the start, Jetpack and Hover Pack in the shop, proper German umlauts.
 
+⚠️ Built for the 1.2.5.1 patch – 0.10.2 crashes on it, so please update.
+
 Still alpha – feedback and bug reports welcome (Core Menu → *Report bug / idea*).
 Mod: https://ficsit.app/mod/FicsitTD · Guide: https://spancken.github.io/FicsitTD/
 

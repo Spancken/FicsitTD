@@ -24,6 +24,11 @@
 #include "Blueprint/UserWidget.h"
 #include "Buildables/FGBuildableConveyorBase.h"
 #include "TDLayoutGroessen.inl"
+#include "TDGunTurret.h"
+#include "Misc/CoreDelegates.h"
+#include "Windows/AllowWindowsPlatformTypes.h"
+#include "Windows/HideWindowsPlatformTypes.h"
+extern "C" __declspec(dllimport) DWORD __stdcall K32GetModuleBaseNameW(HANDLE, HMODULE, LPWSTR, DWORD);
 
 class FTDLayoutDiagnose
 {
@@ -99,9 +104,72 @@ public:
 			}
 		}
 
-		UE_LOG(LogFicsitTD, Warning, TEXT("Layout-Pruefung Ergebnis: Groessen %d/%d abweichend, Felder %d/%d abweichend, %d fehlen, %d Spielfelder gelistet"),
+		// Warnung nur bei verschobenen Feldern der Fabrik-/Band-Klassen; bekannte Groessenabweichungen (GameState, GameUI,
+		// ConveyorAttachment, ConveyorLift) betreffen keine Felder, die FicsitTD liest (README 20.11.)
+		if (FelderFalsch > 0 || FelderFehlen > 0)
+			UE_LOG(LogFicsitTD, Warning, TEXT("Layout-Pruefung: verschobene Felder - Header passen nicht zum Spiel"));
+		UE_LOG(LogFicsitTD, Log, TEXT("Layout-Pruefung Ergebnis: Groessen %d/%d abweichend, Felder %d/%d abweichend, %d fehlen, %d Spielfelder gelistet"),
 			GroessenFalsch, Groessen, FelderFalsch, Felder, FelderFehlen, Neu);
 	}
 };
 
-void TDLayoutPruefen() { FTDLayoutDiagnose::Pruefen(); }
+
+// 20.11.2026: Turmfenster stuerzt ab (UpdateRotation) - vtable des Turms gegen die des Spiels vergleichen.
+static void* TDZiel(void* Adr)
+{
+	// Import-Sprung "jmp [rip+disp32]" (FF 25) bis zur echten Funktion verfolgen
+	for (int32 i = 0; i < 4 && Adr; ++i)
+	{
+		const uint8* B = (const uint8*)Adr;
+		if (B[0] == 0xFF && B[1] == 0x25) { Adr = *(void**)(B + 6 + *(const int32*)(B + 2)); continue; }
+		if (B[0] == 0xE9) { Adr = (void*)(B + 5 + *(const int32*)(B + 1)); continue; }
+		break;
+	}
+	return Adr;
+}
+static FString TDModul(void* Adr, uint64& Rva)
+{
+	HMODULE M = nullptr; Rva = 0;
+	if (!Adr || !GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, (LPCWSTR)Adr, &M) || !M) return TEXT("-");
+	WCHAR Name[MAX_PATH]; K32GetModuleBaseNameW(GetCurrentProcess(), M, Name, MAX_PATH);
+	Rva = (uint64)((UPTRINT)Adr - (UPTRINT)M);
+	FString S(Name); S.ReplaceInline(TEXT("FactoryGameSteam-"), TEXT("")); S.ReplaceInline(TEXT("-Win64-Shipping.dll"), TEXT(""));
+	return S;
+}
+static void TDVergleicheTabelle(const TCHAR* Was, void** Spiel, void** Wir, int32 Max)
+{
+	int32 Gleich = 0, Ueberschrieben = 0, Verschoben = 0;
+	for (int32 i = 0; i < Max; ++i)
+	{
+		uint64 RS, RW;
+		void* S = TDZiel(Spiel[i]); void* W = TDZiel(Wir[i]);
+		const FString MS = TDModul(S, RS), MW = TDModul(W, RW);
+		if (MS == TEXT("-") || MW == TEXT("-")) { UE_LOG(LogFicsitTD, Log, TEXT("Layout-Pruefung VTable %s Ende bei Slot %d (Spiel %s, wir %s)"), Was, i, *MS, *MW); break; }
+		if (S == W) { ++Gleich; continue; }
+		if (MW.Contains(TEXT("FicsitTD"))) { ++Ueberschrieben; continue; }
+		++Verschoben;
+		if (Verschoben <= 5) UE_LOG(LogFicsitTD, Log, TEXT("Layout-Pruefung VTable %s Slot %d: Spiel %s+%llx, wir %s+%llx  <== ABWEICHUNG"), Was, i, *MS, RS, *MW, RW);
+	}
+	// 20.11.: nur Log - am Tabellenende liest der Vergleich in die naechste Tabelle bzw. unsere eigenen virtuellen Funktionen (keine echte Abweichung).
+	// Aussagekraeftig ist der Beginn einer Abweichung innerhalb einer Schnittstelle (so wurde GetDependantHighPriorityReplicationActors gefunden).
+	UE_LOG(LogFicsitTD, Log, TEXT("Layout-Pruefung VTable %s: %d gleich, %d von FicsitTD ueberschrieben, %d abweichend"), Was, Gleich, Ueberschrieben, Verschoben);
+}
+static void TDVTablePruefen()
+{
+	UObject* Spiel = AFGBuildableManufacturer::StaticClass()->GetDefaultObject();
+	UObject* Wir = ATDGunTurret::StaticClass()->GetDefaultObject();
+	if (!Spiel || !Wir) { UE_LOG(LogFicsitTD, Warning, TEXT("Layout-Pruefung VTable: kein CDO")); return; }
+	TDVergleicheTabelle(TEXT("Primaer"), *(void***)Spiel, *(void***)Wir, 1200);
+	for (UClass* K = AFGBuildableManufacturer::StaticClass(); K && K != AActor::StaticClass(); K = K->GetSuperClass())
+	{
+		for (const FImplementedInterface& I : K->Interfaces)
+		{
+			TDVergleicheTabelle(*I.Class->GetName(), *(void***)((uint8*)Spiel + I.PointerOffset), *(void***)((uint8*)Wir + I.PointerOffset), 200);
+		}
+	}
+}
+void TDLayoutPruefen()
+{
+	FTDLayoutDiagnose::Pruefen();
+	FCoreDelegates::OnPostEngineInit.AddStatic(&TDVTablePruefen);
+}

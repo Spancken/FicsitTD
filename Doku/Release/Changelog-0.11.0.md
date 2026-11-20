@@ -40,6 +40,9 @@
 - Now and then an enemy gets stuck at a cliff or at a front's start point and is moved back onto its path after a few seconds.
 - Hard and Nightmare are not fully balanced yet.
 
+### Compatibility
+- **Requires Satisfactory 1.2.5.1** (build 520140, the multiplayer patch from November 18). That patch changed the factory building classes the turrets are built on, so **0.10.2 crashes on 1.2.5.1** – please update. 0.11.0 does not run on older game versions.
+
 ### Saves
 - 0.10.2 saves load. Saves with Game Mode "Off" from older versions switch to Operation with `/td modus einsatz`.
 
@@ -80,6 +83,8 @@
 **Bekannte Fehler**
 - Gelegentlich bleibt ein Gegner an einer Klippe oder am Startpunkt einer Front hängen und wird nach einigen Sekunden auf den Weg zurückgesetzt.
 - Hart und Albtraum sind noch nicht fertig eingestellt.
+
+**Spielversion:** Braucht Satisfactory 1.2.5.1 (Build 520140, Multiplayer-Patch vom 18.11.). Der Patch hat die Fabrik-Klassen geändert, auf denen die Türme aufbauen – **0.10.2 stürzt mit 1.2.5.1 ab**, bitte aktualisieren. Ältere Spielversionen laufen mit 0.11.0 nicht.
 
 **Spielstände:** Stände aus 0.10.2 laden. Alte Stände mit Spielmodus „Aus“ stellen mit `/td modus einsatz` auf Einsatz um.
 

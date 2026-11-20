@@ -1,0 +1,5 @@
+{
+  "Name": "Turmfenster",
+  "_Hinweis": "20.11.: Gegenprobe nach Spielupdate 1.2.5.1 - Turmfenster oeffnen stuerzte ab (IFGUseableInterface um eine Funktion verschoben).",
+  "Plaene": ["Spezialisierung", "Pionier-P3"]
+}

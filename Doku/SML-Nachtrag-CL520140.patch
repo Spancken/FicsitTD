@@ -132,3 +132,17 @@ index 0000000000..45bcb43696
 +{
 +	uint64 Unbekannt;
 +};
+diff --git a/Source/FactoryGame/Public/FGUseableInterface.h b/Source/FactoryGame/Public/FGUseableInterface.h
+index b1973fdf48..b211fdcc93 100644
+--- a/Source/FactoryGame/Public/FGUseableInterface.h
++++ b/Source/FactoryGame/Public/FGUseableInterface.h
+@@ -170,4 +170,9 @@ class FACTORYGAME_API IFGUseableInterface
+ 	/** Called from widgets that are opened by the use functionality */
+ 	UFUNCTION( BlueprintNativeEvent, BlueprintCallable, Category = "Use" )
+ 	void UnregisterInteractingPlayer( class AFGCharacterPlayer* player );
++
++	// FicsitTD-Nachtrag 20.11.2026 CL520140: neue Funktion im Spiel (Exportliste: execGetDependantHighPriorityReplicationActors,
++	// virtuelles _Implementation in der Schnittstelle). Fehlte sie, war die Funktionstabelle ab Eintrag 3 verschoben -> Absturz beim Oeffnen eines Turmfensters.
++	UFUNCTION( BlueprintNativeEvent, Category = "Use" )
++	void GetDependantHighPriorityReplicationActors( TArray<AActor*>& out_actors );
+ };
