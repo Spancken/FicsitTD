@@ -15,6 +15,9 @@ Factory-fed tower defense: real ammo chains feed your turrets. 50-wave operation
 
 **Your factory makes the ammo. The turrets protect the factory.**
 
+### 📖 [Player guide](https://spancken.github.io/FicsitTD/) · 🐞 [Report a bug or idea](https://github.com/Spancken/FicsitTD/issues/new) · ⚠️ [Known issues](https://spancken.github.io/FicsitTD/#issues)
+*The player guide (English/German) explains game modes, turrets, ammo chains, research and the Pioneer. Bugs and ideas can also be reported right in the game: Core Menu → **Report bug / idea**.*
+
 > 🧪 **Alpha – playtesters wanted!** FICSIT Tower Defense is playable from wave 1 to 50, but balance and some features are still rough, and not every feature has been tested in a full run yet. Please play it, break it and tell me what feels wrong or boring: **Core Menu → Report bug / idea**, or https://github.com/Spancken/FicsitTD/issues. Every report helps shape the next version.
 
 FICSIT Tower Defense turns Satisfactory into a tower defense that lives off your factory. A FICSIT Defense Core stands in your start biome, and waves of native fauna attack it from up to three fronts. Every turret fires **real ammunition from your own production lines**, delivered by conveyor belt or pipe. Fifty waves lead you from simple iron rebar to plasma flames.
@@ -39,7 +42,6 @@ You are no longer just the builder. Fight next to your turrets and earn **Pionee
 
 Take two roles fully or three halfway. Your strongest role shows as a badge in the HUD, and repairs, rally orders and overdrive are visible on the turrets.
 
-📖 **Player guide (English/German):** https://spancken.github.io/FicsitTD/
 ☕ **Support the mod:** https://ko-fi.com/mariusspancken
 
 ## Quick start
@@ -74,8 +76,8 @@ Take two roles fully or three halfway. Your strongest role shows as a badge in t
 - Hard and Nightmare are not fully balanced yet.
 - **Known issues** (occasional stuck enemies, Sky Tower without flyers yet, Tesla power spikes, retry wave untested and more): https://spancken.github.io/FicsitTD/#issues
 
-## Feedback
-Report bugs or suggest ideas right in the game: Core Menu → **Report bug / idea**. It opens a prefilled GitHub issue in your browser and a folder with your log and a screenshot. Or directly: https://github.com/Spancken/FicsitTD/issues
+## Feedback – please report!
+Every report helps. **In the game:** Core Menu → **Report bug / idea** opens a prefilled GitHub issue in your browser and a folder with your log and a screenshot to attach. **On the web:** [open an issue](https://github.com/Spancken/FicsitTD/issues/new). Before reporting, have a look at the [known issues](https://spancken.github.io/FicsitTD/#issues) and the [FAQ in the player guide](https://spancken.github.io/FicsitTD/#faq).
 Log file: `%LOCALAPPDATA%\FactoryGame\Saved\Logs\FactoryGame.log`
 
 ## Use of AI (required disclosure)
