@@ -1,0 +1,39 @@
+{
+  "Name": "Screenshots-EN-Start",
+  "_Hinweis": "0.11 (20.11., Marius): englisches Foto vom Startfenster (vier Spielweisen, Stufe) fuer Mod-Seite und Handbuch. Kein Pruefplan. Wie Startfenster, aber ADA-Hinweis abwarten, damit er das Fenster nicht verdeckt.",
+  "NeuesSpiel": {
+    "Startort": "Grass Fields"
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 6,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warte": 25
+    },
+    {
+      "befehl": "td startfenster"
+    },
+    {
+      "warte": 3
+    },
+    {
+      "foto": "EN_StartWindow"
+    },
+    {
+      "befehl": "td startfenster waehle 1 2"
+    },
+    {
+      "warte": 2
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}

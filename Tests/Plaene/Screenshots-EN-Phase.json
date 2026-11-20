@@ -1,0 +1,133 @@
+{
+  "Name": "Screenshots-EN-Phase",
+  "_Hinweis": "0.11 (20.11., Marius): englische Fotos Phasenabschluss mit Bonuswahl (Kernmenue nach Welle 10), Turmfenster mit Verbrauch pro Minute, Kampf mit Wellenleiste. Kein Pruefplan. Ablauf wie EinsatzPhase; vor dem Kernfoto 25 s warten, bis die Chatzeilen ausgeblendet sind.",
+  "NeuesSpiel": {
+    "Startort": "Grass Fields",
+    "Modus": 1,
+    "Stufe": 2
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 20,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warteBis": "EinsatzAktiv",
+      "max": 120
+    },
+    {
+      "befehl": "td einsatz frei an"
+    },
+    {
+      "stromfrei": true
+    },
+    {
+      "versorgung": {
+        "Bolzenturm": 150
+      }
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 12,
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "befehl": "td einsatz frei aus"
+    },
+    {
+      "oeffne": "*"
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "EN_TurretWindow"
+    },
+    {
+      "schliesse": true
+    },
+    {
+      "warte": 1
+    },
+    {
+      "befehl": "td kern springe 10"
+    },
+    {
+      "befehl": "td kern weiter"
+    },
+    {
+      "warteBis": "WelleLaeuft",
+      "max": 60
+    },
+    {
+      "warte": 15
+    },
+    {
+      "stelle": "gegner",
+      "abstand": 7,
+      "winkel": 30
+    },
+    {
+      "kamera": "dritte"
+    },
+    {
+      "warte": 1
+    },
+    {
+      "foto": "EN_Wave10_Fight"
+    },
+    {
+      "kamera": "erste"
+    },
+    {
+      "zeitraffer": 4
+    },
+    {
+      "warteBis": "WelleVorbei",
+      "max": 600
+    },
+    {
+      "zeitraffer": 1
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Einsatz: Bonuswahl nach Bosswelle 10",
+      "min": 1,
+      "max": 1,
+      "text": "Bonuswahl angeboten"
+    },
+    {
+      "warte": 25
+    },
+    {
+      "oeffne": "Kern"
+    },
+    {
+      "warte": 2
+    },
+    {
+      "kernansicht": 0
+    },
+    {
+      "warte": 1.5
+    },
+    {
+      "foto": "EN_PhaseReport_Bonus"
+    },
+    {
+      "schliesse": true
+    },
+    {
+      "warte": 1
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}

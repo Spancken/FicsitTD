@@ -1,0 +1,9 @@
+{
+  "Name": "Screenshots011",
+  "_Hinweis": "0.11 (20.11.): englische Bilder der Neuerungen fuer ficsit.app und Handbuch, kein Pruefpaket. Aufruf: Teste-Mod.ps1 -Paket Screenshots011 -Sprache en -Kultur en. Danach mit schneide_screenshots.py auf 16:9 schneiden.",
+  "Plaene": [
+    "Screenshots-EN-Start",
+    "Screenshots-EN-Phase",
+    "Screenshots-EN-Endless"
+  ]
+}

@@ -1,0 +1,113 @@
+{
+  "Name": "Screenshots-EN-Endless",
+  "_Hinweis": "0.11 (20.11., Marius): englische Fotos Spielmodus Endlos-Wellen (Countdown im HUD, Kampf mit Wellenleiste). Kein Pruefplan. Aufbau wie Endlos.",
+  "NeuesSpiel": {
+    "Startort": "Grass Fields",
+    "Modus": 2
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 20,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warteBis": "EinsatzAktiv",
+      "max": 120
+    },
+    {
+      "befehl": "td einsatz frei an"
+    },
+    {
+      "stromfrei": true
+    },
+    {
+      "versorgung": {
+        "Bolzenturm": 50
+      }
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 6,
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "befehl": "td einsatz frei aus"
+    },
+    {
+      "warte": 25
+    },
+    {
+      "stelle": "*",
+      "abstand": 10,
+      "winkel": 200
+    },
+    {
+      "kamera": "dritte"
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "EN_Endless_Countdown"
+    },
+    {
+      "kamera": "erste"
+    },
+    {
+      "zeitraffer": 8
+    },
+    {
+      "warteBis": "WelleLaeuft",
+      "max": 700
+    },
+    {
+      "zeitraffer": 1
+    },
+    {
+      "warte": 12
+    },
+    {
+      "stelle": "gegner",
+      "abstand": 7,
+      "winkel": 30
+    },
+    {
+      "kamera": "dritte"
+    },
+    {
+      "warte": 1
+    },
+    {
+      "foto": "EN_Endless_Wave1"
+    },
+    {
+      "warte": 8
+    },
+    {
+      "stelle": "gegner",
+      "abstand": 7,
+      "winkel": 30
+    },
+    {
+      "kamera": "dritte"
+    },
+    {
+      "warte": 1
+    },
+    {
+      "foto": "EN_Endless_Wave1_b"
+    },
+    {
+      "kamera": "erste"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}
