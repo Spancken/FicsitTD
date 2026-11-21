@@ -10,6 +10,7 @@
 #include "FicsitTDModule.h"
 #include "FGResearchTree.h"
 #include "FGSchematic.h"
+#include "TDShop.h"
 #include "TDForschungListe.inl"
 
 UTDWorldModule::UTDWorldModule()
@@ -34,9 +35,25 @@ void UTDWorldModule::DispatchLifecycleEvent(ELifecyclePhase Phase)
 		TDBalance::Lade();
 		// 0.85 L1: Asset-Texte bei englischer Spielsprache ersetzen
 		TDSprache::UebersetzeAssets();
+		// 0.12 E1 (Shop-Prototyp): Preise im CDO leben laenger als eine Welt -> je Welt auf den Grundpreis; Hooks nur mit Schalter
+		TDShop::SetzeZurueck();
+		TDShop::StelleHooksSicher();
 	}
 	if (Phase == ELifecyclePhase::CONSTRUCTION && mResearchTrees.Num() == 0)
 	{
+		// 0.12 E1 (Shop-Prototyp): Posten fuer den AWESOME-Shop (Scripts/create_shop_prototyp.py). Ohne Experiment.ShopPrototyp
+		// bleibt er ueber UTDExperimentAbhaengigkeit verborgen und nicht kaufbar.
+		int32 ShopPosten = 0;
+		for (const FString& Pfad : TDShop::PostenPfade())
+		{
+			if (UClass* Klasse = LoadClass<UFGSchematic>(nullptr, *Pfad))
+			{
+				mSchematics.Add(Klasse);
+				++ShopPosten;
+			}
+		}
+		UE_LOG(LogFicsitTD, Log, TEXT("Shop: %d von %d Posten eingetragen (Prototyp, Schalter %s)"), ShopPosten, TDShop::PostenPfade().Num(),
+			TDShop::PrototypAn() ? TEXT("an") : TEXT("aus"));
 		// Einsatz-Konzept Abschnitt 5: MAM-Baeume (erzeugt von Scripts/create_research.py)
 		for (const TCHAR* Pfad : TDForschungsSchemata)
 		{

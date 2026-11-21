@@ -3700,10 +3700,33 @@ void UTDWaveSubsystem::EntschaerfeLogistik(const FVector& Mitte)
 		++mLogistikVersion;
 		static const TCHAR* Namen[] = { TEXT("ResourceDeposit"), TEXT("NodeMeshActor"), TEXT("CrabHatcher"), TEXT("NutBush"), TEXT("BerryBush") };
 		const float Radius = TDBalance::Wert(TEXT("Gegner.HindernisRadius"), 400.f) * 100.f;
-		int32 Objekte = 0, Gefunden = 0;
+		int32 Objekte = 0, Gefunden = 0, KernNahGemeldet = 0;
 		TMap<FString, FString> Uebersprungen;
 		for (TActorIterator<AActor> It(GetWorld()); It; ++It)
 		{
+			// 0.12 (C2, "graue Kugel am Kern", Fotos seit 16.11.): was steht an der Kernplattform, das der Mod nicht gebaut hat?
+			// Reine Diagnose, einmal je Kernort: alles mit sichtbarem Modell im Umkreis von 35 m (Plattform 24 m + Rampen) einzeln melden.
+			// Auch Figuren: auf den Fotos vom 20.11. (FW10_C_High, vor Welle 1 schon Fab_E_Base) hat das graue Objekt Beine und einen Hog-Koerper.
+			if (FVector::DistSquared2D(It->GetActorLocation(), Mitte) < FMath::Square(3500.f) && !It->IsA<AFGBuildable>() && KernNahGemeldet < 40)
+			{
+				const UStaticMeshComponent* Modell = It->FindComponentByClass<UStaticMeshComponent>();
+				const USkeletalMeshComponent* Koerper = It->FindComponentByClass<USkeletalMeshComponent>();
+				const bool bModell = Modell && Modell->GetStaticMesh() && Modell->IsVisible();
+				const bool bKoerper = Koerper && Koerper->GetSkeletalMeshAsset() && Koerper->IsVisible();
+				if (bModell || bKoerper)
+				{
+					FVector Ort, Halb;
+					It->GetActorBounds(false, Ort, Halb);
+					const UMaterialInterface* Material = bKoerper ? Koerper->GetMaterial(0) : Modell->GetMaterial(0);
+					const AFGCreature* Kreatur = Cast<AFGCreature>(*It);
+					++KernNahGemeldet;
+					UE_LOG(LogFicsitTD, Log, TEXT("%s am Kern: %s (%s), Modell %s, Material %s, %.1f m von der Mitte, %.1f x %.1f x %.1f m, Unterkante %.1f m zur Mitte%s"),
+						It->IsA<APawn>() ? TEXT("Figur") : TEXT("Weltobjekt"), *It->GetClass()->GetName(), *It->GetName(),
+						bKoerper ? *Koerper->GetSkeletalMeshAsset()->GetName() : *Modell->GetStaticMesh()->GetName(), Material ? *Material->GetName() : TEXT("-"),
+						FVector::Dist2D(It->GetActorLocation(), Mitte) / 100.f, Halb.X / 50.f, Halb.Y / 50.f, Halb.Z / 50.f, (Ort.Z - Halb.Z - Mitte.Z) / 100.f,
+						Kreatur ? (Kreatur->IsAliveAndWell() ? TEXT(", lebt") : TEXT(", tot")) : TEXT(""));
+				}
+			}
 			if (FVector::DistSquared2D(It->GetActorLocation(), Mitte) > FMath::Square(Radius) || (It->IsA<APawn>() && !It->GetClass()->GetName().Contains(TEXT("CrabHatcher"))))
 			{
 				continue;

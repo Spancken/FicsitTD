@@ -1699,6 +1699,21 @@ TArray<FString> UTDKernTerminal::SichtbareTestKnoepfe() const
 	return Namen;
 }
 
+int32 UTDKernTerminal::FreiePlusKnoepfe(int32& OutAlle) const
+{
+	int32 Frei = 0;
+	OutAlle = 0;
+	for (const UTDKaufKnopf* K : mKaufKnoepfe)
+	{
+		if (K && K->Schritt > 0 && K->Knopf.IsValid())
+		{
+			++OutAlle;
+			Frei += K->Knopf->GetIsEnabled() ? 1 : 0;
+		}
+	}
+	return Frei;
+}
+
 static FString RollenName(int32 Rolle)
 {
 	switch (FMath::Clamp(Rolle, 0, 4))
@@ -1968,8 +1983,21 @@ void UTDKernTerminal::BaueListen()
 			mFronten->SetText(FText::FromString(FString::Join(Fronten, TEXT("   "))));
 		}
 	}
-	const bool bWelle = Waves && Waves->LaeuftWelle();
-	auto Fuellen = [](UHorizontalBox* Reihe, UWidget* W)
+	// 0.12 (C7): dieselbe Regel wie Kaufe() - im Endlos ist der Laden auch in der Welle offen.
+	// Vorher stand hier nur "laeuft eine Welle", die Knoepfe waren im Endlos gesperrt, obwohl der Kauf erlaubt war.
+	const bool bWelle = Einsatz->LadenInWelleZu();
+	{
+		static int32 TDLadenStandGemeldet = -1;
+		const int32 Stand = (Waves && Waves->LaeuftWelle() ? 1 : 0) + (Waves && Waves->IstEndlos() ? 2 : 0) + (bWelle ? 4 : 0);
+		if (Stand != TDLadenStandGemeldet)
+		{
+			TDLadenStandGemeldet = Stand;
+			UE_LOG(LogFicsitTD, Log, TEXT("Kern-Menue Laden: Welle %s, Endlos %s -> Knoepfe %s"),
+				Waves && Waves->LaeuftWelle() ? TEXT("ja") : TEXT("nein"), Waves && Waves->IstEndlos() ? TEXT("ja") : TEXT("nein"),
+				bWelle ? TEXT("gesperrt") : TEXT("frei"));
+		}
+	}
+	auto Fuellen =[](UHorizontalBox* Reihe, UWidget* W)
 	{
 		if (UHorizontalBoxSlot* S = Reihe->AddChildToHorizontalBox(W))
 		{
@@ -2005,6 +2033,7 @@ void UTDKernTerminal::BaueListen()
 		Ziel->Key = Key;
 		Ziel->Schritt = Schritt;
 		Ziel->Menue = this;
+		Ziel->Knopf = B;
 		B->OnClicked.AddDynamic(Ziel, &UTDKaufKnopf::Geklickt);
 		mKaufKnoepfe.Add(Ziel);
 		return B;
@@ -2250,8 +2279,8 @@ void UTDKernTerminal::AendereKorb(const FString& Key, int32 Schritt)
 		BaueListen();
 		return;
 	}
-	const UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
-	if (Waves && Waves->LaeuftWelle())
+	const UTDEinsatzSubsystem* EinsatzRegel = GetWorld()->GetSubsystem<UTDEinsatzSubsystem>();
+	if (EinsatzRegel && EinsatzRegel->LadenInWelleZu())
 	{
 		Melde(TDT(TEXT("Während der Welle ist der Laden geschlossen."), TEXT("The shop is closed during a wave.")));
 		return;
@@ -3427,12 +3456,26 @@ void UTDWellenLeiste::FuelleSchaden()
 			mSchadenTexte.Add(Text);
 			mSchadenBalken.Add(Balken);
 		}
+		// 0.12 (C1): Nachweis der Anzeigenamen fuer den Selbsttest (Plan Schadensleiste) - je Turmart und Sprache eine Zeile, einmal je Spielstart
+		static TSet<FString> Gemeldet;
+		const TCHAR* Sprache = TDSprache::Englisch() ? TEXT("en") : TEXT("de");
+		for (const FTDTurmStat& T : Liste)
+		{
+			const FString Name = UTDEinsatzSubsystem::Anzeige(T.Art);
+			const FString Merker = FString(Sprache) + T.Art;
+			if (!Gemeldet.Contains(Merker))
+			{
+				Gemeldet.Add(Merker);
+				UE_LOG(LogFicsitTD, Log, TEXT("Wellenleiste Schaden %s: %s (Schluessel %s)"), Sprache, *Name, *T.Art);
+			}
+		}
 	}
 	for (int32 i = 0; i < Liste.Num() && i < mSchadenTexte.Num(); ++i)
 	{
 		const FTDTurmStat& T = Liste[i];
 		// 0.11: ohne "Schaden" (steht in der Ueberschrift), damit die Zeile meist einzeilig bleibt
-		mSchadenTexte[i]->SetText(TDFX(TEXT("%s (%d): %s · %.0f %% · %d Abschüsse"), TEXT("%s (%d): %s · %.0f %% · %d kills"), *T.Art, T.Anzahl,
+		// 0.12 (C1): T.Art ist der deutsche Schluessel der Statistik - dem Spieler den Anzeigenamen zeigen
+		mSchadenTexte[i]->SetText(TDFX(TEXT("%s (%d): %s · %.0f %% · %d Abschüsse"), TEXT("%s (%d): %s · %.0f %% · %d kills"), *UTDEinsatzSubsystem::Anzeige(T.Art), T.Anzahl,
 			*FText::AsNumber(FMath::RoundToInt(T.Schaden)).ToString(), Summe > 0.f ? 100.f * T.Schaden / Summe : 0.f, T.Kills));
 		mSchadenBalken[i]->SetPercent(T.Schaden / Hoechst);
 	}
@@ -3707,7 +3750,7 @@ void UTDKernTerminal::BaueStatistik()
 			const float Fabrik = T.ProduktionMin * W.Dauer / 60.f;
 			Balken(Reihe, { { T.VorratStart / HoechstMunition, VorratFarbe, 18.f }, { Fabrik / HoechstMunition, FabrikFarbe, 11.f },
 				{ T.Schuesse / HoechstMunition, UTDWellenStatistik::Farbe(T.Art), 5.f } });
-			Spalte(Reihe, T.Art, 140.f, UTDWellenStatistik::Farbe(T.Art), true, false);
+			Spalte(Reihe, UTDEinsatzSubsystem::Anzeige(T.Art), 140.f, UTDWellenStatistik::Farbe(T.Art), true, false);
 			Spalte(Reihe, TDF(TEXT("%d verschossen · Fabrik %.0f (%.0f/min) · Vorrat %d auf %d"), TEXT("%d fired · factory %.0f (%.0f/min) · stock %d to %d"), T.Schuesse, Fabrik, T.ProduktionMin, T.VorratStart, T.VorratEnde),
 				420.f, T.Hungrig > 0.f || T.VorratEnde == 0 ? TDUI::Fehler : TDUI::Hell, false, false);
 			Abschnitt(Reihe, 4.f);
@@ -3757,7 +3800,7 @@ void UTDKernTerminal::BaueStatistik()
 			UBorder* Zeile = NeuesFeld(Nr++ % 2 ? TDUI::ZeileB : TDUI::ZeileA, FMargin(0.f, 3.f));
 			UHorizontalBox* Reihe = WidgetTree->ConstructWidget<UHorizontalBox>();
 			Zeile->AddChild(Reihe);
-			Spalte(Reihe, T.Art, Breiten[0], UTDWellenStatistik::Farbe(T.Art), true, false);
+			Spalte(Reihe, UTDEinsatzSubsystem::Anzeige(T.Art), Breiten[0], UTDWellenStatistik::Farbe(T.Art), true, false);
 			Spalte(Reihe, FString::FromInt(T.Anzahl), Breiten[1], TDUI::Hell, false, true);
 			Spalte(Reihe, Zahl(T.Schaden), Breiten[2], TDUI::Hell, false, true);
 			Spalte(Reihe, FString::Printf(TEXT("%.0f %%"), Summe > 0.f ? 100.f * T.Schaden / Summe : 0.f), Breiten[3], TDUI::Hell, false, true);

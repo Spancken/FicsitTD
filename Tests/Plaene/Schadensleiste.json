@@ -1,0 +1,24 @@
+{
+  "Name": "Schadensleiste",
+  "_Hinweis": "0.12 (C1): Die Wellenleiste zeigte unter 'Damage this wave' den deutschen Statistik-Schluessel ('Bolzenturm') statt des Anzeigenamens. Nur auf Englisch aussagekraeftig: Teste-Mod.ps1 -Plan Schadensleiste -Sprache en (Paket ReleaseEn). Basis: Marius' Spielstand W06 mit Bolzentuermen.",
+  "Spielstand": "Autotest_Marius_W06",
+  "Quelle": "Marius_W06_Plateau.sav",
+  "ErweiterteEinstellungen": true,
+  "WarteNachLaden": 30,
+  "MaxMinuten": 10,
+  "Schritte": [
+    { "pruefe": "Version", "soll": "{VERSION}", "text": "richtige Mod-Version geladen" },
+    { "stromfrei": true },
+    { "befehl": "td kern weiter" },
+    { "_Hinweis": "21.11.: vorher nur 25 s gewartet, der Countdown lief noch 60 s - ohne Schaden gibt es keine Zeile in der Leiste", "warteBis": "WelleLaeuft", "max": 120 },
+    { "warte": 30 },
+    { "pruefe": "LogEnthaelt", "suche": "Wellenleiste Schaden en: Bolt Turret (Schluessel Bolzenturm)", "text": "Schadensleiste zeigt den englischen Turmnamen" },
+    { "pruefe": "LogEnthaelt", "suche": "Wellenleiste Schaden en: Bolzenturm", "max": 0, "min": 0, "text": "kein deutscher Turmname in der englischen Schadensleiste" },
+    { "foto": "Schadensleiste_en" },
+    { "oeffne": "Kern" },
+    { "warte": 2 },
+    { "foto": "Kern_Statistik_en" },
+    { "schliesse": true },
+    { "pruefe": "KeineWarnungen", "text": "keine Warnungen oder Fehler des Mods im Log" }
+  ]
+}

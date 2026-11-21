@@ -1,8 +1,8 @@
 {
 	"FileVersion": 3,
 	"Version": 0,
-	"VersionName": "0.11.0",
-	"SemVersion": "0.11.0",
+	"VersionName": "0.11.1",
+	"SemVersion": "0.11.1",
 	"GameVersion": ">=520140",
 	"FriendlyName": "FICSIT Tower Defense",
 	"Description": "Factory-fed tower defense for Satisfactory: defend a FICSIT Defense Core against waves of native fauna. Your factory produces real ammunition for five turret lines with levels, doctrines and physical combos. FICSIT Coupons, MAM research, defensive buildings. Single-player alpha, German and English.",
@@ -29,7 +29,7 @@
 		{
 			"Name": "SML",
 			"Enabled": true,
-			"SemVersion": "^3.12.0"
+			"SemVersion": "^3.12.1"
 		}
 	]
 }

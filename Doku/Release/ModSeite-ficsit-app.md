@@ -68,7 +68,7 @@ Take two roles fully or three halfway. Your strongest role shows as a badge in t
 
 *Click a picture for full size.*
 
-## Status: Alpha (0.11.0)
+## Status: Alpha (0.11.1)
 
 **Requires Satisfactory 1.2.5.1** (build 520140). Older versions of the mod (0.10.2 and before) crash on this game version.
 - Steam and Epic, Windows. **Single-player only**; multiplayer and dedicated servers are not supported.
@@ -89,7 +89,7 @@ This mod was developed with substantial help of AI (Anthropic Claude): most of t
 
 ## Changelog für die nächste hochgeladene Version
 
-> **0.11.0:** Text in `Changelog-0.11.0.md` (Abschnitt English), Stand 18.11.2026. Vor dem Upload die offenen Punkte dort abhaken.
+> **0.11.1:** Text in `Changelog-0.11.1.md` (Patch 21.11.2026). **0.11.0:** Text in `Changelog-0.11.0.md` (Abschnitt English), Stand 18.11.2026. Vor dem Upload die offenen Punkte dort abhaken.
 
 **0.10.2 (Tag `v0.10.2`, G2 DE 12/14 mit bekanntem Felspfeiler-Rest, EN 5/5, G5 bestanden):**
 

@@ -71,10 +71,12 @@
 - **Spielerausrüstung und Kern im Laden** (kein Kontingent, wirkt sofort; Preise in der Laden-Tabelle unten). Ein Posten verschwindet, sobald das Maximum gekauft ist.
   - Inventarplätze: +5 je Kauf, höchstens 6 Käufe.
   - Handplatz: +1 je Kauf, höchstens 3.
-  - Armierpistole, Klingenläufer, Gewehr, Nobelisken-Zünder: je einmal, fester Preis. Kaufbar, sobald Bolzenturm (ab Start), Assembler, Gewehrturm bzw. Nobelisk-Werfer freigeschaltet sind.
+  - Armierpistole, Klingenläufer, Gewehr, Nobelisken-Zünder: je einmal, fester Preis. Kaufbar, sobald Bolzenturm (ab Start), Assembler, Gewehrturm bzw. Caterium freigeschaltet sind.
+  - Klingenläufer hat man ab Start; der Laden bietet sie nur als Ersatz an, wenn man keine mehr hat (weder im Inventar noch angelegt) *(0.12, C9)*.
+  - Nobelisken-Zünder ab der Forschung Caterium, mit 10 Nobelisken (`Einsatz.Laden.Nobelisken-Zünder.Beigabe`). Danach „Nobelisken“: 5 Stück je Kauf, jeder Kauf 20 % teurer. Damit lassen sich Felsen über Rohstoffknoten sprengen, ohne die Nobelisk-Kette *(0.12, C14)*.
   - Kernreparatur: +25 % Kern-LP je Kauf, jeder Kauf 50 % teurer. Nur sichtbar, wenn der Kern beschädigt ist.
 - **Pionier** (Reiter im Kern-Menü; Umbau nach `Notizen\Analyse-Spieler-und-Pionier-2026-11-12.md`: P0/P1 seit 0.9.6, P2 seit 0.9.7, P3/P4 seit 0.9.8):
-  - **XP je Welle (0.9.8 halbiert):** 20 + 3 × N, +10 bei vollem Kern, jede zehnte Welle doppelt (`Pionier.XPWelle`, `XPJeWelle`, `XPKernVoll`). Dazu Leistungs-XP: 2 je Prozent Anteil am Wellenschaden (`Pionier.XPJeProzent`) und 1 je 200 reparierte LP (`Pionier.XPJeReparatur`). Eigener Abschuss 3 XP, Elite 10, Boss 50, wenn der Spieler den Gegner in den letzten 5 s getroffen hat. Assist 1 XP.
+  - **XP je Welle (0.9.8 halbiert):** 20 + 3 × N, +10 bei vollem Kern, jede zehnte Welle doppelt (`Pionier.XPWelle`, `XPJeWelle`, `XPKernVoll`). Dazu Leistungs-XP: 2 je Prozent Anteil am Wellenschaden (`Pionier.XPJeProzent`; der Anteil zählt höchstens bis `Pionier.XPAnteilKappe`, Standard 100 = ohne Kappe *(0.12, Regler für C10)*) und 1 je 200 reparierte LP (`Pionier.XPJeReparatur`). Eigener Abschuss 3 XP, Elite 10, Boss 50, wenn der Spieler den Gegner in den letzten 5 s getroffen hat. Assist 1 XP.
   - **Rang (0.9.8):** Schwelle je Rang 5 + 20 × Rang (`Pionier.XPGrund`, `XPSchritt`): Rang 2 bei 25 XP (also nach Welle 1), 3 bei 70, 4 bei 135, 5 bei 220, höchstens Rang 16 (`Pionier.MaxRang`) = 15 Talentpunkte; Rang und Bohrung zusammen höchstens 15 (`Pionier.MaxPunkte` *(Nachprüfung 16.11., Marius)*). Alle 3 Ränge gibt es +10 LP und +3 % Lauftempo (`Pionier.RangBonusAlle`, `RangBonus.LP`, `RangBonus.Tempo`). Rang und Talente hängen am Spielstand (seit 0.12-dev `ATDSpielstand`) und bleiben auch nach dem Einsatz. Talente neu verteilen kostet 20 Coupons.
   - **Vier Rollen-Zweige mit je 5 Stufen (0.9.8, P3/P4, Marius 12.11.):** zwei Zweige ganz oder drei zur Hälfte. Jede Stufe ist eine Fähigkeit, keine reine Prozentzahl. Der Reiter zeigt je Zweig die Wirkung der letzten Welle.
     - **Schütze** (Handwaffen): 1 Kopftreffer ×1,5 · 2 Schnellladen (Nachladen doppelt so schnell) · 3 Durchschlag (nächster Gegner dahinter bis 6 m, halber Schaden) · 4 Munition sparen (jeder vierte Treffer kostet nichts) · 5 Sprengmantel (jeder fünfte Treffer explodiert mit vollem Trefferschaden in 4 m).
@@ -140,7 +142,7 @@
 - **Tor:** 8 m breit mit 4 × 4 m Öffnung. Spieler und Fahrzeuge kommen durch, Gegner nicht. **Seit 0.9.3** braucht es 2 MW (`Bauten.Tor.Strom`). **Ohne Strom bleibt es während der Welle offen**, die Sperre im Navigationsnetz fällt weg und Kreaturen laufen durch (`Bauten.Tor.OhneStromOffen`). Statuslampe: grün mit Strom, gelb ohne Strom in der Bauphase, rot ohne Strom in der Welle.
 - **Lockfeuer:** Köder. Sind Gegner in 40 m, öffnen die Klappen, Horn und Leuchte laufen, und 15 s lang gehen alle Gegner in 40 m zum Lockfeuer statt zum Kern. Danach 30 s Pause. Verbraucht Kohle per Band. Kombos: Sammelpunkt (Explosionen in der Nähe +25 %), entzündet Ölschlick in 12 m. Seit 0.9.3 symmetrisch: Leuchte mittig, Horn dreht um die Mastmitte.
 - **Ölschlick-Feld:** 8 × 8 m, begehbar. Solange Öl fließt, bremst es. Angezündet brennt es 5 s, seit 0.9.3 mit sichtbaren Flammen über der ganzen Fläche (`Effekte.Oelbrand.*`). Anschluss über ein Pumpenhaus am Rand mit Original-Rohrflansch, Ventil auf dem Dach.
-- **Elektrozaun:** seit 0.9.3 ohne Mauer, nur Pfosten, Schaltkästen und leuchtende Drähte. Für Gegner weiter ein Hindernis; wer angreift, bekommt einen Stromschlag.
+- **Elektrozaun:** seit 0.9.3 ohne Mauer, nur Pfosten, Schaltkästen und leuchtende Drähte. Für Gegner weiter ein Hindernis; wer angreift, bekommt einen Stromschlag. Seit 0.12 nimmt jeder Zaun 2 Kabel: eine Zaunreihe lässt sich vom Mast aus von Zaun zu Zaun verketten (`Bauten.Elektrozaun.Kabel`, C13).
 - **Radar (Funkmast):** Türme in 30 m +10 % Reichweite. **Seit 0.9.3:** Rohstoffvorkommen in 150 m werden wie beim Ressourcenscanner angezeigt (`Tuerme.Funkmast.RessourcenRadius`). 30 s vor jeder Welle bis zu ihrem Ende markiert er jede aktive Front auf Karte und Kompass mit Welle, Gegnerarten und Anzahl; blau mit „FLIEGER!“, wenn Flieger kommen (`Tuerme.Funkmast.Vorwarnung`). Nur mit Strom.
 - **Schildgenerator:** Kuppel mit 20 m Radius, schluckt Schaden an Bauten (nicht am Kern), 3000 Schild, gebrochen 20 s Ladezeit, sonst 5 %/s nach 5 s ohne Treffer.
 - **Störfeld-Projektor** (Gabelung mit dem Schildgenerator, nur einer von beiden je Spiel): bremst alle Gegner in 15 m auf 60 % Tempo, solange er läuft (1 reanimiertes SAM je 60 s, 80 MW).
@@ -313,6 +315,7 @@ Preis = Grundpreis × (1 + Aufschlag × bisher gekauft); Paket = Gebäude je Kau
 | Miner | 6 | 0,5 | 1 | 1 |
 | Mischer | 10 | 0,5 | 1 | 0 |
 | Nobelisk-Werfer | 10 | 0,3 | 1 | 0 |
+| Nobelisken | 5 | 0,2 | 5 | 0 |
 | Nobelisken-Zünder | 12 | 0 | 1 | 0 |
 | Oelpumpe | 6 | 0,4 | 1 | 0 |
 | Oelschlick | 4 | 0,3 | 1 | 0 |

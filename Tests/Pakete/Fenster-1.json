@@ -1,0 +1,13 @@
+{
+  "Name": "Fenster-1",
+  "_Hinweis": "Testfenster 1 aus dem Fahrplan 0.12 (Satisfactory/Notizen/Fahrplan-0.12-2026-11-20.md, Abschnitt 5). Drei Starts: (1) Paket Schnell fuer E0, (2) dieses Paket mit -Bereit, (3) Paket ReleaseEn mit -Sprache en -Kultur en (Schadensleiste C1, Turmfenster C4). Reihenfolge nach Risiko, das Erprobte zuerst: Endlos-Laden und Einsatz-Laden (C7), zwei weitere Kernplaetze fuer die Logzeilen 'Figur am Kern' / 'Weltobjekt am Kern' (C2), Rezeptprobe (Fund F1, am Ende Abriss der Rampen per Code), S0-Messung (Kern-Zugang, nur Messungen), zuletzt ShopPrototyp (neue Hooks) - danach bleibt das Spiel offen, Marius kauft zweimal von Hand im Shop-Fenster. Bricht ein Plan das Spiel ab, die restlichen einzeln mit -Plan nachholen. Ohne Optik-Abzug (eigenes Fenster 1b nach Entscheidung 4).",
+  "Plaene": [
+    "Endlos-Laden",
+    "Einsatz-Laden",
+    "Fronten-Fels-S3",
+    "Fronten-Duene-S6",
+    "Rezeptprobe",
+    "S0-Messung",
+    "ShopPrototyp"
+  ]
+}

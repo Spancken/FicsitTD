@@ -335,7 +335,9 @@ void UTDPionier::WelleBeendet(int32 Welle, float KernAnteil)
 		XP *= 2;
 	}
 	GibXP(XP, FString::Printf(TEXT("Welle %d"), Welle));
-	const int32 Leistung = FMath::RoundToInt(mBilanz.Anteil * TDBalance::Wert(TEXT("Pionier.XPJeProzent"), 2.f))
+	// 21.11. (C10, Handspiel: 55 % Anteil in Welle 1 = +110 XP): Kappe fuer den Anteil, Standard 100 = ohne Kappe, bis Marius entscheidet
+	const float AnteilXP = FMath::Min(mBilanz.Anteil, TDBalance::Wert(TEXT("Pionier.XPAnteilKappe"), 100.f));
+	const int32 Leistung = FMath::RoundToInt(AnteilXP * TDBalance::Wert(TEXT("Pionier.XPJeProzent"), 2.f))
 		+ FMath::FloorToInt(mBilanz.Repariert / FMath::Max(TDBalance::Wert(TEXT("Pionier.XPJeReparatur"), 200.f), 1.f));
 	mBilanz.LeistungsXP = Leistung;
 	mBilanz.XP += Leistung;

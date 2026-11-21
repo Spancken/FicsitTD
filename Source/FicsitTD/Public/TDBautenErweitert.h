@@ -18,11 +18,20 @@ class FICSITTD_API ATDConductorWall : public ATDTurretBase
 public:
 	ATDConductorWall();
 	virtual void BeginPlay() override;
+	/** 21.11. (C13, Handspiel Marius): der vom Konstruktor geerbte Anschluss nimmt nur ein Kabel - vor dem Laden der Kabel auf
+	 *  Bauten.Elektrozaun.Kabel (2) setzen, damit sich eine Zaunreihe verketten laesst wie beim Tor */
+	virtual void PostInitializeComponents() override;
+	float KabelWert(bool bFrei) const;
 	/** Aus UTDGegnerHirn::Greife: Angreifer bekommt einen Schlag */
 	static void Schlag(AActor* Zaun, class AFGCreature* Angreifer);
 	virtual float ZusatzTestWert(const FString& Name) const override
 	{
 		// 0.9.4 Diagnose (Leiter loest nie aus): naechster Abstand eines Ziels zum Zaun (m), Takte mit Ziel, Takte mit Ziel unter 4 m
+		// 21.11. (C13): Kabel = hoechste Zahl Kabel am Anschluss (Soll 2), FreieKabel = davon noch frei
+		if (Name == TEXT("Kabel") || Name == TEXT("FreieKabel"))
+		{
+			return KabelWert(Name == TEXT("FreieKabel"));
+		}
 		return Name == TEXT("Schlaege") ? mSchlaege : Name == TEXT("NahMin") ? mDiagNahMin / 100.f : Name == TEXT("ZielTakte") ? float(mDiagZiel)
 			: Name == TEXT("NahTakte") ? float(mDiagNah) : Name == TEXT("Intakt") ? (IsTDIntact() ? 1.f : 0.f) : -1.f;
 	}

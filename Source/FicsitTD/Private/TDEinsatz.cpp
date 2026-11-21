@@ -45,6 +45,8 @@
 #include "Engine/World.h"
 #include "FGCharacterPlayer.h"
 #include "FGInventoryComponent.h"
+#include "FGInventoryComponentEquipment.h"
+#include "Equipment/FGEquipment.h"
 #include "Hologram/FGHologram.h"
 #include "Resources/FGItemDescriptor.h"
 #include "Resources/FGBuildingDescriptor.h"
@@ -153,7 +155,10 @@ static const FTDLadenEintrag LadenListe[] = {
 	{ TEXT("Armierpistole"), 6, 0.f, 1, TEXT("/FicsitTD/Buildings/BoltTurret/Recipe_TD_BoltTurret.Recipe_TD_BoltTurret_C") },
 	{ TEXT("Klingenläufer"), 8, 0.f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_AssemblerMk1.Recipe_AssemblerMk1_C") },
 	{ TEXT("Gewehr"), 10, 0.f, 1, TEXT("/FicsitTD/Buildings/GunTurret/Recipe_TD_GunTurret.Recipe_TD_GunTurret_C") },
-	{ TEXT("Nobelisken-Zünder"), 12, 0.f, 1, TEXT("/FicsitTD/Buildings/NobeliskLauncher/Recipe_TD_NobeliskLauncher.Recipe_TD_NobeliskLauncher_C") },
+	// 21.11. (C14, Handspiel Marius 20.11.: Caterium unter einem Felsen, Zuender erst mit dem Nobelisk-Werfer): Zuender und Nobelisken
+	// ab der Forschung Caterium, damit verschuettete Vorkommen ohne fremde Turmlinie und Stahl-/Pulverkette frei zu sprengen sind
+	{ TEXT("Nobelisken-Zünder"), 12, 0.f, 1, TEXT("/Game/FactoryGame/Recipes/Smelter/Recipe_IngotCaterium.Recipe_IngotCaterium_C") },
+	{ TEXT("Nobelisken"), 5, 0.2f, 5, TEXT("/Game/FactoryGame/Recipes/Smelter/Recipe_IngotCaterium.Recipe_IngotCaterium_C") },
 	// 18.11. (Marius: Bewegung spaeter kaufen): Jetpack erst mit Oel (Raffinerie im MAM, der Jetpack fliegt mit Treibstoff), danach das
 	// Hover-Pack mit dem Fertiger (spaetes Spiel, braucht Stromleitungen in der Naehe)
 	{ TEXT("Jetpack"), 16, 0.f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_OilRefinery.Recipe_OilRefinery_C") },
@@ -171,6 +176,9 @@ struct FTDSpielerPosten
 	int32 Max;
 	/** Ausruestung (Art 0) bzw. nur Symbol */
 	const TCHAR* Item;
+	/** 21.11. (C14): Beigabe zum ersten Kauf (Art 0), Menge aus Einsatz.Laden.<Key>.Beigabe */
+	const TCHAR* Beigabe = nullptr;
+	int32 BeigabeMenge = 0;
 };
 static const FTDSpielerPosten SpielerPosten[] = {
 	{ TEXT("Inventarplätze"), 1, 6, TEXT("/Game/FactoryGame/Buildable/Factory/StorageContainerMk1/Desc_StorageContainerMk1.Desc_StorageContainerMk1_C") },
@@ -178,7 +186,9 @@ static const FTDSpielerPosten SpielerPosten[] = {
 	{ TEXT("Armierpistole"), 0, 1, TEXT("/Game/FactoryGame/Resource/Equipment/NailGun/Desc_RebarGunProjectile.Desc_RebarGunProjectile_C") },
 	{ TEXT("Klingenläufer"), 0, 1, TEXT("/Game/FactoryGame/Resource/Equipment/JumpingStilts/BP_EquipmentDescriptorJumpingStilts.BP_EquipmentDescriptorJumpingStilts_C") },
 	{ TEXT("Gewehr"), 0, 1, TEXT("/Game/FactoryGame/Resource/Equipment/Rifle/BP_EquipmentDescriptorRifle.BP_EquipmentDescriptorRifle_C") },
-	{ TEXT("Nobelisken-Zünder"), 0, 1, TEXT("/Game/FactoryGame/Resource/Equipment/NobeliskDetonator/BP_EquipmentDescriptorNobeliskDetonator.BP_EquipmentDescriptorNobeliskDetonator_C") },
+	{ TEXT("Nobelisken-Zünder"), 0, 1, TEXT("/Game/FactoryGame/Resource/Equipment/NobeliskDetonator/BP_EquipmentDescriptorNobeliskDetonator.BP_EquipmentDescriptorNobeliskDetonator_C"),
+		TEXT("/Game/FactoryGame/Resource/Parts/NobeliskExplosive/Desc_NobeliskExplosive.Desc_NobeliskExplosive_C"), 10 },
+	{ TEXT("Nobelisken"), 0, 0, TEXT("/Game/FactoryGame/Resource/Parts/NobeliskExplosive/Desc_NobeliskExplosive.Desc_NobeliskExplosive_C") },
 	{ TEXT("Jetpack"), 0, 1, TEXT("/Game/FactoryGame/Resource/Equipment/JetPack/BP_EquipmentDescriptorJetPack.BP_EquipmentDescriptorJetPack_C") },
 	{ TEXT("Hover-Pack"), 0, 1, TEXT("/Game/FactoryGame/Resource/Equipment/HoverPack/BP_EquipmentDescriptorHoverPack.BP_EquipmentDescriptorHoverPack_C") },
 	{ TEXT("Kernreparatur"), 3, 0, TEXT("/Game/FactoryGame/Resource/Parts/IronPlateReinforced/Desc_IronPlateReinforced.Desc_IronPlateReinforced_C") },
@@ -291,7 +301,7 @@ static FString TDAnzeige(const FString& Key)
 		{ TEXT("Raffinerie"), TEXT("Refinery") }, { TEXT("Abfueller"), TEXT("Packager") }, { TEXT("Mischer"), TEXT("Blender") },
 		{ TEXT("Fabrik"), TEXT("Factory") }, { TEXT("Fluessigkeitspuffer"), TEXT("Fluid Buffer") }, { TEXT("Inventarplätze"), TEXT("Inventory Slots") },
 		{ TEXT("Handplatz"), TEXT("Hand Slot") }, { TEXT("Armierpistole"), TEXT("Rebar Gun") }, { TEXT("Klingenläufer"), TEXT("Blade Runners") },
-		{ TEXT("Gewehr"), TEXT("Rifle") }, { TEXT("Nobelisken-Zünder"), TEXT("Nobelisk Detonator") }, { TEXT("Kernreparatur"), TEXT("Core Repair") },
+		{ TEXT("Gewehr"), TEXT("Rifle") }, { TEXT("Nobelisken-Zünder"), TEXT("Nobelisk Detonator") }, { TEXT("Nobelisken"), TEXT("Nobelisks") }, { TEXT("Kernreparatur"), TEXT("Core Repair") },
 		{ TEXT("Jetpack"), TEXT("Jetpack") }, { TEXT("Hover-Pack"), TEXT("Hover Pack") },
 	};
 	const FString* Gefunden = En.Find(Key);
@@ -1107,7 +1117,52 @@ FString UTDEinsatzSubsystem::SpielerWirkung(const FTDSpielerPosten& P, int32 Men
 	{
 		Item.Add(Klasse, Menge);
 	}
+	// 21.11. (C14): der Zuender kam ohne Nobelisken - ohne Werfer-Forschung und Stahl-/Pulverkette gab es keine
+	const int32 Beigabe = P.Beigabe ? TDBalance::Ganz(FString::Printf(TEXT("Einsatz.Laden.%s.Beigabe"), P.Key), P.BeigabeMenge) : 0;
+	if (Beigabe > 0)
+	{
+		if (UClass* Klasse = LoadClass<UFGItemDescriptor>(nullptr, P.Beigabe))
+		{
+			Item.FindOrAdd(Klasse) += Beigabe;
+		}
+	}
 	return Item.Num() ? TDT(TEXT("Erhalten: "), TEXT("Received: ")) + GibMaterial(Item) + TEXT(".") : TDT(TEXT("(Ausrüstung nicht gefunden)"), TEXT("(equipment not found)"));
+}
+
+bool UTDEinsatzSubsystem::SpielerPostenSichtbar(const FTDSpielerPosten& P) const
+{
+	// Nobelisken nur mit dem Zuender (sonst lassen sie sich nicht werfen)
+	if (FCString::Strcmp(P.Key, TEXT("Nobelisken")) == 0)
+	{
+		const ATDDefenseCore* Kern = mKern.Get();
+		const int32* Zuender = Kern ? Kern->mKontingentGekauft.Find(TEXT("Nobelisken-Zünder")) : nullptr;
+		return Zuender && *Zuender > 0;
+	}
+	// Klingenlaeufer stehen seit 18.11. im Startkit; der Laden bietet sie nur als Ersatz an, wenn der Spieler keine mehr hat
+	if (FCString::Strcmp(P.Key, TEXT("Klingenläufer")) == 0)
+	{
+		const UWorld* World = GetWorld();
+		const APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
+		const AFGCharacterPlayer* Spieler = PC ? Cast<AFGCharacterPlayer>(PC->GetPawn()) : nullptr;
+		UClass* Laeufer = LoadClass<UFGItemDescriptor>(nullptr, P.Item);
+		if (!Spieler || !Laeufer)
+		{
+			return true;
+		}
+		if (Spieler->GetInventory() && Spieler->GetInventory()->HasItems(Laeufer, 1))
+		{
+			return false;
+		}
+		for (uint8 Platz = uint8(EEquipmentSlot::ES_ARMS); Platz < uint8(EEquipmentSlot::ES_MAX); ++Platz)
+		{
+			const UFGInventoryComponentEquipment* Ausruestung = Spieler->GetEquipmentSlot(EEquipmentSlot(Platz));
+			if (Ausruestung && Ausruestung->HasItems(Laeufer, 1))
+			{
+				return false;
+			}
+		}
+	}
+	return true;
 }
 
 FString FTDLadenZeile::KategorieName(int32 Index)
@@ -1162,7 +1217,7 @@ TArray<FTDLadenZeile> UTDEinsatzSubsystem::LadenZeilen() const
 		if (const FTDSpielerPosten* SP = SpielerFuer(E.Key))
 		{
 			Z.Einheit = SP->Art == 1 ? TDT(TEXT("Inventarplätze"), TEXT("inventory slots")) : SP->Art == 2 ? TDT(TEXT("Handplatz"), TEXT("hand slot"))
-				: SP->Art == 3 ? TDT(TEXT("% Kern-LP"), TEXT("% Core HP")) : TDT(TEXT("Ausrüstung"), TEXT("equipment"));
+				: SP->Art == 3 ? TDT(TEXT("% Kern-LP"), TEXT("% Core HP")) : SP->Max == 0 ? TDT(TEXT("Stück"), TEXT("pcs")) : TDT(TEXT("Ausrüstung"), TEXT("equipment"));
 			Z.Max = SpielerMax(*SP);
 			// Marius 03.11.2026: eine gekaufte Waffe noch einmal anzubieten ergibt keinen Sinn
 			if (Z.Max > 0 && Z.Gekauft >= Z.Max)
@@ -1170,6 +1225,10 @@ TArray<FTDLadenZeile> UTDEinsatzSubsystem::LadenZeilen() const
 				continue;
 			}
 			if (SP->Art == 3 && (!Kern || Kern->GetTDHealth() >= Kern->GetTDMaxHealth() - 1.f))
+			{
+				continue;
+			}
+			if (!SpielerPostenSichtbar(*SP))
 			{
 				continue;
 			}
@@ -1295,6 +1354,14 @@ TArray<FString> UTDEinsatzSubsystem::LadenText() const
 	return Zeilen;
 }
 
+bool UTDEinsatzSubsystem::LadenInWelleZu() const
+{
+	// 16.11. (Nachpruefung, Marius): im Endlos-Modus ist der Laden auch in der Welle offen.
+	// 0.12 (C7): Das Kern-Menue fragte nur "laeuft eine Welle" und sperrte die Knoepfe auch im Endlos.
+	const UTDWaveSubsystem* Waves = GetWorld() ? GetWorld()->GetSubsystem<UTDWaveSubsystem>() : nullptr;
+	return Waves && Waves->LaeuftWelle() && !Waves->IstEndlos();
+}
+
 FString UTDEinsatzSubsystem::Kaufe(const FString& Name, int32 Anzahl)
 {
 	ATDDefenseCore* Kern = mKern.Get();
@@ -1302,9 +1369,7 @@ FString UTDEinsatzSubsystem::Kaufe(const FString& Name, int32 Anzahl)
 	{
 		return TDT(TEXT("Kein Einsatz aktiv."), TEXT("No operation active."));
 	}
-	const UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
-	// 16.11. (Nachpruefung, Marius): im Endlos-Modus ist der Laden auch in der Welle offen
-	if (Waves && Waves->LaeuftWelle() && !Waves->IstEndlos())
+	if (LadenInWelleZu())
 	{
 		return TDT(TEXT("Während der Welle ist der Laden geschlossen."), TEXT("The shop is closed during a wave."));
 	}
@@ -1340,6 +1405,13 @@ FString UTDEinsatzSubsystem::Kaufe(const FString& Name, int32 Anzahl)
 	if (SP && SpielerMax(*SP) > 0 && Bisher >= SpielerMax(*SP))
 	{
 		return TDF(TEXT("%s: schon %d von %d gekauft."), TEXT("%s: already bought %d of %d."), *TDAnzeige(E->Key), Bisher, SpielerMax(*SP));
+	}
+	// 21.11. (C9, C14): Klingenlaeufer nur als Ersatz, Nobelisken erst mit dem Zuender
+	if (SP && !SpielerPostenSichtbar(*SP))
+	{
+		return FCString::Strcmp(SP->Key, TEXT("Nobelisken")) == 0
+			? TDT(TEXT("Nobelisken gibt es im Laden erst mit dem Nobelisken-Zünder."), TEXT("Nobelisks are sold only once you have the Nobelisk Detonator."))
+			: TDF(TEXT("%s hast du schon."), TEXT("You already have %s."), *TDAnzeige(E->Key));
 	}
 	// 0.11 (Gegencheck Einsatz A7): nach der Niederlage kostete die Reparatur Coupons und heilte nichts
 	if (SP && SP->Art == 3 && (Kern->mLaufEnde != 0 || Kern->GetTDHealth() <= 0.f))
@@ -1396,9 +1468,7 @@ FString UTDEinsatzSubsystem::KaufeKorb(const TMap<FString, int32>& Korb)
 	{
 		return TDT(TEXT("Kein Einsatz aktiv."), TEXT("No operation active."));
 	}
-	const UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
-	// 16.11. (Nachpruefung, Marius): im Endlos-Modus ist der Laden auch in der Welle offen
-	if (Waves && Waves->LaeuftWelle() && !Waves->IstEndlos())
+	if (LadenInWelleZu())
 	{
 		return TDT(TEXT("Während der Welle ist der Laden geschlossen."), TEXT("The shop is closed during a wave."));
 	}

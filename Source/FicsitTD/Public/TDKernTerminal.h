@@ -26,6 +26,8 @@ public:
 	FString Key;
 	int32 Schritt = 1;
 	TWeakObjectPtr<UTDKernTerminal> Menue;
+	/** 0.12 (C7): der Knopf selbst, damit der Selbsttest lesen kann, ob er bedienbar ist */
+	TWeakObjectPtr<UButton> Knopf;
 	UFUNCTION()
 	void Geklickt();
 };
@@ -149,6 +151,8 @@ public:
 	void ZeigeAnsicht(int32 Ansicht);
 	/** 16.11. (Selbsttest Spielersicht): sichtbare Entwickler-Knoepfe (FreiesBauen, NeuStarten, EinsatzStarten, Testsprung) */
 	TArray<FString> SichtbareTestKnoepfe() const;
+	/** 0.12 (C7, Selbsttest): bedienbare Plus-Knoepfe im Laden; OutAlle = alle Plus-Knoepfe der offenen Liste */
+	int32 FreiePlusKnoepfe(int32& OutAlle) const;
 private:
 	void BaueForschung();
 	void BauePionier();

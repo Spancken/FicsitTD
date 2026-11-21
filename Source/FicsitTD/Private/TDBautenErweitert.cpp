@@ -20,6 +20,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 #include "TDSprache.h"
+#include "FGPowerConnectionComponent.h"
 
 // Lage der beweglichen Teile aus den Blender-Skripten in Satisfactory\Modelle (m -> cm). Namen mit Praefix wegen Unity-Build.
 
@@ -82,6 +83,34 @@ void ATDConductorWall::BeginPlay()
 {
 	Super::BeginPlay();
 	SetzeModell(mTuer2, TDErw::Modell(TEXT("ConductorWall"), TEXT("Door1")));
+}
+
+void ATDConductorWall::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+	// Der Anschluss kommt aus dem Blueprint (Kopie des Konstruktors); mMaxNumConnectionLinks ist geschuetzt, deshalb per Reflexion
+	const int32 Kabel = FMath::Clamp(TDBalance::Ganz(TEXT("Bauten.Elektrozaun.Kabel"), 2), 1, 4);
+	static FIntProperty* Feld = FindFProperty<FIntProperty>(UFGCircuitConnectionComponent::StaticClass(), TEXT("mMaxNumConnectionLinks"));
+	TInlineComponentArray<UFGPowerConnectionComponent*> Strom(this);
+	for (UFGPowerConnectionComponent* S : Strom)
+	{
+		if (S && Feld && Feld->GetPropertyValue_InContainer(S) < Kabel)
+		{
+			Feld->SetPropertyValue_InContainer(S, Kabel);
+		}
+	}
+	static bool bGemeldet = false;
+	if (!bGemeldet && !HasAnyFlags(RF_ClassDefaultObject))
+	{
+		bGemeldet = true;
+		UE_LOG(LogFicsitTD, Log, TEXT("Elektrozaun: %d Anschluss, je %d Kabel%s"), Strom.Num(), Kabel, Feld ? TEXT("") : TEXT(" (Feld mMaxNumConnectionLinks NICHT gefunden)"));
+	}
+}
+
+float ATDConductorWall::KabelWert(bool bFrei) const
+{
+	const UFGPowerConnectionComponent* S = FindComponentByClass<UFGPowerConnectionComponent>();
+	return !S ? -1.f : bFrei ? float(S->GetNumFreeConnections()) : float(S->GetMaxNumConnections());
 }
 
 void ATDConductorWall::Schlag(AActor* Zaun, AFGCreature* Angreifer)

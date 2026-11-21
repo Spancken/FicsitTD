@@ -167,6 +167,8 @@ public:
 	void SetzeAbwehrKern(ATDDefenseCore* Kern) { if (!mAktiv) { mKern = Kern; } }
 	/** /td laden: Konto, kaufbare Kontingente mit Preis */
 	TArray<FString> LadenText() const;
+	/** 0.12 (C7): die eine Regel "Laden zu" - in der Welle geschlossen, im Endlos-Modus immer offen. Kaufe, KaufeKorb und das Kern-Menue fragen hier */
+	bool LadenInWelleZu() const;
 	/** /td kaufe <Name> [Anzahl]: Antwortzeile */
 	FString Kaufe(const FString& Name, int32 Anzahl);
 	/** Warenkorb aus dem Kern-Menue: alles oder nichts (Summe muss ins Konto passen) */
@@ -233,6 +235,8 @@ public:
 	FString WerteEinsatzAus(bool bSieg, int32 Welle, float KernAnteil);
 private:
 	FString SpielerWirkung(const FTDSpielerPosten& P, int32 Menge);
+	/** 21.11. (C9, C14): Klingenlaeufer nur zeigen, wenn der Spieler keine besitzt (Ersatz); Nobelisken erst mit dem Zuender */
+	bool SpielerPostenSichtbar(const FTDSpielerPosten& P) const;
 	void Verbinde();
 	/** 0.10.0: nach dem Laden auf das Spielerinventar warten, dann Kampfdaten -> Festplatten und wartende Coupons ins Inventar */
 	void UmstellungNachLaden();
