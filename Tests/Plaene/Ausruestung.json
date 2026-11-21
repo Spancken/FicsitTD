@@ -49,6 +49,46 @@
       "text": "Hover-Pack nach Schwerindustrie"
     },
     {
+      "erforsche": "Assembler"
+    },
+    {
+      "warte": 2
+    },
+    {
+      "befehl": "td kaufe Klingenläufer",
+      "antwortEnthaelt": "schon",
+      "text": "C9: Klingenläufer aus dem Startkit - kein zweites Paar im Laden"
+    },
+    {
+      "befehl": "td kaufe Nobelisken-Zünder",
+      "antwortEnthaelt": "erforscht",
+      "text": "C14: Zünder vor Caterium (soll abgelehnt werden)"
+    },
+    {
+      "erforsche": "Kupfer"
+    },
+    {
+      "erforsche": "Caterium"
+    },
+    {
+      "warte": 2
+    },
+    {
+      "befehl": "td kaufe Nobelisken",
+      "antwortEnthaelt": "Zünder",
+      "text": "C14: Nobelisken erst mit dem Zünder"
+    },
+    {
+      "befehl": "td kaufe Nobelisken-Zünder",
+      "antwortEnthaelt": "10",
+      "text": "C14: Zünder nach Caterium, mit 10 Nobelisken"
+    },
+    {
+      "befehl": "td kaufe Nobelisken",
+      "antwortEnthaelt": "Gekauft",
+      "text": "C14: Nobelisken nachkaufen"
+    },
+    {
       "pruefe": "KeineWarnungen",
       "text": "keine Warnungen oder Fehler des Mods im Log"
     }

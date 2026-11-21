@@ -94,6 +94,13 @@
     },
     {
       "pruefe": "TurmWert",
+      "turm": "Elektrozaun",
+      "wert": "Kabel",
+      "soll": 2,
+      "text": "Elektrozaun nimmt 2 Kabel (C13, Zaunreihe verkettbar)"
+    },
+    {
+      "pruefe": "TurmWert",
       "turm": "Funkmast",
       "wert": "Sendet",
       "soll": 1,

@@ -1,0 +1,31 @@
+{
+  "Name": "Rezeptprobe",
+  "_Hinweis": "0.12 Fenster 1 (Fund F1 aus Bericht A5): Kann der Spieler im Einsatz ueberhaupt Fundamente, Rampen oder Waende des Spiels bauen? Nach Code und Spieldaten nein (Meilensteine gesperrt, Startrezepte ohne Bauteile). Besteht der Plan, ist F1 im Spiel belegt; faellt BauteilRezepte durch, ist F1 widerlegt und die Liste steht im Bericht. Standardeinstellungen, ohne Freies Bauen. Dazu von Hand (Marius, eine Minute): Mittelklick auf ein Fundament der Plattform - laesst es sich so nachbauen? Zweiter Teil: alle Rampen der Plattform per Code entfernen (Schlupfloch aus Bericht A1) und sehen, was die Frontpruefung meldet.",
+  "NeuesSpiel": { "Startort": "Grass Fields", "Modus": 1 },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 10,
+  "Schritte": [
+    { "pruefe": "Version", "soll": "{VERSION}", "text": "richtige Mod-Version geladen" },
+    { "warteBis": "EinsatzAktiv", "max": 120 },
+    { "befehl": "td s0 liste 60" },
+    { "pruefe": "LogEnthaelt", "suche": "S0b: Liste", "min": 1, "text": "Bestand: Lightweight-Bauteile der Plattform gezaehlt" },
+    { "spielersicht": true },
+    { "pruefe": "BauteilRezepte", "max": 0, "text": "F1: im Einsatz kein Bauteil-Rezept des Spiels verfuegbar" },
+    { "pruefe": "RezeptFrei", "rezept": "/Game/FactoryGame/Recipes/Buildings/Foundations/Recipe_Foundation_8x4_01.Recipe_Foundation_8x4_01_C", "erwartet": false, "text": "F1: Fundament (4 m) nicht baubar" },
+    { "pruefe": "RezeptFrei", "rezept": "/Game/FactoryGame/Recipes/Buildings/Walls/Recipe_Wall_8x4_01.Recipe_Wall_8x4_01_C", "erwartet": false, "text": "F1: Standardwand (4 m) nicht baubar" },
+    { "pruefe": "RezeptFrei", "rezept": "/Game/FactoryGame/Recipes/Buildings/Ramps/Recipe_Ramp_8x2_01.Recipe_Ramp_8x2_01_C", "erwartet": false, "text": "F1: Rampe (2 m) nicht baubar" },
+    { "pruefe": "RezeptFrei", "rezept": "/Game/FactoryGame/Recipes/Buildings/Recipe_ResourceSinkShop.Recipe_ResourceSinkShop_C", "erwartet": false, "text": "Befund A2: AWESOME-Shop im Einsatz heute nicht baubar" },
+    { "foto": "Rezeptprobe_Start" },
+    { "spielersicht": false },
+    { "pruefe": "KeineWarnungen", "text": "keine Warnungen oder Fehler des Mods im Log (vor dem Rampen-Versuch; was danach kommt, ist Befund)" },
+    { "befehl": "td kern fronten" },
+    { "befehl": "td s0 abrissalle Ramp 60" },
+    { "pruefe": "LogEnthaelt", "suche": "S0c: Abriss aller", "min": 1, "text": "Rampen der Plattform per Code entfernt (Zahl steht in der Zeile)" },
+    { "warte": 20 },
+    { "befehl": "td kern fronten neu" },
+    { "warte": 20 },
+    { "befehl": "td kern fronten" },
+    { "foto": "Rezeptprobe_ohneRampen" }
+  ]
+}

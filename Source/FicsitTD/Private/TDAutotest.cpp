@@ -37,6 +37,10 @@
 #include "HAL/FileManager.h"
 #include "HAL/PlatformMisc.h"
 #include "Interfaces/IPluginManager.h"
+#include "Internationalization/Internationalization.h"
+#include "Internationalization/Culture.h"
+#include "Misc/CommandLine.h"
+#include "Misc/Parse.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/DamageType.h"
 #include "TDPionier.h"
@@ -70,6 +74,12 @@
 #include "Buildables/FGBuildableMAM.h"
 #include "UI/FGGameUI.h"
 #include "Resources/FGItemDescriptor.h"
+#include "Resources/FGBuildDescriptor.h"
+#include "Buildables/FGBuildableFactoryBuilding.h"
+#include "Buildables/FGBuildableFoundation.h"
+#include "Buildables/FGBuildableWall.h"
+#include "Buildables/FGBuildableResourceSinkShop.h"
+#include "TDShop.h"
 
 /** erster Turm eines Typs (Anzeigename, z. B. Gewehrturm) */
 static ATDTurretBase* TDTestTurm(UWorld* World, const FString& Typ)
@@ -309,8 +319,38 @@ void UTDAutotest::PasseZeitrafferAn(UWorld* World)
 	}
 }
 
+/** 0.12 (C4): -culture=en wirkt nur, bis das Spiel seine eigene Einstellung mPrimaryLanguage anwendet (Log 20.11.: 6 s nach dem Start
+ *  zurueck auf "de", danach waren Spieltexte wie "Rezept auswaehlen" wieder deutsch). Der Selbsttest haelt die gewuenschte Kultur deshalb
+ *  selbst. Die Spieleinstellung wird dabei nicht angefasst und nicht gespeichert; ohne -culture passiert nichts. */
+static void TDHalteTestKultur()
+{
+	static FString Wunsch;
+	static bool bGelesen = false;
+	if (!bGelesen)
+	{
+		bGelesen = true;
+		FParse::Value(FCommandLine::Get(), TEXT("-culture="), Wunsch);
+	}
+	if (Wunsch.IsEmpty())
+	{
+		return;
+	}
+	FInternationalization& Sprachen = FInternationalization::Get();
+	const FString Ist = Sprachen.GetCurrentLanguage()->GetName();
+	if (!Ist.StartsWith(Wunsch))
+	{
+		const bool bOk = Sprachen.SetCurrentLanguageAndLocale(Wunsch);
+		UE_LOG(LogFicsitTD, Log, TEXT("Autotest: Spielsprache %s -> %s (%s)"), *Ist, *Wunsch, bOk ? TEXT("gesetzt") : TEXT("FEHLGESCHLAGEN, kein weiterer Versuch"));
+		if (!bOk)
+		{
+			Wunsch.Reset();
+		}
+	}
+}
+
 bool UTDAutotest::Tick(float /*BildDt*/)
 {
+	TDHalteTestKultur();
 	// Test 0.74.0: der Ticker uebergibt nur die Zeit eines Bildes, nicht die seit dem letzten Aufruf (alles lief ~30x zu langsam) -> selbst messen
 	const double Jetzt = FPlatformTime::Seconds();
 	const float Dt = mLetzte > 0.0 ? static_cast<float>(Jetzt - mLetzte) : 0.f;
@@ -759,7 +799,43 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 			bAlle &= bOk;
 			Teile.Add(FString::Printf(TEXT("%s=%g%s"), *V.Key, V.Value->AsNumber(), bOk ? TEXT("") : TEXT(" (unbekannt)")));
 		}
+		// 0.12 E1: der Shop-Prototyp richtet seine Hooks erst ein, wenn sein Schalter gesetzt wird
+		TDShop::StelleHooksSicher();
 		Ergebnis(TEXT("Pruefstand"), TEXT("Balance ") + FString::Join(Teile, TEXT(", ")), bAlle);
+		return true;
+	}
+	if (S->TryGetStringField(TEXT("shopkauf"), Wort))
+	{
+		// 0.12 E1 (Shop-Prototyp): Posten des Mods am gebauten AWESOME-Shop kaufen - dieselbe Funktion, die das Shop-Fenster ruft.
+		// "anzahl" = Stueck in einem Kauf (Frage 4), "erwartet": false fuer einen Kauf, der abgelehnt werden soll
+		AFGBuildableResourceSinkShop* Shop = nullptr;
+		for (TActorIterator<AFGBuildableResourceSinkShop> It(World); It && !Shop; ++It)
+		{
+			Shop = *It;
+		}
+		APlayerController* PC = World->GetFirstPlayerController();
+		AFGCharacterPlayer* Figur = PC ? Cast<AFGCharacterPlayer>(PC->GetPawn()) : nullptr;
+		UFGInventoryComponent* Inventar = Figur ? Figur->GetInventory() : nullptr;
+		UClass* Posten = TDShop::Posten(Wort);
+		UClass* Coupon = LoadClass<UFGItemDescriptor>(nullptr, TEXT("/Game/FactoryGame/Resource/Parts/ResourceSinkCoupon/Desc_ResourceSinkCoupon.Desc_ResourceSinkCoupon_C"));
+		const int32 Stueck = S->HasField(TEXT("anzahl")) ? static_cast<int32>(S->GetNumberField(TEXT("anzahl"))) : 1;
+		const bool bSoll = !S->HasField(TEXT("erwartet")) || S->GetBoolField(TEXT("erwartet"));
+		if (!Shop || !Inventar || !Posten)
+		{
+			Ergebnis(TEXT("Shop"), TEXT("kaufe ") + Wort, false, !Shop ? TEXT("kein AWESOME-Shop gebaut") : !Posten ? TEXT("Posten nicht gefunden (Asset fehlt)") : TEXT("kein Spielerinventar"));
+			return true;
+		}
+		TArray<TSubclassOf<UFGSchematic>> Liste;
+		for (int32 i = 0; i < Stueck; ++i)
+		{
+			Liste.Add(Posten);
+		}
+		const int32 Vorher = Coupon ? Inventar->GetNumItems(Coupon) : -1;
+		const int32 PreisVorher = TDShop::LiesPreis(Posten);
+		const bool bGekauft = Shop->PurchaseResourceSinkSchematics(Inventar, Liste);
+		const int32 Nachher = Coupon ? Inventar->GetNumItems(Coupon) : -1;
+		Ergebnis(TEXT("Shop"), FString::Printf(TEXT("kaufe %d x %s"), Stueck, *Wort), bGekauft == bSoll,
+			FString::Printf(TEXT("%s, Coupons %d -> %d, Preis im Posten %d -> %d"), bGekauft ? TEXT("gekauft") : TEXT("abgelehnt"), Vorher, Nachher, PreisVorher, TDShop::LiesPreis(Posten)));
 		return true;
 	}
 	if (S->HasField(TEXT("stromfrei")))
@@ -793,6 +869,11 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 			Klasse = LoadClass<AFGBuildable>(nullptr, *S->GetStringField(TEXT("klasse")));
 		}
 		UClass* BauRezept = O ? LoadClass<UFGRecipe>(nullptr, *FString::Printf(TEXT("/FicsitTD/Buildings/%s/Recipe_TD_%s.Recipe_TD_%s_C"), **O, **O, **O)) : nullptr;
+		// 0.12 E1: Spielgebaeude ueber "klasse" bekommen ihr Bau-Rezept ueber "baurezept" (voller Klassenpfad), z. B. der AWESOME-Shop
+		if (!BauRezept && S->HasField(TEXT("baurezept")))
+		{
+			BauRezept = LoadClass<UFGRecipe>(nullptr, *S->GetStringField(TEXT("baurezept")));
+		}
 		UClass* Munition = O && S->HasField(TEXT("rezept")) ? LoadClass<UFGRecipe>(nullptr, *FString::Printf(TEXT("/FicsitTD/Buildings/%s/%s.%s_C"), **O,
 			*S->GetStringField(TEXT("rezept")), *S->GetStringField(TEXT("rezept")))) : nullptr;
 		AFGBuildableSubsystem* Bau = AFGBuildableSubsystem::Get(World);
@@ -1617,6 +1698,14 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 				Ziel = *It;
 			}
 		}
+		else if (Wort == TEXT("Shop"))
+		{
+			// 0.12 E1 (Shop-Prototyp): Fenster des AWESOME-Shops
+			for (TActorIterator<AFGBuildableResourceSinkShop> It(World); It && !Ziel; ++It)
+			{
+				Ziel = *It;
+			}
+		}
 		else if (Wort == TEXT("Kern"))
 		{
 			// 0.9.6: Kern-Menue (Laden mit Kategorien) fotografieren
@@ -1726,6 +1815,25 @@ bool UTDAutotest::Pruefe(UWorld* World, const TSharedPtr<FJsonObject>& S, FStrin
 		}
 		OutIst = !bOffen ? FString(TEXT("Kern-Menue nicht offen")) : Ist.Num() ? FString::Join(Ist, TEXT(", ")) : FString(TEXT("keine"));
 		return bOffen && FString::Join(Ist, TEXT(", ")) == Soll;
+	}
+	// 0.12 (C7): Plus-Knoepfe im Laden des offenen Kern-Menues - "soll": "frei" (mindestens einer bedienbar) oder "gesperrt" (keiner)
+	if (Name == TEXT("LadenKnoepfe"))
+	{
+		bool bOffen = false;
+		int32 Frei = 0, Alle = 0;
+		for (TObjectIterator<UTDKernTerminal> It; It; ++It)
+		{
+			if (It->GetWorld() == World && It->GetCachedWidget().IsValid())
+			{
+				Frei = It->FreiePlusKnoepfe(Alle);
+				bOffen = true;
+			}
+		}
+		const UTDEinsatzSubsystem* EinsatzLaden = World->GetSubsystem<UTDEinsatzSubsystem>();
+		OutIst = !bOffen ? FString(TEXT("Kern-Menue nicht offen"))
+			: FString::Printf(TEXT("%d von %d Plus-Knoepfen frei, Konto %d"), Frei, Alle, EinsatzLaden ? EinsatzLaden->Konto() : -1);
+		const FString Soll = S->HasField(TEXT("soll")) ? S->GetStringField(TEXT("soll")) : FString(TEXT("frei"));
+		return bOffen && Alle > 0 && (Soll == TEXT("gesperrt") ? Frei == 0 : Frei > 0);
 	}
 	// 17.11. (P16/A12): darf der erste Turm des Typs abgerissen werden? "turm" (Standard Bolzenturm), "soll" true/false
 	if (Name == TEXT("Abriss"))
@@ -2003,6 +2111,56 @@ bool UTDAutotest::Pruefe(UWorld* World, const TSharedPtr<FJsonObject>& S, FStrin
 		}
 		OutIst = FString::Printf(TEXT("%s: %s"), *K->Key, TDZustandName(TDForschung::Zustand(World, *K)));
 		return OutIst.EndsWith(S->GetStringField(TEXT("soll")));
+	}
+	// 0.12 (F1, Rezeptprobe): Welche Bauteil-Rezepte des Spiels (Fundamente, Rampen, Waende, Laufstege, Saeulen ...) hat der Spieler?
+	// Nach Code und Spieldaten im Einsatz und Endlos keine (Meilensteine gesperrt, Startrezepte ohne Bauteile) - "max" (Standard 0)
+	// ist die erlaubte Zahl, "min" die verlangte. Eigene Bauten des Mods (/FicsitTD/) zaehlen nicht.
+	if (Name == TEXT("BauteilRezepte"))
+	{
+		AFGRecipeManager* Rezepte = AFGRecipeManager::Get(World);
+		TArray<FString> Namen;
+		int32 Fundamente = 0, Waende = 0, Sonst = 0;
+		if (Rezepte)
+		{
+			for (const TSubclassOf<UFGRecipe>& R : Rezepte->GetAllAvailableRecipes())
+			{
+				if (!R || R->GetPathName().StartsWith(TEXT("/FicsitTD/")))
+				{
+					continue;
+				}
+				for (const FItemAmount& P : UFGRecipe::GetProducts(R))
+				{
+					UClass* Beschreibung = P.ItemClass.Get();
+					UClass* Bau = Beschreibung && Beschreibung->IsChildOf(UFGBuildDescriptor::StaticClass())
+						? UFGBuildDescriptor::GetBuildClass(TSubclassOf<UFGBuildDescriptor>(Beschreibung)).Get() : nullptr;
+					if (Bau && Bau->IsChildOf(AFGBuildableFactoryBuilding::StaticClass()))
+					{
+						(Bau->IsChildOf(AFGBuildableFoundation::StaticClass()) ? Fundamente : Bau->IsChildOf(AFGBuildableWall::StaticClass()) ? Waende : Sonst)++;
+						Namen.Add(R->GetName());
+						break;
+					}
+				}
+			}
+		}
+		Namen.Sort();
+		const int32 Anzahl = Namen.Num();
+		const UTDWaveSubsystem* WellenModus = World->GetSubsystem<UTDWaveSubsystem>();
+		const UTDEinsatzSubsystem* EinsatzModus = World->GetSubsystem<UTDEinsatzSubsystem>();
+		UE_LOG(LogFicsitTD, Log, TEXT("Rezeptprobe: %d Bauteil-Rezepte des Spiels verfuegbar (Fundamente und Rampen %d, Waende %d, sonstige %d), Einsatz %s, Endlos %s"),
+			Anzahl, Fundamente, Waende, Sonst, EinsatzModus && EinsatzModus->IstAktiv() ? TEXT("aktiv") : TEXT("aus"), WellenModus && WellenModus->IstEndlos() ? TEXT("ja") : TEXT("nein"));
+		for (int32 i = 0; i < Namen.Num(); i += 12)
+		{
+			TArray<FString> Teil;
+			for (int32 k = i; k < FMath::Min(i + 12, Namen.Num()); ++k)
+			{
+				Teil.Add(Namen[k]);
+			}
+			UE_LOG(LogFicsitTD, Log, TEXT("Rezeptprobe: %s"), *FString::Join(Teil, TEXT(", ")));
+		}
+		OutIst = !Rezepte ? FString(TEXT("keine Rezeptverwaltung")) : FString::Printf(TEXT("%d Bauteil-Rezepte (Fundamente und Rampen %d, Waende %d, sonstige %d)%s%s"),
+			Anzahl, Fundamente, Waende, Sonst, Anzahl ? TEXT(": ") : TEXT(""), *FString::Join(TArray<FString>(Namen.GetData(), FMath::Min(8, Namen.Num())), TEXT(", ")));
+		return Rezepte && Anzahl >= (S->HasField(TEXT("min")) ? int32(S->GetNumberField(TEXT("min"))) : 0)
+			&& Anzahl <= (S->HasField(TEXT("max")) ? int32(S->GetNumberField(TEXT("max"))) : 0);
 	}
 	if (Name == TEXT("RezeptFrei"))
 	{

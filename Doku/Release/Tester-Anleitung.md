@@ -1,6 +1,6 @@
 # FICSIT Tower Defense – Playtest Guide / Anleitung für Tester (Alpha)
 
-> **Stand 0.11.0** (Entwurf 18.11.2026, Release geplant 20.11.2026). Die gültigen Regeln stehen in `..\Spielregeln.md`, das Spielerhandbuch unter https://spancken.github.io/FicsitTD/. Bei jeder Version mit sichtbaren Änderungen hier nachziehen.
+> **Stand 0.11.1** (Patch 21.11.2026, Inhalt wie 0.11.0 plus Fehlerbehebungen, `Changelog-0.11.1.md`). Die gültigen Regeln stehen in `..\Spielregeln.md`, das Spielerhandbuch unter https://spancken.github.io/FicsitTD/. Bei jeder Version mit sichtbaren Änderungen hier nachziehen.
 
 *English first, Deutsch weiter unten.*
 

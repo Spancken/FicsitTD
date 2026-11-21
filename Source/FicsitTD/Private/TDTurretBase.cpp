@@ -42,22 +42,9 @@
 /** Anzeigename eines Turms fuer Spielertexte; mTurmName selbst bleibt deutscher Schluessel (Balance, Forschung, Statistik) */
 static FString TDTurmAnzeige(const FString& Turm)
 {
-	if (!TDSprache::Englisch()) return Turm;
-	if (Turm == TEXT("Bolzenturm")) return TEXT("Bolt Turret");
-	if (Turm == TEXT("Gewehrturm")) return TEXT("Rifle Turret");
-	if (Turm == TEXT("Nobelisk-Werfer")) return TEXT("Nobelisk Launcher");
-	if (Turm == TEXT("Teslaspule")) return TEXT("Tesla Coil");
-	if (Turm == TEXT("Flammenwerfer")) return TEXT("Flamethrower");
-	if (Turm == TEXT("Lockfeuer")) return TEXT("Lure Fire");
-	if (Turm == TEXT("Reparaturstation")) return TEXT("Repair Station");
-	if (Turm == TEXT("Oelschlick")) return TEXT("Oil Slick Field");
-	if (Turm == TEXT("Elektrozaun")) return TEXT("Electric Fence");
-	if (Turm == TEXT("Funkmast")) return TEXT("Radio Mast");
-	if (Turm == TEXT("Schildgenerator")) return TEXT("Shield Generator");
-	if (Turm == TEXT("Himmelsturm")) return TEXT("Sky Tower");
-	if (Turm == TEXT("Stoerfeld")) return TEXT("Jammer Projector");
-	if (Turm == TEXT("Singularitaet")) return TEXT("Singularity Launcher");
-	return Turm;
+	// 0.12 (C1): eine Tabelle fuer alle Anzeigenamen (TDEinsatz.cpp, TDAnzeige). Die eigene Liste hier kannte den Drohnenplatz
+	// nicht und gab auf Deutsch die Schluessel ohne Umlaut aus ("Singularitaet", "Stoerfeld", "Oelschlick").
+	return UTDEinsatzSubsystem::Anzeige(Turm);
 }
 
 /** Anzeigename der Schadensart; SchadensartName() bleibt Balance-Schluessel (Resistenzen.*) */

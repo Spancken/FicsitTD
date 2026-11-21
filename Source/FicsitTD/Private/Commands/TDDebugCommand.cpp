@@ -49,6 +49,7 @@
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "TDSprache.h"
+#include "TDSpikeS0.h"
 
 /** Chat-Antwort, zusaetzlich im Log - Testlaeufe lassen sich danach ohne Screenshots auswerten */
 static void Antwort(UCommandSender* Sender, const FString& Text)
@@ -62,8 +63,8 @@ static void Antwort(UCommandSender* Sender, const FString& Text)
 /** Hilfetext in der Spielsprache (0.85); auch bei falscher Eingabe neu gesetzt, falls die Sprache nach dem Start wechselt */
 static FText TDUsage()
 {
-	return TDTX(TEXT("/td umgebung|instanzen [Radius_m] - Objekte bzw. Instanzen um dich auflisten | /td koeder - alle Köder entfernen | /td reichweite [an|aus] - Reichweitenkreise | /td turmlevel <1-5> - naechsten Turm auf Level setzen (Test) | /td teil [Name] - Turmteil ein-/ausblenden | /td probe gewehr|flamme|weg - Effekt-Vorschau | /td fuellen [art] [m3] - Puffer/Flammenwerfer füllen | /td kern start [erkundung|normal|hart|albtraum] [Wellen] [Min] [Min]|weiter|stop|status|fronten [neu]|wege [aus]|stufen|tempo [Faktor]|stress [N ...] [lp=20] [s=20] [mix|art=<Gegner>] [anim=immer|sichtbar] [kollision=an|aus] [ragdoll=an|aus] [tuerme=aus] [geschoss=aus] [angriff=aus] [drehen=aus] [schatten=aus] [effekte=aus] [df=aus] [drehtakt=N] [töten=N/s]|stress stop - Kern-Verteidigung | /td test [karte|gegner|marsch] - automatischer Test | /td einsatz start [stufe] [wellen]|frei [an|aus]|status|stop - Einsatz mit Kontingenten | /td laden, /td kaufe <Gebäude> [n] - Laden | /td freischalten - alles frei | /td balance - Balance-Datei neu lesen | /td platz [liste|scan <Biom>|scan stop|prüfen <Id|S1..S8|hier [Biom]>|merken <Biom> [Notiz]|gemerkt|zurück|bauen <Biom> [1-3]] - Kernplätze suchen, prüfen, merken und bauen | /td szenario [liste|<1-5>|pruefen [Nr]|fertig|leeren] - Testszenarien | /td ada [bank] - ADA-Begrüßung | /td baender <2-6>|pruefen|reparieren - alle Bänder aufrüsten, offene Band-Enden prüfen oder verbinden"),
-		TEXT("/td umgebung|instanzen [radius_m] - list objects or instances around you | /td koeder - remove all decoys | /td reichweite [an|aus] - range circles | /td turmlevel <1-5> - set the nearest turret to a level (test) | /td teil [name] - show/hide a turret part | /td probe gewehr|flamme|weg - effect preview | /td fuellen [type] [m3] - fill buffer/flamethrower | /td kern start [erkundung|normal|hart|albtraum] [waves] [min] [min]|weiter|stop|status|fronten [neu]|wege [aus]|stufen|tempo [factor]|stress [N ...] [lp=20] [s=20] [mix|art=<enemy>] [anim=immer|sichtbar] [kollision=an|aus] [ragdoll=an|aus] [tuerme=aus] [geschoss=aus] [angriff=aus] [drehen=aus] [schatten=aus] [effekte=aus] [df=aus] [drehtakt=N] [toeten=N/s]|stress stop - core defense | /td test [karte|gegner|marsch] - automatic test | /td einsatz start [level] [waves]|frei [an|aus]|status|stop - Operation with quotas | /td laden, /td kaufe <building> [n] - Shop | /td freischalten - unlock everything | /td balance - reload the balance file | /td platz [liste|scan <biome>|scan stop|pruefen <Id|S1..S8|hier [biome]>|merken <biome> [note]|gemerkt|zurueck|bauen <biome> [1-3]] - find, check, save and build core sites | /td szenario [liste|<1-5>|pruefen [no]|fertig|leeren] - test scenarios | /td ada [bank] - ADA greeting | /td baender <2-6>|pruefen|reparieren - upgrade all belts, check or connect open belt ends"));
+	return TDTX(TEXT("/td umgebung|instanzen [Radius_m] - Objekte bzw. Instanzen um dich auflisten | /td koeder - alle Köder entfernen | /td reichweite [an|aus] - Reichweitenkreise | /td turmlevel <1-5> - naechsten Turm auf Level setzen (Test) | /td teil [Name] - Turmteil ein-/ausblenden | /td probe gewehr|flamme|weg - Effekt-Vorschau | /td fuellen [art] [m3] - Puffer/Flammenwerfer füllen | /td kern start [erkundung|normal|hart|albtraum] [Wellen] [Min] [Min]|weiter|stop|status|fronten [neu]|wege [aus]|stufen|tempo [Faktor]|stress [N ...] [lp=20] [s=20] [mix|art=<Gegner>] [anim=immer|sichtbar] [kollision=an|aus] [ragdoll=an|aus] [tuerme=aus] [geschoss=aus] [angriff=aus] [drehen=aus] [schatten=aus] [effekte=aus] [df=aus] [drehtakt=N] [töten=N/s]|stress stop - Kern-Verteidigung | /td test [karte|gegner|marsch] - automatischer Test | /td einsatz start [stufe] [wellen]|frei [an|aus]|status|stop - Einsatz mit Kontingenten | /td laden, /td kaufe <Gebäude> [n] - Laden | /td freischalten - alles frei | /td balance - Balance-Datei neu lesen | /td platz [liste|scan <Biom>|scan stop|prüfen <Id|S1..S8|hier [Biom]>|merken <Biom> [Notiz]|gemerkt|zurück|bauen <Biom> [1-3]] - Kernplätze suchen, prüfen, merken und bauen | /td szenario [liste|<1-5>|pruefen [Nr]|fertig|leeren] - Testszenarien | /td ada [bank] - ADA-Begrüßung | /td baender <2-6>|pruefen|reparieren - alle Bänder aufrüsten, offene Band-Enden prüfen oder verbinden | /td s0 strahl|baue|liste|blick|probe|abriss|abrissalle|nach - Messungen zum Kern-Zugang (Spike S0)"),
+		TEXT("/td umgebung|instanzen [radius_m] - list objects or instances around you | /td koeder - remove all decoys | /td reichweite [an|aus] - range circles | /td turmlevel <1-5> - set the nearest turret to a level (test) | /td teil [name] - show/hide a turret part | /td probe gewehr|flamme|weg - effect preview | /td fuellen [type] [m3] - fill buffer/flamethrower | /td kern start [erkundung|normal|hart|albtraum] [waves] [min] [min]|weiter|stop|status|fronten [neu]|wege [aus]|stufen|tempo [factor]|stress [N ...] [lp=20] [s=20] [mix|art=<enemy>] [anim=immer|sichtbar] [kollision=an|aus] [ragdoll=an|aus] [tuerme=aus] [geschoss=aus] [angriff=aus] [drehen=aus] [schatten=aus] [effekte=aus] [df=aus] [drehtakt=N] [toeten=N/s]|stress stop - core defense | /td test [karte|gegner|marsch] - automatic test | /td einsatz start [level] [waves]|frei [an|aus]|status|stop - Operation with quotas | /td laden, /td kaufe <building> [n] - Shop | /td freischalten - unlock everything | /td balance - reload the balance file | /td platz [liste|scan <biome>|scan stop|pruefen <Id|S1..S8|hier [biome]>|merken <biome> [note]|gemerkt|zurueck|bauen <biome> [1-3]] - find, check, save and build core sites | /td szenario [liste|<1-5>|pruefen [no]|fertig|leeren] - test scenarios | /td ada [bank] - ADA greeting | /td baender <2-6>|pruefen|reparieren - upgrade all belts, check or connect open belt ends | /td s0 strahl|baue|liste|blick|probe|abriss|abrissalle|nach - core access measurements (spike S0)"));
 }
 
 ATDDebugCommand::ATDDebugCommand()
@@ -93,6 +94,22 @@ EExecutionStatus ATDDebugCommand::ExecuteCommand_Implementation(UCommandSender* 
 				TEXT("This command is only available in developer mode. Player commands: /td ada, /td kern status, /td kern weiter, /td baender reparieren, /td modus einsatz, /td modus abwehr.")));
 			return EExecutionStatus::COMPLETED;
 		}
+	}
+	// 0.12 E1 (Spike S0 Kern-Zugang, nur Messungen): /td s0 strahl|baue|liste|blick|probe|abriss|nach - TDSpikeS0.cpp
+	if (Arguments[0].Equals(TEXT("s0"), ESearchCase::IgnoreCase))
+	{
+		TArray<FString> Rest;
+		for (int32 i = 1; i < Arguments.Num(); ++i)
+		{
+			Rest.Add(Arguments[i]);
+		}
+		TArray<FString> Zeilen;
+		TDSpikeS0::Befehl(GetWorld(), Player, Rest, Zeilen);
+		for (const FString& Zeile : Zeilen)
+		{
+			Antwort(Sender, Zeile);
+		}
+		return EExecutionStatus::COMPLETED;
 	}
 	// 0.11 (Modus Aus, Marius 15.11.: nur der Spielmodus zaehlt): alte Staende, in denen der Einsatz ohne Spielmodus "Einsatz"
 	// lief (Start per /td oder Kern-Menue), stellen den Modus einmal nach. Ohne Argument: aktuellen Modus zeigen.
