@@ -1,8 +1,8 @@
 {
-  "datum": "2026-11-21 17:04",
+  "datum": "2026-11-21 17:22",
   "hinweis": "SHA-256 der Quelldateien, gegen die sim_alle_modi.py zuletzt gerechnet hat",
   "code_stand": {
-    "Source/FicsitTD/Private/TDBalance.cpp": "a10195480356663012e4c1a757751893e72aa51bf7d35aa6570a6d43ff0ad897",
+    "Source/FicsitTD/Private/TDBalance.cpp": "2896a0d9b2cd31dd5e61d1030a23b1e6f42bfed0f33cade135e7ca6d6e29470e",
     "Source/FicsitTD/Private/TDWaveSubsystem.cpp": "b512f7e720ee30173a91755f124585846c3e270a82ac9b968216a506a6c76497",
     "Source/FicsitTD/Private/TDEinsatz.cpp": "3f13ca4a21b7ffc0667c5ed69a18042326efd04a02918b94d3117232bbf1f289",
     "Source/FicsitTD/Private/TDBohrung.cpp": "0f848ddd5d7fc009d20a95afe6183fe47238ed9faf117d8623c4393829368744",

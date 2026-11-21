@@ -776,7 +776,9 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 				Figur->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 			}
 			Figur->SetActorLocation(Ort, false, nullptr, ETeleportType::TeleportPhysics);
-			const FVector Ziel = bGegner ? GegnerMitte + FVector(0.f, 0.f, 100.f) : Mitte + FVector(0.f, 0.f, 250.f);
+			// 21.11. (Optik-Stufen, Bericht A3): "blickhoehe" in m ueber dem Fuss des Baus, damit hohe Tuerme ganz ins Bild passen
+			const float BlickHoehe = S->HasField(TEXT("blickhoehe")) ? static_cast<float>(S->GetNumberField(TEXT("blickhoehe"))) * 100.f : 250.f;
+			const FVector Ziel = bGegner ? GegnerMitte + FVector(0.f, 0.f, 100.f) : Mitte + FVector(0.f, 0.f, BlickHoehe);
 			const FRotator Blick = (Ziel - Ort).Rotation();
 			PC->SetControlRotation(Blick);
 			Figur->SetActorRotation(FRotator(0.f, Blick.Yaw, 0.f));

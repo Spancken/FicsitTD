@@ -145,15 +145,17 @@ footer { padding-block: 28px; color: var(--muted); font-size: .86rem; border-top
       <h3><span class="en">Build phase</span><span class="de">Aufbauphase</span></h3>
       <ul class="en">
         <li>No time pressure. You start the next wave yourself; the Core then lists turrets without ammo or power in the chat (it does not hold the wave).</li>
-        <li><b>Quotas</b>: production and defense buildings are limited per type. Logistics is free: belts, lifts, pipes, power lines, foundations. Splitters, mergers, storage containers and fluid buffers count as buildings and are bought in the shop.</li>
+        <li><b>Quotas</b>: production and defense buildings are limited per type. Logistics is free: belts, lifts, pipes, power lines. Foundations, walls and ramps of the base game cannot be built during an operation, and the core platform cannot be dismantled. Splitters, mergers, storage containers and fluid buffers count as buildings and are bought in the shop.</li>
         <li><b>FICSIT Coupons</b> from the Core land in your inventory as the game's Coupon item (if it is full, they wait at the Core). They buy more quota, gear, core repairs and Hard Drives. At first in the Core Menu; after wave 2 you may build the <b>AWESOME Shop</b> (free, one per operation), and from then on you buy there in the category FICSIT Defense – the Core no longer sells. Every purchase raises the next price, also when you buy several at once. During an operation the shop sells no base game items. Turret levels are bought in the turret window.</li>
         <li>New technology only comes from the <b>MAM</b> (Hard Drives from waves). HUB milestones and blueprints are locked during an operation.</li>
+        <li><b>Getting started:</b> after wave 1 ADA asks you to build the MAM, after wave 2 the AWESOME Shop (both free). The second line of the status bar at the top left shows the current task, otherwise what your quota still allows.</li>
       </ul>
       <ul class="de">
         <li>Ohne Zeitdruck. Die nächste Welle startest du selbst; der Kern nennt dann im Chat Türme ohne Munition oder Strom (er hält die Welle nicht an).</li>
-        <li><b>Kontingente</b>: Produktions- und Verteidigungsgebäude sind je Typ begrenzt. Logistik ist frei: Bänder, Lifte, Rohre, Stromleitungen, Fundamente. Splitter, Verbinder, Lager und Flüssigkeitspuffer zählen wie Gebäude und werden im Laden gekauft.</li>
+        <li><b>Kontingente</b>: Produktions- und Verteidigungsgebäude sind je Typ begrenzt. Logistik ist frei: Bänder, Lifte, Rohre, Stromleitungen. Fundamente, Wände und Rampen des Grundspiels sind im Einsatz nicht baubar, und die Kernplattform lässt sich nicht abreißen. Splitter, Verbinder, Lager und Flüssigkeitspuffer zählen wie Gebäude und werden im Laden gekauft.</li>
         <li><b>FICSIT-Coupons</b> vom Kern landen als Coupon-Item des Spiels im Inventar (ist es voll, warten sie am Kern). Sie kaufen mehr Kontingent, Ausrüstung, Kernreparatur und Festplatten. Zuerst im Kern-Menü; nach Welle 2 darfst du den <b>AWESOME-Shop</b> bauen (kostenlos, einer je Einsatz), danach kaufst du dort in der Kategorie FICSIT-Abwehr – der Kern verkauft dann nicht mehr. Jeder Kauf erhöht den nächsten Preis, auch wenn du mehrere auf einmal kaufst. Im Einsatz verkauft der Shop keine Artikel des Grundspiels. Turmlevel kauft man im Turmfenster.</li>
         <li>Neue Technik gibt es nur im <b>MAM</b> (Festplatten aus den Wellen). Meilensteine am HUB und Blaupausen sind im Einsatz gesperrt.</li>
+        <li><b>Einstieg:</b> Nach Welle 1 bittet ADA dich, das MAM zu bauen, nach Welle 2 den AWESOME-Shop (beide kostenlos). Die zweite Zeile der Statusleiste oben links zeigt die aktuelle Aufgabe, sonst was dein Kontingent noch erlaubt.</li>
       </ul>
     </div>
     <div>
@@ -163,12 +165,14 @@ footer { padding-block: 28px; color: var(--muted); font-size: .86rem; border-top
         <li>Inside the defense zone you cannot place quota buildings while a wave runs, and turrets and defenses cannot be dismantled there (0.11). Logistics and power still work.</li>
         <li>You cannot save during a wave. The mod saves before and after every wave.</li>
         <li>After the wave: Coupons and Hard Drives in your inventory, biomass and a small core repair. The report shows your best turrets and your own damage share.</li>
+        <li>After every boss wave (10, 20, 30, 40) a window shows the phase report and three bonus cards (Coupons, Core health, Hard Drives) and you get a talent point. “Choose later” keeps the pick open in the Core Menu.</li>
       </ul>
       <ul class="de">
         <li>Gegner laufen echte Wege aus 1–3 Fronten zum Kern. Zu Beginn heilen alle Verteidigungsbauten auf 100 %.</li>
         <li>Im Verteidigungsfeld kannst du während der Welle keine Kontingent-Gebäude setzen, und Türme und Abwehrbauten lassen sich dort nicht abreißen (0.11). Logistik und Strom gehen weiter.</li>
         <li>In der Welle kann nicht gespeichert werden. Der Mod speichert vor und nach jeder Welle.</li>
         <li>Nach der Welle: Coupons und Festplatten im Inventar, Biomasse und eine kleine Kernreparatur. Der Bericht zeigt die besten Türme und deinen eigenen Schadensanteil.</li>
+        <li>Nach jeder Bosswelle (10, 20, 30, 40) zeigt ein Fenster den Phasenbericht und drei Bonus-Karten (Coupons, Kern-LP, Festplatten), dazu gibt es einen Talentpunkt. „Später wählen“ lässt die Wahl im Kern-Menü offen.</li>
       </ul>
     </div>
   </div>
@@ -384,7 +388,6 @@ footer { padding-block: 28px; color: var(--muted); font-size: .86rem; border-top
   <ul class="en">
     <li><b>Stuck enemies:</b> now and then an enemy still gets stuck at a cliff or right at a front's start point. The mod blocks that cliff for following enemies and moves stuck ones back onto their path after a few seconds. Please report the spot with your log.</li>
     <li><b>Hard and Nightmare</b> are not fully balanced yet.</li>
-    <li><b>To-do list:</b> in English games the mod’s block in the To-do list can stay German and show old values. The Core Menu is correct.</li>
     <li><b>Sky Tower:</b> there are no flying enemies yet, so it never finds a target. Don't build it yet.</li>
     <li><b>Singularity Launcher:</b> unlocks after wave 50, so only in Endless mode.</li>
     <li><b>Tesla Coils and power:</b> each coil draws 125 MW while charging. Several coils can trip the fuse and silence every turret on that grid without a warning. Keep a power reserve or a separate grid.</li>
@@ -401,7 +404,6 @@ footer { padding-block: 28px; color: var(--muted); font-size: .86rem; border-top
   <ul class="de">
     <li><b>Hängende Gegner:</b> Gelegentlich bleibt ein Gegner noch an einer Klippe oder direkt am Startpunkt einer Front hängen. Die Mod sperrt die Klippe für nachfolgende Gegner und setzt hängende nach einigen Sekunden auf ihren Weg zurück. Bitte die Stelle mit Log melden.</li>
     <li><b>Hart und Albtraum</b> sind noch nicht fertig eingestellt.</li>
-    <li><b>To-do-Liste:</b> In englischen Spielen kann der Block der Mod in der To-do-Liste deutsch bleiben und alte Werte zeigen. Das Kern-Menü stimmt.</li>
     <li><b>Himmelsturm:</b> Es gibt noch keine fliegenden Gegner, er findet nie ein Ziel. Vorerst nicht bauen.</li>
     <li><b>Singularitätswerfer:</b> wird erst nach Welle 50 frei, also nur im Endlos-Modus.</li>
     <li><b>Teslaspulen und Strom:</b> Jede Spule zieht beim Laden 125 MW. Mehrere Spulen können die Sicherung auslösen und alle Türme im Netz ohne Warnung verstummen lassen. Stromreserve oder eigenes Netz einplanen.</li>

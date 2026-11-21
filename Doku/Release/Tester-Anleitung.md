@@ -33,6 +33,13 @@
 - Existing saves: `/td modus abwehr` in the chat switches to Free play with defense.
 - **Also new in 0.11:** one ammo item lasts for several shots (basic 4, advanced 3, special 2); the turret window shows consumption per minute. Power Storage in the shop (Coal Power research), Miner Mk.2/Mk.3 and belts up to Mk.5 in the MAM. Turrets and defenses cannot be dismantled near the Core during a wave. Wave saves carry the session name.
 
+### Coming in 0.12 (development build only, not on ficsit.app yet)
+- **AWESOME Shop:** after wave 2 ADA asks you to build the game's AWESOME Shop (free, one per operation). From then on quotas, gear, core repairs and Hard Drives are bought there in the category FICSIT Defense; the Core stops selling. Base game shop items are hidden during an operation.
+- **Getting started:** after wave 1 ADA asks for the MAM, after wave 2 for the shop. The second line of the status bar shows the current task (replaces the mod's To-do block).
+- **Boss waves:** a window with the phase report and three bonus cards; one talent point per boss wave.
+- The core platform cannot be dismantled during an operation.
+- Questions: Did you find the shop category? Were the prices clear? Did ADA's task lines help?
+
 ### What we want to know
 - How far did you get (wave), how long did it take, which turrets did you use?
 - Ammo per item: how many turrets does one miner, chain or belt feed for you? Did you run out of ammo, and in which wave?
@@ -83,6 +90,13 @@ Full list in the handbook: https://spancken.github.io/FicsitTD/#issues (section 
 - **Freies Spiel mit Abwehr:** normales Satisfactory mit HUB und Meilensteinen, dazu Türme und Abwehr-Forschung im MAM (bezahlt mit Coupons aus dem AWESOME-Sink). Nichts greift an, was du nicht startest: Stell einen Abwehrkern neben einen Erzknoten und starte in seinem Menü eine **Bohrung** (Leicht, Mittel, Schwer). Jede gehaltene Welle bringt Erz, der erste Erfolg je Rohstoff und Stufe Festplatten. Abbrechen geht jederzeit ohne Strafe.
 - Bestehende Spielstände: `/td modus abwehr` im Chat stellt auf Freies Spiel mit Abwehr um.
 - **Außerdem neu in 0.11:** Ein Stück Munition reicht für mehrere Schuss (Grund 4, Stufe 2 drei, Spezial 2); das Turmfenster zeigt den Verbrauch pro Minute. Akku im Laden (Forschung Kohlekraft), Miner Mk2/Mk3 und Bänder bis Mk5 im MAM. Türme und Abwehrbauten lassen sich während der Welle am Kern nicht abreißen. Wellen-Spielstände tragen den Namen des Spiels.
+
+### Kommt mit 0.12 (nur Entwicklungsstand, noch nicht auf ficsit.app)
+- **AWESOME-Shop:** Nach Welle 2 bittet ADA dich, den AWESOME-Shop des Spiels zu bauen (kostenlos, einer je Einsatz). Ab dann kaufst du Kontingente, Ausrüstung, Kernreparatur und Festplatten dort in der Kategorie FICSIT-Abwehr; der Kern verkauft nicht mehr. Artikel des Grundspiels sind im Einsatz ausgeblendet.
+- **Einstieg:** Nach Welle 1 bittet ADA um das MAM, nach Welle 2 um den Shop. Die zweite Zeile der Statusleiste zeigt die aktuelle Aufgabe (statt des Blocks in der To-do-Liste).
+- **Bosswellen:** ein Fenster mit Phasenbericht und drei Bonus-Karten; ein Talentpunkt je Bosswelle.
+- Die Kernplattform lässt sich im Einsatz nicht abreißen.
+- Fragen: Hast du die Shop-Kategorie gefunden? Waren die Preise klar? Haben ADAs Aufgaben geholfen?
 
 ### Was wir wissen wollen
 - Bis zu welcher Welle, wie lange, welche Türme?

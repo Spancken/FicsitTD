@@ -107,6 +107,9 @@ namespace TDBalanceIntern
 		{ TEXT("Tuerme.Level.Nobelisk-Werfer.L2.Schaden"), 0.2f }, { TEXT("Tuerme.Level.Nobelisk-Werfer.L3.Takt"), 0.25f }, { TEXT("Tuerme.Level.Nobelisk-Werfer.L4.Reichweite"), 0.15f }, { TEXT("Tuerme.Level.Nobelisk-Werfer.L4.Radius"), 0.2f },
 		{ TEXT("Tuerme.Level.Teslaspule.L2.Reichweite"), 0.1f }, { TEXT("Tuerme.Level.Teslaspule.L3.Spruenge"), 1.0f }, { TEXT("Tuerme.Level.Teslaspule.L3.Schaden"), 0.2f }, { TEXT("Tuerme.Level.Teslaspule.L4.Takt"), 0.3f },
 		{ TEXT("Tuerme.Level.Flammenwerfer.L2.Schaden"), 0.2f }, { TEXT("Tuerme.Level.Flammenwerfer.L3.Kegel"), 0.5f }, { TEXT("Tuerme.Level.Flammenwerfer.L4.Reichweite"), 0.15f }, { TEXT("Tuerme.Level.Flammenwerfer.L4.Nachbrennen"), 0.5f },
+		// 21.11. (Lauf Optik-Stufen): bisher nur Ersatzwerte im Code (Warnung "fehlt in der Tabelle"), Werte unveraendert
+		{ TEXT("Tuerme.Level.Himmelsturm.L3.Takt"), 0.25f }, { TEXT("Tuerme.Level.Himmelsturm.L4.Reichweite"), 0.15f },
+		{ TEXT("Tuerme.Level.Singularitaet.L3.Takt"), 0.2f }, { TEXT("Tuerme.Level.Singularitaet.L4.Reichweite"), 0.15f },
 		{ TEXT("Tuerme.Bolzenturm.Startmunition"), 20.f }, { TEXT("Tuerme.Gewehrturm.Startmunition"), 20.f },
 		// 0.78 (Pruefstand: "Schluessel fehlt"): Startmunition der uebrigen Tuerme, Flammen-Eigenschaften des Treibstoffs
 		{ TEXT("Tuerme.Teslaspule.Startmunition"), 0.f }, { TEXT("Tuerme.Nobelisk-Werfer.Startmunition"), 0.f }, { TEXT("Tuerme.Flammenwerfer.Startmunition"), 0.f },

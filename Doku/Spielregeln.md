@@ -46,7 +46,7 @@
 3. **Welle:**
    - Die Gegner kommen aus 1–3 Fronten und laufen auf Navigationswegen zum Kern.
    - Zu Beginn heilen alle Verteidigungsbauten auf 100 %.
-   - Im Verteidigungsfeld (120 m um den Kern) ist das Bauen aller Gebäude mit Kontingent gesperrt, also auch Splitter, Verbinder, Lager, Puffer und Generatoren. Bänder, Rohre, Stromleitungen und Fundamente darf man weiter bauen (Marius 12.11.). Der Laden ist in der Welle zu, Turmlevel und Talente gehen.
+   - Im Verteidigungsfeld (120 m um den Kern) ist das Bauen aller Gebäude mit Kontingent gesperrt, also auch Splitter, Verbinder, Lager, Puffer und Generatoren. Bänder, Rohre und Stromleitungen darf man weiter bauen (Marius 12.11.; Fundamente hat der Spieler im Einsatz nicht, siehe unten). Der Laden ist in der Welle zu, Turmlevel und Talente gehen.
    - Während der Welle kann nicht gespeichert werden, auch der Autosave ruht. Sonst ließe sich Beute durch Laden wiederholen.
    - Die Welle endet, wenn alle Gegner tot sind. Nachzügler werden versetzt oder entfernt.
    - **Klippenprobe (ab 0.11-dev):** Vor jeder Welle fährt eine Gegner-Kapsel (Radius und Halbhöhe 70 cm) jeden vollen Frontweg in 2-m-Schritten ab. Klippen mit Flächen steiler als 45 Grad, an denen sie hängen bleibt, werden vorab aus dem Navigationsnetz genommen (`Gegner.KlippenProbe*`, höchstens `Gegner.KlippenSperrenMax` = 24). Nach dem Netzumbau planen marschierende Gegner ihren Weg neu. Liegt die Hängestelle am Startpunkt einer Front, wird der Startpunkt entlang des Frontwegs hinter die Sperrfläche verlegt (`Gegner.FrontVerlegen`, 16.11.).
@@ -66,7 +66,7 @@
 
 ## 4. Kontingente und Laden
 
-- **Begrenzt sind Produktions- und Verteidigungsgebäude**, je Typ. Logistik ist frei: Bänder, Lifte, Rohre, Stromleitungen, Fundamente. Splitter (auch Smart/Programmierbar), Verbinder, Lager und Flüssigkeitspuffer haben ein Kontingent und stehen nicht im Startkontingent, nur im Laden (Marius 02.11.). Das Abwägen zwischen neuer Fertigung und neuen Türmen ist gewollt (Marius, 05.11.).
+- **Begrenzt sind Produktions- und Verteidigungsgebäude**, je Typ. Logistik ist frei: Bänder, Lifte, Rohre, Stromleitungen. Fundamente, Wände und Rampen des Grundspiels sind im Einsatz und im Endlos nicht baubar: ihre Rezepte hängen an HUB-Meilensteinen, die gesperrt sind, und der Shop verkauft sie nicht (Marius 21.11., A5 Nr. 1, Probe `Rezeptprobe` 21.11.: 0 Rezepte). Splitter (auch Smart/Programmierbar), Verbinder, Lager und Flüssigkeitspuffer haben ein Kontingent und stehen nicht im Startkontingent, nur im Laden (Marius 02.11.). Das Abwägen zwischen neuer Fertigung und neuen Türmen ist gewollt (Marius, 05.11.).
 - **Laden** im Kern-Menü: Ein Kontingent kostet Coupons, und der Preis steigt mit jedem Kauf. Dazu gibt es Spielerausrüstung und Kernreparatur. Seit 0.9.4 ist der Laden nach Kategorien geordnet (Türme, Verteidigung, Produktion, Strom, Logistik, Pionier, Kern), jede zum Einklappen. Noch nicht Erforschtes ist ausgeblendet, unten steht „N weitere im MAM erforschbar“. Turmlevel kauft man nicht im Laden, sondern im Turmfenster.
 - **Spielerausrüstung und Kern im Laden** (kein Kontingent, wirkt sofort; Preise in der Laden-Tabelle unten). Ein Posten verschwindet, sobald das Maximum gekauft ist.
   - Inventarplätze: +5 je Kauf, höchstens 6 Käufe.
@@ -365,6 +365,8 @@ Turmlevel kosten 8 / 15 / 25 / 40 Coupons (Level 2–5). Doktrin: Schaden +25 %,
 | Gewehrturm.L4.Magazin | 1 |
 | Gewehrturm.L4.Reichweite | 0,15 |
 | Gewehrturm.L5.Takt | 0,25 |
+| Himmelsturm.L3.Takt | 0,25 |
+| Himmelsturm.L4.Reichweite | 0,15 |
 | Nobelisk-Werfer.L2.Schaden | 0,2 |
 | Nobelisk-Werfer.L3.Takt | 0,25 |
 | Nobelisk-Werfer.L4.Radius | 0,2 |
@@ -373,6 +375,8 @@ Turmlevel kosten 8 / 15 / 25 / 40 Coupons (Level 2–5). Doktrin: Schaden +25 %,
 | Preis3 | 15 |
 | Preis4 | 25 |
 | Preis5 | 40 |
+| Singularitaet.L3.Takt | 0,2 |
+| Singularitaet.L4.Reichweite | 0,15 |
 | Teslaspule.L2.Reichweite | 0,1 |
 | Teslaspule.L3.Schaden | 0,2 |
 | Teslaspule.L3.Spruenge | 1 |
