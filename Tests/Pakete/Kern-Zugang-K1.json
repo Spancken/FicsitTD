@@ -1,0 +1,10 @@
+{
+  "Name": "Kern-Zugang-K1",
+  "_Hinweis": "0.13 K1 (Fahrplan-0.13): Pruefung 'Kern erreichbar', Wellenstart wartet, Bohrung prueft beim Start. Danach Regression: Grundtest und EinsatzPhase.",
+  "Plaene": [
+    "KZ-1-Einsatz",
+    "KZ-6-Bohrung",
+    "Grundtest",
+    "EinsatzPhase"
+  ]
+}

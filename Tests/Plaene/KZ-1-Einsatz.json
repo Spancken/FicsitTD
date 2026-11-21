@@ -1,0 +1,145 @@
+{
+  "Name": "KZ-1-Einsatz",
+  "_Hinweis": "0.13 K1 (Fahrplan-0.13, Marius 21.11.): Pruefung 'Kern erreichbar' im Einsatz. Ring aus Spielwaenden mit Luecke = Frei. Geschlossener Ring aus Konstruktoren = Unpassierbar, Wellenstart wartet, Sperrstelle auf der Karte, Fronten bleiben. Nach dem Entfernen startet die Welle. Nichts wird abgerissen ausser vom Test selbst.",
+  "NeuesSpiel": {
+    "Startort": "Grass Fields",
+    "Modus": 1
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 12,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warteBis": "EinsatzAktiv",
+      "max": 120
+    },
+    {
+      "warte": 20
+    },
+    {
+      "pruefe": "KernZugang",
+      "soll": "Frei",
+      "text": "vor dem Zubauen frei"
+    },
+    {
+      "spielbau": "Wand",
+      "ring": 45,
+      "luecke": true,
+      "text": "Ring aus Spielwaenden 45 m mit einer Luecke im Osten"
+    },
+    {
+      "warte": 10
+    },
+    {
+      "pruefe": "KernZugang",
+      "soll": "Frei",
+      "text": "eine Luecke reicht: frei, kein Fehlalarm"
+    },
+    {
+      "entferne": "spielbau"
+    },
+    {
+      "spielbau": "Konstruktor",
+      "ring": 45,
+      "text": "geschlossener Ring aus Konstruktoren 45 m"
+    },
+    {
+      "warte": 10
+    },
+    {
+      "foto": "KZ-1_Ring"
+    },
+    {
+      "pruefe": "KernZugang",
+      "soll": "Unpassierbar",
+      "bau": true,
+      "sperre": "Constructor",
+      "text": "abgeriegelt, Konstruktor als Sperre erkannt"
+    },
+    {
+      "befehl": "td kern weiter"
+    },
+    {
+      "warte": 8
+    },
+    {
+      "pruefe": "WartetAufKernZugang",
+      "soll": true,
+      "text": "Wellenstart wartet"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "wartet: Kern abgeriegelt",
+      "min": 1,
+      "text": "Log: Start wartet"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "KernZugang: Kartenmarke gesetzt",
+      "min": 1,
+      "text": "Sperrstelle auf der Karte"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "versperrt durch",
+      "min": 1,
+      "text": "Frontpruefung: Fronten bleiben"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Fronten neu bestimmen",
+      "min": 0,
+      "max": 0,
+      "text": "keine Neuwahl der Fronten wegen der Sperre"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "WELLE 1",
+      "min": 0,
+      "max": 0,
+      "text": "Welle 1 laeuft nicht"
+    },
+    {
+      "foto": "KZ-1_wartet"
+    },
+    {
+      "warte": 35
+    },
+    {
+      "pruefe": "WartetAufKernZugang",
+      "soll": true,
+      "text": "wartet nach 40 s weiter (kein Zeitlimit bei erkanntem Bau)"
+    },
+    {
+      "entferne": "spielbau"
+    },
+    {
+      "warteBis": "WelleLaeuft",
+      "max": 30,
+      "text": "Welle startet nach dem Oeffnen"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Kern wieder erreichbar",
+      "min": 1,
+      "text": "Log: Zugang wieder frei"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "startet mit ungeprueften Fronten",
+      "min": 0,
+      "max": 0
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "KernZugang: Zustand",
+      "min": 2,
+      "text": "Messzeile mit Wegsuchen und ms"
+    }
+  ]
+}

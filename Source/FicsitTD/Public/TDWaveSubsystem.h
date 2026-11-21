@@ -26,6 +26,34 @@ enum class ETDSteuerModus : uint8
 	Laufen
 };
 
+/** 0.13 K1 (Fahrplan-0.13, Bericht A1 5.1): Ist der Kern fuer Wellengegner erreichbar? Schlechtester Zustand ueber die aktiven Fronten. */
+enum class ETDKernZugang : uint8
+{
+	Frei,              // voller Weg
+	Durchbrechbar,     // Teilweg, die Sperre sind nur TD-Hindernisse (Mauer, Sperre, Tor, Zaun) - die Gegner greifen sie an
+	NetzNichtBereit,   // Wegsuche ohne Punkte (Netz um den Kern noch im Bau)
+	Unpassierbar       // Teilweg, ein Spielbau, eine Maschine oder ein Turm sperrt (oder Gelaende ohne erkannten Bau)
+};
+
+/** Ergebnis einer Pruefung "Kern erreichbar" */
+struct FTDKernZugang
+{
+	ETDKernZugang Zustand = ETDKernZugang::NetzNichtBereit;
+	/** Front mit dem schlechtesten Zustand (1-basiert), 0 = Ringprobe ohne Fronten */
+	int32 Front = 0;
+	/** Ein Bau des Spielers sperrt (Sperre, Sperrstelle gesetzt). false bei Unpassierbar = Gelaende oder unbekannt */
+	bool bBau = false;
+	FVector Sperrstelle = FVector::ZeroVector;
+	/** Anzeigename des sperrenden Baus (Spielsprache) und Klasse fuer das Log */
+	FString Sperre;
+	FString SperreKlasse;
+	int32 Wegsuchen = 0;
+	double Ms = 0.0;
+	/** FPlatformTime::Seconds der Pruefung (Zwischenspeicher KernZugang.Haltezeit) */
+	double Zeit = -1000.0;
+	bool IstGesperrt() const { return Zustand == ETDKernZugang::Unpassierbar; }
+};
+
 /** Schwierigkeitsstufe eines Laufs (Level-Konzept Abschnitt 5). Zeiten in Sekunden, Abstaende in cm. */
 struct FTDStufe
 {
@@ -288,6 +316,17 @@ public:
 	/** Zeilen fuer das Kern-Menue (Knoten, Stufen, Erstlohn) */
 	TArray<FString> BohrInfo(ATDDefenseCore* Kern);
 	int32 GetBohrStufe() const { return mBohrStufe; }
+	// ---- 0.13 K1 Kern-Zugang (TDKernZugang.cpp, Fahrplan-0.13 Abschnitt 3) ----
+	/** Kern erreichbar? Aktive Fronten der naechsten Welle, ohne Fronten eine Ringprobe. Zwischenspeicher KernZugang.Haltezeit s */
+	const FTDKernZugang& PruefeKernZugang(bool bErzwingen = false);
+	/** Pruefung von beliebigen Startpunkten; leer = Ringprobe (8 Richtungen, KernZugang.RingAbstaende). Aendert mKernZugang nicht. */
+	FTDKernZugang PruefeKernZugangVon(const ATDDefenseCore* Kern, const TArray<FVector>& Starts, bool bRingprobe) const;
+	const FTDKernZugang& GetKernZugang() const { return mKernZugang; }
+	static const TCHAR* KernZugangName(ETDKernZugang Zustand);
+	/** Zeile fuer Kern-Menue und Chat in der Spielsprache, z. B. "Kern-Zugang: abgeriegelt durch Konstruktor, 24 m Nordosten" */
+	FString KernZugangText(const FTDKernZugang& Z) const;
+	/** Wellenstart wartet gerade, weil der Kern abgeriegelt ist */
+	bool WartetAufKernZugang() const { return mZugangWarte > 0.f; }
 	/** Alle TD-Rezepte freischalten (freier Modus; im Einsatz kommen sie ueber das MAM) */
 	void SchalteSandkastenFrei();
 	int32 mWellenGesamt = 30;
@@ -598,6 +637,17 @@ private:
 	int32 mFrontenStufe = -1;
 	/** Wie viele der 16 Richtungen beim Suchen geprueft gueltig waren */
 	int32 mGueltigeRichtungen = 0;
+	/** 0.13 K1: letzte Pruefung "Kern erreichbar", Warten des Wellenstarts, Uhren fuer Neupruefung und Ansage */
+	FTDKernZugang mKernZugang;
+	float mZugangWarte = 0.f;
+	float mZugangPruefUhr = 0.f;
+	float mZugangAnsageUhr = 0.f;
+	/** Wellenstart halten, solange ein Bau den Kern abriegelt; true = Start diesmal halten (LaufTick kehrt zurueck) */
+	bool HalteStartFuerKernZugang(float DeltaTime);
+	/** Eine Front: Weg zum Kern, bei Teilweg die Sperrstelle (Kapselfahrten, Brueckentest) */
+	FTDKernZugang PruefeZugangEinzeln(const ATDDefenseCore* Kern, const FVector& Start, int32 Front) const;
+	/** Kartenmarke an der Sperrstelle setzen (bZeigen) oder entfernen */
+	void MarkiereSperrstelle(bool bZeigen);
 	/** 18.11. (P12-E5: Neusuche nach 0 von 16 fand 13 Richtungen, waehlte aber Norden 357 m statt Nordwesten 343 m - welche
 	 *  Wege gueltig sind, haengt am Stand des Netzes): vor Welle 1 erst starten, wenn zwei Suchen nacheinander dieselben Fronten liefern */
 	bool mFrontenStabil = true;

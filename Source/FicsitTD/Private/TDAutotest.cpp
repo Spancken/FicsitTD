@@ -59,6 +59,7 @@
 #include "Widgets/SWindow.h"
 #include "FGSchematic.h"
 #include "FGResearchManager.h"
+#include "FGLightweightBuildableSubsystem.h"
 #include "FGResearchTree.h"
 #include "Camera/PlayerCameraManager.h"
 #include "FGSchematicManager.h"
@@ -1561,6 +1562,121 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		Ergebnis(TEXT("Spieler"), TEXT("Uebersteuern"), Turm && Turm->UebersteuernRest() > 0.f, Antwort);
 		return true;
 	}
+	if (S->TryGetStringField(TEXT("spielbau"), Wort))
+	{
+		// 0.13 K1 (Fahrplan-0.13, Plaene KZ-*): Spielbauten als Ring um den Kern setzen, wie ein Spieler, der den Kern zubaut.
+		// "Wand" (8 x 4 m, Lightweight), "Fundament" (8 x 4 m, Lightweight), "Konstruktor" (Maschine, Actor). "ring" = Radius in m
+		// (Standard 40), "luecke": true laesst das Stueck im Osten (Winkel 0) frei. Kein Kontingent, kein Material (Testaufbau).
+		struct FTDSpielbauArt { const TCHAR* Name; const TCHAR* Klasse; const TCHAR* Rezept; float Abstand; float Hoehe; };
+		static const FTDSpielbauArt Arten[] = {
+			{ TEXT("Wand"), TEXT("/Game/FactoryGame/Buildable/Building/Wall/Build_Wall_8x4_01.Build_Wall_8x4_01_C"),
+				TEXT("/Game/FactoryGame/Recipes/Buildings/Walls/Recipe_Wall_8x4_01.Recipe_Wall_8x4_01_C"), 760.f, -50.f },
+			{ TEXT("Fundament"), TEXT("/Game/FactoryGame/Buildable/Building/Foundation/Build_Foundation_8x4_01.Build_Foundation_8x4_01_C"),
+				TEXT("/Game/FactoryGame/Recipes/Buildings/Foundations/Recipe_Foundation_8x4_01.Recipe_Foundation_8x4_01_C"), 760.f, 150.f },
+			{ TEXT("Konstruktor"), TEXT("/Game/FactoryGame/Buildable/Factory/ConstructorMk1/Build_ConstructorMk1.Build_ConstructorMk1_C"),
+				TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_ConstructorMk1.Recipe_ConstructorMk1_C"), 700.f, -20.f } };
+		const FTDSpielbauArt* Art = nullptr;
+		for (const FTDSpielbauArt& A : Arten)
+		{
+			Art = Wort == A.Name ? &A : Art;
+		}
+		ATDDefenseCore* Kern = nullptr;
+		for (TActorIterator<ATDDefenseCore> It(World); It && !Kern; ++It)
+		{
+			Kern = *It;
+		}
+		UClass* Klasse = Art ? LoadClass<AFGBuildable>(nullptr, Art->Klasse) : nullptr;
+		UClass* Rezept = Art ? LoadClass<UFGRecipe>(nullptr, Art->Rezept) : nullptr;
+		AFGBuildableSubsystem* Bau = AFGBuildableSubsystem::Get(World);
+		const float Radius = (S->HasField(TEXT("ring")) ? static_cast<float>(S->GetNumberField(TEXT("ring"))) : 40.f) * 100.f;
+		const bool bLuecke = S->HasField(TEXT("luecke")) && S->GetBoolField(TEXT("luecke"));
+		int32 Gesetzt = 0, Stuecke = 0;
+		if (Art && Kern && Klasse && Bau)
+		{
+			const FVector Mitte = Kern->GetActorLocation();
+			Stuecke = FMath::Max(6, FMath::CeilToInt(2.f * PI * Radius / Art->Abstand));
+			for (int32 k = bLuecke ? 1 : 0; k < Stuecke; ++k)
+			{
+				const float Winkel = 360.f * k / Stuecke;
+				FVector Ort = Mitte + FRotator(0.f, Winkel, 0.f).Vector() * Radius;
+				// Boden unter dem Platz (Gelaende und Bauten)
+				FHitResult Boden;
+				FCollisionObjectQueryParams Statisch(ECC_WorldStatic);
+				if (World->LineTraceSingleByObjectType(Boden, Ort + FVector(0.f, 0.f, 4000.f), Ort - FVector(0.f, 0.f, 4000.f), Statisch))
+				{
+					Ort.Z = Boden.ImpactPoint.Z;
+				}
+				Ort.Z += Art->Hoehe;
+				// lange Seite tangential, damit der Ring geschlossen ist
+				const FTransform T(FRotator(0.f, Winkel + 90.f, 0.f), Ort);
+				if (AFGBuildable* Neu = Bau->BeginSpawnBuildable(Klasse, T))
+				{
+					Neu->SetBuiltWithRecipe(Rezept);
+					Neu->FinishSpawning(T);
+					FTDSpielbau Eintrag;
+					Eintrag.Klasse = Klasse->GetName();
+					Eintrag.Lage = T;
+					Eintrag.Actor = IsValid(Neu) && !Neu->GetIsLightweightTemporary() ? Neu : nullptr;
+					mSpielbau.Add(Eintrag);
+					++Gesetzt;
+				}
+			}
+		}
+		UE_LOG(LogFicsitTD, Log, TEXT("Autotest: Spielbau %s als Ring %.0f m, %d von %d Stuecken gesetzt%s"), *Wort, Radius / 100.f, Gesetzt, Stuecke,
+			bLuecke ? TEXT(", Luecke im Osten") : TEXT(""));
+		Ergebnis(TEXT("Spielbau"), S->HasField(TEXT("text")) ? S->GetStringField(TEXT("text")) : Wort, Gesetzt > 0,
+			!Art ? FString(TEXT("unbekannte Art (Wand, Fundament, Konstruktor)")) : !Kern ? FString(TEXT("kein Kern"))
+			: FString::Printf(TEXT("%d von %d Stuecken, Ring %.0f m%s"), Gesetzt, Stuecke, Radius / 100.f, bLuecke ? TEXT(", Luecke im Osten") : TEXT("")));
+		return true;
+	}
+	if (S->TryGetStringField(TEXT("entferne"), Wort))
+	{
+		// 0.13 K1: alles, was "spielbau" gesetzt hat, wieder entfernen (Lightweight ueber Klasse und Lage wie /td s0 abrissalle)
+		int32 Entfernt = 0;
+		const int32 Gesamt = mSpielbau.Num();
+		TArray<FLightweightBuildableInstanceRef> Ziele;
+		AFGLightweightBuildableSubsystem* Leicht = AFGLightweightBuildableSubsystem::Get(World);
+		for (const FTDSpielbau& E : mSpielbau)
+		{
+			// Actor (Maschine) abreissen; zusaetzlich nach einer Lightweight-Instanz an derselben Stelle suchen, falls der Bau
+			// nach FinishSpawning doch in eine Instanz umgewandelt wurde
+			if (AActor* A = E.Actor.Get())
+			{
+				A->Destroy();
+				++Entfernt;
+			}
+			if (!Leicht)
+			{
+				continue;
+			}
+			for (const TPair<TSubclassOf<AFGBuildable>, TArray<FRuntimeBuildableInstanceData>>& P : Leicht->GetAllLightweightBuildableInstances())
+			{
+				if (!P.Key || P.Key->GetName() != E.Klasse)
+				{
+					continue;
+				}
+				for (int32 i = 0; i < P.Value.Num(); ++i)
+				{
+					if (P.Value[i].IsValid() && P.Value[i].Transform.GetLocation().Equals(E.Lage.GetLocation(), 5.f))
+					{
+						FLightweightBuildableInstanceRef Ref;
+						Ref.Initialize(Leicht, P.Key, i);
+						Ziele.Add(Ref);
+					}
+				}
+			}
+		}
+		// erst sammeln, dann entfernen - Remove() aendert die Tabelle
+		for (FLightweightBuildableInstanceRef& Ref : Ziele)
+		{
+			Entfernt += Ref.IsValid() && Ref.Remove() ? 1 : 0;
+		}
+		Entfernt = FMath::Min(Entfernt, Gesamt);
+		mSpielbau.Reset();
+		UE_LOG(LogFicsitTD, Log, TEXT("Autotest: Spielbau entfernt, %d von %d Stuecken"), Entfernt, Gesamt);
+		Ergebnis(TEXT("Spielbau"), TEXT("entferne"), Entfernt == Gesamt && Gesamt > 0, FString::Printf(TEXT("%d von %d entfernt"), Entfernt, Gesamt));
+		return true;
+	}
 	if (S->HasField(TEXT("schadebau")))
 	{
 		// 0.9.8 P4: Turm beschaedigen (Anteil der Max-LP), fuer Feldreparatur und Bollwerk
@@ -2264,6 +2380,39 @@ bool UTDAutotest::Pruefe(UWorld* World, const TSharedPtr<FJsonObject>& S, FStrin
 		const bool bFern = TDPlattformAbrissGesperrtAn(World, Fundament, KernP->GetActorLocation() + FVector(10000.f, 0.f, 0.f));
 		OutIst = FString::Printf(TEXT("16 m: %s, 100 m: %s"), bNah ? TEXT("gesperrt") : TEXT("frei"), bFern ? TEXT("gesperrt") : TEXT("frei"));
 		return bNah && !bFern;
+	}
+	if (Name == TEXT("KernZugang"))
+	{
+		// 0.13 K1: Pruefung "Kern erreichbar" frisch rechnen. "soll": Frei, Durchbrechbar, Unpassierbar, NetzNichtBereit;
+		// optional "bau": true/false (ein Bau des Spielers als Sperre erkannt), "sperre": Teil des Anzeigenamens
+		UTDWaveSubsystem* WavesZ = World->GetSubsystem<UTDWaveSubsystem>();
+		if (!WavesZ)
+		{
+			OutIst = TEXT("kein Wellensystem");
+			return false;
+		}
+		const FTDKernZugang& Z = WavesZ->PruefeKernZugang(true);
+		OutIst = FString::Printf(TEXT("%s, Bau %s, Sperre %s (%s), %d Wegsuchen, %.2f ms"), UTDWaveSubsystem::KernZugangName(Z.Zustand), Z.bBau ? TEXT("ja") : TEXT("nein"),
+			Z.Sperre.IsEmpty() ? TEXT("-") : *Z.Sperre, *Z.SperreKlasse, Z.Wegsuchen, Z.Ms);
+		bool bOk = !S->HasField(TEXT("soll")) || S->GetStringField(TEXT("soll")) == UTDWaveSubsystem::KernZugangName(Z.Zustand);
+		if (S->HasField(TEXT("bau")))
+		{
+			bOk = bOk && S->GetBoolField(TEXT("bau")) == Z.bBau;
+		}
+		if (S->HasField(TEXT("sperre")))
+		{
+			bOk = bOk && (Z.Sperre.Contains(S->GetStringField(TEXT("sperre"))) || Z.SperreKlasse.Contains(S->GetStringField(TEXT("sperre"))));
+		}
+		return bOk;
+	}
+	if (Name == TEXT("WartetAufKernZugang"))
+	{
+		// 0.13 K1: haelt der Wellenstart gerade wegen Abriegelung? "soll": true/false (Standard true)
+		const UTDWaveSubsystem* WavesW = World->GetSubsystem<UTDWaveSubsystem>();
+		const bool bWartet = WavesW && WavesW->WartetAufKernZugang();
+		const bool bSoll = !S->HasField(TEXT("soll")) || S->GetBoolField(TEXT("soll"));
+		OutIst = bWartet ? (WavesW->GetKernZugang().Sperre.IsEmpty() ? FString(TEXT("wartet")) : TEXT("wartet, Sperre ") + WavesW->GetKernZugang().Sperre) : FString(TEXT("wartet nicht"));
+		return bWartet == bSoll;
 	}
 	if (Name == TEXT("LogEnthaelt"))
 	{

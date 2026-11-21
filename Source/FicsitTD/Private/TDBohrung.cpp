@@ -120,6 +120,27 @@ FString UTDWaveSubsystem::BohrPruefung(ATDDefenseCore* Kern, AFGResourceNode** O
 	}
 	// Wege wie beim Kernplatz pruefen und im Klartext sagen, was fehlt
 	FrontenFuer(Kern);
+	// 0.13 K1 (Marius 21.11.: in der Bohrung kein Ring, nur Wegpruefung beim Start): pruefen, ob ein Bau den Bohrer abriegelt - dann
+	// den Bau und die Stelle nennen und auf der Karte markieren. Bestehende Fabrik bleibt unberuehrt. Auch mit zwischengespeicherten
+	// gueltigen Fronten, denn die stammen evtl. von vor dem Zubauen. Ergebnis KernZugang.Haltezeit s gehalten (das Kern-Menue fragt oft).
+	if (TDBalance::Wert(TEXT("KernZugang.Aktiv"), 1.f) > 0.f)
+	{
+		const bool bNeu = FPlatformTime::Seconds() - mKernZugang.Zeit >= TDBalance::Wert(TEXT("KernZugang.Haltezeit"), 5.f) || mKernZugang.Front != 0;
+		if (bNeu)
+		{
+			mKernZugang = PruefeKernZugangVon(Kern, {}, true);
+		}
+		const FTDKernZugang& Z = mKernZugang;
+		if (Z.IstGesperrt() && Z.bBau)
+		{
+			MarkiereSperrstelle(true);
+			if (bNeu)
+			{
+				UE_LOG(LogFicsitTD, Log, TEXT("Bohrung: Bohrer abgeriegelt durch %s (%s), %d Wegsuchen, %.2f ms"), *Z.Sperre, *Z.SperreKlasse, Z.Wegsuchen, Z.Ms);
+			}
+			return KernZugangText(Z);
+		}
+	}
 	if (mGueltigeRichtungen <= 0)
 	{
 		return TDT(TEXT("Kein begehbarer Weg zum Bohrer: ringsum Klippen, Wasser oder Gebäude. Stell den Kern in offeneres Gelände oder räume einen Zugang frei (Wegvorschau: \"Wegvorschau an\")."),
