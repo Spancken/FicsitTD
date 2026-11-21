@@ -615,6 +615,43 @@ private:
 	TArray<TObjectPtr<class UTDStartKlick>> mKlicks;
 };
 
+/**
+ * 21.11. (Marius, C11): eigenes Fenster nach der Bosswelle - Kurzbericht der Phase und drei Bonus-Karten. Vorher gab es nur drei
+ * unauffaellige Knoepfe im Kern-Menue. "Spaeter waehlen" schliesst; die Wahl bleibt offen (Kern-Menue).
+ */
+UCLASS()
+class FICSITTD_API UTDBonusFenster : public UUserWidget
+{
+	GENERATED_BODY()
+public:
+	/** Welle der Bosswelle (fuer Kopfzeile und Bericht) */
+	int32 mWelle = 0;
+	bool mEndlos = false;
+	void Waehle(int32 Nr);
+	/** Fenster fuer den ersten Spieler oeffnen (Einsatz.Bonus.Fenster = 1) */
+	static void Zeige(UObject* Kontext, int32 Welle, bool bEndlos);
+protected:
+	virtual TSharedRef<SWidget> RebuildWidget() override;
+	virtual void NativeConstruct() override;
+	virtual void NativeDestruct() override;
+private:
+	UPROPERTY()
+	TArray<TObjectPtr<class UTDBonusKlick>> mKlicks;
+};
+
+/** Klick im Bonusfenster: Nr 0..2 = Bonus, -1 = spaeter */
+UCLASS()
+class FICSITTD_API UTDBonusKlick : public UObject
+{
+	GENERATED_BODY()
+public:
+	UPROPERTY()
+	TObjectPtr<UTDBonusFenster> mFenster;
+	int32 mNr = 0;
+	UFUNCTION()
+	void Klick() { if (mFenster) { mFenster->Waehle(mNr); } }
+};
+
 /** Klick im Startfenster: Art 0 = Modus, 1 = Stufe, 2 = Los */
 UCLASS()
 class FICSITTD_API UTDStartKlick : public UObject

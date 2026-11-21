@@ -1776,6 +1776,14 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		{
 			HUD->GetGameUI()->PopAllWidgets();
 		}
+		// 21.11. (C11): auch das Bonusfenster nach der Bosswelle ("spaeter waehlen")
+		for (TObjectIterator<UTDBonusFenster> It; It; ++It)
+		{
+			if (It->GetWorld() == World && It->IsInViewport())
+			{
+				It->Waehle(-1);
+			}
+		}
 		return true;
 	}
 	if (S->TryGetStringField(TEXT("foto"), Wort))

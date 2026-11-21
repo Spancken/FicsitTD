@@ -4381,3 +4381,191 @@ void UTDVorbereitung::Zeige()
 		mTitel->SetColorAndOpacity(FSlateColor(TDUI::Gut));
 	}
 }
+
+// ---------------------------------------------------------------------------------------------------------------
+// 21.11. (Marius, C11): Bonusfenster nach der Bosswelle
+// ---------------------------------------------------------------------------------------------------------------
+
+void UTDBonusFenster::Zeige(UObject* Kontext, int32 Welle, bool bEndlos)
+{
+	UWorld* World = Kontext ? Kontext->GetWorld() : nullptr;
+	APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
+	if (!PC || !PC->IsLocalController() || TDBalance::Wert(TEXT("Einsatz.Bonus.Fenster"), 1.f) < 1.f)
+	{
+		return;
+	}
+	UTDBonusFenster* Fenster = CreateWidget<UTDBonusFenster>(PC, UTDBonusFenster::StaticClass());
+	if (!Fenster)
+	{
+		return;
+	}
+	Fenster->mWelle = Welle;
+	Fenster->mEndlos = bEndlos;
+	Fenster->AddToViewport(60);
+	UE_LOG(LogFicsitTD, Log, TEXT("Bonusfenster: geoeffnet nach Bosswelle %d"), Welle);
+}
+
+TSharedRef<SWidget> UTDBonusFenster::RebuildWidget()
+{
+	if (WidgetTree && !WidgetTree->RootWidget)
+	{
+		UTDEinsatzSubsystem* Einsatz = GetWorld() ? GetWorld()->GetSubsystem<UTDEinsatzSubsystem>() : nullptr;
+		UCanvasPanel* Flaeche = WidgetTree->ConstructWidget<UCanvasPanel>();
+		WidgetTree->RootWidget = Flaeche;
+		UBorder* Dunkel = WidgetTree->ConstructWidget<UBorder>();
+		Dunkel->SetBrush(FSlateColorBrush(TDUI::C(0, 0, 0, 120)));
+		if (UCanvasPanelSlot* S = Flaeche->AddChildToCanvas(Dunkel))
+		{
+			S->SetAnchors(FAnchors(0.f, 0.f, 1.f, 1.f));
+			S->SetOffsets(FMargin(0.f));
+		}
+		UBorder* Fenster = WidgetTree->ConstructWidget<UBorder>();
+		Fenster->SetBrush(FSlateRoundedBoxBrush(TDUI::Fenster, 6.f));
+		Fenster->SetPadding(FMargin(0.f));
+		if (UCanvasPanelSlot* S = Flaeche->AddChildToCanvas(Fenster))
+		{
+			S->SetAnchors(FAnchors(0.5f, 0.5f));
+			S->SetAlignment(FVector2D(0.5f, 0.5f));
+			S->SetAutoSize(true);
+		}
+		USizeBox* Breite = WidgetTree->ConstructWidget<USizeBox>();
+		Breite->SetWidthOverride(980.f);
+		Fenster->AddChild(Breite);
+		UVerticalBox* Spalte = WidgetTree->ConstructWidget<UVerticalBox>();
+		Breite->AddChild(Spalte);
+
+		UBorder* Kopf = WidgetTree->ConstructWidget<UBorder>();
+		Kopf->SetBrush(FSlateRoundedBoxBrush(TDUI::Kopfleiste, 6.f));
+		Kopf->SetPadding(FMargin(20.f, 12.f));
+		Kopf->AddChild(TDUI::Text(WidgetTree, mEndlos
+			? TDF(TEXT("Bosswelle %d geschafft – wähle einen Bonus"), TEXT("Boss wave %d cleared – pick a bonus"), mWelle)
+			: TDF(TEXT("Phase %d geschafft – wähle einen Bonus"), TEXT("Phase %d complete – pick a bonus"), FMath::Max(1, mWelle / 10)), 22, TDUI::Hell, true));
+		Spalte->AddChildToVerticalBox(Kopf);
+
+		UVerticalBox* Inhalt = WidgetTree->ConstructWidget<UVerticalBox>();
+		if (UVerticalBoxSlot* S = Spalte->AddChildToVerticalBox(Inhalt))
+		{
+			S->SetPadding(FMargin(20.f, 14.f, 20.f, 20.f));
+		}
+		if (Einsatz && !mEndlos)
+		{
+			for (const FString& Zeile : Einsatz->PhasenBericht(FMath::Max(1, mWelle - 9), mWelle))
+			{
+				UTextBlock* T = TDUI::Text(WidgetTree, Zeile, 14, TDUI::C(210, 210, 210));
+				T->SetAutoWrapText(true);
+				Inhalt->AddChildToVerticalBox(T);
+			}
+		}
+		UTextBlock* Hinweis = TDUI::Text(WidgetTree, TDT(TEXT("Dazu gibt es einen Talentpunkt (Kern-Menü, Reiter Pionier)."), TEXT("You also get a Talent Point (Core Menu, Pioneer tab).")), 14, TDUI::Grau);
+		if (UVerticalBoxSlot* S = Inhalt->AddChildToVerticalBox(Hinweis))
+		{
+			S->SetPadding(FMargin(0.f, 8.f, 0.f, 0.f));
+		}
+
+		auto NeuerKlick = [this](UButton* Knopf, int32 Nr)
+		{
+			UTDBonusKlick* K = NewObject<UTDBonusKlick>(this);
+			K->mFenster = this;
+			K->mNr = Nr;
+			Knopf->OnClicked.AddDynamic(K, &UTDBonusKlick::Klick);
+			mKlicks.Add(K);
+		};
+		static const TCHAR* TexteDe[] = { TEXT("Sofort mehr Geld für Kontingente und Ausrüstung."), TEXT("Der Kern hält dauerhaft mehr aus."), TEXT("Mehr Forschung im MAM.") };
+		static const TCHAR* TexteEn[] = { TEXT("More money right away for quotas and gear."), TEXT("The Core permanently takes more damage."), TEXT("More research in the MAM.") };
+		UHorizontalBox* Karten = WidgetTree->ConstructWidget<UHorizontalBox>();
+		if (UVerticalBoxSlot* S = Inhalt->AddChildToVerticalBox(Karten))
+		{
+			S->SetPadding(FMargin(0.f, 14.f, 0.f, 0.f));
+		}
+		for (int32 Nr = 0; Nr < 3; ++Nr)
+		{
+			UButton* Knopf = WidgetTree->ConstructWidget<UButton>();
+			FButtonStyle Stil;
+			Stil.SetNormal(FSlateRoundedBoxBrush(TDUI::C(255, 255, 255, 14), 4.f));
+			Stil.SetHovered(FSlateRoundedBoxBrush(TDUI::C(250, 149, 73, 90), 4.f));
+			Stil.SetPressed(FSlateRoundedBoxBrush(TDUI::C(250, 149, 73, 150), 4.f));
+			Stil.SetNormalPadding(FMargin(0.f));
+			Stil.SetPressedPadding(FMargin(0.f));
+			Knopf->SetStyle(Stil);
+			UVerticalBox* Karte = WidgetTree->ConstructWidget<UVerticalBox>();
+			UTextBlock* Name = TDUI::Text(WidgetTree, UTDEinsatzSubsystem::EndlosBonusName(Nr), 20, TDUI::Hell, true);
+			Name->SetAutoWrapText(true);
+			Karte->AddChildToVerticalBox(Name);
+			UTextBlock* Text = TDUI::Text(WidgetTree, TDT(TexteDe[Nr], TexteEn[Nr]), 14, TDUI::C(210, 210, 210));
+			Text->SetAutoWrapText(true);
+			if (UVerticalBoxSlot* S = Karte->AddChildToVerticalBox(Text))
+			{
+				S->SetPadding(FMargin(0.f, 8.f, 0.f, 0.f));
+			}
+			UBorder* Feld = WidgetTree->ConstructWidget<UBorder>();
+			Feld->SetBrush(FSlateNoResource());
+			Feld->SetPadding(FMargin(16.f, 14.f));
+			USizeBox* Hoehe = WidgetTree->ConstructWidget<USizeBox>();
+			Hoehe->SetMinDesiredHeight(120.f);
+			Hoehe->AddChild(Karte);
+			Feld->AddChild(Hoehe);
+			Knopf->AddChild(Feld);
+			if (UHorizontalBoxSlot* S = Karten->AddChildToHorizontalBox(Knopf))
+			{
+				S->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
+				S->SetPadding(FMargin(0.f, 0.f, Nr < 2 ? 10.f : 0.f, 0.f));
+				S->SetVerticalAlignment(VAlign_Fill);
+			}
+			NeuerKlick(Knopf, Nr);
+		}
+		UButton* Spaeter = WidgetTree->ConstructWidget<UButton>();
+		FButtonStyle Grau;
+		Grau.SetNormal(FSlateRoundedBoxBrush(TDUI::C(255, 255, 255, 10), 4.f));
+		Grau.SetHovered(FSlateRoundedBoxBrush(TDUI::C(255, 255, 255, 30), 4.f));
+		Grau.SetPressed(FSlateRoundedBoxBrush(TDUI::C(255, 255, 255, 50), 4.f));
+		Spaeter->SetStyle(Grau);
+		Spaeter->AddChild(TDUI::Text(WidgetTree, TDT(TEXT("Später wählen (Kern-Menü)"), TEXT("Pick later (Core Menu)")), 14, TDUI::Grau));
+		if (UVerticalBoxSlot* S = Inhalt->AddChildToVerticalBox(Spaeter))
+		{
+			S->SetPadding(FMargin(0.f, 14.f, 0.f, 0.f));
+			S->SetHorizontalAlignment(HAlign_Right);
+		}
+		NeuerKlick(Spaeter, -1);
+	}
+	return Super::RebuildWidget();
+}
+
+void UTDBonusFenster::NativeConstruct()
+{
+	Super::NativeConstruct();
+	if (APlayerController* PC = GetOwningPlayer())
+	{
+		PC->SetShowMouseCursor(true);
+		FInputModeUIOnly Modus;
+		Modus.SetWidgetToFocus(TakeWidget());
+		Modus.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+		PC->SetInputMode(Modus);
+		PC->SetIgnoreLookInput(true);
+		PC->SetIgnoreMoveInput(true);
+	}
+}
+
+void UTDBonusFenster::NativeDestruct()
+{
+	if (APlayerController* PC = GetOwningPlayer())
+	{
+		PC->SetShowMouseCursor(false);
+		PC->SetInputMode(FInputModeGameOnly());
+		PC->ResetIgnoreLookInput();
+		PC->ResetIgnoreMoveInput();
+	}
+	Super::NativeDestruct();
+}
+
+void UTDBonusFenster::Waehle(int32 Nr)
+{
+	if (Nr >= 0)
+	{
+		if (UTDEinsatzSubsystem* Einsatz = GetWorld() ? GetWorld()->GetSubsystem<UTDEinsatzSubsystem>() : nullptr)
+		{
+			Einsatz->WaehleEndlosBonus(Nr);
+		}
+	}
+	UE_LOG(LogFicsitTD, Log, TEXT("Bonusfenster: %s"), Nr >= 0 ? *FString::Printf(TEXT("Bonus %d gewaehlt"), Nr) : TEXT("spaeter"));
+	RemoveFromParent();
+}

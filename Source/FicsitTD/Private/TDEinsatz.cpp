@@ -1857,7 +1857,24 @@ void UTDEinsatzSubsystem::AktualisiereToDo()
 		AFGRecipeManager* RezeptVerwaltung = AFGRecipeManager::Get(GetWorld());
 		UClass* ShopRezept = LoadClass<UFGRecipe>(nullptr, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_ResourceSinkShop.Recipe_ResourceSinkShop_C"));
 		const bool bShopAufgabe = !mFrei && !TDShop::ShopSteht(this) && RezeptVerwaltung && ShopRezept && RezeptVerwaltung->IsRecipeAvailable(ShopRezept);
-		mHudZeile = bShopAufgabe ? TDT(TEXT("AUFGABE: Baue den AWESOME-Shop (kostenlos) - dort kaufst du ab jetzt"), TEXT("TASK: Build the AWESOME Shop (free) - buy there from now on"))
+		// 0.12 E5 (Marius 14.11.: Einstieg Kern -> MAM -> Shop): nach Welle 1 die Aufgabe MAM, solange keins steht
+		const int32 Geschafft = Waves ? (Waves->LaeuftWelle() ? Waves->GetWelle() - 1 : Waves->GetWelle()) : 0;
+		bool bMamSteht = false;
+		for (TActorIterator<AFGBuildableMAM> It(GetWorld()); It; ++It)
+		{
+			bMamSteht = true;
+			break;
+		}
+		const bool bMamAufgabe = !mFrei && !bMamSteht && Geschafft >= 1;
+		if (bMamAufgabe && !mMamGemeldet)
+		{
+			mMamGemeldet = true;
+			UE_LOG(LogFicsitTD, Log, TEXT("Einstieg: Aufgabe MAM nach Welle %d"), Geschafft);
+			Melde(TDT(TEXT("AUFGABE: Baue das MAM (kostenlos, Baumenü Spezial). Dort setzt du Festplatten für neue Technik ein."),
+				TEXT("TASK: Build the MAM (free, build menu Special). Spend Hard Drives there on new technology.")));
+		}
+		mHudZeile = bMamAufgabe ? TDT(TEXT("AUFGABE: Baue das MAM (kostenlos) - dort setzt du Festplatten ein"), TEXT("TASK: Build the MAM (free) - spend Hard Drives there"))
+			: bShopAufgabe ? TDT(TEXT("AUFGABE: Baue den AWESOME-Shop (kostenlos) - dort kaufst du ab jetzt"), TEXT("TASK: Build the AWESOME Shop (free) - buy there from now on"))
 			: Block[3];
 	}
 	else
@@ -2424,6 +2441,8 @@ void UTDEinsatzSubsystem::BieteEndlosBonusAn(int32 Welle)
 	UE_LOG(LogFicsitTD, Log, TEXT("%s: Bonuswahl nach Bosswelle %d angeboten"), bEndlos ? TEXT("Endlos") : TEXT("Einsatz"), Welle);
 	// 21.11. (Marius, C10 "1 je Boss"): jede geschaffte Bosswelle bringt Talentpunkte, Rang nur noch Boni
 	UTDPionier::BossGeschafft(this, Welle);
+	// 21.11. (Marius, C11): eigenes Fenster mit Bericht und drei Karten (die Knoepfe im Kern-Menue bleiben fuer "spaeter")
+	UTDBonusFenster::Zeige(this, Welle, bEndlos);
 	Melde(bEndlos ? TDF(TEXT("Bosswelle %d geschafft! Lange Pause - wähle im Kern-Menü (E am Kern) einen Bonus: %s, %s oder %s."),
 		TEXT("Boss wave %d done! Long break - pick a bonus in the Core Menu (E at the Core): %s, %s or %s."), Welle,
 		*EndlosBonusName(0), *EndlosBonusName(1), *EndlosBonusName(2))

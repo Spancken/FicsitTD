@@ -291,6 +291,8 @@ private:
 	TWeakObjectPtr<ATDDefenseCore> mKern;
 	/** 21.11. (C15): zweite HUD-Zeile, gesetzt in AktualisiereToDo */
 	FString mHudZeile;
+	/** 0.12 E5: Aufgabe MAM einmal je Sitzung im Chat */
+	bool mMamGemeldet = false;
 	bool mAktiv = false;
 	bool mFrei = false;
 	TMap<FString, int32> mBelegt;
