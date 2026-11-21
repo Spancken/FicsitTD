@@ -78,6 +78,20 @@ public:
 	UTDCDAbrissSperre();
 };
 
+/** 21.11. (Marius, A5 Nr. 6): Abriss abgelehnt - Fundament oder Rampe der Kernplattform im Einsatz (ohne Rampen erreicht kein Gegner den Kern) */
+UCLASS()
+class FICSITTD_API UTDCDPlattform : public UFGConstructDisqualifier
+{
+	GENERATED_BODY()
+public:
+	UTDCDPlattform();
+};
+
+/** Fundament oder Rampe der Kernplattform bei aktivem Einsatz (Einsatz.Plattform.AbrissSperren) */
+FICSITTD_API bool TDPlattformAbrissGesperrt(const AActor* Bau);
+/** Dieselbe Pruefung fuer Klasse und Ort (Selbsttest ohne Actor) */
+FICSITTD_API bool TDPlattformAbrissGesperrtAn(UWorld* World, const UClass* Klasse, const FVector& Ort);
+
 /** Bau abgelehnt: im Verteidigungsfeld waehrend einer Welle (Einsatz-Konzept Abschnitt 2) */
 UCLASS()
 class FICSITTD_API UTDCDWellenSperre : public UFGConstructDisqualifier

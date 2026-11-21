@@ -552,13 +552,16 @@ EExecutionStatus ATDDebugCommand::ExecuteCommand_Implementation(UCommandSender* 
 		}
 		if (Was == TEXT("platz"))
 		{
-			// naechster fester Rohstoffknoten zum Spieler, Kern 12 m daneben auf ebenem Boden
+			// naechster fester Rohstoffknoten zum Spieler, Kern 12 m daneben auf ebenem Boden.
+			// 21.11. (T1-6: je nach Landestelle SAM in 133 m Tiefe oder Kalkstein am Hang): "/td bohrung platz X Y" sucht ab diesem Punkt
+			const bool bOrt = Arguments.Num() > 3 && Arguments[2].IsNumeric() && Arguments[3].IsNumeric();
+			const FVector Bezug = bOrt ? FVector(FCString::Atof(*Arguments[2]), FCString::Atof(*Arguments[3]), 0.f) : (Pawn ? Pawn->GetActorLocation() : FVector::ZeroVector);
 			AFGResourceNode* Knoten = nullptr;
 			float Best = TNumericLimits<float>::Max();
 			for (TActorIterator<AFGResourceNode> It(GetWorld()); It; ++It)
 			{
 				const TSubclassOf<UFGResourceDescriptor> Art = It->GetResourceClass();
-				const float D = Pawn ? FVector::DistSquared(It->GetActorLocation(), Pawn->GetActorLocation()) : 0.f;
+				const float D = bOrt ? FVector::DistSquared2D(It->GetActorLocation(), Bezug) : Pawn ? FVector::DistSquared(It->GetActorLocation(), Bezug) : 0.f;
 				// 16.11. (Fenster B1: Testkern stand an einem Kalkstein-Brocken, die Bohrung lehnte ab): dieselbe Regel wie die Bohrung -
 				// nur echte Knoten, keine Rohstoffbrocken
 				if (Art && UFGItemDescriptor::GetForm(Art) == EResourceForm::RF_SOLID && !It->IsA<AFGResourceDeposit>() && D < Best)

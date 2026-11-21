@@ -7,6 +7,8 @@
 #include "FGInventoryComponent.h"
 #include "Buildables/FGBuildableResourceSinkShop.h"
 #include "Patching/NativeHookManager.h"
+#include "TDEinsatz.h"
+#include "Engine/World.h"
 #include "ItemAmount.h"
 
 // 0.12 Etappe E1, Shop-Prototyp (Fahrplan-0.12 Abschnitt 4, Bericht A2 Abschnitt 5.3). Fuenf Fragen an das Spiel, alle als Logzeile
@@ -255,6 +257,109 @@ static void TDShopNachListe(const TCHAR* Funktion, bool bShop, int32 Eintraege, 
 	{
 		TDShopMeldeListe(Funktion, Eintraege, Eigene);
 	}
+}
+
+// ---- 21.11. (Marius, A5 Nr. 1 "alles gesperrt"): Artikel des Spiels im Einsatz und Endlos ausblenden und nicht verkaufen ----
+// Anlass Fenster 1 (T1-3): Der Shop bot im Einsatz Fundamente und Waende an, obwohl der Spieler keine Bauteil-Rezepte hat.
+
+static bool TDShopIstEigener(const UClass* Schematic)
+{
+	return Schematic && Schematic->GetPathName().StartsWith(TEXT("/FicsitTD/"));
+}
+
+bool TDShop::SpielArtikelGesperrt(const UObject* Kontext)
+{
+	const UWorld* World = Kontext ? Kontext->GetWorld() : nullptr;
+	const UTDEinsatzSubsystem* Einsatz = World ? World->GetSubsystem<UTDEinsatzSubsystem>() : nullptr;
+	return Einsatz && Einsatz->IstAktiv() && TDBalance::Wert(TEXT("Einsatz.Shop.SpielArtikelSperren"), 1.f) >= 1.f;
+}
+
+/** Zahl der ausgeblendeten Artikel nur melden, wenn sie sich aendert (das Fenster fragt bei jedem Oeffnen) */
+static void TDShopMeldeSperre(int32 Weg, int32 Bleiben)
+{
+	static int32 Zuletzt = -1;
+	if (Weg != Zuletzt)
+	{
+		Zuletzt = Weg;
+		UE_LOG(LogFicsitTD, Log, TEXT("Shop: %d Artikel des Spiels im Einsatz ausgeblendet, %d des Mods sichtbar"), Weg, Bleiben);
+	}
+}
+
+static void TDShopFilterKategorien(AFGSchematicManager* Self, ESchematicType Typ, TArray<FSchematicCategoryData>& Daten)
+{
+	if (Typ != ESchematicType::EST_ResourceSink || !TDShop::SpielArtikelGesperrt(Self))
+	{
+		return;
+	}
+	int32 Weg = 0, Bleiben = 0;
+	for (FSchematicCategoryData& Kategorie : Daten)
+	{
+		for (FSchematicSubCategoryData& Unter : Kategorie.SchematicSubCategoryData)
+		{
+			Weg += Unter.Schematics.RemoveAll([](const TSubclassOf<UFGSchematic>& S) { return !TDShopIstEigener(S.Get()); });
+			Bleiben += Unter.Schematics.Num();
+		}
+		Kategorie.SchematicSubCategoryData.RemoveAll([](const FSchematicSubCategoryData& U) { return U.Schematics.Num() == 0; });
+	}
+	Daten.RemoveAll([](const FSchematicCategoryData& K) { return K.SchematicSubCategoryData.Num() == 0; });
+	TDShopMeldeSperre(Weg, Bleiben);
+}
+
+static void TDShopFilterListe(const AFGSchematicManager* Self, ESchematicType Typ, FTDShopListe& Liste)
+{
+	if (Typ == ESchematicType::EST_ResourceSink && TDShop::SpielArtikelGesperrt(Self))
+	{
+		Liste.RemoveAll([](const TSubclassOf<UFGSchematic>& S) { return !TDShopIstEigener(S.Get()); });
+	}
+}
+
+/** true = Kauf ablehnen (ein Artikel des Spiels im Korb, z. B. aus einem alten Korb oder per Blueprint) */
+static bool TDShopKaufGesperrt(AFGBuildableResourceSinkShop* Self, const FTDShopListe& Liste)
+{
+	if (!TDShop::SpielArtikelGesperrt(Self))
+	{
+		return false;
+	}
+	for (const TSubclassOf<UFGSchematic>& S : Liste)
+	{
+		if (!TDShopIstEigener(S.Get()))
+		{
+			UE_LOG(LogFicsitTD, Log, TEXT("Shop: Kauf abgelehnt - %s ist ein Artikel des Spiels, im Einsatz gesperrt"), S ? *S->GetName() : TEXT("?"));
+			return true;
+		}
+	}
+	return false;
+}
+
+void TDShop::RichteSperreEin()
+{
+#if !WITH_EDITOR
+	static bool bEingerichtet = false;
+	if (bEingerichtet)
+	{
+		return;
+	}
+	bEingerichtet = true;
+	UE_LOG(LogFicsitTD, Log, TEXT("Shop: Sperre der Spiel-Artikel im Einsatz eingerichtet (drei Hooks)"));
+	SUBSCRIBE_METHOD_AFTER(AFGSchematicManager::GetVisibleSchematicCategoryData,
+		[](AFGSchematicManager* Self, ESchematicType Typ, TArray<FSchematicCategoryData>& Daten)
+	{
+		TDShopFilterKategorien(Self, Typ, Daten);
+	});
+	SUBSCRIBE_METHOD_AFTER(AFGSchematicManager::GetAllVisibleSchematicsOfType,
+		[](const AFGSchematicManager* Self, ESchematicType Typ, FTDShopListe& Liste)
+	{
+		TDShopFilterListe(Self, Typ, Liste);
+	});
+	SUBSCRIBE_METHOD(AFGBuildableResourceSinkShop::PurchaseResourceSinkSchematics,
+		[](auto& Scope, AFGBuildableResourceSinkShop* Self, UFGInventoryComponent* Inventar, FTDShopListe Liste)
+	{
+		if (TDShopKaufGesperrt(Self, Liste))
+		{
+			Scope.Override(false);
+		}
+	});
+#endif
 }
 
 void TDShop::StelleHooksSicher()

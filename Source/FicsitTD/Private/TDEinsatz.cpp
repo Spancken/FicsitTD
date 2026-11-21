@@ -41,6 +41,7 @@
 #include "Buildables/FGBuildablePipelineJunction.h"
 #include "Buildables/FGBuildableTradingPost.h"
 #include "Buildables/FGBuildableMAM.h"
+#include "Buildables/FGBuildableFoundation.h"
 #include "EngineUtils.h"
 #include "Engine/World.h"
 #include "FGCharacterPlayer.h"
@@ -352,6 +353,33 @@ void TDAbrissSperreGruende(const AActor* Bau, TArray<TSubclassOf<UFGConstructDis
 	}
 }
 
+static FText TDTextPlattform() { return TDTX(TEXT("Die Kernplattform lässt sich im Einsatz nicht abreißen"), TEXT("The Core platform cannot be dismantled during an operation")); }
+
+UTDCDPlattform::UTDCDPlattform()
+{
+	mDisqfualifyingText = TDTextPlattform();
+}
+
+bool TDPlattformAbrissGesperrt(const AActor* Bau)
+{
+	// 21.11. (Marius, A5 Nr. 6; Fenster 1: ohne die 28 Rampen 0 von 16 Richtungen begehbar). Die Plattform besteht aus
+	// Spiel-Fundamenten und -Rampen (Lightweight); zum Abreissen erzeugt das Spiel kurz einen Actor dieser Klasse an ihrem Ort.
+	return Bau && TDPlattformAbrissGesperrtAn(Bau->GetWorld(), Bau->GetClass(), Bau->GetActorLocation());
+}
+
+bool TDPlattformAbrissGesperrtAn(UWorld* World, const UClass* Klasse, const FVector& Ort)
+{
+	const UTDEinsatzSubsystem* Einsatz = World ? World->GetSubsystem<UTDEinsatzSubsystem>() : nullptr;
+	const ATDDefenseCore* Kern = Einsatz && Einsatz->IstAktiv() ? Einsatz->GetKern() : nullptr;
+	if (!Kern || !Klasse || !Klasse->IsChildOf(AFGBuildableFoundation::StaticClass()) || TDBalance::Wert(TEXT("Einsatz.Plattform.AbrissSperren"), 1.f) < 1.f)
+	{
+		return false;
+	}
+	// 6 x 6 Fundamente (48 m) plus Rampenring und Ecken: bis 36 m von der Kernmitte, hoechstens 12 m Hoehenunterschied
+	const FVector D = Ort - Kern->GetActorLocation();
+	return FVector2D(D.X, D.Y).Size() <= TDBalance::Wert(TEXT("Einsatz.Plattform.Radius"), 3600.f) && FMath::Abs(D.Z) <= 1200.f;
+}
+
 UTDCDWellenSperre::UTDCDWellenSperre()
 {
 	mDisqfualifyingText = TDTextWellenSperre();
@@ -376,6 +404,7 @@ static void TDAktualisiereSperrTexte()
 	Feld->SetPropertyValue_InContainer(GetMutableDefault<UTDCDWellenSperre>(), TDTextWellenSperre());
 	Feld->SetPropertyValue_InContainer(GetMutableDefault<UTDCDAbrissSperre>(), TDTextAbrissSperre());
 	Feld->SetPropertyValue_InContainer(GetMutableDefault<UTDCDBlaupause>(), TDTextBlaupause());
+	Feld->SetPropertyValue_InContainer(GetMutableDefault<UTDCDPlattform>(), TDTextPlattform());
 }
 
 bool UTDEinsatzSubsystem::IstLogistik(const UClass* BauKlasse)
@@ -2212,6 +2241,8 @@ void UTDEinsatzSubsystem::BieteEndlosBonusAn(int32 Welle)
 	const UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
 	const bool bEndlos = Waves && Waves->IstEndlos();
 	UE_LOG(LogFicsitTD, Log, TEXT("%s: Bonuswahl nach Bosswelle %d angeboten"), bEndlos ? TEXT("Endlos") : TEXT("Einsatz"), Welle);
+	// 21.11. (Marius, C10 "1 je Boss"): jede geschaffte Bosswelle bringt Talentpunkte, Rang nur noch Boni
+	UTDPionier::BossGeschafft(this, Welle);
 	Melde(bEndlos ? TDF(TEXT("Bosswelle %d geschafft! Lange Pause - wähle im Kern-Menü (E am Kern) einen Bonus: %s, %s oder %s."),
 		TEXT("Boss wave %d done! Long break - pick a bonus in the Core Menu (E at the Core): %s, %s or %s."), Welle,
 		*EndlosBonusName(0), *EndlosBonusName(1), *EndlosBonusName(2))

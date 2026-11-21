@@ -1488,11 +1488,18 @@ void UTDKernTerminal::BauePionier()
 	Abschnitt(NeuerText(bMax ? TDF(TEXT("%d XP, Höchstrang erreicht"), TEXT("%d XP, max rank reached"), XP)
 		: TDF(TEXT("%d / %d XP bis Rang %d"), TEXT("%d / %d XP to rank %d"), XP, Bis, Rang + 1), 13, TDUI::Grau), 4.f);
 	// 0.9.8 P3: XP vor allem fuer eigene Leistung, hoechstens 15 Punkte, Rangboni ohne Punkte
-	UTextBlock* Info = NeuerText(TDF(TEXT("XP gibt es für deinen Anteil am Wellenschaden, für Abschüsse (normal 3, Elite 10, Boss 50), Assists und reparierte LP, dazu etwas für jede abgewehrte Welle. "
+	// 21.11. (Marius, C10): Talentpunkte nur aus Bosswellen und Bohrung, der Rang bringt die Boni
+	UTextBlock* Info = UTDPionier::TalenteAusRang()
+		? NeuerText(TDF(TEXT("XP gibt es für deinen Anteil am Wellenschaden, für Abschüsse (normal 3, Elite 10, Boss 50), Assists und reparierte LP, dazu etwas für jede abgewehrte Welle. "
 		"Jeder Rang bringt einen Talentpunkt, höchstens %d: Wähle zwei Rollen ganz oder drei zur Hälfte. Alle 3 Ränge: +10 LP und +3 %% Lauftempo (jetzt +%d LP). Rang und Talente gehören zum Spielstand."),
 		TEXT("You earn XP for your share of the wave damage, for kills (normal 3, Elite 10, Boss 50), assists and repaired HP, plus a little for every repelled wave. "
 		"Each rank gives one Talent Point, at most %d: pick two roles in full or three halfway. Every 3 ranks: +10 HP and +3 %% walk speed (now +%d HP). Rank and talents belong to the save."),
-		FMath::Min(UTDPionier::MaxRang() - 1, TDBalance::Ganz(TEXT("Pionier.MaxPunkte"), 15)), 10 * P->RangBoni()), 13, TDUI::Grau);
+		FMath::Min(UTDPionier::MaxRang() - 1, TDBalance::Ganz(TEXT("Pionier.MaxPunkte"), 15)), 10 * P->RangBoni()), 13, TDUI::Grau)
+		: NeuerText(TDF(TEXT("Talentpunkte gibt es für jede geschaffte Bosswelle und für Erfolge in der Bohrung, höchstens %d. Wähle mit Bedacht: Im Einsatz kommen nur wenige. "
+		"XP gibt es für deinen Anteil am Wellenschaden, für Abschüsse, Assists und reparierte LP. Alle 3 Ränge: +10 LP und +3 %% Lauftempo (jetzt +%d LP). Rang und Talente gehören zum Spielstand."),
+		TEXT("You get a Talent Point for every boss wave you clear and for drilling successes, at most %d. Choose carefully: an operation gives only a few. "
+		"You earn XP for your share of the wave damage, for kills, assists and repaired HP. Every 3 ranks: +10 HP and +3 %% walk speed (now +%d HP). Rank and talents belong to the save."),
+		TDBalance::Ganz(TEXT("Pionier.MaxPunkte"), 15), 10 * P->RangBoni()), 13, TDUI::Grau);
 	Info->SetAutoWrapText(true);
 	Abschnitt(Info, 14.f);
 

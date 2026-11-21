@@ -1,0 +1,72 @@
+{
+  "Name": "Sperren-1121",
+  "_Hinweis": "21.11. (Marius, A5 Nr. 1 und 6): Im Einsatz blendet der AWESOME-Shop die Artikel des Spiels aus (Fundamente, Waende, Fabrikwagen ...), und die Fundamente und Rampen der Kernplattform lassen sich nicht abreissen. Foto des offenen Shops zeigen: keine Spiel-Artikel.",
+  "NeuesSpiel": {
+    "Startort": "Grass Fields",
+    "Modus": 1
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 8,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warteBis": "EinsatzAktiv",
+      "max": 120
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Shop: Sperre der Spiel-Artikel im Einsatz eingerichtet",
+      "min": 1,
+      "text": "Hooks der Shop-Sperre eingerichtet"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Abriss: Sperre der Kernplattform eingerichtet",
+      "min": 1,
+      "text": "Hooks der Abrisssperre eingerichtet"
+    },
+    {
+      "pruefe": "PlattformAbriss",
+      "text": "Fundament am Kern gesperrt, 100 m daneben frei"
+    },
+    {
+      "gib": "/Game/FactoryGame/Resource/Parts/ResourceSinkCoupon/Desc_ResourceSinkCoupon.Desc_ResourceSinkCoupon_C",
+      "anzahl": 20
+    },
+    {
+      "baue": "Shop",
+      "klasse": "/Game/FactoryGame/Buildable/Factory/ResourceSinkShop/Build_ResourceSinkShop.Build_ResourceSinkShop_C",
+      "baurezept": "/Game/FactoryGame/Recipes/Buildings/Recipe_ResourceSinkShop.Recipe_ResourceSinkShop_C"
+    },
+    {
+      "warte": 3
+    },
+    {
+      "oeffne": "Shop"
+    },
+    {
+      "warte": 3
+    },
+    {
+      "foto": "ShopSperre_offen"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Artikel des Spiels im Einsatz ausgeblendet",
+      "min": 1,
+      "text": "Spiel-Artikel ausgeblendet (Zahl in der Zeile)"
+    },
+    {
+      "schliesse": true
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}

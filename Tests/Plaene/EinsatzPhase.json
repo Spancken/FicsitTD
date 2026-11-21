@@ -25,6 +25,7 @@
     { "zeitraffer": 1 },
     { "pruefe": "LogEnthaelt", "suche": "Phasenabschluss 1:", "min": 1, "text": "Kurzbericht nach Phase 1" },
     { "pruefe": "LogEnthaelt", "suche": "Einsatz: Bonuswahl nach Bosswelle 10", "min": 1, "max": 1, "text": "Bonuswahl im Einsatz angeboten" },
+    { "pruefe": "LogEnthaelt", "suche": "Pionier: Bosswelle 10 geschafft, +1 Talentpunkt", "min": 1, "max": 1, "text": "21.11. (C10): Bosswelle bringt einen Talentpunkt" },
     { "oeffne": "Kern" },
     { "warte": 2 },
     { "foto": "Phasenabschluss_Bonus" },

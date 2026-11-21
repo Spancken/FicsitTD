@@ -63,4 +63,8 @@ namespace TDShop
 	FICSITTD_API void SetzeZurueck();
 	/** Hooks des Prototyps einmal einrichten - nur wenn der Schalter an ist. Ohne Schalter bleibt das Spiel unberuehrt. */
 	FICSITTD_API void StelleHooksSicher();
+	/** 21.11. (A5 Nr. 1): Artikel des Spiels im Einsatz und Endlos aus der Shop-Liste nehmen und ihren Kauf ablehnen (immer aktiv) */
+	FICSITTD_API void RichteSperreEin();
+	/** Einsatz oder Endlos aktiv und Einsatz.Shop.SpielArtikelSperren >= 1 */
+	FICSITTD_API bool SpielArtikelGesperrt(const UObject* Kontext);
 }

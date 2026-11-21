@@ -195,9 +195,32 @@ int32 UTDPionier::FreiePunkte() const
 		Vergeben += GetStufe(i);
 	}
 	const ATDDefenseCore* K = Kern();
-	// 16.11. (Nachpruefung F8, Marius): Rang und Bohrung zusammen hoechstens 15 Punkte - die Bohrung bringt sie nur frueher
-	const int32 Gesamt = FMath::Min(GetRang() - 1 + (K ? K->mPionierBonusPunkte : 0), TDBalance::Ganz(TEXT("Pionier.MaxPunkte"), 15));
+	// 16.11. (Nachpruefung F8, Marius): hoechstens 15 Punkte.
+	// 21.11. (Marius, C10 "1 je Boss"): Talentpunkte nur noch aus Bosswellen und Bohrung (mPionierBonusPunkte); der Rang
+	// bringt nur seine Boni. Pionier.TalenteAusRang = 1 stellt die alte Regel wieder her.
+	const int32 AusRang = TalenteAusRang() ? GetRang() - 1 : 0;
+	const int32 Gesamt = FMath::Min(AusRang + (K ? K->mPionierBonusPunkte : 0), TDBalance::Ganz(TEXT("Pionier.MaxPunkte"), 15));
 	return FMath::Max(0, Gesamt - Vergeben);
+}
+
+bool UTDPionier::TalenteAusRang()
+{
+	return TDBalance::Wert(TEXT("Pionier.TalenteAusRang"), 0.f) >= 1.f;
+}
+
+void UTDPionier::BossGeschafft(const UObject* Kontext, int32 Welle)
+{
+	UTDPionier* P = Kontext ? Get(Kontext) : nullptr;
+	ATDDefenseCore* K = P ? P->Kern() : nullptr;
+	const int32 Punkte = TDBalance::Ganz(TEXT("Pionier.PunkteJeBoss"), 1);
+	if (!K || Punkte <= 0)
+	{
+		return;
+	}
+	K->mPionierBonusPunkte += Punkte;
+	UE_LOG(LogFicsitTD, Log, TEXT("Pionier: Bosswelle %d geschafft, +%d Talentpunkt, jetzt %d frei (Bonuspunkte %d)"), Welle, Punkte, P->FreiePunkte(), K->mPionierBonusPunkte);
+	P->Melde(TDF(TEXT("Bosswelle geschafft: +%d Talentpunkt (%d frei, Kern-Menü, Reiter Pionier)."), TEXT("Boss wave cleared: +%d Talent Point (%d free, Core Menu, Pioneer tab)."),
+		Punkte, P->FreiePunkte()));
 }
 
 FString UTDPionier::Lerne(int32 Zweig)
@@ -215,7 +238,8 @@ FString UTDPionier::Lerne(int32 Zweig)
 	}
 	if (FreiePunkte() <= 0)
 	{
-		return TDT(TEXT("Kein Talentpunkt frei. Nächster Rang bringt einen."), TEXT("No Talent Point free. The next rank gives you one."));
+		return TalenteAusRang() ? TDT(TEXT("Kein Talentpunkt frei. Nächster Rang bringt einen."), TEXT("No Talent Point free. The next rank gives you one."))
+			: TDT(TEXT("Kein Talentpunkt frei. Die nächste Bosswelle bringt einen."), TEXT("No Talent Point free. The next boss wave gives you one."));
 	}
 	K->mTalente.FindOrAdd(Z.Key) = Stufe + 1;
 	UE_LOG(LogFicsitTD, Log, TEXT("Pionier: Talent %s Stufe %d (%s), Rang %d"), Z.Key, Stufe + 1, TDZweigeDe()[Zweig].Stufen[Stufe], GetRang());
@@ -317,10 +341,14 @@ void UTDPionier::GibXP(int32 XP, const FString& Grund)
 	const int32 Vorher = GetRang();
 	K->mPionierXP += XP;
 	const int32 Nachher = GetRang();
-	if (Nachher > Vorher)
+	if (Nachher > Vorher && TalenteAusRang())
 	{
 		Melde(TDF(TEXT("Rang %d erreicht! %d Talentpunkt%s frei: Kern-Menü, Reiter Pionier."), TEXT("Rank %d reached! %d Talent Point%s free: Core Menu, Pioneer tab."),
 			Nachher, FreiePunkte(), FreiePunkte() == 1 ? TEXT("") : *TDT(TEXT("e"), TEXT("s"))));
+	}
+	else if (Nachher > Vorher)
+	{
+		Melde(TDF(TEXT("Rang %d erreicht!"), TEXT("Rank %d reached!"), Nachher));
 	}
 	UE_LOG(LogFicsitTD, Verbose, TEXT("Pionier: +%d XP (%s), %d XP, Rang %d"), XP, *Grund, K->mPionierXP, Nachher);
 }

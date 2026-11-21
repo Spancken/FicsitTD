@@ -2239,6 +2239,22 @@ bool UTDAutotest::Pruefe(UWorld* World, const TSharedPtr<FJsonObject>& S, FStrin
 		OutIst = TDNetz::Text(&Summe);
 		return Summe == 0;
 	}
+	if (Name == TEXT("PlattformAbriss"))
+	{
+		// 21.11. (Marius, A5 Nr. 6): Fundament 16 m neben dem Kern gesperrt, 100 m daneben frei (Logik ohne Bau-Pistole)
+		UClass* Fundament = LoadClass<AActor>(nullptr, TEXT("/Game/FactoryGame/Buildable/Building/Foundation/Build_Foundation_8x4_01.Build_Foundation_8x4_01_C"));
+		const UTDEinsatzSubsystem* EinsatzP = World->GetSubsystem<UTDEinsatzSubsystem>();
+		const ATDDefenseCore* KernP = EinsatzP ? EinsatzP->GetKern() : nullptr;
+		if (!Fundament || !KernP)
+		{
+			OutIst = TEXT("kein Kern oder keine Fundamentklasse");
+			return false;
+		}
+		const bool bNah = TDPlattformAbrissGesperrtAn(World, Fundament, KernP->GetActorLocation() + FVector(1600.f, 0.f, 0.f));
+		const bool bFern = TDPlattformAbrissGesperrtAn(World, Fundament, KernP->GetActorLocation() + FVector(10000.f, 0.f, 0.f));
+		OutIst = FString::Printf(TEXT("16 m: %s, 100 m: %s"), bNah ? TEXT("gesperrt") : TEXT("frei"), bFern ? TEXT("gesperrt") : TEXT("frei"));
+		return bNah && !bFern;
+	}
 	if (Name == TEXT("LogEnthaelt"))
 	{
 		// 0.10.1: kommt der Text im Log dieses Plans vor? "suche", "min" (Standard 1), optional "max"

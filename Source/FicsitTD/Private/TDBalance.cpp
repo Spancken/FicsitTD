@@ -264,6 +264,10 @@ namespace TDBalanceIntern
 		// 21.11. (C14): Zuender ab Caterium mit 10 Nobelisken, Nobelisken zum Nachkaufen (5 je Kauf, +20 % je Kauf)
 		{ TEXT("Einsatz.Laden.Nobelisken-Zünder.Beigabe"), 10.f },
 		{ TEXT("Einsatz.Laden.Nobelisken.Grundpreis"), 5.f }, { TEXT("Einsatz.Laden.Nobelisken.Aufschlag"), 0.2f }, { TEXT("Einsatz.Laden.Nobelisken.Paket"), 5.f }, { TEXT("Einsatz.Laden.Nobelisken.Max"), 0.f },
+		// 21.11. (Marius, A5 Nr. 1): Artikel des Spiels im AWESOME-Shop bei aktivem Einsatz/Endlos ausblenden und nicht verkaufen (1 = an)
+		{ TEXT("Einsatz.Shop.SpielArtikelSperren"), 1.f },
+		// 21.11. (Marius, A5 Nr. 6): Fundamente und Rampen der Kernplattform im Einsatz nicht abreissbar (1 = an)
+		{ TEXT("Einsatz.Plattform.AbrissSperren"), 1.f }, { TEXT("Einsatz.Plattform.Radius"), 3600.f },   // cm um die Kernmitte
 		{ TEXT("Einsatz.Laden.Treibstoffkraftwerk.Grundpreis"), 8.f }, { TEXT("Einsatz.Laden.Treibstoffkraftwerk.Aufschlag"), 0.4f }, { TEXT("Einsatz.Laden.Treibstoffkraftwerk.Paket"), 1.f },
 		// 0.9.1 Endgame-Konzept: spaete Maschinen (Schwerindustrie W25, Mischtechnik W35), Fluessigkeitspuffer mit der Raffinerie
 		{ TEXT("Einsatz.Laden.Fluessigkeitspuffer.Grundpreis"), 3.f }, { TEXT("Einsatz.Laden.Fluessigkeitspuffer.Aufschlag"), 0.3f }, { TEXT("Einsatz.Laden.Fluessigkeitspuffer.Paket"), 1.f },
@@ -339,7 +343,9 @@ namespace TDBalanceIntern
 		// 0.9.8 P3/P4 (Analyse 3.3, Marius 12.11.): Talentbaum Schuetze/Kommandant/Techniker/Jaeger, Rangboni, XP fuer Leistung (je Prozent Schadensanteil, je reparierte LP)
 		{ TEXT("Pionier.RangBonusAlle"), 3.f }, { TEXT("Pionier.RangBonus.LP"), 10.f }, { TEXT("Pionier.RangBonus.Tempo"), 0.03f },
 		{ TEXT("Pionier.XPJeProzent"), 2.f }, { TEXT("Pionier.XPJeReparatur"), 200.f },
-		{ TEXT("Pionier.XPAnteilKappe"), 100.f },   // 21.11. (C10): hoechster Schadensanteil (%), der Leistungs-XP bringt; 100 = ohne Kappe
+		{ TEXT("Pionier.XPAnteilKappe"), 100.f },
+		{ TEXT("Pionier.PunkteJeBoss"), 1.f },     // 21.11. (Marius, C10): Talentpunkte je geschaffter Bosswelle
+		{ TEXT("Pionier.TalenteAusRang"), 0.f },   // 21.11.: 1 = Talentpunkte zusaetzlich aus dem Rang (Regel bis 0.11.1)   // 21.11. (C10): hoechster Schadensanteil (%), der Leistungs-XP bringt; 100 = ohne Kappe
 		{ TEXT("Pionier.Kopftreffer"), 1.5f }, { TEXT("Pionier.Schnellladen"), 0.5f }, { TEXT("Pionier.Munition.Anteil"), 0.25f }, { TEXT("Pionier.Sprengmantel.Radius"), 4.f },
 		{ TEXT("Pionier.Markierung.Sprung"), 10.f }, { TEXT("Pionier.Sammelbefehl.Radius"), 30.f }, { TEXT("Pionier.Sammelbefehl.Dauer"), 5.f },
 		{ TEXT("Pionier.Uebersteuern.Radius"), 20.f }, { TEXT("Pionier.Uebersteuern.Dauer"), 10.f }, { TEXT("Pionier.Uebersteuern.Pause"), 60.f }, { TEXT("Pionier.Uebersteuern.Takt"), 1.5f },

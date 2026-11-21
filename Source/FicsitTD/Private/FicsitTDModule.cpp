@@ -89,6 +89,8 @@ bool FFicsitTDModule::IstGemerkteWellenKreatur(const void* Adresse)
 #include "TDForschung.h"
 #include "TDSprache.h"
 #include "TDForschungVoraussetzungen.inl"
+#include "Equipment/FGBuildGunDismantle.h"
+#include "TDEinsatz.h"
 
 void TDForschung::GibStilleRezepte(const UObject* WorldContext)
 {
@@ -389,6 +391,37 @@ static bool KoederFuer(const AFGCreatureController* Self, const AActor* Actor)
 	return IstWellenKreatur(Selbst) || !UTDKernplatz::IstAbwehr(Self);
 }
 
+#if !WITH_EDITOR
+/** 21.11. (Marius, A5 Nr. 6): Kernplattform im Einsatz nicht abreissbar. CanDismantleActor ist privat, deshalb Friend in
+ *  Config/AccessTransformers.ini. Der Hinweis in der Bau-Pistole kommt ueber GetDismantleDisqualifiers. */
+class FTDAbrissHooks
+{
+public:
+	static void Einrichten()
+	{
+		SUBSCRIBE_METHOD(UFGBuildGunStateDismantle::CanDismantleActor, [](auto& Scope, const UFGBuildGunStateDismantle* Self, AActor* Actor)
+		{
+			if (TDPlattformAbrissGesperrt(Actor))
+			{
+				Scope.Override(false);
+			}
+		});
+		SUBSCRIBE_METHOD_AFTER(UFGBuildGunStateDismantle::GetDismantleDisqualifiers, [](const UFGBuildGunStateDismantle* Self, TArray<TSubclassOf<UFGConstructDisqualifier>>& Gruende)
+		{
+			FTDAbrissHooks::Grund(Self, Gruende);
+		});
+		UE_LOG(LogFicsitTD, Log, TEXT("Abriss: Sperre der Kernplattform eingerichtet (zwei Hooks)"));
+	}
+	static void Grund(const UFGBuildGunStateDismantle* Self, TArray<TSubclassOf<UFGConstructDisqualifier>>& Gruende)
+	{
+		if (Self && TDPlattformAbrissGesperrt(Self->GetSelectedActor()))
+		{
+			Gruende.AddUnique(UTDCDPlattform::StaticClass());
+		}
+	}
+};
+#endif
+
 void FFicsitTDModule::StartupModule()
 {
 	UE_LOG(LogFicsitTD, Log, TEXT("FICSIT Tower Defense geladen"));
@@ -396,6 +429,7 @@ void FFicsitTDModule::StartupModule()
 	{ extern void TDLayoutPruefen(); TDLayoutPruefen(); }
 
 #if !WITH_EDITOR
+	FTDAbrissHooks::Einrichten();
 	// Die Kreatur-KI soll Koeder wie Spieler behandeln: gueltiges Ziel, Feindschaft, Bedrohung
 	AFGCreatureController* Sample = GetMutableDefault<AFGCreatureController>();
 

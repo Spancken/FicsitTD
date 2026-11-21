@@ -38,6 +38,8 @@ void UTDWorldModule::DispatchLifecycleEvent(ELifecyclePhase Phase)
 		// 0.12 E1 (Shop-Prototyp): Preise im CDO leben laenger als eine Welt -> je Welt auf den Grundpreis; Hooks nur mit Schalter
 		TDShop::SetzeZurueck();
 		TDShop::StelleHooksSicher();
+		// 21.11. (A5 Nr. 1): Spiel-Artikel im Einsatz/Endlos ausblenden, immer eingerichtet (wirkt nur bei aktivem Einsatz)
+		TDShop::RichteSperreEin();
 	}
 	if (Phase == ELifecyclePhase::CONSTRUCTION && mResearchTrees.Num() == 0)
 	{
