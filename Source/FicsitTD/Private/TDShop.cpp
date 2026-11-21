@@ -1,5 +1,7 @@
 #include "TDShop.h"
 #include "TDBalance.h"
+#include "TDEinsatz.h"
+#include "TDSprache.h"
 #include "FicsitTDModule.h"
 #include "FGSchematic.h"
 #include "FGSchematicManager.h"
@@ -7,45 +9,57 @@
 #include "FGInventoryComponent.h"
 #include "Buildables/FGBuildableResourceSinkShop.h"
 #include "Patching/NativeHookManager.h"
-#include "TDEinsatz.h"
-#include "Engine/World.h"
 #include "ItemAmount.h"
+#include "Engine/World.h"
+#include "EngineUtils.h"
 
-// 0.12 Etappe E1, Shop-Prototyp (Fahrplan-0.12 Abschnitt 4, Bericht A2 Abschnitt 5.3). Fuenf Fragen an das Spiel, alle als Logzeile
-// "ShopProto: ..." beantwortet:
-//   1 Laesst der Shop denselben Posten mehrfach kaufen?            -> "Kauf <Posten> Ergebnis 1" bei Kauf 2 und 3
-//   2 Liest das Spiel den Preis nach dem Kauf neu aus dem CDO?     -> "Preis <Schluessel> 4 -> 5 (CDO)", "Kosten laut Spiel 5"
-//   3 Ruft das Spiel Unlock() bei jedem Kauf?                      -> "Unlock <Schluessel> Nr. n" (nur Befund)
-//   4 Wie rechnet das Spiel mehrere Stueck in einem Kauf?          -> "Kaufliste 2 x <Posten>, Kosten laut Spiel n"
-//   5 Ueber welche Funktion holt das Shop-Fenster seine Liste?     -> "Liste aus <Funktion>, n Eintraege"
-// Der Prototyp vergibt kein Kontingent und speichert nichts: Kaufzaehler und Preis leben nur bis zum Spielende.
-
-static TMap<FString, int32>& TDShopKaeufe()
-{
-	static TMap<FString, int32> Zaehler;
-	return Zaehler;
-}
-
-static TMap<FString, int32>& TDShopUnlocks()
-{
-	static TMap<FString, int32> Zaehler;
-	return Zaehler;
-}
+// 0.12 E4 (Marius 14.11. und 21.11.): Kontingente, Ausruestung, Kernreparatur und Festplatten im AWESOME-Shop.
+// Ergebnisse des Prototyps aus Testfenster 1 (21.11.):
+//   1 derselbe Posten laesst sich beliebig oft kaufen (IsRepeatPurchasesAllowed)
+//   2 das Spiel liest den Preis nach dem Kauf neu aus dem CDO (mCost)
+//   3 Unlock() laeuft einmal je Kaufvorgang, nicht je Stueck -> Wirkung im Kauf-Hook
+//   4 n Stueck in einem Kauf kosten n x aktuellen Preis, ohne Staffel -> der Hook zieht die Differenz nach
+//   5 das Fenster holt seine Liste aus GetVisibleSchematicCategoryData
+// Wahrheit bleiben die Kaufzaehler am Kern (mKontingentGekauft); der Preis im CDO wird daraus gesetzt und nicht gespeichert.
 
 bool TDShop::PrototypAn()
 {
 	return TDBalance::Wert(TEXT("Experiment.ShopPrototyp"), 0.f) >= 1.f;
 }
 
-const TArray<FString>& TDShop::PostenPfade()
+FString TDShop::AssetName(const FString& Schluessel)
 {
-	static const TArray<FString> Pfade = { TEXT("/FicsitTD/Shop/Shop_TD_Bolzenturm.Shop_TD_Bolzenturm_C") };
-	return Pfade;
+	FString Name = Schluessel.Replace(TEXT("ä"), TEXT("ae")).Replace(TEXT("ö"), TEXT("oe")).Replace(TEXT("ü"), TEXT("ue"))
+		.Replace(TEXT("Ä"), TEXT("Ae")).Replace(TEXT("Ö"), TEXT("Oe")).Replace(TEXT("Ü"), TEXT("Ue")).Replace(TEXT("ß"), TEXT("ss"));
+	FString Aus;
+	for (const TCHAR C : Name)
+	{
+		if (FChar::IsAlnum(C))
+		{
+			Aus.AppendChar(C);
+		}
+	}
+	return Aus;
 }
 
 UClass* TDShop::Posten(const FString& Schluessel)
 {
-	return LoadClass<UFGSchematic>(nullptr, *FString::Printf(TEXT("/FicsitTD/Shop/Shop_TD_%s.Shop_TD_%s_C"), *Schluessel, *Schluessel));
+	const FString A = AssetName(Schluessel);
+	return LoadClass<UFGSchematic>(nullptr, *FString::Printf(TEXT("/FicsitTD/Shop/Shop_TD_%s.Shop_TD_%s_C"), *A, *A));
+}
+
+const TArray<FString>& TDShop::PostenPfade()
+{
+	static TArray<FString> Pfade;
+	if (Pfade.Num() == 0)
+	{
+		for (const FString& Key : UTDEinsatzSubsystem::LadenSchluessel())
+		{
+			const FString A = AssetName(Key);
+			Pfade.Add(FString::Printf(TEXT("/FicsitTD/Shop/Shop_TD_%s.Shop_TD_%s_C"), *A, *A));
+		}
+	}
+	return Pfade;
 }
 
 static TArray<FItemAmount>* TDShopKosten(UClass* Schematic)
@@ -68,7 +82,7 @@ bool TDShop::SetzePreis(UClass* Schematic, int32 Preis)
 	{
 		return false;
 	}
-	(*Kosten)[0].Amount = Preis;
+	(*Kosten)[0].Amount = FMath::Max(1, Preis);
 	return true;
 }
 
@@ -88,51 +102,39 @@ static FString TDShopSchluessel(TSubclassOf<UFGSchematic> Schematic)
 	return FString();
 }
 
-/** Preis nach n Kaeufen wie im Laden: Grundpreis x (1 + Aufschlag x gekauft), gerundet */
-static int32 TDShopPreisNach(const FString& Schluessel, int32 Gekauft)
+static UTDEinsatzSubsystem* TDShopEinsatz(const UObject* Kontext)
 {
-	const float Grund = TDBalance::Wert(FString::Printf(TEXT("Einsatz.Laden.%s.Grundpreis"), *Schluessel), 4.f);
-	const float Aufschlag = TDBalance::Wert(FString::Printf(TEXT("Einsatz.Laden.%s.Aufschlag"), *Schluessel), 0.3f);
-	return FMath::RoundToInt(Grund * (1.f + Aufschlag * Gekauft));
+	UWorld* World = Kontext ? Kontext->GetWorld() : nullptr;
+	return World ? World->GetSubsystem<UTDEinsatzSubsystem>() : nullptr;
+}
+
+void TDShop::SetzePreise(const UObject* Kontext)
+{
+	const UTDEinsatzSubsystem* Einsatz = TDShopEinsatz(Kontext);
+	int32 Gesetzt = 0;
+	for (const FString& Key : UTDEinsatzSubsystem::LadenSchluessel())
+	{
+		if (UClass* Klasse = Posten(Key))
+		{
+			// ohne Einsatz: Grundpreis (PreisFuer liest dann 0 Kaeufe)
+			const int32 Preis = Einsatz ? Einsatz->PreisFuer(Key, 1) : UTDEinsatzSubsystem::GrundpreisFuer(Key);
+			Gesetzt += SetzePreis(Klasse, Preis) ? 1 : 0;
+		}
+	}
+	UE_LOG(LogFicsitTD, Verbose, TEXT("Shop: Preise von %d Posten gesetzt"), Gesetzt);
 }
 
 void TDShop::SetzeZurueck()
 {
-	TDShopKaeufe().Reset();
-	TDShopUnlocks().Reset();
-	for (const FString& Pfad : PostenPfade())
-	{
-		UClass* Klasse = LoadClass<UFGSchematic>(nullptr, *Pfad);
-		const FString Schluessel = TDShopSchluessel(Klasse);
-		if (Klasse && !Schluessel.IsEmpty())
-		{
-			const int32 Alt = LiesPreis(Klasse);
-			const int32 Grund = TDShopPreisNach(Schluessel, 0);
-			SetzePreis(Klasse, Grund);
-			if (PrototypAn() || Alt != Grund)
-			{
-				UE_LOG(LogFicsitTD, Log, TEXT("ShopProto: %s Startpreis %d (vorher %d)"), *Schluessel, Grund, Alt);
-			}
-		}
-	}
+	SetzePreise(nullptr);
 }
 
-void UTDUnlockLaden::Unlock(AFGUnlockSubsystem* unlockSubsystem)
+void TDShop::StelleHooksSicher()
 {
-	Super::Unlock(unlockSubsystem);
-	const int32 Nr = ++TDShopUnlocks().FindOrAdd(mSchluessel);
-	UE_LOG(LogFicsitTD, Log, TEXT("ShopProto: Unlock %s Nr. %d"), *mSchluessel, Nr);
-}
-
-void UTDUnlockLaden::Apply(AFGUnlockSubsystem* unlockSubsystem)
-{
-	Super::Apply(unlockSubsystem);
-	UE_LOG(LogFicsitTD, Log, TEXT("ShopProto: Apply %s"), *mSchluessel);
 }
 
 bool UTDExperimentAbhaengigkeit::AreDependenciesMet(UObject* worldContext) const
 {
-	// ohne Welt (im Editor beim Pruefen der Assets) nicht sperren
 	if (!worldContext || !worldContext->GetWorld())
 	{
 		return true;
@@ -140,123 +142,29 @@ bool UTDExperimentAbhaengigkeit::AreDependenciesMet(UObject* worldContext) const
 	return TDBalance::Wert(TEXT("Experiment.") + mSchalter, 0.f) >= 1.f;
 }
 
-/** Frage 5: hoechstens zehn Zeilen je Funktion, nur wenn sich die Zahl der Eintraege aendert */
-static void TDShopMeldeListe(const TCHAR* Funktion, int32 Eintraege, int32 Eigene)
+bool UTDShopAbhaengigkeit::AreDependenciesMet(UObject* worldContext) const
 {
-	static TMap<FString, int32> Zuletzt;
-	static TMap<FString, int32> Zeilen;
-	const int32 Merker = Eintraege * 1000 + Eigene;
-	if (Zuletzt.FindRef(Funktion) == Merker + 1 || Zeilen.FindRef(Funktion) >= 10)
+	// ohne Welt (Editor, Pruefung der Assets) nicht sperren
+	if (!worldContext || !worldContext->GetWorld())
 	{
-		return;
+		return true;
 	}
-	Zuletzt.Add(Funktion, Merker + 1);
-	Zeilen.FindOrAdd(Funktion)++;
-	UE_LOG(LogFicsitTD, Log, TEXT("ShopProto: Liste aus %s, %d Eintraege, davon %d des Mods"), Funktion, Eintraege, Eigene);
+	const UTDEinsatzSubsystem* Einsatz = TDShopEinsatz(worldContext);
+	return Einsatz && Einsatz->ShopSichtbar(mSchluessel);
 }
 
-static int32 TDShopZaehleEigene(const TArray<TSubclassOf<UFGSchematic>>& Liste)
+bool TDShop::ShopSteht(const UObject* Kontext)
 {
-	int32 Eigene = 0;
-	for (const TSubclassOf<UFGSchematic>& S : Liste)
+	UWorld* World = Kontext ? Kontext->GetWorld() : nullptr;
+	if (!World)
 	{
-		Eigene += S && S->GetPathName().StartsWith(TEXT("/FicsitTD/Shop/")) ? 1 : 0;
+		return false;
 	}
-	return Eigene;
-}
-
-// Die Hook-Koerper stehen in eigenen Funktionen: Kommas in Vorlagen-Argumenten (TMap<A, B>) zerlegen sonst das Makro SUBSCRIBE_METHOD.
-using FTDShopListe = TArray<TSubclassOf<UFGSchematic>>;
-using FTDShopStueck = TMap<UClass*, int32>;
-
-static FTDShopStueck TDShopZaehle(const FTDShopListe& Liste)
-{
-	FTDShopStueck Stueck;
-	for (const TSubclassOf<UFGSchematic>& S : Liste)
+	for (TActorIterator<AFGBuildableResourceSinkShop> It(World); It; ++It)
 	{
-		Stueck.FindOrAdd(S.Get())++;
+		return true;
 	}
-	return Stueck;
-}
-
-/** Frage 4: was wird gekauft, und was rechnet das Spiel dafuer? */
-static void TDShopVorKauf(AFGBuildableResourceSinkShop* Self, UFGInventoryComponent* Inventar, const FTDShopListe& Liste)
-{
-	if (!TDShop::PrototypAn() || !Self)
-	{
-		return;
-	}
-	const AFGResourceSinkSubsystem* Sink = AFGResourceSinkSubsystem::Get(Self->GetWorld());
-	const int32 Kosten = Sink ? Sink->GetCostOfSchematics(Liste) : -1;
-	const int32 Coupons = Sink && Inventar && Sink->GetCouponClass() ? Inventar->GetNumItems(Sink->GetCouponClass()) : -1;
-	for (const TPair<UClass*, int32>& P : TDShopZaehle(Liste))
-	{
-		const FString Name = P.Key ? P.Key->GetName().LeftChop(2) : FString(TEXT("?"));
-		UE_LOG(LogFicsitTD, Log, TEXT("ShopProto: Kaufliste %d x %s, Kosten laut Spiel %d, Coupons im Inventar %d, wiederholbar %s"),
-			P.Value, *Name, Kosten, Coupons, P.Key && UFGSchematic::IsRepeatPurchasesAllowed(P.Key) ? TEXT("ja") : TEXT("nein"));
-	}
-}
-
-/** Fragen 1 und 2: Ergebnis des Kaufs, danach neuer Preis ins CDO und Gegenprobe ueber die Kostenfunktion des Spiels */
-static void TDShopNachKauf(bool bErgebnis, AFGBuildableResourceSinkShop* Self, const FTDShopListe& Liste)
-{
-	if (!TDShop::PrototypAn() || !Self)
-	{
-		return;
-	}
-	const AFGResourceSinkSubsystem* Sink = AFGResourceSinkSubsystem::Get(Self->GetWorld());
-	const AFGSchematicManager* Schemata = AFGSchematicManager::Get(Self->GetWorld());
-	for (const TPair<UClass*, int32>& P : TDShopZaehle(Liste))
-	{
-		const FString Name = P.Key ? P.Key->GetName().LeftChop(2) : FString(TEXT("?"));
-		UE_LOG(LogFicsitTD, Log, TEXT("ShopProto: Kauf %s Ergebnis %d (%d Stueck, danach als gekauft gefuehrt: %s)"), *Name, bErgebnis ? 1 : 0, P.Value,
-			Schemata && P.Key && Schemata->IsSchematicPurchased(P.Key) ? TEXT("ja") : TEXT("nein"));
-		const FString Schluessel = TDShopSchluessel(P.Key);
-		if (!bErgebnis || Schluessel.IsEmpty())
-		{
-			continue;
-		}
-		int32& Gekauft = TDShopKaeufe().FindOrAdd(Schluessel);
-		const int32 Alt = TDShop::LiesPreis(P.Key);
-		Gekauft += P.Value;
-		const int32 Neu = TDShopPreisNach(Schluessel, Gekauft);
-		const bool bGesetzt = TDShop::SetzePreis(P.Key, Neu);
-		UE_LOG(LogFicsitTD, Log, TEXT("ShopProto: Preis %s %d -> %d (CDO%s), %d gekauft"), *Schluessel, Alt, Neu, bGesetzt ? TEXT("") : TEXT(", nicht gesetzt"), Gekauft);
-		if (Sink)
-		{
-			FTDShopListe Einer;
-			Einer.Add(P.Key);
-			UE_LOG(LogFicsitTD, Log, TEXT("ShopProto: Kosten laut Spiel %d (%s nach dem Kauf)"), Sink->GetCostOfSchematics(Einer), *Schluessel);
-		}
-	}
-}
-
-/** Fragen 2 und 4: jede Kostenabfrage, die einen Posten des Mods enthaelt (das Shop-Fenster fragt beim Fuellen des Korbs) */
-static void TDShopNachKosten(int32 Kosten, const FTDShopListe& Liste)
-{
-	static int32 Zeilen = 0;
-	static int32 Zuletzt = MIN_int32;
-	if (!TDShop::PrototypAn() || Zeilen >= 40)
-	{
-		return;
-	}
-	const int32 Eigene = TDShopZaehleEigene(Liste);
-	const int32 Merker = Liste.Num() * 100000 + Eigene * 1000 + Kosten;
-	if (Eigene > 0 && Merker != Zuletzt)
-	{
-		Zuletzt = Merker;
-		++Zeilen;
-		UE_LOG(LogFicsitTD, Log, TEXT("ShopProto: Kostenabfrage %d Posten (%d des Mods) -> %d Coupons"), Liste.Num(), Eigene, Kosten);
-	}
-}
-
-/** Frage 5: welche Funktion fuellt das Shop-Fenster? */
-static void TDShopNachListe(const TCHAR* Funktion, bool bShop, int32 Eintraege, int32 Eigene)
-{
-	if (TDShop::PrototypAn() && bShop)
-	{
-		TDShopMeldeListe(Funktion, Eintraege, Eigene);
-	}
+	return false;
 }
 
 // ---- 21.11. (Marius, A5 Nr. 1 "alles gesperrt"): Artikel des Spiels im Einsatz und Endlos ausblenden und nicht verkaufen ----
@@ -269,8 +177,7 @@ static bool TDShopIstEigener(const UClass* Schematic)
 
 bool TDShop::SpielArtikelGesperrt(const UObject* Kontext)
 {
-	const UWorld* World = Kontext ? Kontext->GetWorld() : nullptr;
-	const UTDEinsatzSubsystem* Einsatz = World ? World->GetSubsystem<UTDEinsatzSubsystem>() : nullptr;
+	const UTDEinsatzSubsystem* Einsatz = TDShopEinsatz(Kontext);
 	return Einsatz && Einsatz->IstAktiv() && TDBalance::Wert(TEXT("Einsatz.Shop.SpielArtikelSperren"), 1.f) >= 1.f;
 }
 
@@ -278,12 +185,18 @@ bool TDShop::SpielArtikelGesperrt(const UObject* Kontext)
 static void TDShopMeldeSperre(int32 Weg, int32 Bleiben)
 {
 	static int32 Zuletzt = -1;
-	if (Weg != Zuletzt)
+	static int32 ZuletztBleiben = -1;
+	if (Weg != Zuletzt || Bleiben != ZuletztBleiben)
 	{
 		Zuletzt = Weg;
+		ZuletztBleiben = Bleiben;
 		UE_LOG(LogFicsitTD, Log, TEXT("Shop: %d Artikel des Spiels im Einsatz ausgeblendet, %d des Mods sichtbar"), Weg, Bleiben);
 	}
 }
+
+// Die Hook-Koerper stehen in eigenen Funktionen: Kommas in Vorlagen-Argumenten (TMap<A, B>) zerlegen sonst das Makro SUBSCRIBE_METHOD.
+using FTDShopListe = TArray<TSubclassOf<UFGSchematic>>;
+using FTDShopStueck = TMap<FString, int32>;
 
 static void TDShopFilterKategorien(AFGSchematicManager* Self, ESchematicType Typ, TArray<FSchematicCategoryData>& Daten)
 {
@@ -313,22 +226,129 @@ static void TDShopFilterListe(const AFGSchematicManager* Self, ESchematicType Ty
 	}
 }
 
-/** true = Kauf ablehnen (ein Artikel des Spiels im Korb, z. B. aus einem alten Korb oder per Blueprint) */
-static bool TDShopKaufGesperrt(AFGBuildableResourceSinkShop* Self, const FTDShopListe& Liste)
+/** Posten des Mods im Korb, je Schluessel die Stueckzahl */
+static FTDShopStueck TDShopZaehle(const FTDShopListe& Liste)
 {
-	if (!TDShop::SpielArtikelGesperrt(Self))
+	FTDShopStueck Stueck;
+	for (const TSubclassOf<UFGSchematic>& S : Liste)
+	{
+		const FString Key = TDShopSchluessel(S);
+		if (!Key.IsEmpty())
+		{
+			Stueck.FindOrAdd(Key)++;
+		}
+	}
+	return Stueck;
+}
+
+/** Zwischen dem Hook vor und dem nach dem Kauf: Staffel-Summe je Schluessel und was das Spiel selbst abzieht */
+struct FTDShopKauf
+{
+	FTDShopStueck Stueck;
+	TMap<FString, int32> Soll;
+	int32 SollSumme = 0;
+	int32 SpielSumme = 0;
+	bool bAktiv = false;
+};
+static FTDShopKauf GTDShopKauf;
+
+static void TDShopMelde(const UObject* Kontext, const FString& Text)
+{
+	if (const UTDEinsatzSubsystem* Einsatz = TDShopEinsatz(Kontext))
+	{
+		Einsatz->Melde(Text);
+	}
+	UE_LOG(LogFicsitTD, Log, TEXT("Shop: %s"), *Text);
+}
+
+/** true = Kauf ablehnen */
+static bool TDShopVorKauf(AFGBuildableResourceSinkShop* Self, UFGInventoryComponent* Inventar, const FTDShopListe& Liste)
+{
+	GTDShopKauf = FTDShopKauf();
+	if (!Self)
 	{
 		return false;
 	}
-	for (const TSubclassOf<UFGSchematic>& S : Liste)
+	// Spiel-Artikel im Einsatz (alter Korb, Blueprint)
+	if (TDShop::SpielArtikelGesperrt(Self))
 	{
-		if (!TDShopIstEigener(S.Get()))
+		for (const TSubclassOf<UFGSchematic>& S : Liste)
 		{
-			UE_LOG(LogFicsitTD, Log, TEXT("Shop: Kauf abgelehnt - %s ist ein Artikel des Spiels, im Einsatz gesperrt"), S ? *S->GetName() : TEXT("?"));
-			return true;
+			if (!TDShopIstEigener(S.Get()))
+			{
+				TDShopMelde(Self, TDF(TEXT("Im Einsatz verkauft der Shop keine Artikel des Spiels (%s)."), TEXT("During an operation the Shop sells no base game items (%s)."),
+					S ? *UFGSchematic::GetSchematicDisplayName(S).ToString() : TEXT("?")));
+				return true;
+			}
 		}
 	}
+	const FTDShopStueck Stueck = TDShopZaehle(Liste);
+	if (Stueck.Num() == 0)
+	{
+		return false;
+	}
+	UTDEinsatzSubsystem* Einsatz = TDShopEinsatz(Self);
+	if (!Einsatz)
+	{
+		return true;
+	}
+	int32 Soll = 0, Spiel = 0;
+	for (const TPair<FString, int32>& P : Stueck)
+	{
+		FString Grund;
+		if (!Einsatz->KaufErlaubt(P.Key, Grund))
+		{
+			TDShopMelde(Self, Grund);
+			return true;
+		}
+		const int32 S = Einsatz->PreisFuer(P.Key, P.Value);
+		GTDShopKauf.Soll.Add(P.Key, S);
+		Soll += S;
+		// das Spiel rechnet Stueck x Preis im CDO (Frage 4)
+		Spiel += P.Value * FMath::Max(0, TDShop::LiesPreis(TDShop::Posten(P.Key)));
+	}
+	const AFGResourceSinkSubsystem* Sink = AFGResourceSinkSubsystem::Get(Self->GetWorld());
+	const int32 Coupons = Sink && Inventar && Sink->GetCouponClass() ? Inventar->GetNumItems(Sink->GetCouponClass()) : 0;
+	// Spiel-Artikel im selben Korb (ausserhalb des Einsatzes) bezahlt das Spiel; hier zaehlt nur der Teil des Mods
+	if (Coupons < Soll + FMath::Max(0, (Sink ? Sink->GetCostOfSchematics(Liste) : 0) - Spiel))
+	{
+		TDShopMelde(Self, TDF(TEXT("Zu wenig FICSIT-Coupons: %d nötig (der Preis steigt mit jedem Stück), %d im Inventar."),
+			TEXT("Not enough FICSIT Coupons: %d needed (the price rises with every piece), %d in your inventory."), Soll, Coupons));
+		return true;
+	}
+	GTDShopKauf.Stueck = Stueck;
+	GTDShopKauf.SollSumme = Soll;
+	GTDShopKauf.SpielSumme = Spiel;
+	GTDShopKauf.bAktiv = true;
 	return false;
+}
+
+static void TDShopNachKauf(bool bErgebnis, AFGBuildableResourceSinkShop* Self, UFGInventoryComponent* Inventar)
+{
+	const FTDShopKauf Kauf = GTDShopKauf;
+	GTDShopKauf = FTDShopKauf();
+	if (!bErgebnis || !Kauf.bAktiv || !Self)
+	{
+		return;
+	}
+	UTDEinsatzSubsystem* Einsatz = TDShopEinsatz(Self);
+	const AFGResourceSinkSubsystem* Sink = AFGResourceSinkSubsystem::Get(Self->GetWorld());
+	// Staffel: das Spiel nahm Stueck x aktuellen Preis, die Differenz zur Staffel-Summe nachziehen
+	const int32 Differenz = Kauf.SollSumme - Kauf.SpielSumme;
+	if (Differenz > 0 && Inventar && Sink && Sink->GetCouponClass())
+	{
+		Inventar->Remove(Sink->GetCouponClass(), Differenz);
+	}
+	for (const TPair<FString, int32>& P : Kauf.Stueck)
+	{
+		const FString Text = Einsatz ? Einsatz->WirkeKauf(P.Key, P.Value, Kauf.Soll.FindRef(P.Key)) : FString();
+		if (!Text.IsEmpty())
+		{
+			TDShopMelde(Self, Text);
+		}
+	}
+	UE_LOG(LogFicsitTD, Log, TEXT("Shop: Kauf %d Posten, Spiel %d + Staffel %d = %d Coupons"), Kauf.Stueck.Num(), Kauf.SpielSumme, Differenz, Kauf.SollSumme);
+	TDShop::SetzePreise(Self);
 }
 
 void TDShop::RichteSperreEin()
@@ -340,7 +360,7 @@ void TDShop::RichteSperreEin()
 		return;
 	}
 	bEingerichtet = true;
-	UE_LOG(LogFicsitTD, Log, TEXT("Shop: Sperre der Spiel-Artikel im Einsatz eingerichtet (drei Hooks)"));
+	UE_LOG(LogFicsitTD, Log, TEXT("Shop: Sperre der Spiel-Artikel im Einsatz eingerichtet (vier Hooks)"));
 	SUBSCRIBE_METHOD_AFTER(AFGSchematicManager::GetVisibleSchematicCategoryData,
 		[](AFGSchematicManager* Self, ESchematicType Typ, TArray<FSchematicCategoryData>& Daten)
 	{
@@ -354,59 +374,15 @@ void TDShop::RichteSperreEin()
 	SUBSCRIBE_METHOD(AFGBuildableResourceSinkShop::PurchaseResourceSinkSchematics,
 		[](auto& Scope, AFGBuildableResourceSinkShop* Self, UFGInventoryComponent* Inventar, FTDShopListe Liste)
 	{
-		if (TDShopKaufGesperrt(Self, Liste))
+		if (TDShopVorKauf(Self, Inventar, Liste))
 		{
 			Scope.Override(false);
 		}
 	});
-#endif
-}
-
-void TDShop::StelleHooksSicher()
-{
-#if !WITH_EDITOR
-	static bool bEingerichtet = false;
-	if (!PrototypAn())
-	{
-		return;
-	}
-	UE_LOG(LogFicsitTD, Log, TEXT("ShopProto: Experiment.ShopPrototyp an - Hooks auf Shop und Schematic-Verwaltung %s"),
-		bEingerichtet ? TEXT("waren schon eingerichtet") : TEXT("werden eingerichtet (sechs)"));
-	if (bEingerichtet)
-	{
-		return;
-	}
-	bEingerichtet = true;
-
-	SUBSCRIBE_METHOD(AFGBuildableResourceSinkShop::PurchaseResourceSinkSchematics,
-		[](auto& Scope, AFGBuildableResourceSinkShop* Self, UFGInventoryComponent* Inventar, FTDShopListe Liste)
-	{
-		TDShopVorKauf(Self, Inventar, Liste);
-	});
 	SUBSCRIBE_METHOD_AFTER(AFGBuildableResourceSinkShop::PurchaseResourceSinkSchematics,
 		[](const bool& bErgebnis, AFGBuildableResourceSinkShop* Self, UFGInventoryComponent* Inventar, FTDShopListe Liste)
 	{
-		TDShopNachKauf(bErgebnis, Self, Liste);
-	});
-	SUBSCRIBE_METHOD_AFTER(AFGResourceSinkSubsystem::GetCostOfSchematics,
-		[](const int32& Kosten, const AFGResourceSinkSubsystem* Self, FTDShopListe Liste)
-	{
-		TDShopNachKosten(Kosten, Liste);
-	});
-	SUBSCRIBE_METHOD_AFTER(AFGSchematicManager::GetVisibleSchematicCategoryData,
-		[](AFGSchematicManager* Self, ESchematicType Typ, TArray<FSchematicCategoryData>& Daten)
-	{
-		TDShopNachListe(TEXT("GetVisibleSchematicCategoryData"), Typ == ESchematicType::EST_ResourceSink, Daten.Num(), -1);
-	});
-	SUBSCRIBE_METHOD_AFTER(AFGSchematicManager::GetAllVisibleSchematicsOfType,
-		[](const AFGSchematicManager* Self, ESchematicType Typ, FTDShopListe& Liste)
-	{
-		TDShopNachListe(TEXT("GetAllVisibleSchematicsOfType"), Typ == ESchematicType::EST_ResourceSink, Liste.Num(), TDShopZaehleEigene(Liste));
-	});
-	SUBSCRIBE_METHOD_AFTER(AFGSchematicManager::GetAvailableSchematicsOfTypes,
-		[](const AFGSchematicManager* Self, TArray<ESchematicType> Typen, FTDShopListe& Liste)
-	{
-		TDShopNachListe(TEXT("GetAvailableSchematicsOfTypes"), Typen.Contains(ESchematicType::EST_ResourceSink), Liste.Num(), TDShopZaehleEigene(Liste));
+		TDShopNachKauf(bErgebnis, Self, Inventar);
 	});
 #endif
 }

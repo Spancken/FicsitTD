@@ -35,16 +35,15 @@ void UTDWorldModule::DispatchLifecycleEvent(ELifecyclePhase Phase)
 		TDBalance::Lade();
 		// 0.85 L1: Asset-Texte bei englischer Spielsprache ersetzen
 		TDSprache::UebersetzeAssets();
-		// 0.12 E1 (Shop-Prototyp): Preise im CDO leben laenger als eine Welt -> je Welt auf den Grundpreis; Hooks nur mit Schalter
+		// 0.12 E4: Preise im CDO leben laenger als eine Welt -> je Welt auf den Grundpreis (Lade/Starte setzen die Staffel)
 		TDShop::SetzeZurueck();
-		TDShop::StelleHooksSicher();
-		// 21.11. (A5 Nr. 1): Spiel-Artikel im Einsatz/Endlos ausblenden, immer eingerichtet (wirkt nur bei aktivem Einsatz)
+		// Hooks auf Shop und Schematic-Verwaltung: Spiel-Artikel im Einsatz sperren, Posten des Mods pruefen und wirken
 		TDShop::RichteSperreEin();
 	}
 	if (Phase == ELifecyclePhase::CONSTRUCTION && mResearchTrees.Num() == 0)
 	{
-		// 0.12 E1 (Shop-Prototyp): Posten fuer den AWESOME-Shop (Scripts/create_shop_prototyp.py). Ohne Experiment.ShopPrototyp
-		// bleibt er ueber UTDExperimentAbhaengigkeit verborgen und nicht kaufbar.
+		// 0.12 E4: Posten fuer den AWESOME-Shop (Scripts/create_shop.py, je Eintrag der Ladenliste). Sichtbar nur im Einsatz
+		// (UTDShopAbhaengigkeit), gekauft und gewirkt ueber die Hooks in TDShop.cpp.
 		int32 ShopPosten = 0;
 		for (const FString& Pfad : TDShop::PostenPfade())
 		{
@@ -54,8 +53,7 @@ void UTDWorldModule::DispatchLifecycleEvent(ELifecyclePhase Phase)
 				++ShopPosten;
 			}
 		}
-		UE_LOG(LogFicsitTD, Log, TEXT("Shop: %d von %d Posten eingetragen (Prototyp, Schalter %s)"), ShopPosten, TDShop::PostenPfade().Num(),
-			TDShop::PrototypAn() ? TEXT("an") : TEXT("aus"));
+		UE_LOG(LogFicsitTD, Log, TEXT("Shop: %d von %d Posten eingetragen"), ShopPosten, TDShop::PostenPfade().Num());
 		// Einsatz-Konzept Abschnitt 5: MAM-Baeume (erzeugt von Scripts/create_research.py)
 		for (const TCHAR* Pfad : TDForschungsSchemata)
 		{

@@ -5,6 +5,7 @@
 #include "FicsitTDModule.h"
 #include "TDDefenseCore.h"
 #include "TDEinsatz.h"
+#include "TDShop.h"
 #include "TDKernplatz.h"
 #include "TDTurretBase.h"
 #include "TDWaveSubsystem.h"
@@ -2046,13 +2047,18 @@ void UTDKernTerminal::BaueListen()
 		return B;
 	};
 
-	if (!Einsatz->IstAktiv())
+	// 0.12 E4 (Marius 14./21.11.): sobald ein AWESOME-Shop steht, verkauft der Kern nicht mehr
+	const bool bShopSteht = Einsatz->IstAktiv() && Einsatz->KernVerkauftNicht();
+	if (!Einsatz->IstAktiv() || bShopSteht)
 	{
 		mLadenZeilen.Reset();
 		mKorb.Reset();
 		UHorizontalBox* Reihe = nullptr;
 		NeueKarte(mLaden, TDUI::ZeileA, Reihe);
-		Fuellen(Reihe, NeuerText(UTDKernplatz::IstAbwehr(this)
+		Fuellen(Reihe, NeuerText(bShopSteht
+			? TDT(TEXT("Gekauft wird jetzt im AWESOME-Shop: Kontingente, Ausrüstung, Kernreparatur und Festplatten (Kategorie FICSIT-Abwehr). Den Stand deiner Kontingente siehst du rechts."),
+				TEXT("You now buy in the AWESOME Shop: quotas, gear, Core repairs and Hard Drives (category FICSIT Defense). Your quotas are listed on the right."))
+			: UTDKernplatz::IstAbwehr(this)
 			? TDT(TEXT("Im Freien Spiel mit Abwehr gibt es keinen Laden: Coupons aus dem AWESOME-Sink bezahlen Abwehr-Forschung im MAM und Turmlevel."),
 				TEXT("Free play with defense has no shop: Coupons from the AWESOME Sink pay for defense research in the MAM and turret levels."))
 			: TDT(TEXT("Erst einen Einsatz starten."), TEXT("Start an operation first.")), 13, TDUI::Grau));
@@ -3223,9 +3229,12 @@ void UTDHud::Aktualisiere()
 			Grund->SetVisibility(Bild ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed);
 		}
 	}
-	mText->SetText(TDFX(TEXT("%s  |  Kern %.0f %%  |  %d Coupons  |  %d Festplatten  |  Rang %d%s"), TEXT("%s  |  Core %.0f %%  |  %d Coupons  |  %d Hard Drives  |  Rank %d%s"), *Welle,
+	// 21.11. (Marius, C15): zweite Zeile mit "Noch baubar" bzw. der Shop-Aufgabe (vorher im Notizblock der To-do-Liste)
+	const FString Zweite = Einsatz->GetHudZeile();
+	const FString Erste = TDF(TEXT("%s  |  Kern %.0f %%  |  %d Coupons  |  %d Festplatten  |  Rang %d%s"), TEXT("%s  |  Core %.0f %%  |  %d Coupons  |  %d Hard Drives  |  Rank %d%s"), *Welle,
 		K ? 100.f * K->GetTDHealth() / FMath::Max(K->GetTDMaxHealth(), 1.f) : 0.f, Einsatz->Konto(), Einsatz->FPImInventar(),
-		Pionier ? Pionier->GetRang() : 1, *Punkte));
+		Pionier ? Pionier->GetRang() : 1, *Punkte);
+	mText->SetText(FText::FromString(Zweite.IsEmpty() ? Erste : Erste + TEXT("\n") + Zweite));
 }
 
 // ---------------------------------------------------------------------------------------------------------------

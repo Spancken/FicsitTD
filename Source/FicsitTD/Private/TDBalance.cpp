@@ -264,8 +264,9 @@ namespace TDBalanceIntern
 		// 21.11. (C14): Zuender ab Caterium mit 10 Nobelisken, Nobelisken zum Nachkaufen (5 je Kauf, +20 % je Kauf)
 		{ TEXT("Einsatz.Laden.Nobelisken-Zünder.Beigabe"), 10.f },
 		{ TEXT("Einsatz.Laden.Nobelisken.Grundpreis"), 5.f }, { TEXT("Einsatz.Laden.Nobelisken.Aufschlag"), 0.2f }, { TEXT("Einsatz.Laden.Nobelisken.Paket"), 5.f }, { TEXT("Einsatz.Laden.Nobelisken.Max"), 0.f },
+		{ TEXT("Einsatz.Laden.Festplatte.Grundpreis"), 40.f }, { TEXT("Einsatz.Laden.Festplatte.Aufschlag"), 0.25f }, { TEXT("Einsatz.Laden.Festplatte.Paket"), 1.f }, { TEXT("Einsatz.Laden.Festplatte.Max"), 0.f },
 		// 21.11. (Marius, A5 Nr. 1): Artikel des Spiels im AWESOME-Shop bei aktivem Einsatz/Endlos ausblenden und nicht verkaufen (1 = an)
-		{ TEXT("Einsatz.Shop.SpielArtikelSperren"), 1.f },
+		{ TEXT("Einsatz.Shop.SpielArtikelSperren"), 1.f }, { TEXT("Einsatz.Shop.AbWelle"), 2.f }, { TEXT("Einsatz.Shop.KernBisShop"), 1.f }, { TEXT("Einsatz.ToDo.Block"), 0.f },   // 21.11. (C15): 1 = Stand-Block wieder in die private To-do-Liste   // 1 = Kern verkauft nur, bis ein Shop steht   // Shop-Rezept nach dieser Welle (Marius 14.11.)
 		// 21.11. (Marius, A5 Nr. 6): Fundamente und Rampen der Kernplattform im Einsatz nicht abreissbar (1 = an)
 		{ TEXT("Einsatz.Plattform.AbrissSperren"), 1.f }, { TEXT("Einsatz.Plattform.Radius"), 3600.f },   // cm um die Kernmitte
 		{ TEXT("Einsatz.Laden.Treibstoffkraftwerk.Grundpreis"), 8.f }, { TEXT("Einsatz.Laden.Treibstoffkraftwerk.Aufschlag"), 0.4f }, { TEXT("Einsatz.Laden.Treibstoffkraftwerk.Paket"), 1.f },

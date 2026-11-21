@@ -75,7 +75,9 @@
   - Klingenläufer hat man ab Start; der Laden bietet sie nur als Ersatz an, wenn man keine mehr hat (weder im Inventar noch angelegt) *(0.12, C9)*.
   - Nobelisken-Zünder ab der Forschung Caterium, mit 10 Nobelisken (`Einsatz.Laden.Nobelisken-Zünder.Beigabe`). Danach „Nobelisken“: 5 Stück je Kauf, jeder Kauf 20 % teurer. Damit lassen sich Felsen über Rohstoffknoten sprengen, ohne die Nobelisk-Kette *(0.12, C14)*.
   - Kernreparatur: +25 % Kern-LP je Kauf, jeder Kauf 50 % teurer. Nur sichtbar, wenn der Kern beschädigt ist.
+- **AWESOME-Shop als Laden** *(0.12 E4, Marius 14. und 21.11.)*: Nach Welle 2 (`Einsatz.Shop.AbWelle`) kommt das Rezept des Shops, kostenlos, Kontingent 1. Er verkauft in der Kategorie „FICSIT-Abwehr“ (sechs Unterkategorien wie der Kern-Laden) alle Posten der Ladenliste: Kontingente mit Baumaterial, Ausrüstung, Inventar- und Handplätze, Kernreparatur und die **Festplatte** (40 Coupons, Aufschlag 0,25 = jede weitere 10 teurer, nur im Shop). Preis wie am Kern: `Grund × (1 + Aufschlag × Käufe)`; bei mehreren Stück in einem Kauf zieht der Mod die Staffel nach (das Spiel rechnet Stück × aktuellen Preis). Ein Posten ist sichtbar, solange der Einsatz läuft, er erforscht ist und seine Höchstzahl nicht erreicht. Sobald ein Shop steht, verkauft der Kern nicht mehr (`Einsatz.Shop.KernBisShop`), das Kern-Menü zeigt dann einen Hinweis und die Kontingente. Wahrheit sind die Kaufzähler am Kern (`mKontingentGekauft`); alte Stände behalten ihre Preise.
 - **AWESOME-Shop im Einsatz** *(0.12, Marius 21.11., A5 Nr. 1)*: Bei aktivem Einsatz oder Endlos blendet der Shop alle Artikel des Spiels aus (Fundamente, Wände, Fabrikwagen, Deko) und lehnt ihren Kauf ab (`Einsatz.Shop.SpielArtikelSperren`). Bauteile des Spiels sind im Einsatz damit weder baubar noch kaufbar. Im Freien Spiel mit Abwehr bleibt der Shop unverändert.
+- **HUD-Statusleiste** *(0.12, Marius 21.11., C15)*: oben links Welle, Kern, Coupons, Festplatten, Rang; zweite Zeile „Noch baubar: …“ oder die Aufgabe „Baue den AWESOME-Shop“. Der Notizblock der To-do-Liste bekommt keinen Block mehr (das Spiel liest ihn nur beim Laden); `Einsatz.ToDo.Block` = 1 stellt ihn wieder her.
 - **Kernplattform** *(0.12, Marius 21.11., A5 Nr. 6)*: Fundamente und Rampen der Plattform (bis 36 m um den Kern, `Einsatz.Plattform.Radius`) lassen sich im Einsatz nicht abreißen (`Einsatz.Plattform.AbrissSperren`). Ohne Rampen erreicht kein Gegner den Kern (Testfenster 1).
 - **Pionier** (Reiter im Kern-Menü; Umbau nach `Notizen\Analyse-Spieler-und-Pionier-2026-11-12.md`: P0/P1 seit 0.9.6, P2 seit 0.9.7, P3/P4 seit 0.9.8):
   - **XP je Welle (0.9.8 halbiert):** 20 + 3 × N, +10 bei vollem Kern, jede zehnte Welle doppelt (`Pionier.XPWelle`, `XPJeWelle`, `XPKernVoll`). Dazu Leistungs-XP: 2 je Prozent Anteil am Wellenschaden (`Pionier.XPJeProzent`; der Anteil zählt höchstens bis `Pionier.XPAnteilKappe`, Standard 100 = ohne Kappe *(0.12, Regler für C10)*) und 1 je 200 reparierte LP (`Pionier.XPJeReparatur`). Eigener Abschuss 3 XP, Elite 10, Boss 50, wenn der Spieler den Gegner in den letzten 5 s getroffen hat. Assist 1 XP.
@@ -295,6 +297,7 @@ Preis = Grundpreis × (1 + Aufschlag × bisher gekauft); Paket = Gebäude je Kau
 | Drohnenplatz | 14 | 0,5 | 1 | 0 |
 | Elektrozaun | 5 | 0,3 | 1 | 0 |
 | Fertiger | 14 | 0,5 | 1 | 0 |
+| Festplatte | 40 | 0,25 | 1 | 0 |
 | Flammenturm | 8 | 0,3 | 1 | 0 |
 | Fluessigkeitspuffer | 3 | 0,3 | 1 | 0 |
 | Foerderanlage | 6 | 0,4 | 3 | 0 |

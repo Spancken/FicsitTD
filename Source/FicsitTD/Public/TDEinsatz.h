@@ -185,6 +185,20 @@ public:
 	bool LadenInWelleZu() const;
 	/** /td kaufe <Name> [Anzahl]: Antwortzeile */
 	FString Kaufe(const FString& Name, int32 Anzahl);
+	/** 0.12 E4: alle Schluessel der Ladenliste, die einen Shop-Posten haben (ohne Panzersperre) */
+	static TArray<FString> LadenSchluessel();
+	/** 0.12 E4: Grundpreis eines Postens (Balance), ohne Kaeufe */
+	static int32 GrundpreisFuer(const FString& Key);
+	/** 0.12 E4: Posten im AWESOME-Shop zeigen? Einsatz aktiv, Rezept da, Hoechstzahl nicht erreicht, Sonderregeln (nicht die Welle) */
+	bool ShopSichtbar(const FString& Key) const;
+	/** 0.12 E4: Einsatz aktiv und ein AWESOME-Shop steht -> der Kern verkauft nicht mehr (Einsatz.Shop.KernBisShop) */
+	bool KernVerkauftNicht() const;
+	/** 0.12 E4.1: darf der Posten jetzt gekauft werden (Einsatz, Welle, Forschung, Hoechstzahl, Sonderregeln)? Sonst Grund */
+	bool KaufErlaubt(const FString& Key, FString& OutGrund) const;
+	/** 0.12 E4.1: Summe der naechsten Anzahl Kaeufe nach der Preisstaffel */
+	int32 PreisFuer(const FString& Key, int32 Anzahl) const;
+	/** 0.12 E4.1: Wirkung eines bezahlten Kaufs (Zaehler, Laufprotokoll, Kontingent mit Material oder Ausruestung); Antwortzeile */
+	FString WirkeKauf(const FString& Key, int32 Gekauft, int32 Kosten);
 	/** Warenkorb aus dem Kern-Menue: alles oder nichts (Summe muss ins Konto passen) */
 	FString KaufeKorb(const TMap<FString, int32>& Korb);
 	/** Gebaeudesymbol zum Kontingent-Schluessel (aus dem Bau-Rezept) */
@@ -202,6 +216,10 @@ public:
 	/** To-do-Liste des Spiels: offene Kontingente als Bau-Rezepte in die Einkaufsliste, Einsatz-Block in die private Notiz
 	 *  (eigener Text des Spielers bleibt). Alle 3 s, solange ein Einsatz laeuft; beim Ende wird alles entfernt. */
 	void AktualisiereToDo();
+	/** 21.11. (C15): zweite Zeile der HUD-Statusleiste ("Noch baubar: ..." oder Aufgabe AWESOME-Shop), alle 3 s neu */
+	const FString& GetHudZeile() const { return mHudZeile; }
+	/** 0.12 E4/E5: Rezept des AWESOME-Shops geben, sobald Welle Einsatz.Shop.AbWelle geschafft ist (auch alte Spielstaende) */
+	void FreigabeShop();
 	/** Zu Beginn jeder Welle: alle Verteidigungsanlagen auf 100 % (Marius: kein Reparieren waehrend der Welle) */
 	void HeileVerteidigung();
 
@@ -271,6 +289,8 @@ private:
 	FTimerHandle mToDoTimer;
 
 	TWeakObjectPtr<ATDDefenseCore> mKern;
+	/** 21.11. (C15): zweite HUD-Zeile, gesetzt in AktualisiereToDo */
+	FString mHudZeile;
 	bool mAktiv = false;
 	bool mFrei = false;
 	TMap<FString, int32> mBelegt;

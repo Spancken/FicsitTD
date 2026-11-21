@@ -1,0 +1,119 @@
+{
+  "Name": "Shop",
+  "_Hinweis": "0.12 E4 (Marius 14./21.11.): Kontingente, Ausruestung und Festplatten im AWESOME-Shop. Vor dem Shop verkauft der Kern, danach nur noch der Shop. Preisstaffel auch bei mehreren Stueck in einem Kauf (Bolzenturm Grund 5, Aufschlag 0,3: 5, 7, 8, 10). Festplatte nur im Shop. Nicht Erforschtes lehnt der Shop ab. Artikel des Spiels ausgeblendet (Foto).",
+  "NeuesSpiel": {
+    "Startort": "Grass Fields",
+    "Modus": 1
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 10,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warteBis": "EinsatzAktiv",
+      "max": 120
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Shop: 47 von 47 Posten eingetragen",
+      "min": 1,
+      "text": "alle 47 Posten als Schematic eingetragen"
+    },
+    {
+      "gib": "/Game/FactoryGame/Resource/Parts/ResourceSinkCoupon/Desc_ResourceSinkCoupon.Desc_ResourceSinkCoupon_C",
+      "anzahl": 200
+    },
+    {
+      "befehl": "td kaufe Bolzenturm",
+      "antwortEnthaelt": "Gekauft",
+      "text": "vor dem Shop verkauft der Kern (5 Coupons)"
+    },
+    {
+      "befehl": "td kaufe Festplatte",
+      "antwortEnthaelt": "nur im AWESOME-Shop",
+      "text": "Festplatte nicht am Kern"
+    },
+    {
+      "baue": "Shop",
+      "klasse": "/Game/FactoryGame/Buildable/Factory/ResourceSinkShop/Build_ResourceSinkShop.Build_ResourceSinkShop_C",
+      "baurezept": "/Game/FactoryGame/Recipes/Buildings/Recipe_ResourceSinkShop.Recipe_ResourceSinkShop_C"
+    },
+    {
+      "warte": 3
+    },
+    {
+      "befehl": "td kaufe Mauer",
+      "antwortEnthaelt": "AWESOME-Shop",
+      "text": "nach dem Bau des Shops verkauft der Kern nicht mehr"
+    },
+    {
+      "shopkauf": "Bolzenturm",
+      "text": "ein Bolzenturm im Shop (Preis 7)"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Gekauft: Bolzenturm +1 für 7 Coupons",
+      "min": 1,
+      "text": "Kauf im Shop wirkt wie am Kern (Kontingent, Material)"
+    },
+    {
+      "shopkauf": "Bolzenturm",
+      "anzahl": 2,
+      "text": "zwei Bolzentuerme in einem Kauf"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Spiel 16 + Staffel 2 = 18 Coupons",
+      "min": 1,
+      "text": "Staffel bei mehreren Stueck: 8 + 10 = 18, das Spiel nahm 2 x 8"
+    },
+    {
+      "shopkauf": "Festplatte",
+      "text": "eine Festplatte im Shop (40 Coupons)"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Gekauft: Festplatte für 40 Coupons",
+      "min": 1,
+      "text": "Festplatte gekauft"
+    },
+    {
+      "shopkauf": "Gewehrturm",
+      "erwartet": false,
+      "text": "Gewehrturm ohne Forschung abgelehnt"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "ist noch nicht erforscht",
+      "min": 1,
+      "text": "Grund der Ablehnung im Chat"
+    },
+    {
+      "oeffne": "Shop"
+    },
+    {
+      "warte": 3
+    },
+    {
+      "foto": "Shop_offen"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Artikel des Spiels im Einsatz ausgeblendet",
+      "min": 1,
+      "text": "Spiel-Artikel ausgeblendet"
+    },
+    {
+      "schliesse": true
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}
