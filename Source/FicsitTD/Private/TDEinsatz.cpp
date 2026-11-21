@@ -19,6 +19,7 @@
 #include "TDBalance.h"
 #include "TDSprache.h"
 #include "TDShop.h"
+#include "TDAda.h"
 #include "UObject/TextProperty.h"
 #include "TDBarrier.h"
 #include "TDDamageable.h"
@@ -373,6 +374,8 @@ bool TDPlattformAbrissGesperrt(const AActor* Bau)
 	// Spiel-Fundamenten und -Rampen (Lightweight); zum Abreissen erzeugt das Spiel kurz einen Actor dieser Klasse an ihrem Ort.
 	return Bau && TDPlattformAbrissGesperrtAn(Bau->GetWorld(), Bau->GetClass(), Bau->GetActorLocation());
 }
+
+int32 GTDAbrissHooks = 0;
 
 bool TDPlattformAbrissGesperrtAn(UWorld* World, const UClass* Klasse, const FVector& Ort)
 {
@@ -1752,6 +1755,7 @@ void UTDEinsatzSubsystem::FreigabeShop()
 	}
 	Rezepte->AddAvailableRecipe(Rezept);
 	UE_LOG(LogFicsitTD, Log, TEXT("Einstieg: AWESOME-Shop freigegeben nach Welle %d"), Geschafft);
+	TDAda::Sage(this, mKern.Get(), TEXT("AufgabeShop"));   // 0.12 E5: ADA mit Stimme, einmal je Kern (mAdaGesagt)
 	Melde(TDT(TEXT("AUFGABE: Baue den AWESOME-Shop (kostenlos, am besten nah am Kern, Baumenü Spezial). Dort kaufst du ab jetzt Kontingente, Ausrüstung und Festplatten. Der Kern verkauft nur noch, bis dein Shop steht."),
 		TEXT("TASK: Build the AWESOME Shop (free, ideally near the Core, build menu Special). From now on you buy quotas, gear and Hard Drives there. The Core only sells until your Shop is built.")));
 }
@@ -1870,6 +1874,7 @@ void UTDEinsatzSubsystem::AktualisiereToDo()
 		{
 			mMamGemeldet = true;
 			UE_LOG(LogFicsitTD, Log, TEXT("Einstieg: Aufgabe MAM nach Welle %d"), Geschafft);
+			TDAda::Sage(this, mKern.Get(), TEXT("AufgabeMam"));
 			Melde(TDT(TEXT("AUFGABE: Baue das MAM (kostenlos, Baumenü Spezial). Dort setzt du Festplatten für neue Technik ein."),
 				TEXT("TASK: Build the MAM (free, build menu Special). Spend Hard Drives there on new technology.")));
 		}
@@ -2118,6 +2123,9 @@ void UTDEinsatzSubsystem::Starte(ATDDefenseCore* Kern, int32 Stufe, int32 Wellen
 	Verbinde();
 	mKern = Kern;
 	mAktiv = true;
+	// 21.11. (Fenster 2): die Hooks entstehen beim Modulstart, vor jedem Selbsttest-Plan - deshalb hier je Einsatz melden
+	UE_LOG(LogFicsitTD, Log, TEXT("Abriss: Sperre der Kernplattform %s (%d Hooks, Einsatz.Plattform.AbrissSperren %.0f)"),
+		GTDAbrissHooks > 0 ? TEXT("aktiv") : TEXT("FEHLT"), GTDAbrissHooks, TDBalance::Wert(TEXT("Einsatz.Plattform.AbrissSperren"), 1.f));
 	mFrei = false;
 	Kern->mEinsatzAktiv = true;
 	Kern->mEinsatzFrei = false;

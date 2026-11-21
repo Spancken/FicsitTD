@@ -361,7 +361,7 @@ namespace TDBalanceIntern
 		{ TEXT("Forschung.NobeliskWerfer.AbWelle"), 10.f }, { TEXT("Forschung.GasNobelisk.AbWelle"), 15.f }, { TEXT("Forschung.PulsNobelisk.AbWelle"), 15.f },
 		{ TEXT("Forschung.Turbomunition.AbWelle"), 25.f }, { TEXT("Forschung.Turbotreibstoff.AbWelle"), 25.f }, { TEXT("Forschung.StreuNobelisk.AbWelle"), 25.f },
 		// Startkontingent je Einsatz
-		{ TEXT("Einsatz.Start.Abwehrkern"), 1.f }, { TEXT("Einsatz.Start.MAM"), 1.f }, { TEXT("Einsatz.Start.Miner"), 1.f }, { TEXT("Einsatz.Start.Schmelzofen"), 1.f },
+		{ TEXT("Einsatz.Start.Abwehrkern"), 1.f }, { TEXT("Einsatz.Start.MAM"), 1.f }, { TEXT("Einsatz.Start.AWESOME-Shop"), 1.f }, { TEXT("Einsatz.Start.Miner"), 1.f }, { TEXT("Einsatz.Start.Schmelzofen"), 1.f },
 		{ TEXT("Einsatz.Start.Konstruktor"), 1.f }, { TEXT("Einsatz.Start.Biomassegenerator"), 1.f }, { TEXT("Einsatz.Start.Lager"), 0.f },
 		{ TEXT("Einsatz.Start.Bolzenturm"), 1.f }, { TEXT("Einsatz.Start.Mauer"), 5.f }, { TEXT("Einsatz.Start.Splitter"), 0.f }, { TEXT("Einsatz.Start.Verbinder"), 0.f },
 

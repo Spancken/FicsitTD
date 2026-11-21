@@ -15,7 +15,7 @@ experiment:
 
 **Warum:** Marius 21.11.: Bonusfenster mit dem Einstieg (C11 fiel im Handspiel kaum auf); Einstieg Kern → MAM → Shop (Entscheidung 14.11.).
 
-**Nachweis:** Plan `EinsatzPhase` (Logzeile „Bonusfenster: geoeffnet nach Bosswelle 10“, Foto `Bonusfenster`, „Bonusfenster: spaeter“), Plan `Shop` (Freigabe). Logzeilen „Einstieg: Aufgabe MAM“ und „Einstieg: AWESOME-Shop freigegeben“. Offen: ADA-Sätze mit Ton.
+**Nachweis:** Plan `EinsatzPhase` (Logzeile „Bonusfenster: geoeffnet nach Bosswelle 10“, Foto `Bonusfenster`, „Bonusfenster: spaeter“), Plan `Shop` (Freigabe). Logzeilen „Einstieg: Aufgabe MAM“ und „Einstieg: AWESOME-Shop freigegeben“. ADA-Sätze mit Ton: Zettel `2026-11-21_ada-einstieg.md`.
 
 **Changelog EN:** After every boss wave a window shows the phase report and three bonus cards; new games guide you with tasks: build the MAM after wave 1, the AWESOME Shop after wave 2.
 

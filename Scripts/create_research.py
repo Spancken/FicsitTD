@@ -88,7 +88,7 @@ BAEUME = [
          (0, 2), ["Giesserei"], [], ZEIT, [], f"{G}/Resource/RawResources/Sulfur/Desc_Sulfur"),
         ("Quarz", "Quarzverarbeitung", "Rohquarz abbauen (Miner) und im Konstruktor zu Quarzkristall verarbeiten. Für Streubolzen und Puls-Nobelisk.",
          (2, 1), ["Assembler"], [], ZEIT, [f"{R}/Constructor/Recipe_QuartzCrystal"], f"{P}/QuartzCrystal/Desc_QuartzCrystal"),
-        ("Caterium", "Caterium", "Caterium-Erz abbauen, Caterium-Barren im Schmelzofen, Turbodraht im Konstruktor. Für Schockbolzen und Zielsuchmunition.",
+        ("Caterium", "Caterium", "Caterium-Erz abbauen, Caterium-Barren im Schmelzofen, Turbodraht im Konstruktor. Für Schockbolzen und Zielsuchmunition. Gibt im Laden den Nobelisken-Zünder mit 10 Nobelisken frei: damit sprengst du Felsen auf Vorkommen.",
          (5, 1), ["Kupfer"], [], ZEIT, [f"{R}/Smelter/Recipe_IngotCaterium", f"{R}/Constructor/Recipe_Quickwire"], f"{P}/HighSpeedWire/Desc_HighSpeedWire"),
         ("Bauxit", "Bauxit und Aluminium", "Bauxit abbauen, Aluminiumbarren in der Gießerei aus Bauxit und Kohle (FICSIT-Feldrezept, ohne Wasser), Aluminiumgehäuse im Konstruktor. Für Turbomunition.",
          (1, 3), ["Raffinerie"], [], ZEIT, [f"{TDR}/Recipe_TD_Aluminiumbarren", f"{R}/Constructor/Recipe_AluminumCasing"], f"{P}/AluminumCasing/Desc_AluminumCasing"),

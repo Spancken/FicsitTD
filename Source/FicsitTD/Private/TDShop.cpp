@@ -182,14 +182,16 @@ bool TDShop::SpielArtikelGesperrt(const UObject* Kontext)
 }
 
 /** Zahl der ausgeblendeten Artikel nur melden, wenn sie sich aendert (das Fenster fragt bei jedem Oeffnen) */
-static void TDShopMeldeSperre(int32 Weg, int32 Bleiben)
+static void TDShopMeldeSperre(const UWorld* Welt, int32 Weg, int32 Bleiben)
 {
 	static int32 Zuletzt = -1;
 	static int32 ZuletztBleiben = -1;
-	if (Weg != Zuletzt || Bleiben != ZuletztBleiben)
+	static TWeakObjectPtr<const UWorld> ZuletztWelt;
+	if (Weg != Zuletzt || Bleiben != ZuletztBleiben || ZuletztWelt.Get() != Welt)
 	{
 		Zuletzt = Weg;
 		ZuletztBleiben = Bleiben;
+		ZuletztWelt = Welt;
 		UE_LOG(LogFicsitTD, Log, TEXT("Shop: %d Artikel des Spiels im Einsatz ausgeblendet, %d des Mods sichtbar"), Weg, Bleiben);
 	}
 }
@@ -215,7 +217,7 @@ static void TDShopFilterKategorien(AFGSchematicManager* Self, ESchematicType Typ
 		Kategorie.SchematicSubCategoryData.RemoveAll([](const FSchematicSubCategoryData& U) { return U.Schematics.Num() == 0; });
 	}
 	Daten.RemoveAll([](const FSchematicCategoryData& K) { return K.SchematicSubCategoryData.Num() == 0; });
-	TDShopMeldeSperre(Weg, Bleiben);
+	TDShopMeldeSperre(Self ? Self->GetWorld() : nullptr, Weg, Bleiben);
 }
 
 static void TDShopFilterListe(const AFGSchematicManager* Self, ESchematicType Typ, FTDShopListe& Liste)

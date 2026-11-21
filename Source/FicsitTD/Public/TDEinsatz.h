@@ -89,6 +89,8 @@ public:
 
 /** Fundament oder Rampe der Kernplattform bei aktivem Einsatz (Einsatz.Plattform.AbrissSperren) */
 FICSITTD_API bool TDPlattformAbrissGesperrt(const AActor* Bau);
+/** Zahl der eingerichteten Hooks der Abrisssperre (FicsitTDModule, 0 = keine, z. B. im Editor) */
+extern FICSITTD_API int32 GTDAbrissHooks;
 /** Dieselbe Pruefung fuer Klasse und Ort (Selbsttest ohne Actor) */
 FICSITTD_API bool TDPlattformAbrissGesperrtAn(UWorld* World, const UClass* Klasse, const FVector& Ort);
 

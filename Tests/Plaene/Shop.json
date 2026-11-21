@@ -1,6 +1,6 @@
 {
   "Name": "Shop",
-  "_Hinweis": "0.12 E4 (Marius 14./21.11.): Kontingente, Ausruestung und Festplatten im AWESOME-Shop. Vor dem Shop verkauft der Kern, danach nur noch der Shop. Preisstaffel auch bei mehreren Stueck in einem Kauf (Bolzenturm Grund 5, Aufschlag 0,3: 5, 7, 8, 10). Festplatte nur im Shop. Nicht Erforschtes lehnt der Shop ab. Artikel des Spiels ausgeblendet (Foto).",
+  "_Hinweis": "0.12 E4 (Marius 14./21.11.): Kontingente, Ausruestung und Festplatten im AWESOME-Shop. Vor dem Shop verkauft der Kern, danach nur noch der Shop. Preisstaffel auch bei mehreren Stueck in einem Kauf (Bolzenturm Grund 4 laut Balance-Tabelle (Spielregeln, C8), Aufschlag 0,3: 4, 5, 6, 8, 9). Festplatte nur im Shop. Nicht Erforschtes lehnt der Shop ab. Artikel des Spiels ausgeblendet (Foto).",
   "NeuesSpiel": {
     "Startort": "Grass Fields",
     "Modus": 1
@@ -31,7 +31,7 @@
     {
       "befehl": "td kaufe Bolzenturm",
       "antwortEnthaelt": "Gekauft",
-      "text": "vor dem Shop verkauft der Kern (5 Coupons)"
+      "text": "vor dem Shop verkauft der Kern (4 Coupons)"
     },
     {
       "befehl": "td kaufe Festplatte",
@@ -53,11 +53,11 @@
     },
     {
       "shopkauf": "Bolzenturm",
-      "text": "ein Bolzenturm im Shop (Preis 7)"
+      "text": "ein Bolzenturm im Shop (Preis 5)"
     },
     {
       "pruefe": "LogEnthaelt",
-      "suche": "Gekauft: Bolzenturm +1 für 7 Coupons",
+      "suche": "Gekauft: Bolzenturm +1 für 5 Coupons",
       "min": 1,
       "text": "Kauf im Shop wirkt wie am Kern (Kontingent, Material)"
     },
@@ -68,9 +68,9 @@
     },
     {
       "pruefe": "LogEnthaelt",
-      "suche": "Spiel 16 + Staffel 2 = 18 Coupons",
+      "suche": "Spiel 12 + Staffel 2 = 14 Coupons",
       "min": 1,
-      "text": "Staffel bei mehreren Stueck: 8 + 10 = 18, das Spiel nahm 2 x 8"
+      "text": "Staffel bei mehreren Stueck: 6 + 8 = 14, das Spiel nahm 2 x 6"
     },
     {
       "shopkauf": "Festplatte",

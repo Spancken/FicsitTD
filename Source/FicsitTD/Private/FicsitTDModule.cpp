@@ -410,6 +410,7 @@ public:
 		{
 			FTDAbrissHooks::Grund(Self, Gruende);
 		});
+		GTDAbrissHooks = 2;
 		UE_LOG(LogFicsitTD, Log, TEXT("Abriss: Sperre der Kernplattform eingerichtet (zwei Hooks)"));
 	}
 	static void Grund(const UFGBuildGunStateDismantle* Self, TArray<TSubclassOf<UFGConstructDisqualifier>>& Gruende)

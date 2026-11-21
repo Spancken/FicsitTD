@@ -89,6 +89,13 @@ namespace
 		{ TEXT("Boss50"), TEXT(""),
 			TEXT("Mehrere Johnnys. FICSIT hält das statistisch für unwahrscheinlich und bittet Sie trotzdem, es zu verhindern."),
 			TEXT("Multiple Johnnys. FICSIT considers this statistically unlikely and asks you to prevent it anyway.") },
+		// 0.12 E5 (Marius 14.11.: Einstieg Kern -> MAM -> Shop): Aufgaben nach Welle 1 und 2, gesprochen wie die Ansagen
+		{ TEXT("AufgabeMam"), TEXT(""),
+			TEXT("Erste Welle abgewehrt. Bauen Sie jetzt das MAM, es kostet nichts. Dort werden Festplatten zu neuer Technik. Großzügigkeit dieser Art ist bei FICSIT selten. Nutzen Sie sie."),
+			TEXT("First wave repelled. Build the MAM now, it is free of charge. It turns Hard Drives into new technology. Generosity of this kind is rare at FICSIT. Use it.") },
+		{ TEXT("AufgabeShop"), TEXT(""),
+			TEXT("Der AWESOME-Shop ist freigegeben, das erste Exemplar ist kostenlos. Dort tauschen Sie Coupons gegen Kontingente, Ausrüstung und Festplatten. FICSIT nennt das Belohnung. Die Buchhaltung nennt es Kreislauf."),
+			TEXT("The AWESOME Shop has been cleared for use, the first one is free. Trade Coupons there for quotas, equipment and Hard Drives. FICSIT calls this a reward. Accounting calls it circulation.") },
 		// Endlos ab Welle 60: die Bosse kommen reihum wieder - ein kurzer Satz statt Wiederholung
 		{ TEXT("BossWieder"), TEXT(""),
 			TEXT("Bosswelle. FICSIT hat aufgehört, die Bosse zu zählen. Sie bitte nicht."),
