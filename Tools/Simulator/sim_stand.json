@@ -1,11 +1,11 @@
 {
-  "datum": "2026-11-22 07:29",
+  "datum": "2026-11-22 10:04",
   "hinweis": "SHA-256 der Quelldateien, gegen die sim_alle_modi.py zuletzt gerechnet hat",
   "code_stand": {
-    "Source/FicsitTD/Private/TDBalance.cpp": "ae563906504221c1bcb83f8693866b4057a147719ad10e6d6dd359cd07a4a5a2",
-    "Source/FicsitTD/Private/TDWaveSubsystem.cpp": "b127c959b77db28e7b4b0d59a28de9f6206823b01e890a0ef7a45118c9aab9ed",
-    "Source/FicsitTD/Private/TDEinsatz.cpp": "3f13ca4a21b7ffc0667c5ed69a18042326efd04a02918b94d3117232bbf1f289",
-    "Source/FicsitTD/Private/TDBohrung.cpp": "2c3f810d94404bc2ed0225b98017b7908149ad4af2b4fa5ec2c215560419d2a8",
+    "Source/FicsitTD/Private/TDBalance.cpp": "c9ae9ffdbf9f0a2e902c154fd3f0cb9ca6899a6210526135b96eda1ca22bb881",
+    "Source/FicsitTD/Private/TDWaveSubsystem.cpp": "05328b6b6f8c36f0dfbb4427b4c08c8b272d6f6e90de385c93375e2a0a1cbafc",
+    "Source/FicsitTD/Private/TDEinsatz.cpp": "096286aa762c6ba11da614a519820acbf945d57bfff76934d92bfe18ca884d1d",
+    "Source/FicsitTD/Private/TDBohrung.cpp": "154b5e63fe8e9b7af50823de9715b084289b3914303d35ff9aca453a859a95b2",
     "Source/FicsitTD/Private/TDTurretBase.cpp": "409e590be60fce8e1fdcc23ac940a5d17293cf02382737cfe5d92c82a3f3b2e7",
     "Source/FicsitTD/Private/TDForschungInfo.inl": "41961d1b2913074f917fa35e82723de574a96e7569594f349f53a631eabfbb4d",
     "Source/FicsitTD/Private/TDForschungVoraussetzungen.inl": "6cdbd11c51686a4391eebcb3cd30f0a1a0b57303919090877f216f1a363dbc86",

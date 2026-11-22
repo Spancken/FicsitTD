@@ -7,6 +7,7 @@
 class AFGCreature;
 class ATDTestWall;
 class ATDDefenseCore;
+class AFGBuildable;
 
 /** Ablauf des Modus Kern-Verteidigung (Spielkonzept S2/S3) */
 UENUM()
@@ -327,6 +328,21 @@ public:
 	FString KernZugangText(const FTDKernZugang& Z, const ATDDefenseCore* FuerKern = nullptr) const;
 	/** Wellenstart wartet gerade, weil der Kern abgeriegelt ist */
 	bool WartetAufKernZugang() const { return mZugangWarte > 0.f; }
+	// ---- 0.13 N1 Bau-Sperren (TDBauSperren.cpp): Maschinen und Tuerme als Sperrflaeche im Gegnernetz ----
+	/** Alle passenden Bauten im Umkreis Gegner.BauSperrenRadius um Mitte sperren; liefert die Zahl neuer Sperrflaechen */
+	int32 SperreBautenUm(const FVector& Mitte);
+	/** Sperrflaechen abgerissener Bauten entfernen (bAlle: alle, beim Laufende) */
+	void RaeumeBauSperren(bool bAlle);
+	int32 GetBauSperrenZahl() const { return mBauSperren.Num(); }
+	/** Bau-Ereignis des Spiels (AFGBuildableSubsystem::BuildableConstructedGlobalDelegate) */
+	UFUNCTION()
+	void BauGebaut(AFGBuildable* Bau);
+	// ---- 0.13 K4 Wegpruefung beim Bauen (TDLebensadern.cpp) ----
+	/** Hologramm, das den letzten Weg zum Kern schliessen wuerde, bekommt den Ablehnungsgrund UTDCDKernAbriegelung. true = abgelehnt */
+	bool PruefeHologrammZugang(class AFGHologram* Holo);
+	/** Schneidet der Kasten (Welt) alle gueltigen Lebensadern? (mindestens 3 gueltige) */
+	bool WuerdeAbriegeln(const FBox& Kasten, int32* OutGeschnitten = nullptr, int32* OutGueltig = nullptr) const;
+	int32 GetLebensadernZahl() const;
 	/** Alle TD-Rezepte freischalten (freier Modus; im Einsatz kommen sie ueber das MAM) */
 	void SchalteSandkastenFrei();
 	int32 mWellenGesamt = 30;
@@ -646,6 +662,19 @@ private:
 	bool mZugangGemeldet = false;
 	/** so lange haelt der Start schon wegen eines laufenden Netzumbaus (KernZugang.WarteNetz) */
 	float mZugangNetzWarte = 0.f;
+	/** 0.13 N1: Bau -> Sperrkasten (eigener Actor, nicht gespeichert) */
+	TMap<TWeakObjectPtr<AFGBuildable>, TWeakObjectPtr<AActor>> mBauSperren;
+	bool mBauVerbunden = false;
+	/** > 0: nach dem Bau-Ereignis in so vielen s die Bauten im Umkreis neu sperren */
+	float mBauSperrenUhr = 0.f;
+	float mBauRaeumUhr = 0.f;
+	/** 0.13 K4: volle Wege aus 16 Richtungen (leer = kein voller Weg), reihum eine je Bild */
+	TArray<TArray<FVector>> mLebensadern;
+	int32 mLebensaderIndex = 0;
+	void PflegeLebensadern();
+	bool BrauchtBauSperre(const AFGBuildable* Bau) const;
+	bool SperreBau(AFGBuildable* Bau);
+	void VerbindeBauSperren();
 	/** Wellenstart halten, solange ein Bau den Kern abriegelt; true = Start diesmal halten (LaufTick kehrt zurueck) */
 	bool HalteStartFuerKernZugang(float DeltaTime);
 	/** Eine Front: Weg zum Kern, bei Teilweg die Sperrstelle (Kapselfahrten, Brueckentest) */

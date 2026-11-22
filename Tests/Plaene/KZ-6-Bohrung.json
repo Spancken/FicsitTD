@@ -84,7 +84,8 @@
       "netzneu": true
     },
     {
-      "warte": 12
+      "warte": 20,
+      "_Hinweis": "22.11. (Lauf 1031): nach dem Entfernen baut das Netz um den Bohrer laenger um; bei 12 s meldete die Pruefung richtig 'wird gerade aufgebaut'"
     },
     {
       "befehl": "td bohrung leicht"

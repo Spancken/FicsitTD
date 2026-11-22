@@ -323,6 +323,30 @@ static FText TDTextKontingent() { return TDTX(TEXT("Kontingent erschöpft (/td e
 static FText TDTextSinkGesperrt() { return TDTX(TEXT("Im Einsatz gesperrt: FICSIT-Coupons gibt es nur vom Abwehrkern"), TEXT("Locked during an operation: FICSIT Coupons only come from the Defense Core")); }
 static FText TDTextBlaupause() { return TDTX(TEXT("Im Einsatz gesperrt: Blaupausen sind nicht erlaubt"), TEXT("Locked during an operation: blueprints are not allowed")); }
 static FText TDTextWellenSperre() { return TDTX(TEXT("Während der Welle ist Bauen am Kern gesperrt"), TEXT("Building near the Core is locked during a wave")); }
+// 0.13 K2 (Marius 21.11.: Lore - der Boden um den Bohrer ist nicht stabil genug fuer Fabriken)
+static FText TDTextBodenInstabil()
+{
+	const int32 Meter = FMath::RoundToInt(TDBalance::Wert(TEXT("Einsatz.Ring.Radius"), 40.f));
+	return TDFX(TEXT("Boden instabil: Das Bohrbeben des Abwehrkerns trägt hier keine Fabrik. Fabrikgebäude erst ab %d m vom Kern, Abwehrbauten gehen."),
+		TEXT("Unstable ground: the Defense Core's drilling tremors cannot carry a factory here. Factory buildings only from %d m away, defenses are fine."), Meter);
+}
+
+UTDCDBodenInstabil::UTDCDBodenInstabil()
+{
+	mDisqfualifyingText = TDTextBodenInstabil();
+}
+
+// 0.13 K4
+static FText TDTextKernAbriegelung()
+{
+	return TDTX(TEXT("Würde den letzten Weg zum Kern schließen. Lass eine Lücke oder sperre mit einer Abwehrmauer."),
+		TEXT("Would close the last path to the Core. Leave a gap or block it with a defense wall."));
+}
+
+UTDCDKernAbriegelung::UTDCDKernAbriegelung()
+{
+	mDisqfualifyingText = TDTextKernAbriegelung();
+}
 
 UTDCDBlaupause::UTDCDBlaupause()
 {
@@ -415,6 +439,14 @@ static void TDAktualisiereSperrTexte()
 	Feld->SetPropertyValue_InContainer(GetMutableDefault<UTDCDAbrissSperre>(), TDTextAbrissSperre());
 	Feld->SetPropertyValue_InContainer(GetMutableDefault<UTDCDBlaupause>(), TDTextBlaupause());
 	Feld->SetPropertyValue_InContainer(GetMutableDefault<UTDCDPlattform>(), TDTextPlattform());
+	Feld->SetPropertyValue_InContainer(GetMutableDefault<UTDCDBodenInstabil>(), TDTextBodenInstabil());
+	Feld->SetPropertyValue_InContainer(GetMutableDefault<UTDCDKernAbriegelung>(), TDTextKernAbriegelung());
+}
+
+bool UTDEinsatzSubsystem::IstFabrikgebaeude(const UClass* BauKlasse)
+{
+	return BauKlasse && BauKlasse->IsChildOf(AFGBuildable::StaticClass()) && !BauKlasse->IsChildOf(AFGBuildableFactoryBuilding::StaticClass())
+		&& !IstLogistik(BauKlasse) && !BauKlasse->GetPathName().StartsWith(TEXT("/FicsitTD/"));
 }
 
 bool UTDEinsatzSubsystem::IstLogistik(const UClass* BauKlasse)
@@ -1979,6 +2011,10 @@ void UTDEinsatzSubsystem::PruefeHologramm(AFGHologram* Hologramm)
 	{
 		Hologramm->AddConstructDisqualifier(UTDCDWellenSperre::StaticClass());
 	}
+	else if (Grund == TEXT("Boden"))
+	{
+		Hologramm->AddConstructDisqualifier(UTDCDBodenInstabil::StaticClass());
+	}
 	else if (Grund == TEXT("Sink"))
 	{
 		Hologramm->AddConstructDisqualifier(UTDCDSinkGesperrt::StaticClass());
@@ -1994,6 +2030,13 @@ FString UTDEinsatzSubsystem::SperrGrund(UClass* BauKlasse, const FVector& Ort, i
 	if (!mAktiv || mFrei || !BauKlasse)
 	{
 		return FString();
+	}
+	// 0.13 K2 (Marius 21.11.): Ring "instabiler Boden" - Fabrikgebaeude nicht naeher als Einsatz.Ring.Radius am Kern (Einsatz und
+	// Endlos; Bestand bleibt stehen, gesperrt ist nur der Neubau). Vor dem Kontingent, weil nicht jedes Fabrikgebaeude einen Schluessel hat.
+	if (const ATDDefenseCore* RingKern = mKern.Get(); RingKern && TDBalance::Wert(TEXT("Einsatz.Ring.Aktiv"), 1.f) > 0.f && IstFabrikgebaeude(BauKlasse)
+		&& FVector::Dist2D(Ort, RingKern->GetActorLocation()) < TDBalance::Wert(TEXT("Einsatz.Ring.Radius"), 40.f) * 100.f)
+	{
+		return TEXT("Boden");
 	}
 	const FString Key = Schluessel(BauKlasse);
 	if (Key.IsEmpty())

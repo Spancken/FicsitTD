@@ -1,0 +1,135 @@
+{
+  "Name": "KZ-2-Maschinen",
+  "_Hinweis": "0.13 N1 (Fahrplan-0.13 Abschnitt 7, Marius 22.11.): Maschinen und Tuerme als Sperrflaeche im Gegnernetz. Ring aus Konstruktoren 20 m auf der flachen Plattform (45 m am Hang liess Luecken unter schwebenden Maschinen) ueber das Hologramm: kein Netz mehr unter den Maschinen, Kern abgeriegelt, Welle wartet; nach dem Abriss verschwinden die Sperrflaechen und die Welle startet. Dazu Messung Bolzentuerme.",
+  "NeuesSpiel": {
+    "Startort": "Grass Fields",
+    "Modus": 1
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 14,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warteBis": "EinsatzAktiv",
+      "max": 120
+    },
+    {
+      "warte": 20
+    },
+    {
+      "pruefe": "KernZugang",
+      "soll": "Frei",
+      "text": "vor dem Zubauen frei"
+    },
+    {
+      "spielbau": "Konstruktor",
+      "ring": 20,
+      "echt": true,
+      "text": "geschlossener Ring aus Konstruktoren 20 m auf der flachen Plattform (Hologramm, Bestand im Ring)"
+    },
+    {
+      "warte": 4
+    },
+    {
+      "pruefe": "KernZugang",
+      "text": "Pruefung setzt die Sperrflaechen (Netz baut um)"
+    },
+    {
+      "warte": 15
+    },
+    {
+      "netzunterbau": true,
+      "text": "MESSUNG: Netz unter den Konstruktoren (Soll: ohne Netz)"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "BauSperren:",
+      "min": 1,
+      "text": "Sperrflaechen gesetzt"
+    },
+    {
+      "pruefe": "KernZugang",
+      "soll": "Unpassierbar",
+      "bau": true,
+      "sperre": "Constructor",
+      "text": "Maschinenring erkannt"
+    },
+    {
+      "foto": "KZ-2_Ring"
+    },
+    {
+      "befehl": "td kern weiter"
+    },
+    {
+      "warte": 8
+    },
+    {
+      "pruefe": "WartetAufKernZugang",
+      "soll": true,
+      "text": "Wellenstart wartet"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "wartet: Kern abgeriegelt",
+      "min": 1,
+      "text": "Log: Start wartet (bestaetigt)"
+    },
+    {
+      "entferne": "spielbau"
+    },
+    {
+      "warteBis": "WelleLaeuft",
+      "max": 45,
+      "text": "Welle startet nach dem Abriss"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "entfernt (Bau abgerissen)",
+      "min": 1,
+      "text": "Sperrflaechen der abgerissenen Maschinen entfernt"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Kern wieder erreichbar",
+      "min": 1
+    },
+    {
+      "spielbau": "Bolzenturm",
+      "ring": 45,
+      "echt": true,
+      "text": "MESSUNG Bolzentuerme 45 m"
+    },
+    {
+      "warte": 4
+    },
+    {
+      "pruefe": "KernZugang",
+      "text": "Pruefung setzt die Sperrflaechen"
+    },
+    {
+      "warte": 15
+    },
+    {
+      "netzunterbau": true,
+      "text": "MESSUNG: Netz unter den Tuermen (Soll: ohne Netz)"
+    },
+    {
+      "entferne": "spielbau"
+    },
+    {
+      "warte": 5
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "kein Navigationsnetz in 12 m um den Kern",
+      "min": 0,
+      "max": 0,
+      "text": "Kern bleibt erreichbar (kein Riesenkasten um Tuerme)"
+    }
+  ]
+}

@@ -126,6 +126,12 @@ FString UTDWaveSubsystem::BohrPruefung(ATDDefenseCore* Kern, AFGResourceNode** O
 	if (TDBalance::Wert(TEXT("KernZugang.Aktiv"), 1.f) > 0.f)
 	{
 		const bool bNeu = FPlatformTime::Seconds() - mKernZugang.Zeit >= TDBalance::Wert(TEXT("KernZugang.Haltezeit"), 5.f) || mKernZugang.Front != 0;
+		// 0.13 N1: Maschinen und Tuerme um den Bohrer als Sperrflaeche ins Netz. Baut das Netz dafuer gerade um, urteilt die Pruefung
+		// nicht (NetzNichtBereit) - die Wartelogik vor Welle 1 prueft dann erneut (Lauf 0800: Ablehnen brach die zweite Bohrung)
+		if (bNeu)
+		{
+			SperreBautenUm(Kern->GetActorLocation());
+		}
 		if (bNeu)
 		{
 			mKernZugang = PruefeKernZugangVon(Kern, {}, true);
@@ -150,6 +156,13 @@ FString UTDWaveSubsystem::BohrPruefung(ATDDefenseCore* Kern, AFGResourceNode** O
 			FrontenFuer(Kern);
 			UE_LOG(LogFicsitTD, Log, TEXT("Bohrung: Zugang frei, Fronten neu gesucht (%d Richtungen gueltig)"), mGueltigeRichtungen);
 		}
+	}
+	// 0.13 N1: baut das Netz gerade um (neuer Bohrer, neue Sperrflaechen), ist "kein Weg" kein Urteil - Fronten beim naechsten Mal neu
+	if (mGueltigeRichtungen <= 0 && mKernZugang.Zustand == ETDKernZugang::NetzNichtBereit && mKernZugang.SperreKlasse == TEXT("Netzumbau"))
+	{
+		VerwerfeFronten();
+		return TDT(TEXT("Das Navigationsnetz um den Bohrer wird gerade aufgebaut. Versuche es in ein paar Sekunden noch einmal."),
+			TEXT("The navigation mesh around the drill is still being built. Try again in a few seconds."));
 	}
 	if (mGueltigeRichtungen <= 0)
 	{

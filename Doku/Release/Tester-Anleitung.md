@@ -40,6 +40,12 @@
 - The core platform cannot be dismantled during an operation.
 - Questions: Did you find the shop category? Were the prices clear? Did ADA's task lines help?
 
+### Coming in 0.13 (development build only)
+- **Core access:** if your buildings seal off the Core, the wave (or the drilling) does not start; the blocking spot is on the map. A building that would close the last path is red in the hologram. Defense walls may close it.
+- **Unstable ground:** no factory buildings within 40 m of the Core during an operation.
+- Enemies walk around machines and turrets instead of getting stuck on them.
+- Questions: Was it clear why a wave did not start? Did the red hologram ever block something you did not expect?
+
 ### What we want to know
 - How far did you get (wave), how long did it take, which turrets did you use?
 - Ammo per item: how many turrets does one miner, chain or belt feed for you? Did you run out of ammo, and in which wave?
@@ -97,6 +103,12 @@ Full list in the handbook: https://spancken.github.io/FicsitTD/#issues (section 
 - **Bosswellen:** ein Fenster mit Phasenbericht und drei Bonus-Karten; ein Talentpunkt je Bosswelle.
 - Die Kernplattform lässt sich im Einsatz nicht abreißen.
 - Fragen: Hast du die Shop-Kategorie gefunden? Waren die Preise klar? Haben ADAs Aufgaben geholfen?
+
+### Kommt mit 0.13 (nur Entwicklungsstand)
+- **Kern-Zugang:** Riegeln deine Bauten den Kern ab, startet die Welle (oder die Bohrung) nicht; die Sperrstelle steht auf der Karte. Ein Bau, der den letzten Weg schließen würde, ist im Hologramm rot. Abwehrmauern dürfen schließen.
+- **Instabiler Boden:** Im Einsatz keine Fabrikgebäude in 40 m um den Kern.
+- Gegner laufen um Maschinen und Türme herum, statt an ihnen hängen zu bleiben.
+- Fragen: War klar, warum eine Welle nicht startete? Hat das rote Hologramm etwas gesperrt, das du nicht erwartet hast?
 
 ### Was wir wissen wollen
 - Bis zu welcher Welle, wie lange, welche Türme?

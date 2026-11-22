@@ -1,0 +1,103 @@
+{
+  "Name": "KZ-4-Wegpruefung",
+  "_Hinweis": "0.13 K4 (Marius 21.11.): Wegpruefung beim Bauen. Ring aus Spielwaenden 20 m auf der Plattform mit einer Luecke im Osten. Ein Bau in der Luecke wuerde abriegeln (Lebensadern alle geschnitten) -> Hologramm rot (TDCDKernAbriegelung); TD-Mauer darf schliessen; anderswo frei.",
+  "NeuesSpiel": {
+    "Startort": "Grass Fields",
+    "Modus": 1
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 8,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warteBis": "EinsatzAktiv",
+      "max": 120
+    },
+    {
+      "balance": {
+        "KernZugang.HologrammLog": 1
+      }
+    },
+    {
+      "warte": 25
+    },
+    {
+      "pruefe": "Wegpruefung",
+      "winkel": 0,
+      "abstand": 20,
+      "breite": 8,
+      "tiefe": 2,
+      "soll": false,
+      "text": "ohne Ring: Bau im Osten riegelt nicht ab"
+    },
+    {
+      "spielbau": "Wand",
+      "ring": 20,
+      "luecke": true,
+      "echt": true,
+      "text": "Ring aus Spielwaenden 20 m, Luecke im Osten"
+    },
+    {
+      "warte": 15
+    },
+    {
+      "pruefe": "KernZugang",
+      "soll": "Frei",
+      "text": "mit Luecke frei"
+    },
+    {
+      "pruefe": "Wegpruefung",
+      "winkel": 0,
+      "abstand": 20,
+      "breite": 8,
+      "tiefe": 2,
+      "soll": true,
+      "text": "Bau in der Luecke wuerde abriegeln"
+    },
+    {
+      "pruefe": "Wegpruefung",
+      "winkel": 180,
+      "abstand": 30,
+      "breite": 8,
+      "tiefe": 2,
+      "soll": false,
+      "text": "Bau gegenueber der Luecke riegelt nicht ab"
+    },
+    {
+      "hologramm": "/FicsitTD/Buildings/BoltTurret/Recipe_TD_BoltTurret.Recipe_TD_BoltTurret_C",
+      "winkel": 0,
+      "abstand": 20,
+      "erwartet": "TDCDKernAbriegelung",
+      "text": "Hologramm Bolzenturm in der Luecke: rot (wuerde abriegeln)"
+    },
+    {
+      "hologramm": "/FicsitTD/Buildings/BoltTurret/Recipe_TD_BoltTurret.Recipe_TD_BoltTurret_C",
+      "winkel": 180,
+      "abstand": 30,
+      "erwartet": "",
+      "text": "Hologramm Bolzenturm gegenueber: kein Ablehnungsgrund"
+    },
+    {
+      "hologramm": "/FicsitTD/Buildings/DefenseWall/Recipe_TD_DefenseWall.Recipe_TD_DefenseWall_C",
+      "winkel": 0,
+      "abstand": 20,
+      "erwartet": "",
+      "text": "Hologramm Verteidigungsmauer in der Luecke: erlaubt (wird angegriffen)"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "wuerde den letzten Weg schliessen",
+      "min": 1,
+      "text": "Log der Ablehnung"
+    },
+    {
+      "entferne": "spielbau",
+      "netzneu": true
+    }
+  ]
+}

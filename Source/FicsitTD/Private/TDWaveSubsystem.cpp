@@ -1539,6 +1539,9 @@ void UTDWaveSubsystem::StoppeLauf(const FString& Grund)
 		return;
 	}
 	mLauf = ETDLauf::Aus;
+	// 0.13 N1: Sperrflaechen bleiben stehen (Lauf 0855: Entfernen am Laufende und Neusetzen bei der naechsten Bohrungspruefung liess
+	// das Netz genau beim Start umbauen - "Kein begehbarer Weg"). Sie werden nicht gespeichert und verschwinden mit ihrem Bau.
+	RaeumeBauSperren(false);
 	EntferneBossBalken();
 	EntferneWellenLeiste();
 	mNachschub.Reset();
@@ -3218,12 +3221,33 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 		StoppeLauf(TDT(TEXT("Kern-Verteidigung beendet: der Abwehrkern wurde abgebaut."), TEXT("Core defense ended: the Defense Core was dismantled.")));
 		return;
 	}
+	// 0.13 N1: nach einem Bau-Ereignis die Sperrflaechen nachziehen (auch in der Welle: Endlos und Bohrung erlauben Bauen)
+	if (mBauSperrenUhr > 0.f)
+	{
+		mBauSperrenUhr -= DeltaTime;
+		if (mBauSperrenUhr <= 0.f)
+		{
+			SperreBautenUm(mKern->GetActorLocation());
+		}
+	}
+	// 0.13 K4: Lebensadern fuer die Wegpruefung beim Bauen (eine Richtung je Bild)
+	PflegeLebensadern();
+	// Sperrflaechen abgerissener Bauten alle 3 s entfernen (sonst laufen Gegner um einen Bau herum, der nicht mehr steht)
+	mBauRaeumUhr -= DeltaTime;
+	if (mBauRaeumUhr <= 0.f)
+	{
+		mBauRaeumUhr = 3.f;
+		RaeumeBauSperren(false);
+	}
 	if (mLauf == ETDLauf::Aufbau)
 	{
 		// Gegnerklassen der naechsten Welle einmal vorladen (Test 0.31: erster Spawn einer Art ruckelte durch Nachladen)
 		if (mVorgeladenFuer != mWelle + 1)
 		{
 			mVorgeladenFuer = mWelle + 1;
+			// 0.13 N1: Maschinen und Tuerme als Sperrflaeche ins Gegnernetz (auch nach dem Laden, die Kaesten werden nicht gespeichert)
+			VerbindeBauSperren();
+			SperreBautenUm(mKern->GetActorLocation());
 			PlaneWelle(mWelle + 1);
 			// 0.12-dev (Marius 16.11.): ADA meldet neue Gegnerarten und Bosse der naechsten Welle zu Beginn der Bauphase
 			TDAda::VorWelle(this, mKern.Get(), mWelle + 1, mPlan);

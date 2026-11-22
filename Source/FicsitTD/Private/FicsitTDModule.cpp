@@ -696,6 +696,11 @@ void FFicsitTDModule::StartupModule()
 		{
 			Einsatz->PruefeHologramm(Self);
 		}
+		// 0.13 K4: Bau, der den letzten Weg zum Kern schliessen wuerde, ist rot (Einsatz, Endlos, laufende Bohrung)
+		if (UTDWaveSubsystem* Waves = World ? World->GetSubsystem<UTDWaveSubsystem>() : nullptr)
+		{
+			Waves->PruefeHologrammZugang(Self);
+		}
 	});
 	// Logistik, HUB und MAM kostenlos: seit 0.27.1 ueber leere Rezeptzutaten (UTDEinsatzSubsystem::AktualisiereGratisRezepte).
 	// Die frueheren Hooks auf GetNoBuildCost und GetDismantleRefund_Implementation sind entfernt: der virtuelle Hook auf die

@@ -357,6 +357,11 @@ const FTDKernZugang& UTDWaveSubsystem::PruefeKernZugang(bool bErzwingen)
 		return mKernZugang;
 	}
 	const ATDDefenseCore* Kern = mKern.Get();
+	// 0.13 N1: neue oder abgerissene Maschinen und Tuerme ins Netz uebernehmen, bevor geurteilt wird
+	if (Kern)
+	{
+		SperreBautenUm(Kern->GetActorLocation());
+	}
 	TArray<FVector> Starts;
 	const int32 Naechste = mLauf == ETDLauf::Welle ? FMath::Max(1, mWelle) : mWelle + 1;
 	for (int32 i = 0; i < AktiveFrontenFuer(Naechste) && mFronten.IsValidIndex(i); ++i)
