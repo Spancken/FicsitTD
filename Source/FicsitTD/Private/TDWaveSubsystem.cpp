@@ -1377,6 +1377,9 @@ bool UTDWaveSubsystem::StarteKernVerteidigung(ATDDefenseCore* Kern, int32 Wellen
 	mPlanWelle = -1;   // T3: Wellenplan haengt an Kern und Stufe
 	mFrontCheckWelle = -1;
 	mKlippenWarte = 0.f;
+	mKernZugang = FTDKernZugang();   // 0.13 K1
+	mZugangWarte = 0.f;
+	mZugangPruefUhr = 0.f;
 	// 18.11.: Abgleich vor Welle 1 - P12-E5 zeigte zwei stabile Zustaende je nach Ladestand des Netzes (Nordwesten 343 m frueh,
 	// Norden 357 m spaeter); der Abgleich schaltete auf den spaeteren um. Deshalb aus (Gegner.FrontenAbgleich 0), bis Marius entscheidet.
 	mFrontenStabil = TDBalance::Wert(TEXT("Gegner.FrontenAbgleich"), 0.f) <= 0.f;
@@ -1536,6 +1539,9 @@ void UTDWaveSubsystem::StoppeLauf(const FString& Grund)
 		return;
 	}
 	mLauf = ETDLauf::Aus;
+	// 0.13 N1: Sperrflaechen bleiben stehen (Lauf 0855: Entfernen am Laufende und Neusetzen bei der naechsten Bohrungspruefung liess
+	// das Netz genau beim Start umbauen - "Kein begehbarer Weg"). Sie werden nicht gespeichert und verschwinden mit ihrem Bau.
+	RaeumeBauSperren(false);
 	EntferneBossBalken();
 	EntferneWellenLeiste();
 	mNachschub.Reset();
@@ -1587,6 +1593,9 @@ void UTDWaveSubsystem::SetzeLaufFort(ATDDefenseCore* Kern)
 	mPlanWelle = -1;   // T3: Wellenplan haengt an Kern und Stufe
 	mFrontCheckWelle = -1;
 	mKlippenWarte = 0.f;
+	mKernZugang = FTDKernZugang();   // 0.13 K1
+	mZugangWarte = 0.f;
+	mZugangPruefUhr = 0.f;
 	if (!Kern || mLauf != ETDLauf::Aus)
 	{
 		return;
@@ -1757,6 +1766,12 @@ float UTDWaveSubsystem::EndlosAbstand(int32 Welle) const
 
 FString UTDWaveSubsystem::GetBereitText(bool bKurz) const
 {
+	// 0.13 K1: der Start wartet, weil ein Bau den Kern abriegelt
+	if (mLauf == ETDLauf::Aufbau && mZugangWarte > 0.f && mZugangGemeldet)
+	{
+		return bKurz ? TDF(TEXT("Welle %d wartet: Kern abgeriegelt"), TEXT("Wave %d waiting: Core sealed off"), mWelle + 1)
+			: TDF(TEXT("Welle %d wartet: Kern abgeriegelt durch %s (Kern-Menü: E)"), TEXT("Wave %d waiting: Core sealed off by %s (Core Menu: E)"), mWelle + 1, *mKernZugang.Sperre);
+	}
 	// Gegencheck 15.11. (F1): auf Zeit zeigt die Zeile den Countdown statt "3/0 bereit"
 	if (!mManuell && mLauf == ETDLauf::Aufbau)
 	{
@@ -2685,6 +2700,18 @@ void UTDWaveSubsystem::PruefeFrontenVorWelle(int32 Nummer)
 					Nummer, i + 1, bNetzImBau ? 1 : 0, Auftraege);
 				continue;
 			}
+			// 0.13 K1: sperrt ein Bau des Spielers (oder eine TD-Mauer) den Weg, bleiben die Fronten - die Neuwahl faende sonst 0 gueltige
+			// Richtungen und die Welle startete nach Gegner.FrontenWarteMax mit ungeprueften Fronten. Den Start haelt HalteStartFuerKernZugang.
+			if (TDBalance::Wert(TEXT("KernZugang.Aktiv"), 1.f) > 0.f)
+			{
+				const FTDKernZugang Z = PruefeZugangEinzeln(mKern.Get(), mFronten[i].Ort, i + 1);
+				if (Z.bBau)
+				{
+					UE_LOG(LogFicsitTD, Log, TEXT("Frontpruefung Welle %d: Front %d versperrt durch %s (%s, %s) - Fronten bleiben"),
+						Nummer, i + 1, *Z.Sperre, *Z.SperreKlasse, KernZugangName(Z.Zustand));
+					continue;
+				}
+			}
 			UE_LOG(LogFicsitTD, Warning, TEXT("Frontpruefung Welle %d: Front %d (%s) hat nur noch einen Teilweg (%d Punkte, Ende %s, Netz im Umbau %d, %d Auftraege) - Fronten neu bestimmen"),
 				Nummer, i + 1, *FrontText(mFronten, i, true), Probe.Num(), Probe.Num() ? *Probe.Last().ToCompactString() : TEXT("-"), bNetzImBau ? 1 : 0, Auftraege);
 			mFronten.Reset();
@@ -3194,12 +3221,33 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 		StoppeLauf(TDT(TEXT("Kern-Verteidigung beendet: der Abwehrkern wurde abgebaut."), TEXT("Core defense ended: the Defense Core was dismantled.")));
 		return;
 	}
+	// 0.13 N1: nach einem Bau-Ereignis die Sperrflaechen nachziehen (auch in der Welle: Endlos und Bohrung erlauben Bauen)
+	if (mBauSperrenUhr > 0.f)
+	{
+		mBauSperrenUhr -= DeltaTime;
+		if (mBauSperrenUhr <= 0.f)
+		{
+			SperreBautenUm(mKern->GetActorLocation());
+		}
+	}
+	// 0.13 K4: Lebensadern fuer die Wegpruefung beim Bauen (eine Richtung je Bild)
+	PflegeLebensadern();
+	// Sperrflaechen abgerissener Bauten alle 3 s entfernen (sonst laufen Gegner um einen Bau herum, der nicht mehr steht)
+	mBauRaeumUhr -= DeltaTime;
+	if (mBauRaeumUhr <= 0.f)
+	{
+		mBauRaeumUhr = 3.f;
+		RaeumeBauSperren(false);
+	}
 	if (mLauf == ETDLauf::Aufbau)
 	{
 		// Gegnerklassen der naechsten Welle einmal vorladen (Test 0.31: erster Spawn einer Art ruckelte durch Nachladen)
 		if (mVorgeladenFuer != mWelle + 1)
 		{
 			mVorgeladenFuer = mWelle + 1;
+			// 0.13 N1: Maschinen und Tuerme als Sperrflaeche ins Gegnernetz (auch nach dem Laden, die Kaesten werden nicht gespeichert)
+			VerbindeBauSperren();
+			SperreBautenUm(mKern->GetActorLocation());
 			PlaneWelle(mWelle + 1);
 			// 0.12-dev (Marius 16.11.): ADA meldet neue Gegnerarten und Bosse der naechsten Welle zu Beginn der Bauphase
 			TDAda::VorWelle(this, mKern.Get(), mWelle + 1, mPlan);
@@ -3342,6 +3390,12 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 		{
 			UE_LOG(LogFicsitTD, Log, TEXT("Wellenstart %d nach %.1f s Warten auf den Netzumbau (offen %d)"), mWelle + 1, mKlippenWarte, mKlippenOffen);
 			mKlippenWarte = 0.f;
+		}
+		// 0.13 K1 (Fahrplan-0.13, Marius 21.11.): riegelt ein Bau den Kern ab, startet die Welle nicht - Einsatz, Endlos und zwischen
+		// Bohrwellen. Sperrstelle auf Karte und im Chat, alle KernZugang.Wiederholung s erneut. Nichts wird abgerissen.
+		if (mCountdown <= 0.f && HalteStartFuerKernZugang(DeltaTime))
+		{
+			return;
 		}
 		if (mCountdown <= 0.f)
 		{

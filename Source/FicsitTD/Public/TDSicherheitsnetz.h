@@ -17,6 +17,7 @@ namespace TDNetz
 		AbsturzEntfernt,       // Gegnerhirn: dritter Absturz, getoetet
 		OhneLeben,             // Gegnerhirn: lebte mit 0 LP weiter, getoetet
 		FrontenUngeprueft,     // Wellensystem: Welle startete mit ungeprueften Fronten (Netz nicht fertig, 18.11.)
+		Abriegelung,           // 0.13 K1: Wellenstart wartete, weil ein Bau den Kern abriegelte (Ziel 0, sobald die Wegpruefung K4 steht)
 		Anzahl
 	};
 	FICSITTD_API void Melde(EArt Art);

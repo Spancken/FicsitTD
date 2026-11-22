@@ -752,6 +752,8 @@ void UTDKernTerminal::Aktualisiere()
 		const int32 VorziehBonus = Waves->IstEndlos() && Waves->GetCountdown() > 0.f
 			? FMath::FloorToInt(Waves->GetCountdown() / FMath::Max(1.f, TDBalance::Wert(TEXT("Endlos.VorziehSekundenJeCoupon"), 10.f))) : 0;
 		mWelleText->SetText(Waves->LaeuftWelle() ? TDTX(TEXT("Welle läuft ..."), TEXT("Wave running ..."))
+			// 0.13 K1: der Start wartet, bis der Kern wieder erreichbar ist (Sperrstelle auf der Karte)
+			: Waves->WartetAufKernZugang() ? TDTX(TEXT("Kern abgeriegelt (Karte)"), TEXT("Core sealed off (map)"))
 			: VorziehBonus > 0 ? TDFX(TEXT("Welle vorziehen (+%d Coupons)"), TEXT("Bring wave forward (+%d Coupons)"), VorziehBonus)
 			: TDTX(TEXT("Welle starten"), TEXT("Start wave")));
 	}

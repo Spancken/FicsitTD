@@ -59,6 +59,13 @@
 #include "Widgets/SWindow.h"
 #include "FGSchematic.h"
 #include "FGResearchManager.h"
+#include "FGLightweightBuildableSubsystem.h"
+#include "Hologram/FGHologram.h"
+#include "FGCharacterPlayer.h"
+#include "Equipment/FGBuildGun.h"
+#include "NavigationSystem.h"
+#include "AbstractInstanceManager.h"
+#include "InstanceData.h"
 #include "FGResearchTree.h"
 #include "Camera/PlayerCameraManager.h"
 #include "FGSchematicManager.h"
@@ -1561,6 +1568,312 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		Ergebnis(TEXT("Spieler"), TEXT("Uebersteuern"), Turm && Turm->UebersteuernRest() > 0.f, Antwort);
 		return true;
 	}
+	if (S->TryGetStringField(TEXT("spielbau"), Wort))
+	{
+		// 0.13 K1 (Fahrplan-0.13, Plaene KZ-*): Spielbauten als Ring um den Kern setzen, wie ein Spieler, der den Kern zubaut.
+		// "Wand" (8 x 4 m, Lightweight), "Fundament" (8 x 4 m, Lightweight), "Konstruktor" (Maschine, Actor). "ring" = Radius in m
+		// (Standard 40), "luecke": true laesst das Stueck im Osten (Winkel 0) frei. Kein Kontingent, kein Material (Testaufbau).
+		struct FTDSpielbauArt { const TCHAR* Name; const TCHAR* Klasse; const TCHAR* Rezept; float Abstand; float Hoehe; float Drehung; };
+		static const FTDSpielbauArt Arten[] = {
+			{ TEXT("Wand"), TEXT("/Game/FactoryGame/Buildable/Building/Wall/Build_Wall_8x4_01.Build_Wall_8x4_01_C"),
+				TEXT("/Game/FactoryGame/Recipes/Buildings/Walls/Recipe_Wall_8x4_01.Recipe_Wall_8x4_01_C"), 760.f, -50.f, 0.f },
+			{ TEXT("Fundament"), TEXT("/Game/FactoryGame/Buildable/Building/Foundation/Build_Foundation_8x4_01.Build_Foundation_8x4_01_C"),
+				TEXT("/Game/FactoryGame/Recipes/Buildings/Foundations/Recipe_Foundation_8x4_01.Recipe_Foundation_8x4_01_C"), 760.f, 150.f, 90.f },
+			{ TEXT("Konstruktor"), TEXT("/Game/FactoryGame/Buildable/Factory/ConstructorMk1/Build_ConstructorMk1.Build_ConstructorMk1_C"),
+				TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_ConstructorMk1.Recipe_ConstructorMk1_C"), 700.f, -20.f, 90.f },
+			{ TEXT("TD-Mauer"), TEXT("/FicsitTD/Buildings/DefenseWall/Build_TD_DefenseWall.Build_TD_DefenseWall_C"),
+				TEXT("/FicsitTD/Buildings/DefenseWall/Recipe_TD_DefenseWall.Recipe_TD_DefenseWall_C"), 760.f, -50.f, 0.f },
+			{ TEXT("Bolzenturm"), TEXT("/FicsitTD/Buildings/BoltTurret/Build_TD_BoltTurret.Build_TD_BoltTurret_C"),
+				TEXT("/FicsitTD/Buildings/BoltTurret/Recipe_TD_BoltTurret.Recipe_TD_BoltTurret_C"), 500.f, -20.f, 0.f } };
+		const FTDSpielbauArt* Art = nullptr;
+		for (const FTDSpielbauArt& A : Arten)
+		{
+			Art = Wort == A.Name ? &A : Art;
+		}
+		ATDDefenseCore* Kern = nullptr;
+		for (TActorIterator<ATDDefenseCore> It(World); It && !Kern; ++It)
+		{
+			Kern = *It;
+		}
+		UClass* Klasse = Art ? LoadClass<AFGBuildable>(nullptr, Art->Klasse) : nullptr;
+		UClass* Rezept = Art ? LoadClass<UFGRecipe>(nullptr, Art->Rezept) : nullptr;
+		AFGBuildableSubsystem* Bau = AFGBuildableSubsystem::Get(World);
+		const float Radius = (S->HasField(TEXT("ring")) ? static_cast<float>(S->GetNumberField(TEXT("ring"))) : 40.f) * 100.f;
+		const bool bLuecke = S->HasField(TEXT("luecke")) && S->GetBoolField(TEXT("luecke"));
+		// 22.11. (Lauf Kern-Zugang-K1: per Code gesetzte Bauten erscheinen nicht im Navigationsnetz, nur in Kacheln, die aus anderem
+		// Grund neu gebaut werden - wie die Kernplattform, TDKernplatz AddDirtyArea): "echt": true baut ueber das Hologramm wie der
+		// Spieler (Construct), "netz": true erzeugt danach das Netz im Ring neu. Beides zusammen misst, ob echtes Bauen das Netz aktualisiert.
+		const bool bEcht = S->HasField(TEXT("echt")) && S->GetBoolField(TEXT("echt"));
+		const bool bNetz = S->HasField(TEXT("netzneu")) && S->GetBoolField(TEXT("netzneu"));
+		APawn* SpielerFigur = World->GetFirstPlayerController() ? World->GetFirstPlayerController()->GetPawn() : nullptr;
+		AFGCharacterPlayer* Spieler = Cast<AFGCharacterPlayer>(SpielerFigur);
+		AActor* HoloBesitzer = Spieler && Spieler->GetBuildGun() ? static_cast<AActor*>(Spieler->GetBuildGun()) : static_cast<AActor*>(SpielerFigur);
+		int32 Gesetzt = 0, Stuecke = 0, PerHologramm = 0;
+		if (Art && Kern && Klasse && Bau)
+		{
+			const FVector Mitte = Kern->GetActorLocation();
+			Stuecke = FMath::Max(6, FMath::CeilToInt(2.f * PI * Radius / Art->Abstand));
+			for (int32 k = bLuecke ? 1 : 0; k < Stuecke; ++k)
+			{
+				const float Winkel = 360.f * k / Stuecke;
+				FVector Ort = Mitte + FRotator(0.f, Winkel, 0.f).Vector() * Radius;
+				// Boden unter dem Platz (Gelaende und Bauten)
+				FHitResult Boden;
+				FCollisionObjectQueryParams Statisch(ECC_WorldStatic);
+				if (World->LineTraceSingleByObjectType(Boden, Ort + FVector(0.f, 0.f, 4000.f), Ort - FVector(0.f, 0.f, 4000.f), Statisch))
+				{
+					Ort.Z = Boden.ImpactPoint.Z;
+				}
+				Ort.Z += Art->Hoehe;
+				// lange Seite tangential, damit der Ring geschlossen ist (Drehung je Art, "drehung" im Plan ueberschreibt)
+				const float Zusatz = S->HasField(TEXT("drehung")) ? static_cast<float>(S->GetNumberField(TEXT("drehung"))) : Art->Drehung;
+				const FTransform T(FRotator(0.f, Winkel + Zusatz, 0.f), Ort);
+				if (bEcht && Rezept && HoloBesitzer)
+				{
+					AFGHologram* Holo = AFGHologram::SpawnHologramFromRecipe(Rezept, HoloBesitzer, Ort, SpielerFigur);
+					if (Holo)
+					{
+						Holo->SetActorLocationAndRotation(Ort, T.GetRotation());
+						TArray<AActor*> Kinder;
+						AActor* Neu = Holo->Construct(Kinder, Bau->GetNewNetConstructionID());
+						Holo->Destroy();
+						FTDSpielbau Eintrag;
+						Eintrag.Klasse = Klasse->GetName();
+						Eintrag.Lage = T;
+						const AFGBuildable* NeuBau = Cast<AFGBuildable>(Neu);
+						Eintrag.Actor = NeuBau && !NeuBau->GetIsLightweightTemporary() ? Neu : nullptr;
+						mSpielbau.Add(Eintrag);
+						++Gesetzt;
+						++PerHologramm;
+						continue;
+					}
+				}
+				if (AFGBuildable* Neu = Bau->BeginSpawnBuildable(Klasse, T))
+				{
+					Neu->SetBuiltWithRecipe(Rezept);
+					Neu->FinishSpawning(T);
+					FTDSpielbau Eintrag;
+					Eintrag.Klasse = Klasse->GetName();
+					Eintrag.Lage = T;
+					Eintrag.Actor = IsValid(Neu) && !Neu->GetIsLightweightTemporary() ? Neu : nullptr;
+					mSpielbau.Add(Eintrag);
+					++Gesetzt;
+				}
+			}
+		}
+		// 22.11. Messung (Lauf K1b: geschlossene Ringe aus Spielwaenden und Konstruktoren blieben auch nach Netzumbau "Frei"):
+		// wirkt das zuletzt gesetzte Teil ueberhaupt aufs Navigationsnetz? Strahl quer durch das Teil, Treffer aufloesen.
+		if (Kern && mSpielbau.Num() > 0)
+		{
+			const FTransform& Letzte = mSpielbau.Last().Lage;
+			const FVector Aussen = (Letzte.GetLocation() - Kern->GetActorLocation()).GetSafeNormal2D();
+			const FVector Hoch(0.f, 0.f, 150.f);
+			TArray<FHitResult> Treffer;
+			FCollisionObjectQueryParams Objekte;
+			Objekte.AddObjectTypesToQuery(ECC_WorldStatic);
+			Objekte.AddObjectTypesToQuery(ECC_WorldDynamic);
+			World->LineTraceMultiByObjectType(Treffer, Letzte.GetLocation() + Aussen * 800.f + Hoch, Letzte.GetLocation() - Aussen * 800.f + Hoch, Objekte);
+			FString Mess = TEXT("kein Treffer");
+			for (const FHitResult& Hit : Treffer)
+			{
+				const UPrimitiveComponent* Teil = Hit.GetComponent();
+				const AActor* Besitzer = Hit.GetActor();
+				FInstanceHandle Handle;
+				AAbstractInstanceManager* Manager = AAbstractInstanceManager::GetInstanceManager(World);
+				if (Manager && Manager->ResolveHit(Hit, Handle) && Handle.GetOwner())
+				{
+					Besitzer = Handle.GetOwner();
+				}
+				if (!Besitzer || (!Besitzer->IsA<AFGBuildable>() && !Besitzer->IsA<AFGLightweightBuildableSubsystem>()))
+				{
+					continue;
+				}
+				int32 Netzwirksam = 0, Alle = 0;
+				if (Besitzer && Besitzer->IsA<AFGBuildable>())
+				{
+					TArray<UPrimitiveComponent*> Teile;
+					Besitzer->GetComponents<UPrimitiveComponent>(Teile);
+					for (const UPrimitiveComponent* P : Teile)
+					{
+						++Alle;
+						Netzwirksam += P && P->CanEverAffectNavigation() && P->IsNavigationRelevant() ? 1 : 0;
+					}
+				}
+				Mess = FString::Printf(TEXT("Treffer %s / %s: Kollision CanEverAffectNavigation %d, IsNavigationRelevant %d, Profil %s; Besitzer %s, netzwirksame Komponenten %d von %d"),
+					Teil ? *Teil->GetClass()->GetName() : TEXT("-"), Teil ? *Teil->GetName() : TEXT("-"), Teil && Teil->CanEverAffectNavigation() ? 1 : 0,
+					Teil && Teil->IsNavigationRelevant() ? 1 : 0, Teil ? *Teil->GetCollisionProfileName().ToString() : TEXT("-"), Besitzer ? *Besitzer->GetClass()->GetName() : TEXT("-"), Netzwirksam, Alle);
+				break;
+			}
+			UE_LOG(LogFicsitTD, Log, TEXT("Autotest: Spielbau-Messung %s: %s"), *Wort, *Mess);
+		}
+		if (bNetz && Kern)
+		{
+			if (UNavigationSystemV1* Nav = FNavigationSystem::GetCurrent<UNavigationSystemV1>(World))
+			{
+				Nav->AddDirtyArea(FBox::BuildAABB(Kern->GetActorLocation(), FVector(Radius + 2000.f, Radius + 2000.f, 3000.f)), ENavigationDirtyFlag::All);
+			}
+		}
+		UE_LOG(LogFicsitTD, Log, TEXT("Autotest: Spielbau %s als Ring %.0f m, %d von %d Stuecken gesetzt (%d per Hologramm)%s%s"), *Wort, Radius / 100.f, Gesetzt, Stuecke,
+			PerHologramm, bLuecke ? TEXT(", Luecke im Osten") : TEXT(""), bNetz ? TEXT(", Netz im Ring neu erzeugt") : TEXT(""));
+		Ergebnis(TEXT("Spielbau"), S->HasField(TEXT("text")) ? S->GetStringField(TEXT("text")) : Wort, Gesetzt > 0,
+			!Art ? FString(TEXT("unbekannte Art (Wand, Fundament, Konstruktor)")) : !Kern ? FString(TEXT("kein Kern"))
+			: FString::Printf(TEXT("%d von %d Stuecken, Ring %.0f m%s"), Gesetzt, Stuecke, Radius / 100.f, bLuecke ? TEXT(", Luecke im Osten") : TEXT("")));
+		return true;
+	}
+	if (S->TryGetStringField(TEXT("hologramm"), Wort))
+	{
+		// 0.13 K4/K2: Hologramm aus dem Rezept (Klassenpfad) bei "winkel"/"abstand" (m) vom Kern, Platzpruefung wie die Bau-Pistole,
+		// Ablehnungsgruende auslesen. "erwartet": Klassenname eines Grundes (z. B. TDCDKernAbriegelung) oder "" = keiner.
+		UClass* Rezept = LoadClass<UFGRecipe>(nullptr, *Wort);
+		ATDDefenseCore* KernH = nullptr;
+		for (TActorIterator<ATDDefenseCore> It(World); It && !KernH; ++It) { KernH = *It; }
+		APawn* FigurH = World->GetFirstPlayerController() ? World->GetFirstPlayerController()->GetPawn() : nullptr;
+		AFGCharacterPlayer* SpielerH = Cast<AFGCharacterPlayer>(FigurH);
+		AActor* BesitzerH = SpielerH && SpielerH->GetBuildGun() ? static_cast<AActor*>(SpielerH->GetBuildGun()) : static_cast<AActor*>(FigurH);
+		TArray<FString> Gruende;
+		bool bDa = false;
+		if (Rezept && KernH && BesitzerH)
+		{
+			const float Winkel = S->HasField(TEXT("winkel")) ? static_cast<float>(S->GetNumberField(TEXT("winkel"))) : 0.f;
+			const float Abstand = static_cast<float>(S->GetNumberField(TEXT("abstand"))) * 100.f;
+			FVector Ort = KernH->GetActorLocation() + FRotator(0.f, Winkel, 0.f).Vector() * Abstand;
+			FHitResult Boden;
+			if (World->LineTraceSingleByObjectType(Boden, Ort + FVector(0.f, 0.f, 4000.f), Ort - FVector(0.f, 0.f, 4000.f), FCollisionObjectQueryParams(ECC_WorldStatic)))
+			{
+				Ort.Z = Boden.ImpactPoint.Z;
+			}
+			const float Drehung = S->HasField(TEXT("drehung")) ? static_cast<float>(S->GetNumberField(TEXT("drehung"))) : Winkel + 90.f;
+			if (AFGHologram* Holo = AFGHologram::SpawnHologramFromRecipe(Rezept, BesitzerH, Ort, FigurH))
+			{
+				Holo->SetActorLocationAndRotation(Ort, FRotator(0.f, Drehung, 0.f));
+				Holo->ValidatePlacementAndCost(SpielerH ? SpielerH->GetInventory() : nullptr);
+				TArray<TSubclassOf<UFGConstructDisqualifier>> Liste;
+				Holo->GetConstructDisqualifiers(Liste);
+				for (const TSubclassOf<UFGConstructDisqualifier>& D : Liste)
+				{
+					Gruende.Add(GetNameSafe(D.Get()));
+				}
+				Holo->Destroy();
+				bDa = true;
+			}
+		}
+		const FString Erwartet = S->HasField(TEXT("erwartet")) ? S->GetStringField(TEXT("erwartet")) : FString();
+		const FString Liste = FString::Join(Gruende, TEXT(", "));
+		const bool bOk = bDa && (Erwartet.IsEmpty() ? !Liste.Contains(TEXT("TDCD")) : Liste.Contains(Erwartet));
+		UE_LOG(LogFicsitTD, Log, TEXT("Autotest: Hologramm %s: Gruende [%s]"), *Wort, *Liste);
+		Ergebnis(TEXT("Hologramm"), S->HasField(TEXT("text")) ? S->GetStringField(TEXT("text")) : Wort, bOk,
+			!bDa ? FString(TEXT("kein Hologramm")) : Liste.IsEmpty() ? FString(TEXT("keine Gruende")) : Liste);
+		return true;
+	}
+	if (S->HasField(TEXT("netzunterbau")))
+	{
+		// 22.11. Messung: Navigationsnetz in der Grundflaeche jedes von "spielbau" gesetzten Teils (Projektion, 40 cm seitlich).
+		// Netz am Boden unter dem Teil = das Teil wirkt nicht aufs Netz; Netz auf dem Dach = begehbar, aber Sperre
+		UNavigationSystemV1* Nav = FNavigationSystem::GetCurrent<UNavigationSystemV1>(World);
+		int32 Boden = 0, Dach = 0, Ohne = 0;
+		TArray<FString> MitNetz;
+		for (const FTDSpielbau& E : mSpielbau)
+		{
+			const FVector P = E.Lage.GetLocation();
+			FNavLocation Ort;
+			if (Nav && Nav->ProjectPointToNavigation(P, Ort, FVector(40.f, 40.f, 1200.f)))
+			{
+				(Ort.Location.Z > P.Z + 250.f ? Dach : Boden) += 1;
+				if (MitNetz.Num() < 6)
+				{
+					MitNetz.Add(FString::Printf(TEXT("%s (Netz %.0f cm hoeher, Gier %.0f)"), *P.ToCompactString(), Ort.Location.Z - P.Z, E.Lage.Rotator().Yaw));
+				}
+			}
+			else
+			{
+				++Ohne;
+			}
+		}
+		const FString Ist = FString::Printf(TEXT("%d Teile: Netz am Boden %d, auf dem Dach %d, ohne Netz %d (Netz im Umbau %d)"), mSpielbau.Num(), Boden, Dach, Ohne,
+			Nav && Nav->IsNavigationBuildInProgress() ? 1 : 0);
+		UE_LOG(LogFicsitTD, Log, TEXT("Autotest: Netz unter Spielbau: %s%s%s"), *Ist, MitNetz.Num() ? TEXT(" - mit Netz: ") : TEXT(""), *FString::Join(MitNetz, TEXT("; ")));
+		Ergebnis(TEXT("Netz"), TEXT("unter Spielbau"), mSpielbau.Num() > 0, Ist);
+		return true;
+	}
+	if (S->HasField(TEXT("netzauffrischen")))
+	{
+		// 22.11. (Kern-Zugang K1): Navigationsnetz im Umkreis (m) um den Kern neu erzeugen, wie TDKernplatz nach der Plattform
+		const float Umkreis = static_cast<float>(S->GetNumberField(TEXT("netzauffrischen"))) * 100.f;
+		ATDDefenseCore* NetzKern = nullptr;
+		for (TActorIterator<ATDDefenseCore> It(World); It && !NetzKern; ++It)
+		{
+			NetzKern = *It;
+		}
+		UNavigationSystemV1* Nav = FNavigationSystem::GetCurrent<UNavigationSystemV1>(World);
+		if (Nav && NetzKern)
+		{
+			Nav->AddDirtyArea(FBox::BuildAABB(NetzKern->GetActorLocation(), FVector(Umkreis, Umkreis, 3000.f)), ENavigationDirtyFlag::All);
+		}
+		Ergebnis(TEXT("Netz"), FString::Printf(TEXT("neu erzeugen %.0f m"), Umkreis / 100.f), Nav && NetzKern, NetzKern ? TEXT("Kacheln angestossen") : TEXT("kein Kern"));
+		return true;
+	}
+	if (S->TryGetStringField(TEXT("entferne"), Wort))
+	{
+		// 0.13 K1: alles, was "spielbau" gesetzt hat, wieder entfernen (Lightweight ueber Klasse und Lage wie /td s0 abrissalle)
+		int32 Entfernt = 0;
+		const int32 Gesamt = mSpielbau.Num();
+		TArray<FLightweightBuildableInstanceRef> Ziele;
+		AFGLightweightBuildableSubsystem* Leicht = AFGLightweightBuildableSubsystem::Get(World);
+		for (const FTDSpielbau& E : mSpielbau)
+		{
+			// Actor (Maschine) abreissen; zusaetzlich nach einer Lightweight-Instanz an derselben Stelle suchen, falls der Bau
+			// nach FinishSpawning doch in eine Instanz umgewandelt wurde
+			if (AActor* A = E.Actor.Get())
+			{
+				A->Destroy();
+				++Entfernt;
+			}
+			if (!Leicht)
+			{
+				continue;
+			}
+			for (const TPair<TSubclassOf<AFGBuildable>, TArray<FRuntimeBuildableInstanceData>>& P : Leicht->GetAllLightweightBuildableInstances())
+			{
+				if (!P.Key || P.Key->GetName() != E.Klasse)
+				{
+					continue;
+				}
+				for (int32 i = 0; i < P.Value.Num(); ++i)
+				{
+					if (P.Value[i].IsValid() && P.Value[i].Transform.GetLocation().Equals(E.Lage.GetLocation(), 5.f))
+					{
+						FLightweightBuildableInstanceRef Ref;
+						Ref.Initialize(Leicht, P.Key, i);
+						Ziele.Add(Ref);
+					}
+				}
+			}
+		}
+		// erst sammeln, dann entfernen - Remove() aendert die Tabelle
+		for (FLightweightBuildableInstanceRef& Ref : Ziele)
+		{
+			Entfernt += Ref.IsValid() && Ref.Remove() ? 1 : 0;
+		}
+		Entfernt = FMath::Min(Entfernt, Gesamt);
+		// Netz um den Kern neu erzeugen, damit die Luecken sofort begehbar sind (wie beim Setzen mit "netz")
+		if (S->HasField(TEXT("netzneu")) && S->GetBoolField(TEXT("netzneu")) && Gesamt > 0)
+		{
+			UNavigationSystemV1* Nav = FNavigationSystem::GetCurrent<UNavigationSystemV1>(World);
+			FBox Kasten(ForceInit);
+			for (const FTDSpielbau& E : mSpielbau)
+			{
+				Kasten += E.Lage.GetLocation();
+			}
+			if (Nav && Kasten.IsValid)
+			{
+				Nav->AddDirtyArea(Kasten.ExpandBy(FVector(1500.f, 1500.f, 1500.f)), ENavigationDirtyFlag::All);
+			}
+		}
+		mSpielbau.Reset();
+		UE_LOG(LogFicsitTD, Log, TEXT("Autotest: Spielbau entfernt, %d von %d Stuecken"), Entfernt, Gesamt);
+		Ergebnis(TEXT("Spielbau"), TEXT("entferne"), Entfernt == Gesamt && Gesamt > 0, FString::Printf(TEXT("%d von %d entfernt"), Entfernt, Gesamt));
+		return true;
+	}
 	if (S->HasField(TEXT("schadebau")))
 	{
 		// 0.9.8 P4: Turm beschaedigen (Anteil der Max-LP), fuer Feldreparatur und Bollwerk
@@ -2025,11 +2338,13 @@ bool UTDAutotest::Pruefe(UWorld* World, const TSharedPtr<FJsonObject>& S, FStrin
 			return false;
 		}
 		const bool bFern = S->HasField(TEXT("ort")) && S->GetStringField(TEXT("ort")) == TEXT("fern");
-		const FVector Ort = Kern->GetActorLocation() + FVector(bFern ? 200000.f : 2000.f, 0.f, 0.f);
+		// 0.13 K2: "abstand" in m vom Kern (Ring "instabiler Boden")
+		const float Abstand = S->HasField(TEXT("abstand")) ? static_cast<float>(S->GetNumberField(TEXT("abstand"))) * 100.f : bFern ? 200000.f : 2000.f;
+		const FVector Ort = Kern->GetActorLocation() + FVector(Abstand, 0.f, 0.f);
 		const int32 Anzahl = S->HasField(TEXT("anzahl")) ? int32(S->GetNumberField(TEXT("anzahl"))) : 1;
 		const FString Ist = Einsatz->SperrGrund(Klasse, Ort, Anzahl);
 		const FString Soll = S->HasField(TEXT("soll")) ? S->GetStringField(TEXT("soll")) : FString();
-		OutIst = FString::Printf(TEXT("%s %s: %s"), *Klasse->GetName(), bFern ? TEXT("fern") : TEXT("am Kern"), Ist.IsEmpty() ? TEXT("erlaubt") : *Ist);
+		OutIst = FString::Printf(TEXT("%s %.0f m: %s"), *Klasse->GetName(), Abstand / 100.f, Ist.IsEmpty() ? TEXT("erlaubt") : *Ist);
 		return Ist == Soll;
 	}
 	if (Name == TEXT("Inventar"))
@@ -2264,6 +2579,67 @@ bool UTDAutotest::Pruefe(UWorld* World, const TSharedPtr<FJsonObject>& S, FStrin
 		const bool bFern = TDPlattformAbrissGesperrtAn(World, Fundament, KernP->GetActorLocation() + FVector(10000.f, 0.f, 0.f));
 		OutIst = FString::Printf(TEXT("16 m: %s, 100 m: %s"), bNah ? TEXT("gesperrt") : TEXT("frei"), bFern ? TEXT("gesperrt") : TEXT("frei"));
 		return bNah && !bFern;
+	}
+	if (Name == TEXT("Wegpruefung"))
+	{
+		// 0.13 K4: wuerde ein Bau (Rechteck "breite" x "tiefe" m, quer zur Richtung) bei "winkel"/"abstand" vom Kern den letzten Weg schliessen?
+		UTDWaveSubsystem* WavesW = World->GetSubsystem<UTDWaveSubsystem>();
+		const ATDDefenseCore* KernW = nullptr;
+		for (TActorIterator<ATDDefenseCore> It(World); It; ++It) { KernW = *It; break; }
+		if (!WavesW || !KernW)
+		{
+			OutIst = TEXT("kein Kern");
+			return false;
+		}
+		const float Winkel = S->HasField(TEXT("winkel")) ? static_cast<float>(S->GetNumberField(TEXT("winkel"))) : 0.f;
+		const float Abstand = static_cast<float>(S->GetNumberField(TEXT("abstand"))) * 100.f;
+		const float Breite = (S->HasField(TEXT("breite")) ? static_cast<float>(S->GetNumberField(TEXT("breite"))) : 8.f) * 50.f;
+		const float Tiefe = (S->HasField(TEXT("tiefe")) ? static_cast<float>(S->GetNumberField(TEXT("tiefe"))) : 1.f) * 50.f;
+		const FRotator R(0.f, Winkel, 0.f);
+		const FVector Mitte = KernW->GetActorLocation() + R.Vector() * Abstand;
+		FBox Kasten(ForceInit);
+		for (const FVector2D& Ecke : { FVector2D(Tiefe, Breite), FVector2D(-Tiefe, Breite), FVector2D(Tiefe, -Breite), FVector2D(-Tiefe, -Breite) })
+		{
+			Kasten += Mitte + R.RotateVector(FVector(Ecke.X, Ecke.Y, 0.f));
+		}
+		Kasten = Kasten.ExpandBy(FVector(0.f, 0.f, 200.f));
+		int32 Geschnitten = 0, Gueltig = 0;
+		const bool bIst = WavesW->WuerdeAbriegeln(Kasten, &Geschnitten, &Gueltig);
+		OutIst = FString::Printf(TEXT("%s (Lebensadern %d von %d geschnitten)"), bIst ? TEXT("wuerde abriegeln") : TEXT("frei"), Geschnitten, Gueltig);
+		return !S->HasField(TEXT("soll")) || S->GetBoolField(TEXT("soll")) == bIst;
+	}
+	if (Name == TEXT("KernZugang"))
+	{
+		// 0.13 K1: Pruefung "Kern erreichbar" frisch rechnen. "soll": Frei, Durchbrechbar, Unpassierbar, NetzNichtBereit;
+		// optional "bau": true/false (ein Bau des Spielers als Sperre erkannt), "sperre": Teil des Anzeigenamens
+		UTDWaveSubsystem* WavesZ = World->GetSubsystem<UTDWaveSubsystem>();
+		if (!WavesZ)
+		{
+			OutIst = TEXT("kein Wellensystem");
+			return false;
+		}
+		const FTDKernZugang& Z = WavesZ->PruefeKernZugang(true);
+		OutIst = FString::Printf(TEXT("%s, Bau %s, Sperre %s (%s), %d Wegsuchen, %.2f ms"), UTDWaveSubsystem::KernZugangName(Z.Zustand), Z.bBau ? TEXT("ja") : TEXT("nein"),
+			Z.Sperre.IsEmpty() ? TEXT("-") : *Z.Sperre, *Z.SperreKlasse, Z.Wegsuchen, Z.Ms);
+		bool bOk = !S->HasField(TEXT("soll")) || S->GetStringField(TEXT("soll")) == UTDWaveSubsystem::KernZugangName(Z.Zustand);
+		if (S->HasField(TEXT("bau")))
+		{
+			bOk = bOk && S->GetBoolField(TEXT("bau")) == Z.bBau;
+		}
+		if (S->HasField(TEXT("sperre")))
+		{
+			bOk = bOk && (Z.Sperre.Contains(S->GetStringField(TEXT("sperre"))) || Z.SperreKlasse.Contains(S->GetStringField(TEXT("sperre"))));
+		}
+		return bOk;
+	}
+	if (Name == TEXT("WartetAufKernZugang"))
+	{
+		// 0.13 K1: haelt der Wellenstart gerade wegen Abriegelung? "soll": true/false (Standard true)
+		const UTDWaveSubsystem* WavesW = World->GetSubsystem<UTDWaveSubsystem>();
+		const bool bWartet = WavesW && WavesW->WartetAufKernZugang();
+		const bool bSoll = !S->HasField(TEXT("soll")) || S->GetBoolField(TEXT("soll"));
+		OutIst = bWartet ? (WavesW->GetKernZugang().Sperre.IsEmpty() ? FString(TEXT("wartet")) : TEXT("wartet, Sperre ") + WavesW->GetKernZugang().Sperre) : FString(TEXT("wartet nicht"));
+		return bWartet == bSoll;
 	}
 	if (Name == TEXT("LogEnthaelt"))
 	{

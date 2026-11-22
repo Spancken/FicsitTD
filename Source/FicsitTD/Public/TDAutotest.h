@@ -121,6 +121,14 @@ private:
 	class FTDAutotestLog* mLog = nullptr;
 	/** 16.11. Fabrik-Pruefstand: gebaute Linie fuer den Bericht */
 	TArray<TWeakObjectPtr<class AFGBuildable>> mFabrik;
+	/** 0.13 K1: vom Schritt "spielbau" gesetzte Spielbauten fuer "entferne" (Lightweight: Klasse und Lage, sonst der Actor) */
+	struct FTDSpielbau
+	{
+		FString Klasse;
+		FTransform Lage;
+		TWeakObjectPtr<AActor> Actor;
+	};
+	TArray<FTDSpielbau> mSpielbau;
 	/** 16.11. (B19): Sekunden, die der Wellenlauf schon auf den Start der naechsten Welle wartet */
 	float mStartWarteUhr = 0.f;
 	/** 17.11. (P11): Pruefstand-Netz wird ueberwacht (Sicherung zuruecksetzen) */

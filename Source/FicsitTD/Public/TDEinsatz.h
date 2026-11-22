@@ -94,6 +94,24 @@ extern FICSITTD_API int32 GTDAbrissHooks;
 /** Dieselbe Pruefung fuer Klasse und Ort (Selbsttest ohne Actor) */
 FICSITTD_API bool TDPlattformAbrissGesperrtAn(UWorld* World, const UClass* Klasse, const FVector& Ort);
 
+/** 0.13 K2 (Marius 21.11.): Bau abgelehnt - Fabrikgebaeude im Ring "instabiler Boden" um den Kern (Einsatz und Endlos) */
+UCLASS()
+class FICSITTD_API UTDCDBodenInstabil : public UFGConstructDisqualifier
+{
+	GENERATED_BODY()
+public:
+	UTDCDBodenInstabil();
+};
+
+/** 0.13 K4 (Marius 21.11.): Bau abgelehnt - er wuerde den letzten Weg der Gegner zum Kern schliessen */
+UCLASS()
+class FICSITTD_API UTDCDKernAbriegelung : public UFGConstructDisqualifier
+{
+	GENERATED_BODY()
+public:
+	UTDCDKernAbriegelung();
+};
+
 /** Bau abgelehnt: im Verteidigungsfeld waehrend einer Welle (Einsatz-Konzept Abschnitt 2) */
 UCLASS()
 class FICSITTD_API UTDCDWellenSperre : public UFGConstructDisqualifier
@@ -117,6 +135,9 @@ public:
 	static FString Schluessel(const UClass* BauKlasse);
 	/** Baender, Lifte, Masten, Stromleitungen, Rohre, Splitter/Verbinder */
 	static bool IstLogistik(const UClass* BauKlasse);
+	/** 0.13 K2: Fabrikgebaeude des Spiels (Maschinen, Lager, Generatoren, MAM, Shop, HUB) - keine Logistik, keine Fundamente/Waende,
+	 *  keine Bauten des Mods (Tuerme, Mauern, Stuetzbauten stehen in der Lore auf Tiefankern) */
+	static bool IstFabrikgebaeude(const UClass* BauKlasse);
 	/** Im Einsatz ohne Materialkosten (und ohne Rueckerstattung beim Abriss): Logistik sowie HUB und MAM (Marius 02.11.) */
 	bool Kostenlos(const UClass* BauKlasse) const;
 	/** Rezepte der kostenlosen Gebaeude (Logistik, HUB, MAM) ohne Zutaten: Bauen kostet nichts, Abriss gibt nichts zurueck
