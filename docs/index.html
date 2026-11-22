@@ -83,6 +83,66 @@ td.hi { color: var(--good); font-weight: 700 } td.lo { color: var(--warn); font-
 details { background: var(--panel); border: 1px solid var(--line); padding: 10px 14px; margin-bottom: 8px; max-width: 900px }
 summary { cursor: pointer; font-weight: 700 }
 footer { padding-block: 28px; color: var(--muted); font-size: .86rem; border-top: 1px solid var(--line) }
+/* 22.11.2026: Forschungsbaum (Spoiler) und Planer, Logik in baeume.js */
+:root { --bad: #eb5a46 }
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) { --bad: #b8432f } }
+:root[data-theme="light"] { --bad: #b8432f }
+#tdPlaner { margin-top: 16px }
+.td-regler { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; background: var(--panel); border: 1px solid var(--line); padding: 12px 14px }
+.td-regler label { display: inline-flex; align-items: center; gap: 8px; font-size: .94rem }
+.td-regler .welle { flex: 1 1 320px; font: 700 1.05rem/1 var(--f-display); letter-spacing: .04em; text-transform: uppercase }
+.td-regler .welle input { flex: 1; accent-color: var(--accent); min-width: 140px }
+.td-regler .welle output { min-width: 2.6em; color: var(--accent); font-size: 1.4rem }
+.td-regler input[type=number] { width: 4.2em; background: var(--well); color: var(--fg); border: 1px solid var(--line); padding: 3px 6px; font: inherit }
+.td-regler input[type=checkbox] { accent-color: var(--accent); width: 16px; height: 16px }
+.td-stand { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 8px; margin: 10px 0 }
+.td-stand div { background: var(--well); border-left: 3px solid var(--accent); padding: 8px 12px; font-size: .92rem }
+.td-stand .zahl { font: 700 1.5rem/1 var(--f-display); color: var(--accent); margin: 0 2px 0 6px }
+.td-stand small { display: block; color: var(--muted) }
+.td-leiste { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 14px 0 8px }
+.td-reiter { display: flex; flex-wrap: wrap; gap: 4px; flex: 1 }
+.td-reiter button, .td-knopf { background: var(--panel); color: var(--fg); border: 1px solid var(--line); padding: 7px 12px; font: 700 .95rem/1 var(--f-display); letter-spacing: .05em; text-transform: uppercase; cursor: pointer }
+.td-reiter button[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent) }
+.td-reiter small { font-size: .78rem; opacity: .85 }
+.td-knopf.ok { border-color: var(--good); color: var(--good) }
+.baumtext { color: var(--muted); font-size: .92rem; max-width: 90ch }
+.feld { position: relative; margin: 6px 0 4px }
+.feld svg { position: absolute; inset: 0; pointer-events: none }
+.feld .linie { fill: none; stroke: var(--line); stroke-width: 3 }
+.feld .linie.an { stroke: var(--accent) }
+.knoten { position: absolute; width: 150px; height: 92px; padding: 7px 8px; background: var(--panel); color: var(--fg); border: 2px solid var(--line); text-align: left; cursor: pointer; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; font: inherit }
+.knoten img { position: absolute; right: 3px; bottom: 3px; width: 34px; height: 34px; opacity: .9 }
+.knoten b { font: 700 1rem/1.08 var(--f-display); letter-spacing: .02em; display: block; hyphens: auto; overflow-wrap: anywhere }
+.knoten small { padding-right: 30px }
+.knoten small { font-size: .76rem; color: var(--muted) }
+.knoten .gabel { font-style: normal; color: var(--warn); margin-left: 4px }
+.knoten:focus-visible, .stufe:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+.knoten.gewaehlt { box-shadow: 0 0 0 3px var(--fg) }
+.z-erforscht { background: var(--accent) !important; border-color: var(--accent) !important; color: var(--accent-ink) !important }
+.z-erforscht small, .z-erforscht .gabel { color: var(--accent-ink) !important }
+.z-frei { border-color: var(--accent) }
+.z-teuer { border-style: dashed; border-color: var(--accent) }
+.z-frueh { opacity: .62 }
+.z-gesperrt { opacity: .38 }
+.z-aus { opacity: .5; border-color: var(--bad) }
+.z-aus b { text-decoration: line-through; text-decoration-color: var(--bad) }
+.td-info { background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--accent); padding: 12px 14px; margin-top: 8px; max-width: 900px }
+.td-info h4 { margin: 0 0 6px; font: 700 1.25rem/1.2 var(--f-display) }
+.td-info .zust { font: 600 .78rem/1 var(--f-body); padding: 3px 7px; margin-left: 8px; border: 1px solid var(--line); vertical-align: middle; opacity: 1 }
+.td-info .kurz { color: var(--accent); font-weight: 600 }
+.td-info .fakten { padding-left: 18px; font-size: .93rem }
+.td-info .ok { color: var(--good) }
+.td-info .fehlt { color: var(--muted) }
+.leise { color: var(--muted); font-size: .9rem }
+.rollen { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px }
+.rolle { background: var(--panel); border: 1px solid var(--line); padding: 12px }
+.rolle h4 { margin: 0; font: 700 1.25rem/1.1 var(--f-display); text-transform: uppercase; letter-spacing: .04em }
+.rolle h4 small { color: var(--accent); margin-left: 6px }
+.stufe { display: flex; gap: 8px; width: 100%; text-align: left; background: var(--well); color: var(--fg); border: 2px solid var(--line); padding: 7px 8px; margin-top: 6px; font: .88rem/1.35 var(--f-body); cursor: pointer }
+.stufe i { font: 700 1.1rem/1 var(--f-display); font-style: normal; min-width: 1.1em; color: var(--accent) }
+.stufe.z-erforscht i { color: var(--accent-ink) }
+.stufe.z-teuer { opacity: .55; border-style: dashed }
+@media (max-width: 800px) { .td-regler .welle { flex-basis: 100% } .td-reiter { flex-basis: 100% } }
 @media (max-width: 800px) { .two { grid-template-columns: minmax(0, 1fr) } nav.toc { order: 3; flex-basis: 100% } }
 </style>
 </head>
@@ -97,6 +157,7 @@ footer { padding-block: 28px; color: var(--muted); font-size: .86rem; border-top
     <a href="#buildings"><span class="en">Buildings</span><span class="de">Bauten</span></a>
     <a href="#enemies"><span class="en">Enemies</span><span class="de">Gegner</span></a>
     <a href="#research"><span class="en">Research</span><span class="de">Forschung</span></a>
+    <a href="#tree"><span class="en">Tree &amp; planner</span><span class="de">Baum &amp; Planer</span></a>
     <a href="#versions"><span class="en">Versions</span><span class="de">Versionen</span></a>
     <a href="#issues"><span class="en">Known issues</span><span class="de">Bekannte Fehler</span></a>
     <a href="#faq">FAQ</a>
@@ -350,6 +411,32 @@ footer { padding-block: 28px; color: var(--muted); font-size: .86rem; border-top
   </div>
 </div></section>
 
+<section id="tree"><div class="wrap">
+  <h2><span class="en">Research tree &amp; planner</span><span class="de">Forschungsbaum &amp; Planer</span></h2>
+  <p class="en">The full MAM tree with every node, wave and price, plus a planner: pick a wave, spend the Hard Drives and Talent Points you would have by then, and try out builds. The address bar keeps your plan, so you can share the link. <b>Spoiler:</b> it shows everything the game reveals step by step.</p>
+  <p class="de">Der ganze MAM-Baum mit allen Knoten, Wellen und Preisen, dazu ein Planer: Welle wählen, die Festplatten und Talentpunkte ausgeben, die du bis dahin hättest, und Builds ausprobieren. Die Adresse im Browser enthält deinen Plan, du kannst den Link also teilen. <b>Spoiler:</b> Hier steht alles, was das Spiel erst nach und nach zeigt.</p>
+  <button type="button" id="tdSpoiler" class="btn main" aria-expanded="false" aria-controls="tdPlaner"><span class="en">Show full tree and planner (spoiler)</span><span class="de">Ganzen Baum und Planer zeigen (Spoiler)</span></button>
+  <div id="tdPlaner" hidden>
+    <div class="td-regler">
+      <label class="welle"><span class="en">Before wave</span><span class="de">Vor Welle</span> <input type="range" id="tdWelle" min="1" max="50" value="3"> <output id="tdWelleZahl">3</output></label>
+      <label><input type="checkbox" id="tdKern" checked> <span class="en">Core stays above 75 % (+1 per wave)</span><span class="de">Kern bleibt über 75 % (+1 je Welle)</span></label>
+      <label><input type="checkbox" id="tdBonus"> <span class="en">Boss bonus: Hard Drives</span><span class="de">Boss-Bonus: Festplatten</span></label>
+      <label><input type="number" id="tdGekauft" min="0" max="60" value="0"> <span class="en">bought in the Shop</span><span class="de">im Shop gekauft</span></label>
+      <label><input type="number" id="tdBohrung" min="0" max="15" value="0"> <span class="en">Talent Points from drilling</span><span class="de">Talentpunkte aus der Bohrung</span></label>
+      <label><input type="checkbox" id="tdEndlos"> <span class="en">Endless (up to wave 150)</span><span class="de">Endlos (bis Welle 150)</span></label>
+    </div>
+    <div class="td-stand" id="tdStand" aria-live="polite"></div>
+    <div class="td-leiste">
+      <div class="td-reiter" id="tdReiter" role="tablist"></div>
+      <button type="button" class="td-knopf" id="tdTeilen"><span class="en">Copy link</span><span class="de">Link kopieren</span></button>
+      <button type="button" class="td-knopf" id="tdLeeren"><span class="en">Reset</span><span class="de">Zurücksetzen</span></button>
+    </div>
+    <div id="tdFlaeche"></div>
+    <div class="td-info" id="tdInfo"></div>
+    <p class="leise"><span class="en">Hard Drives per wave as in the game (2, +1 with the Core above 75 %, +3 per boss wave); drops from elites and bosses are not counted. Every node needs its wave, its parents and prerequisites; branches exclude each other. Generated from the mod's code.</span><span class="de">Festplatten je Welle wie im Spiel (2, +1 bei Kern über 75 %, +3 je Bosswelle); Beute von Eliten und Bossen ist nicht mitgezählt. Jeder Knoten braucht seine Welle, seine Eltern und Voraussetzungen; Gabelungen schließen sich aus. Erzeugt aus dem Code der Mod.</span></p>
+  </div>
+</div></section>
+
 <section id="versions" class="versions"><div class="wrap">
   <h2><span class="en">Versions &amp; changes</span><span class="de">Versionen &amp; Änderungen</span></h2>
   <p class="en">Current version: <b>0.11.1 (alpha)</b>, released on 21.11.2026. SMM shows your installed version in the mod list. All uploads: <a href="https://ficsit.app/mod/FicsitTD">ficsit.app → View Versions</a>.</p>
@@ -460,5 +547,7 @@ footer { padding-block: 28px; color: var(--muted); font-size: .86rem; border-top
   document.querySelectorAll('.lang button').forEach(function (b) { b.addEventListener('click', function () { setze(b.dataset.set); }); });
 })();
 </script>
+<script src="baeume-daten.js"></script>
+<script src="baeume.js"></script>
 </body>
 </html>

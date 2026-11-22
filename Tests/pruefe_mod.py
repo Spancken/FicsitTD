@@ -182,6 +182,14 @@ def main():
         erzeuge_spielregeln.main()
     except Exception as e:
         HINWEIS(f"Spielregeln.md: Zahlen nicht erzeugt ({e})")
+    # 22.11.2026: Forschungsbaum und Planer im Handbuch (docs/baeume-daten.js) ebenso aus dem Code erneuern
+    try:
+        if SKRIPTE not in sys.path:
+            sys.path.insert(0, SKRIPTE)
+        import erzeuge_doku_baeume
+        erzeuge_doku_baeume.main()
+    except (Exception, SystemExit) as e:
+        FEHLER(f"docs/baeume-daten.js: nicht erzeugt ({e})")
     for h in hinweise:
         print("HINWEIS", h)
     for f in fehler:
