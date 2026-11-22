@@ -3232,6 +3232,8 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 	}
 	// 0.13 K4: Lebensadern fuer die Wegpruefung beim Bauen (eine Richtung je Bild)
 	PflegeLebensadern();
+	// 0.13: Ring "instabiler Boden" als Leuchtsignale im Baumodus, Lueckensignale ausblenden
+	PflegeRingSignale(DeltaTime);
 	// Sperrflaechen abgerissener Bauten alle 3 s entfernen (sonst laufen Gegner um einen Bau herum, der nicht mehr steht)
 	mBauRaeumUhr -= DeltaTime;
 	if (mBauRaeumUhr <= 0.f)

@@ -1,0 +1,104 @@
+{
+  "Name": "KZ-3-Foto",
+  "_Hinweis": "22.11.: Bildbeweis Ringsignale (Lampen sichtbar?) aus drei Richtungen, nah am Ring.",
+  "NeuesSpiel": {
+    "Startort": "Grass Fields",
+    "Modus": 1
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 5,
+  "Schritte": [
+    {
+      "warteBis": "EinsatzAktiv",
+      "max": 120
+    },
+    {
+      "warte": 5
+    },
+    {
+      "balance": {
+        "Einsatz.Ring.SignaleImmer": 1
+      }
+    },
+    {
+      "warte": 2
+    },
+    {
+      "pruefe": "Ringsignale",
+      "min": 30,
+      "sichtbar": true
+    },
+    {
+      "kamera": "frei",
+      "ort": "kern",
+      "richtung": 30,
+      "abstand": 46,
+      "hoehe": 4,
+      "blick": "kern",
+      "blickhoehe": 0,
+      "fov": 60
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "KZ-3_Ring_30",
+      "ohneHUD": true
+    },
+    {
+      "kamera": "frei",
+      "ort": "kern",
+      "richtung": 120,
+      "abstand": 46,
+      "hoehe": 4,
+      "blick": "kern",
+      "blickhoehe": 0,
+      "fov": 60
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "KZ-3_Ring_120",
+      "ohneHUD": true
+    },
+    {
+      "kamera": "frei",
+      "ort": "kern",
+      "richtung": 300,
+      "abstand": 46,
+      "hoehe": 4,
+      "blick": "kern",
+      "blickhoehe": 0,
+      "fov": 60
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "KZ-3_Ring_300",
+      "ohneHUD": true
+    },
+    {
+      "kamera": "frei",
+      "ort": "kern",
+      "richtung": 300,
+      "abstand": 20,
+      "hoehe": 45,
+      "blick": "kern",
+      "blickhoehe": 0,
+      "fov": 80
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "KZ-3_Ring_oben",
+      "ohneHUD": true
+    },
+    {
+      "kamera": "erste"
+    }
+  ]
+}

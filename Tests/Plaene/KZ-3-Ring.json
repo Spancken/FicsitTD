@@ -1,6 +1,6 @@
 {
   "Name": "KZ-3-Ring",
-  "_Hinweis": "0.13 K2 (Marius 21.11.): Ring 'instabiler Boden' 40 m - Fabrikgebaeude des Spiels im Ring gesperrt (Disqualifier UTDCDBodenInstabil), Abwehrbauten und Logistik erlaubt. Prueft SperrGrund wie PruefeHologramm.",
+  "_Hinweis": "0.13 K2 (Marius 21.11.): Ring 'instabiler Boden' 40 m - Fabrikgebaeude des Spiels im Ring gesperrt (Disqualifier UTDCDBodenInstabil), Abwehrbauten und Logistik erlaubt. Prueft SperrGrund wie PruefeHologramm. 22.11.: Ringsignale (Lampen im Baumodus) und ADA-Ansage RingInstabil beim ersten Versuch.",
   "NeuesSpiel": {
     "Startort": "Grass Fields",
     "Modus": 1
@@ -87,6 +87,77 @@
       "ort": "fern",
       "soll": "",
       "text": "Konstruktor fern: erlaubt"
+    },
+    {
+      "warte": 3
+    },
+    {
+      "pruefe": "Ringsignale",
+      "min": 30,
+      "sichtbar": false,
+      "text": "Ringsignale angelegt, ohne Baumodus ausgeblendet"
+    },
+    {
+      "balance": {
+        "Einsatz.Ring.SignaleImmer": 1
+      }
+    },
+    {
+      "warte": 2
+    },
+    {
+      "pruefe": "Ringsignale",
+      "min": 30,
+      "sichtbar": true,
+      "text": "Ringsignale sichtbar (wie im Baumodus)"
+    },
+    {
+      "kamera": "frei",
+      "ort": "kern",
+      "richtung": 200,
+      "abstand": 48,
+      "hoehe": 7,
+      "blick": "kern",
+      "blickhoehe": 0
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "KZ-3_Ringsignale",
+      "ohneHUD": true
+    },
+    {
+      "kamera": "erste"
+    },
+    {
+      "hologramm": "/Game/FactoryGame/Recipes/Buildings/Recipe_ConstructorMk1.Recipe_ConstructorMk1_C",
+      "winkel": 90,
+      "abstand": 25,
+      "erwartet": "TDCDBodenInstabil",
+      "text": "Hologramm Konstruktor im Ring: Boden instabil"
+    },
+    {
+      "warte": 6
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "ADA-Ansage RingInstabil (Stimme",
+      "min": 1,
+      "max": 1,
+      "text": "ADA sagt den Ring beim ersten Versuch an (einmal)"
+    },
+    {
+      "hologramm": "/Game/FactoryGame/Recipes/Buildings/Recipe_ConstructorMk1.Recipe_ConstructorMk1_C",
+      "winkel": 180,
+      "abstand": 25,
+      "erwartet": "TDCDBodenInstabil",
+      "text": "zweiter Versuch: wieder rot, keine zweite Ansage"
+    },
+    {
+      "balance": {
+        "Einsatz.Ring.SignaleImmer": 0
+      }
     }
   ]
 }

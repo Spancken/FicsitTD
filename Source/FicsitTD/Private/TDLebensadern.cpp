@@ -182,6 +182,15 @@ bool UTDWaveSubsystem::PruefeHologrammZugang(AFGHologram* Holo)
 	if (bRot)
 	{
 		Holo->AddConstructDisqualifier(UTDCDKernAbriegelung::StaticClass());
+		// 0.13 (Marius 22.11.): letzte Luecke markieren - alle gueltigen Adern laufen hindurch, die erste zeigt den Weg
+		for (const TArray<FVector>& A : mLebensadern)
+		{
+			if (A.Num() >= 2)
+			{
+				ZeigeLetzteLuecke(Kasten, A);
+				break;
+			}
+		}
 		static double Gemeldet = -100.0;
 		if (FPlatformTime::Seconds() - Gemeldet > 2.0)
 		{

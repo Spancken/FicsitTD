@@ -316,6 +316,8 @@ private:
 	FString mHudZeile;
 	/** 0.12 E5: Aufgabe MAM einmal je Sitzung im Chat */
 	bool mMamGemeldet = false;
+	/** 0.13: Aufgabe HUB schon gemeldet (je Spielsitzung; die Stimme sagt TDAda nur einmal je Kern) */
+	bool mHubGemeldet = false;
 	bool mAktiv = false;
 	bool mFrei = false;
 	TMap<FString, int32> mBelegt;

@@ -76,6 +76,12 @@
       "text": "Hologramm Bolzenturm in der Luecke: rot (wuerde abriegeln)"
     },
     {
+      "pruefe": "LogEnthaelt",
+      "suche": "letzte Luecke markiert",
+      "min": 1,
+      "text": "letzte Luecke mit gruenen Signalen markiert"
+    },
+    {
       "hologramm": "/FicsitTD/Buildings/BoltTurret/Recipe_TD_BoltTurret.Recipe_TD_BoltTurret_C",
       "winkel": 180,
       "abstand": 30,

@@ -1772,7 +1772,8 @@ void UTDEinsatzSubsystem::SetzeEinkauf(UFGShoppingListComponent* Liste, UClass* 
 
 void UTDEinsatzSubsystem::FreigabeShop()
 {
-	// 0.12 E4/E5 (Marius 14.11.: nach Welle 2 der Shop): Rezept geben, sobald Welle 2 geschafft ist - auch in alten Spielstaenden
+	// 0.12 E4/E5 (Marius 14.11.: nach Welle 2 der Shop; 0.13, Marius 22.11.: nach Welle 1 - Einsatz.Shop.AbWelle): Rezept geben,
+	// sobald die Welle geschafft ist - auch in alten Spielstaenden
 	if (!mAktiv)
 	{
 		return;
@@ -1781,15 +1782,15 @@ void UTDEinsatzSubsystem::FreigabeShop()
 	const int32 Geschafft = Waves ? (Waves->LaeuftWelle() ? Waves->GetWelle() - 1 : Waves->GetWelle()) : 0;
 	AFGRecipeManager* Rezepte = AFGRecipeManager::Get(GetWorld());
 	UClass* Rezept = LoadClass<UFGRecipe>(nullptr, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_ResourceSinkShop.Recipe_ResourceSinkShop_C"));
-	if (!Rezepte || !Rezept || Geschafft < TDBalance::Ganz(TEXT("Einsatz.Shop.AbWelle"), 2) || Rezepte->IsRecipeAvailable(Rezept))
+	if (!Rezepte || !Rezept || Geschafft < TDBalance::Ganz(TEXT("Einsatz.Shop.AbWelle"), 1) || Rezepte->IsRecipeAvailable(Rezept))
 	{
 		return;
 	}
 	Rezepte->AddAvailableRecipe(Rezept);
 	UE_LOG(LogFicsitTD, Log, TEXT("Einstieg: AWESOME-Shop freigegeben nach Welle %d"), Geschafft);
 	TDAda::Sage(this, mKern.Get(), TEXT("AufgabeShop"));   // 0.12 E5: ADA mit Stimme, einmal je Kern (mAdaGesagt)
-	Melde(TDT(TEXT("AUFGABE: Baue den AWESOME-Shop (kostenlos, am besten nah am Kern, Baumenü Spezial). Dort kaufst du ab jetzt Kontingente, Ausrüstung und Festplatten. Der Kern verkauft nur noch, bis dein Shop steht."),
-		TEXT("TASK: Build the AWESOME Shop (free, ideally near the Core, build menu Special). From now on you buy quotas, gear and Hard Drives there. The Core only sells until your Shop is built.")));
+	Melde(TDT(TEXT("AUFGABE: Baue den AWESOME-Shop (kostenlos, Baumenü Spezial, mindestens 40 m vom Kern). Dort kaufst du ab jetzt Kontingente, Ausrüstung und Festplatten. Der Kern verkauft nur noch, bis dein Shop steht."),
+		TEXT("TASK: Build the AWESOME Shop (free, build menu Special, at least 40 m from the Core). From now on you buy quotas, gear and Hard Drives there. The Core only sells until your Shop is built.")));
 }
 
 void UTDEinsatzSubsystem::AktualisiereToDo()
@@ -1893,25 +1894,42 @@ void UTDEinsatzSubsystem::AktualisiereToDo()
 		AFGRecipeManager* RezeptVerwaltung = AFGRecipeManager::Get(GetWorld());
 		UClass* ShopRezept = LoadClass<UFGRecipe>(nullptr, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_ResourceSinkShop.Recipe_ResourceSinkShop_C"));
 		const bool bShopAufgabe = !mFrei && !TDShop::ShopSteht(this) && RezeptVerwaltung && ShopRezept && RezeptVerwaltung->IsRecipeAvailable(ShopRezept);
-		// 0.12 E5 (Marius 14.11.: Einstieg Kern -> MAM -> Shop): nach Welle 1 die Aufgabe MAM, solange keins steht
+		// 0.13 (Marius 22.11.: Einstieg HUB -> Shop -> MAM, "dann baut sich alles logisch auf"): zu Beginn die HUB (Strom aus den
+		// Biomasse-Brennern, Wiedereinstiegspunkt), nach Welle 1 der Shop (Kontingente), nach Welle 2 das MAM (Festplatten)
 		const int32 Geschafft = Waves ? (Waves->LaeuftWelle() ? Waves->GetWelle() - 1 : Waves->GetWelle()) : 0;
+		bool bHubSteht = false;
+		for (TActorIterator<AFGBuildableTradingPost> It(GetWorld()); It; ++It)
+		{
+			bHubSteht = true;
+			break;
+		}
+		const bool bHubAufgabe = !mFrei && !bHubSteht;
+		if (bHubAufgabe && !mHubGemeldet)
+		{
+			mHubGemeldet = true;
+			UE_LOG(LogFicsitTD, Log, TEXT("Einstieg: Aufgabe HUB zu Beginn (Welle %d geschafft)"), Geschafft);
+			TDAda::Sage(this, mKern.Get(), TEXT("AufgabeHub"));
+			Melde(TDT(TEXT("AUFGABE: Baue die HUB (kostenlos, Baumenü Spezial, mindestens 40 m vom Kern). Ihre Biomasse-Brenner liefern Strom, und sie ist dein Wiedereinstiegspunkt."),
+				TEXT("TASK: Build the HUB (free, build menu Special, at least 40 m from the Core). Its biomass burners provide power, and it is your respawn point.")));
+		}
 		bool bMamSteht = false;
 		for (TActorIterator<AFGBuildableMAM> It(GetWorld()); It; ++It)
 		{
 			bMamSteht = true;
 			break;
 		}
-		const bool bMamAufgabe = !mFrei && !bMamSteht && Geschafft >= 1;
+		const bool bMamAufgabe = !mFrei && !bMamSteht && Geschafft >= TDBalance::Ganz(TEXT("Einsatz.Mam.AbWelle"), 2);
 		if (bMamAufgabe && !mMamGemeldet)
 		{
 			mMamGemeldet = true;
 			UE_LOG(LogFicsitTD, Log, TEXT("Einstieg: Aufgabe MAM nach Welle %d"), Geschafft);
 			TDAda::Sage(this, mKern.Get(), TEXT("AufgabeMam"));
-			Melde(TDT(TEXT("AUFGABE: Baue das MAM (kostenlos, Baumenü Spezial). Dort setzt du Festplatten für neue Technik ein."),
-				TEXT("TASK: Build the MAM (free, build menu Special). Spend Hard Drives there on new technology.")));
+			Melde(TDT(TEXT("AUFGABE: Baue das MAM (kostenlos, Baumenü Spezial, mindestens 40 m vom Kern). Dort setzt du Festplatten für neue Technik ein."),
+				TEXT("TASK: Build the MAM (free, build menu Special, at least 40 m from the Core). Spend Hard Drives there on new technology.")));
 		}
-		mHudZeile = bMamAufgabe ? TDT(TEXT("AUFGABE: Baue das MAM (kostenlos) - dort setzt du Festplatten ein"), TEXT("TASK: Build the MAM (free) - spend Hard Drives there"))
+		mHudZeile = bHubAufgabe ? TDT(TEXT("AUFGABE: Baue die HUB (kostenlos) - Strom und Wiedereinstieg"), TEXT("TASK: Build the HUB (free) - power and respawn point"))
 			: bShopAufgabe ? TDT(TEXT("AUFGABE: Baue den AWESOME-Shop (kostenlos) - dort kaufst du ab jetzt"), TEXT("TASK: Build the AWESOME Shop (free) - buy there from now on"))
+			: bMamAufgabe ? TDT(TEXT("AUFGABE: Baue das MAM (kostenlos) - dort setzt du Festplatten ein"), TEXT("TASK: Build the MAM (free) - spend Hard Drives there"))
 			: Block[3];
 	}
 	else
@@ -2014,6 +2032,8 @@ void UTDEinsatzSubsystem::PruefeHologramm(AFGHologram* Hologramm)
 	else if (Grund == TEXT("Boden"))
 	{
 		Hologramm->AddConstructDisqualifier(UTDCDBodenInstabil::StaticClass());
+		// 0.13 (Marius 22.11.): ADA beim ersten Versuch, im Ring zu bauen (Stimme einmal je Kern)
+		TDAda::Sage(this, mKern.Get(), TEXT("RingInstabil"));
 	}
 	else if (Grund == TEXT("Sink"))
 	{

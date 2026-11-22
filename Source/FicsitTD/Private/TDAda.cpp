@@ -89,13 +89,20 @@ namespace
 		{ TEXT("Boss50"), TEXT(""),
 			TEXT("Mehrere Johnnys. FICSIT hält das statistisch für unwahrscheinlich und bittet Sie trotzdem, es zu verhindern."),
 			TEXT("Multiple Johnnys. FICSIT considers this statistically unlikely and asks you to prevent it anyway.") },
-		// 0.12 E5 (Marius 14.11.: Einstieg Kern -> MAM -> Shop): Aufgaben nach Welle 1 und 2, gesprochen wie die Ansagen
-		{ TEXT("AufgabeMam"), TEXT(""),
-			TEXT("Erste Welle abgewehrt. Bauen Sie jetzt das MAM, es kostet nichts. Dort werden Festplatten zu neuer Technik. Großzügigkeit dieser Art ist bei FICSIT selten. Nutzen Sie sie."),
-			TEXT("First wave repelled. Build the MAM now, it is free of charge. It turns Hard Drives into new technology. Generosity of this kind is rare at FICSIT. Use it.") },
+		// 0.13 (Marius 22.11.: Einstieg HUB -> Shop -> MAM): HUB zu Beginn, Shop nach Welle 1, MAM nach Welle 2
+		{ TEXT("AufgabeHub"), TEXT(""),
+			TEXT("Errichten Sie zuerst die HUB, sie kostet nichts. Ihre Biomasse-Brenner liefern den ersten Strom, und sie ist Ihr Wiedereinstiegspunkt. FICSIT möchte Sie schließlich wiederfinden."),
+			TEXT("Build the HUB first, it is free of charge. Its biomass burners provide your first power, and it is your respawn point. FICSIT would like to be able to find you again, after all.") },
 		{ TEXT("AufgabeShop"), TEXT(""),
-			TEXT("Der AWESOME-Shop ist freigegeben, das erste Exemplar ist kostenlos. Dort tauschen Sie Coupons gegen Kontingente, Ausrüstung und Festplatten. FICSIT nennt das Belohnung. Die Buchhaltung nennt es Kreislauf."),
-			TEXT("The AWESOME Shop has been cleared for use, the first one is free. Trade Coupons there for quotas, equipment and Hard Drives. FICSIT calls this a reward. Accounting calls it circulation.") },
+			TEXT("Erste Welle abgewehrt. Der AWESOME-Shop ist freigegeben, das erste Exemplar ist kostenlos. Dort tauschen Sie Coupons gegen Baukontingente, Ausrüstung und Festplatten. FICSIT nennt das Belohnung. Die Buchhaltung nennt es Kreislauf."),
+			TEXT("First wave repelled. The AWESOME Shop has been cleared for use, the first one is free. Trade Coupons there for build quotas, equipment and Hard Drives. FICSIT calls this a reward. Accounting calls it circulation.") },
+		{ TEXT("AufgabeMam"), TEXT(""),
+			TEXT("Zweite Welle abgewehrt. Bauen Sie jetzt das MAM, es kostet nichts. Dort werden Festplatten zu neuer Technik. Großzügigkeit dieser Art ist bei FICSIT selten. Nutzen Sie sie."),
+			TEXT("Second wave repelled. Build the MAM now, it is free of charge. It turns Hard Drives into new technology. Generosity of this kind is rare at FICSIT. Use it.") },
+		// 0.13 K2 (Marius 22.11.): beim ersten Versuch, im Ring "instabiler Boden" ein Fabrikgebaeude zu bauen
+		{ TEXT("RingInstabil"), TEXT(""),
+			TEXT("Dort nicht. Das Bohrbeben des Kerns lockert den Boden im Umkreis von vierzig Metern, eine Fabrik würde darin versinken. Türme und Mauern stehen auf Tiefankern. Die leuchtenden Signale zeigen die Grenze."),
+			TEXT("Not there. The Core's drilling tremors loosen the ground within forty meters, a factory would sink into it. Turrets and walls stand on deep anchors. The glowing signals mark the boundary.") },
 		// Endlos ab Welle 60: die Bosse kommen reihum wieder - ein kurzer Satz statt Wiederholung
 		{ TEXT("BossWieder"), TEXT(""),
 			TEXT("Bosswelle. FICSIT hat aufgehört, die Bosse zu zählen. Sie bitte nicht."),

@@ -2580,6 +2580,16 @@ bool UTDAutotest::Pruefe(UWorld* World, const TSharedPtr<FJsonObject>& S, FStrin
 		OutIst = FString::Printf(TEXT("16 m: %s, 100 m: %s"), bNah ? TEXT("gesperrt") : TEXT("frei"), bFern ? TEXT("gesperrt") : TEXT("frei"));
 		return bNah && !bFern;
 	}
+	if (Name == TEXT("Ringsignale"))
+	{
+		// 0.13: Ringsignale "instabiler Boden" - "sichtbar" (true/false) und "min" Lampen
+		const UTDWaveSubsystem* WavesR = World->GetSubsystem<UTDWaveSubsystem>();
+		const int32 Zahl = WavesR ? WavesR->RingSignaleZahl() : 0;
+		const bool bSichtbar = WavesR && WavesR->RingSignaleSichtbar();
+		OutIst = FString::Printf(TEXT("%d Lampen, %s"), Zahl, bSichtbar ? TEXT("sichtbar") : TEXT("ausgeblendet"));
+		const int32 Min = S->HasField(TEXT("min")) ? int32(S->GetNumberField(TEXT("min"))) : 1;
+		return Zahl >= Min && (!S->HasField(TEXT("sichtbar")) || S->GetBoolField(TEXT("sichtbar")) == bSichtbar);
+	}
 	if (Name == TEXT("Wegpruefung"))
 	{
 		// 0.13 K4: wuerde ein Bau (Rechteck "breite" x "tiefe" m, quer zur Richtung) bei "winkel"/"abstand" vom Kern den letzten Weg schliessen?

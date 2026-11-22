@@ -343,6 +343,11 @@ public:
 	/** Schneidet der Kasten (Welt) alle gueltigen Lebensadern? (mindestens 3 gueltige) */
 	bool WuerdeAbriegeln(const FBox& Kasten, int32* OutGeschnitten = nullptr, int32* OutGueltig = nullptr) const;
 	int32 GetLebensadernZahl() const;
+	// ---- 0.13 Ring- und Lueckensignale (TDRingSignale.cpp, Marius 22.11.) ----
+	bool RingSignaleSichtbar() const;
+	int32 RingSignaleZahl() const;
+	/** gruene Signale entlang der letzten Lebensader am roten Hologramm (0,6 s sichtbar) */
+	void ZeigeLetzteLuecke(const FBox& Kasten, const TArray<FVector>& Ader);
 	/** Alle TD-Rezepte freischalten (freier Modus; im Einsatz kommen sie ueber das MAM) */
 	void SchalteSandkastenFrei();
 	int32 mWellenGesamt = 30;
@@ -672,6 +677,13 @@ private:
 	TArray<TArray<FVector>> mLebensadern;
 	int32 mLebensaderIndex = 0;
 	void PflegeLebensadern();
+	/** Ringsignale anlegen und im Baumodus zeigen, Lueckensignale ausblenden */
+	void PflegeRingSignale(float DeltaTime);
+	TWeakObjectPtr<AActor> mRingSignale;
+	TWeakObjectPtr<const ATDDefenseCore> mRingSignaleKern;
+	TWeakObjectPtr<AActor> mLueckeSignale;
+	double mLueckeBis = 0.0;
+	float mRingSignalUhr = 0.f;
 	bool BrauchtBauSperre(const AFGBuildable* Bau) const;
 	bool SperreBau(AFGBuildable* Bau);
 	void VerbindeBauSperren();
