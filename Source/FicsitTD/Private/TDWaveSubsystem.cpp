@@ -1764,7 +1764,7 @@ float UTDWaveSubsystem::EndlosAbstand(int32 Welle) const
 FString UTDWaveSubsystem::GetBereitText(bool bKurz) const
 {
 	// 0.13 K1: der Start wartet, weil ein Bau den Kern abriegelt
-	if (mLauf == ETDLauf::Aufbau && mZugangWarte > 0.f && mKernZugang.bBau)
+	if (mLauf == ETDLauf::Aufbau && mZugangWarte > 0.f && mZugangGemeldet)
 	{
 		return bKurz ? TDF(TEXT("Welle %d wartet: Kern abgeriegelt"), TEXT("Wave %d waiting: Core sealed off"), mWelle + 1)
 			: TDF(TEXT("Welle %d wartet: Kern abgeriegelt durch %s (Kern-Menü: E)"), TEXT("Wave %d waiting: Core sealed off by %s (Core Menu: E)"), mWelle + 1, *mKernZugang.Sperre);

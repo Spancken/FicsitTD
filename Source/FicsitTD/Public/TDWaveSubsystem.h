@@ -324,7 +324,7 @@ public:
 	const FTDKernZugang& GetKernZugang() const { return mKernZugang; }
 	static const TCHAR* KernZugangName(ETDKernZugang Zustand);
 	/** Zeile fuer Kern-Menue und Chat in der Spielsprache, z. B. "Kern-Zugang: abgeriegelt durch Konstruktor, 24 m Nordosten" */
-	FString KernZugangText(const FTDKernZugang& Z) const;
+	FString KernZugangText(const FTDKernZugang& Z, const ATDDefenseCore* FuerKern = nullptr) const;
 	/** Wellenstart wartet gerade, weil der Kern abgeriegelt ist */
 	bool WartetAufKernZugang() const { return mZugangWarte > 0.f; }
 	/** Alle TD-Rezepte freischalten (freier Modus; im Einsatz kommen sie ueber das MAM) */
@@ -642,6 +642,10 @@ private:
 	float mZugangWarte = 0.f;
 	float mZugangPruefUhr = 0.f;
 	float mZugangAnsageUhr = 0.f;
+	/** Abriegelung gemeldet (Ansage, Kartenmarke, Zaehler) - erst nach einer zweiten Pruefung */
+	bool mZugangGemeldet = false;
+	/** so lange haelt der Start schon wegen eines laufenden Netzumbaus (KernZugang.WarteNetz) */
+	float mZugangNetzWarte = 0.f;
 	/** Wellenstart halten, solange ein Bau den Kern abriegelt; true = Start diesmal halten (LaufTick kehrt zurueck) */
 	bool HalteStartFuerKernZugang(float DeltaTime);
 	/** Eine Front: Weg zum Kern, bei Teilweg die Sperrstelle (Kapselfahrten, Brueckentest) */

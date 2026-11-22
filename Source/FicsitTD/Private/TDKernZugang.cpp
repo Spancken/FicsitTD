@@ -160,6 +160,14 @@ FTDKernZugang UTDWaveSubsystem::PruefeZugangEinzeln(const ATDDefenseCore* Kern, 
 	{
 		return Z;
 	}
+	// 22.11. (Lauf Kern-Zugang-K1: im selben Bild wie die Ruecknahme von Klippensperren "Unpassierbar", 2 s spaeter "Frei"):
+	// waehrend eines Netzumbaus nicht urteilen
+	if (Nav->IsNavigationBuildInProgress())
+	{
+		Z.Zustand = ETDKernZugang::NetzNichtBereit;
+		Z.SperreKlasse = TEXT("Netzumbau");
+		return Z;
+	}
 	bool bVoll = false;
 	const TArray<FVector> Weg = UTDGegnerHirn::BerechneWeg(World, Start, Kern, &bVoll);
 	++Z.Wegsuchen;
@@ -315,8 +323,15 @@ FTDKernZugang UTDWaveSubsystem::PruefeKernZugangVon(const ATDDefenseCore* Kern, 
 	{
 		FTDKernZugang Z = PruefeZugangEinzeln(Kern, Orte[i], bRingprobe ? 0 : i + 1);
 		Suchen += Z.Wegsuchen;
-		const bool bBesser = bRingprobe ? static_cast<uint8>(Z.Zustand) < static_cast<uint8>(Gesamt.Zustand)
-			: static_cast<uint8>(Z.Zustand) > static_cast<uint8>(Gesamt.Zustand);
+		// 22.11. (Lauf K1b, KZ-6: Ringprobe "NetzNichtBereit", obwohl 14-m-Ring geschlossen): ein Probenpunkt ohne Netz (Klippe,
+		// Wasser) sagt nichts ueber den Zugang - in der Ringprobe nur zaehlen, wenn kein anderer Punkt urteilt
+		if (bRingprobe && Z.Zustand == ETDKernZugang::NetzNichtBereit && !bErster && Gesamt.Zustand != ETDKernZugang::NetzNichtBereit)
+		{
+			continue;
+		}
+		const bool bNetzlos = bRingprobe && Gesamt.Zustand == ETDKernZugang::NetzNichtBereit && Z.Zustand != ETDKernZugang::NetzNichtBereit;
+		const bool bBesser = bNetzlos || (bRingprobe ? static_cast<uint8>(Z.Zustand) < static_cast<uint8>(Gesamt.Zustand)
+			: static_cast<uint8>(Z.Zustand) > static_cast<uint8>(Gesamt.Zustand));
 		// Bei gleichem Zustand die Sperre mit erkanntem Bau nehmen (bessere Meldung)
 		if (bErster || bBesser || (Z.Zustand == Gesamt.Zustand && Z.bBau && !Gesamt.bBau))
 		{
@@ -361,9 +376,10 @@ const FTDKernZugang& UTDWaveSubsystem::PruefeKernZugang(bool bErzwingen)
 	return mKernZugang;
 }
 
-FString UTDWaveSubsystem::KernZugangText(const FTDKernZugang& Z) const
+FString UTDWaveSubsystem::KernZugangText(const FTDKernZugang& Z, const ATDDefenseCore* FuerKern) const
 {
-	const ATDDefenseCore* Kern = mKern.Get();
+	// 22.11. (KZ-6): vor dem Bohrungsstart ist mKern noch nicht gesetzt - dann den gepruefen Kern nehmen
+	const ATDDefenseCore* Kern = FuerKern ? FuerKern : mKern.Get();
 	switch (Z.Zustand)
 	{
 	case ETDKernZugang::Frei:
@@ -393,37 +409,50 @@ bool UTDWaveSubsystem::HalteStartFuerKernZugang(float DeltaTime)
 	}
 	const bool bErst = mZugangWarte <= 0.f;
 	mZugangPruefUhr -= DeltaTime;
+	bool bGeprueft = false;
 	if (bErst || mZugangPruefUhr <= 0.f)
 	{
 		mZugangPruefUhr = TDBalance::Wert(TEXT("KernZugang.PruefTakt"), 2.f);
 		PruefeKernZugang(true);
+		bGeprueft = true;
 	}
 	const FTDKernZugang& Z = mKernZugang;
 	// Ein erkannter Bau haelt den Start, bis der Weg frei ist. Ohne erkannten Bau (Gelaende, Loch im Netz) nur kurz - sonst sperrte
-	// ein Netzfehler den Einsatz fuer immer; danach laeuft der Start wie bisher (Nachzuegler-Netz).
-	const bool bHalten = Z.IstGesperrt() && (Z.bBau || mZugangWarte < TDBalance::Wert(TEXT("KernZugang.WarteOhneBau"), 20.f));
+	// ein Netzfehler den Einsatz fuer immer; danach laeuft der Start wie bisher (Nachzuegler-Netz). Ein laufender Netzumbau haelt
+	// den Start hoechstens KernZugang.WarteNetz s (danach urteilt die Pruefung wieder).
+	const bool bNetzumbau = Z.Zustand == ETDKernZugang::NetzNichtBereit && Z.SperreKlasse == TEXT("Netzumbau");
+	mZugangNetzWarte = bNetzumbau ? mZugangNetzWarte + DeltaTime : 0.f;
+	const bool bHalten = (Z.IstGesperrt() && (Z.bBau || mZugangWarte < TDBalance::Wert(TEXT("KernZugang.WarteOhneBau"), 20.f)))
+		|| (bNetzumbau && mZugangNetzWarte < TDBalance::Wert(TEXT("KernZugang.WarteNetz"), 10.f));
 	if (bHalten)
 	{
 		if (bErst)
 		{
-			UE_LOG(LogFicsitTD, Warning, TEXT("Wellenstart %d wartet: Kern abgeriegelt (Front %d, Sperre %s, %s)"), mWelle + 1, Z.Front,
-				Z.Sperre.IsEmpty() ? TEXT("-") : *Z.Sperre, *Z.SperreKlasse);
-			if (Z.bBau)
+			UE_LOG(LogFicsitTD, Log, TEXT("Wellenstart %d haelt: KernZugang %s (Sperre %s, %s) - pruefe in %.0f s erneut"), mWelle + 1, KernZugangName(Z.Zustand),
+				Z.Sperre.IsEmpty() ? TEXT("-") : *Z.Sperre, *Z.SperreKlasse, mZugangPruefUhr);
+			mZugangWarte = KINDA_SMALL_NUMBER;
+			mZugangGemeldet = false;
+		}
+		mZugangWarte += DeltaTime;
+		// Melden erst, wenn eine zweite Pruefung die Abriegelung bestaetigt (keine Ansage fuer einen Zwischenstand des Netzes)
+		if (!mZugangGemeldet && !bErst && bGeprueft && Z.IstGesperrt() && Z.bBau)
+		{
+			mZugangGemeldet = true;
+			UE_LOG(LogFicsitTD, Warning, TEXT("Wellenstart %d wartet: Kern abgeriegelt (Front %d, Sperre %s, %s)"), mWelle + 1, Z.Front, *Z.Sperre, *Z.SperreKlasse);
+			TDNetz::Melde(TDNetz::EArt::Abriegelung);
+			Ansage(KernZugangText(Z));
+			MarkiereSperrstelle(true);
+			mZugangAnsageUhr = TDBalance::Wert(TEXT("KernZugang.Wiederholung"), 30.f);
+		}
+		else if (mZugangGemeldet && Z.bBau)
+		{
+			mZugangAnsageUhr -= DeltaTime;
+			if (mZugangAnsageUhr <= 0.f)
 			{
-				TDNetz::Melde(TDNetz::EArt::Abriegelung);
+				mZugangAnsageUhr = TDBalance::Wert(TEXT("KernZugang.Wiederholung"), 30.f);
 				Ansage(KernZugangText(Z));
 				MarkiereSperrstelle(true);
 			}
-			mZugangAnsageUhr = TDBalance::Wert(TEXT("KernZugang.Wiederholung"), 30.f);
-			mZugangWarte = KINDA_SMALL_NUMBER;
-		}
-		mZugangWarte += DeltaTime;
-		mZugangAnsageUhr -= DeltaTime;
-		if (mZugangAnsageUhr <= 0.f && Z.bBau)
-		{
-			mZugangAnsageUhr = TDBalance::Wert(TEXT("KernZugang.Wiederholung"), 30.f);
-			Ansage(KernZugangText(Z));
-			MarkiereSperrstelle(true);
 		}
 		mCountdown = 0.f;
 		return true;
@@ -433,7 +462,10 @@ bool UTDWaveSubsystem::HalteStartFuerKernZugang(float DeltaTime)
 		if (!Z.IstGesperrt())
 		{
 			UE_LOG(LogFicsitTD, Log, TEXT("Wellenstart %d nach %.1f s: Kern wieder erreichbar (%s)"), mWelle + 1, mZugangWarte, KernZugangName(Z.Zustand));
-			Ansage(TDT(TEXT("Kern-Zugang wieder frei. Die Welle startet."), TEXT("Core access open again. The wave is starting.")));
+			if (mZugangGemeldet)
+			{
+				Ansage(TDT(TEXT("Kern-Zugang wieder frei. Die Welle startet."), TEXT("Core access open again. The wave is starting.")));
+			}
 		}
 		else
 		{
@@ -442,6 +474,7 @@ bool UTDWaveSubsystem::HalteStartFuerKernZugang(float DeltaTime)
 		MarkiereSperrstelle(false);
 		mZugangWarte = 0.f;
 		mZugangPruefUhr = 0.f;
+		mZugangGemeldet = false;
 	}
 	return false;
 }

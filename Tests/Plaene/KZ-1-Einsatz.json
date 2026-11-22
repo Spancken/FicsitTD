@@ -1,13 +1,13 @@
 {
   "Name": "KZ-1-Einsatz",
-  "_Hinweis": "0.13 K1 (Fahrplan-0.13, Marius 21.11.): Pruefung 'Kern erreichbar' im Einsatz. Ring aus Spielwaenden mit Luecke = Frei. Geschlossener Ring aus Konstruktoren = Unpassierbar, Wellenstart wartet, Sperrstelle auf der Karte, Fronten bleiben. Nach dem Entfernen startet die Welle. Nichts wird abgerissen ausser vom Test selbst.",
+  "_Hinweis": "0.13 K1 (Fahrplan-0.13): Pruefung 'Kern erreichbar' im Einsatz. 22.11. nach den Messlaeufen: Spielwaende sperren das Netz, Maschinen nicht. Ring aus Spielwaenden 20 m auf der flachen Kernplattform (auf Gelaende blieben Luecken), ueber das Hologramm gebaut: mit Luecke frei, geschlossen Unpassierbar, Wellenstart wartet, Sperrstelle, Fronten bleiben; nach dem Entfernen startet die Welle.",
   "NeuesSpiel": {
     "Startort": "Grass Fields",
     "Modus": 1
   },
   "ErweiterteEinstellungen": false,
   "WarteNachLaden": 60,
-  "MaxMinuten": 12,
+  "MaxMinuten": 16,
   "Schritte": [
     {
       "pruefe": "Version",
@@ -28,12 +28,17 @@
     },
     {
       "spielbau": "Wand",
-      "ring": 45,
+      "ring": 20,
       "luecke": true,
-      "text": "Ring aus Spielwaenden 45 m mit einer Luecke im Osten"
+      "echt": true,
+      "text": "Ring aus Spielwaenden 20 m auf der Plattform, eine Luecke im Osten"
     },
     {
-      "warte": 10
+      "warte": 12
+    },
+    {
+      "netzunterbau": true,
+      "text": "Netz unter den Waenden"
     },
     {
       "pruefe": "KernZugang",
@@ -41,15 +46,24 @@
       "text": "eine Luecke reicht: frei, kein Fehlalarm"
     },
     {
-      "entferne": "spielbau"
-    },
-    {
-      "spielbau": "Konstruktor",
-      "ring": 45,
-      "text": "geschlossener Ring aus Konstruktoren 45 m"
+      "entferne": "spielbau",
+      "netzneu": true
     },
     {
       "warte": 10
+    },
+    {
+      "spielbau": "Wand",
+      "ring": 20,
+      "echt": true,
+      "text": "geschlossener Ring aus Spielwaenden 20 m auf der Plattform"
+    },
+    {
+      "warte": 12
+    },
+    {
+      "netzunterbau": true,
+      "text": "Netz unter den Waenden"
     },
     {
       "foto": "KZ-1_Ring"
@@ -58,8 +72,7 @@
       "pruefe": "KernZugang",
       "soll": "Unpassierbar",
       "bau": true,
-      "sperre": "Constructor",
-      "text": "abgeriegelt, Konstruktor als Sperre erkannt"
+      "text": "abgeriegelt, Spielwand als Sperre erkannt"
     },
     {
       "befehl": "td kern weiter"
@@ -76,7 +89,7 @@
       "pruefe": "LogEnthaelt",
       "suche": "wartet: Kern abgeriegelt",
       "min": 1,
-      "text": "Log: Start wartet"
+      "text": "Log: Start wartet (bestaetigt)"
     },
     {
       "pruefe": "LogEnthaelt",
@@ -99,7 +112,7 @@
     },
     {
       "pruefe": "LogEnthaelt",
-      "suche": "WELLE 1",
+      "suche": "Ansage: WELLE 1",
       "min": 0,
       "max": 0,
       "text": "Welle 1 laeuft nicht"
@@ -116,11 +129,12 @@
       "text": "wartet nach 40 s weiter (kein Zeitlimit bei erkanntem Bau)"
     },
     {
-      "entferne": "spielbau"
+      "entferne": "spielbau",
+      "netzneu": true
     },
     {
       "warteBis": "WelleLaeuft",
-      "max": 30,
+      "max": 40,
       "text": "Welle startet nach dem Oeffnen"
     },
     {
@@ -131,15 +145,26 @@
     },
     {
       "pruefe": "LogEnthaelt",
-      "suche": "startet mit ungeprueften Fronten",
-      "min": 0,
-      "max": 0
-    },
-    {
-      "pruefe": "LogEnthaelt",
       "suche": "KernZugang: Zustand",
       "min": 2,
       "text": "Messzeile mit Wegsuchen und ms"
+    },
+    {
+      "spielbau": "Bolzenturm",
+      "ring": 45,
+      "echt": true,
+      "text": "MESSUNG Bolzentuerme: wirken Tuerme aufs Netz?"
+    },
+    {
+      "warte": 12
+    },
+    {
+      "netzunterbau": true,
+      "text": "MESSUNG Bolzentuerme: Netz unter den Tuermen"
+    },
+    {
+      "entferne": "spielbau",
+      "netzneu": true
     }
   ]
 }

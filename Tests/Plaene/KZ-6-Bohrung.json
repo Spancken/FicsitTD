@@ -1,6 +1,6 @@
 {
   "Name": "KZ-6-Bohrung",
-  "_Hinweis": "0.13 K1 (Marius 21.11.: in der Bohrung kein Ring, nur Wegpruefung beim Start): Bohrer rundum mit Spielwaenden zugebaut -> Start abgelehnt mit Bau und Stelle, Kartenmarke. Nach dem Entfernen startet die Bohrung. Knoten wie Plan Bohrung (T1-6).",
+  "_Hinweis": "0.13 K1 (Marius 21.11.: in der Bohrung kein Ring, nur Wegpruefung beim Start): Bohrer rundum mit Spielwaenden zugebaut (ueber das Hologramm, dann Netz neu) -> Start abgelehnt mit Bau und Stelle, Kartenmarke. Nach dem Entfernen startet die Bohrung. Knoten wie Plan Bohrung (T1-6).",
   "NeuesSpiel": {
     "Startort": "Grass Fields",
     "Modus": 3
@@ -31,8 +31,23 @@
     },
     {
       "spielbau": "Wand",
-      "ring": 30,
-      "text": "Bohrer rundum mit Spielwaenden 30 m zugebaut"
+      "ring": 14,
+      "echt": true,
+      "text": "Bohrer rundum mit Spielwaenden 14 m zugebaut (Hologramm)"
+    },
+    {
+      "netzunterbau": true,
+      "text": "Netz unter den Waenden"
+    },
+    {
+      "warte": 12
+    },
+    {
+      "befehl": "td bohrung info",
+      "text": "MESSUNG: Platzpruefung ohne Netzauffrischung"
+    },
+    {
+      "netzauffrischen": 40
     },
     {
       "warte": 12
@@ -65,7 +80,8 @@
       "foto": "KZ-6_abgeriegelt"
     },
     {
-      "entferne": "spielbau"
+      "entferne": "spielbau",
+      "netzneu": true
     },
     {
       "warte": 12

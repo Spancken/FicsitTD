@@ -50,4 +50,28 @@ experiment:
 
 **Changelog DE:** Ein abgeriegelter Kern gewinnt keine Wellen mehr: Sperren deine Bauten jeden Weg zum Kern, startet die Welle (oder die Bohrung) erst, wenn wieder eine Lücke frei ist; die Sperrstelle steht auf der Karte. Abgerissen wird nie etwas.
 
-**Nachweis:** Stand 21.11. abends **ungebaut und ungetestet** (Rechner belegt). Zuerst Build und T0, dann Testfenster mit Paket `Kern-Zugang-K1`.
+**Nachweis (22.11. morgens):**
+- Paket `Kern-Zugang-K1`, Lauf `2026-11-22_0727`: `KZ-1-Einsatz`, Grundtest und EinsatzPhase bestanden.
+- `KZ-6-Bohrung` nach der Textkorrektur bestanden, Lauf `2026-11-22_0733`.
+- Belegt:
+  - Wandring 20 m mit Lücke gilt als frei.
+  - Ein geschlossener Ring wird erkannt („abgeriegelt durch Standardwand (4 m)“, 2 Wegsuchen, 0,5 ms).
+  - Der Wellenstart wartet auch nach 40 s noch, Kartenmarke gesetzt, Fronten bleiben.
+  - Nach dem Entfernen startet die Welle.
+  - Bohrung: Start abgelehnt mit Bau und Stelle, nach dem Öffnen startet sie.
+
+**Befund aus den Messläufen** (`2026-11-22_0654/0703_Kern-Zugang-Messung`, Plan `KZ-0-Messung`):
+- **Spielwände, Fundamente und TD-Mauern** werden aus dem Navigationsnetz der Gegner ausgespart. Wenn sie über das Hologramm gebaut sind, baut das Netz von selbst um.
+- **Maschinen (Konstruktor) und Türme (Bolzenturm)** wirken **nicht** aufs Netz. Unter allen 41 Konstruktoren und 57 Türmen liegt Netz, auch nach einer Netzauffrischung.
+  - Die Gegner planen also durch Maschinen und Türme hindurch und bleiben dann an ihnen hängen.
+  - Ein Ring aus Maschinen oder Türmen ist für K1 unsichtbar.
+  - Ausgerechnet diesen Fall gibt es im Einsatz, wo Spielwände gesperrt sind.
+  - Ohne Lösung dafür ist K1 im Einsatz kaum wirksam. Entscheidung offen (Fahrplan 0.13).
+- Per Code gesetzte Bauten (`BeginSpawnBuildable`) bauen das Netz nicht um. Die Selbsttests bauen deshalb über das Hologramm (`spielbau` mit `echt`) oder rufen `netzauffrischen` auf.
+
+**Korrekturen nach den Läufen:**
+- Während eines Netzumbaus urteilt die Prüfung nicht. Der Start hält dann höchstens `KernZugang.WarteNetz` = 10 s.
+- Eine Abriegelung wird erst gemeldet (Ansage, Marke, Zähler), wenn eine zweite Prüfung sie bestätigt. Vorher meldete die Rücknahme einer Klippensperre im selben Bild „Unpassierbar“.
+- Ringprobe: Punkte ohne Netz zählen nicht.
+- Bohrung: Ist der Zugang frei, sucht sie Fronten ohne gültige Richtung neu.
+- Der Meldetext nennt den geprüften Kern.

@@ -129,6 +129,8 @@ FString UTDWaveSubsystem::BohrPruefung(ATDDefenseCore* Kern, AFGResourceNode** O
 		if (bNeu)
 		{
 			mKernZugang = PruefeKernZugangVon(Kern, {}, true);
+			UE_LOG(LogFicsitTD, Log, TEXT("Bohrung: KernZugang %s, %d Wegsuchen, %.2f ms, Sperre %s (%s)"), KernZugangName(mKernZugang.Zustand),
+				mKernZugang.Wegsuchen, mKernZugang.Ms, mKernZugang.Sperre.IsEmpty() ? TEXT("-") : *mKernZugang.Sperre, *mKernZugang.SperreKlasse);
 		}
 		const FTDKernZugang& Z = mKernZugang;
 		if (Z.IstGesperrt() && Z.bBau)
@@ -138,7 +140,15 @@ FString UTDWaveSubsystem::BohrPruefung(ATDDefenseCore* Kern, AFGResourceNode** O
 			{
 				UE_LOG(LogFicsitTD, Log, TEXT("Bohrung: Bohrer abgeriegelt durch %s (%s), %d Wegsuchen, %.2f ms"), *Z.Sperre, *Z.SperreKlasse, Z.Wegsuchen, Z.Ms);
 			}
-			return KernZugangText(Z);
+			return KernZugangText(Z, Kern);
+		}
+		// 22.11. (Lauf K1b, KZ-6: nach dem Oeffnen blieb "Kein begehbarer Weg" - die Fronten stammten von vor dem Oeffnen):
+		// ist der Bohrer erreichbar, aber keine Richtung gueltig, die Fronten neu suchen
+		if (mGueltigeRichtungen <= 0 && (Z.Zustand == ETDKernZugang::Frei || Z.Zustand == ETDKernZugang::Durchbrechbar))
+		{
+			VerwerfeFronten();
+			FrontenFuer(Kern);
+			UE_LOG(LogFicsitTD, Log, TEXT("Bohrung: Zugang frei, Fronten neu gesucht (%d Richtungen gueltig)"), mGueltigeRichtungen);
 		}
 	}
 	if (mGueltigeRichtungen <= 0)

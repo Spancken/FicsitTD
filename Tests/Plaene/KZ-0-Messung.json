@@ -1,0 +1,194 @@
+{
+  "Name": "KZ-0-Messung",
+  "_Hinweis": "22.11. Messung nach Lauf K1b: Welche Bauten wirken aufs Navigationsnetz der Gegner? Je Art ein geschlossener Ring 45 m ueber das Hologramm, KernZugang vor und nach Netzauffrischung, dazu Logzeile 'Spielbau-Messung' (CanEverAffectNavigation der getroffenen Kollision). Keine Erwartungen.",
+  "NeuesSpiel": {
+    "Startort": "Grass Fields",
+    "Modus": 1
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 18,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warteBis": "EinsatzAktiv",
+      "max": 120
+    },
+    {
+      "warte": 20
+    },
+    {
+      "pruefe": "KernZugang",
+      "soll": "Frei",
+      "text": "vor dem Zubauen frei"
+    },
+    {
+      "spielbau": "Wand",
+      "ring": 45,
+      "echt": true,
+      "text": "MESSUNG Wand: geschlossener Ring 45 m ueber das Hologramm"
+    },
+    {
+      "warte": 12
+    },
+    {
+      "netzunterbau": true,
+      "text": "MESSUNG Wand: Netz unter den Teilen ohne Auffrischung"
+    },
+    {
+      "pruefe": "KernZugang",
+      "text": "MESSUNG Wand: ohne Netzauffrischung"
+    },
+    {
+      "netzauffrischen": 70
+    },
+    {
+      "warte": 15
+    },
+    {
+      "netzunterbau": true,
+      "text": "MESSUNG Wand: Netz unter den Teilen nach Auffrischung"
+    },
+    {
+      "pruefe": "KernZugang",
+      "text": "MESSUNG Wand: nach Netzauffrischung"
+    },
+    {
+      "foto": "KZ-0_Wand"
+    },
+    {
+      "entferne": "spielbau",
+      "netzneu": true
+    },
+    {
+      "warte": 12
+    },
+    {
+      "spielbau": "Konstruktor",
+      "ring": 45,
+      "echt": true,
+      "text": "MESSUNG Konstruktor: geschlossener Ring 45 m ueber das Hologramm"
+    },
+    {
+      "warte": 12
+    },
+    {
+      "netzunterbau": true,
+      "text": "MESSUNG Konstruktor: Netz unter den Teilen ohne Auffrischung"
+    },
+    {
+      "pruefe": "KernZugang",
+      "text": "MESSUNG Konstruktor: ohne Netzauffrischung"
+    },
+    {
+      "netzauffrischen": 70
+    },
+    {
+      "warte": 15
+    },
+    {
+      "netzunterbau": true,
+      "text": "MESSUNG Konstruktor: Netz unter den Teilen nach Auffrischung"
+    },
+    {
+      "pruefe": "KernZugang",
+      "text": "MESSUNG Konstruktor: nach Netzauffrischung"
+    },
+    {
+      "foto": "KZ-0_Konstruktor"
+    },
+    {
+      "entferne": "spielbau",
+      "netzneu": true
+    },
+    {
+      "warte": 12
+    },
+    {
+      "spielbau": "Fundament",
+      "ring": 45,
+      "echt": true,
+      "text": "MESSUNG Fundament: geschlossener Ring 45 m ueber das Hologramm"
+    },
+    {
+      "warte": 12
+    },
+    {
+      "netzunterbau": true,
+      "text": "MESSUNG Fundament: Netz unter den Teilen ohne Auffrischung"
+    },
+    {
+      "pruefe": "KernZugang",
+      "text": "MESSUNG Fundament: ohne Netzauffrischung"
+    },
+    {
+      "netzauffrischen": 70
+    },
+    {
+      "warte": 15
+    },
+    {
+      "netzunterbau": true,
+      "text": "MESSUNG Fundament: Netz unter den Teilen nach Auffrischung"
+    },
+    {
+      "pruefe": "KernZugang",
+      "text": "MESSUNG Fundament: nach Netzauffrischung"
+    },
+    {
+      "foto": "KZ-0_Fundament"
+    },
+    {
+      "entferne": "spielbau",
+      "netzneu": true
+    },
+    {
+      "warte": 12
+    },
+    {
+      "spielbau": "TD-Mauer",
+      "ring": 45,
+      "echt": true,
+      "text": "MESSUNG TD-Mauer: geschlossener Ring 45 m ueber das Hologramm"
+    },
+    {
+      "warte": 12
+    },
+    {
+      "netzunterbau": true,
+      "text": "MESSUNG TD-Mauer: Netz unter den Teilen ohne Auffrischung"
+    },
+    {
+      "pruefe": "KernZugang",
+      "text": "MESSUNG TD-Mauer: ohne Netzauffrischung"
+    },
+    {
+      "netzauffrischen": 70
+    },
+    {
+      "warte": 15
+    },
+    {
+      "netzunterbau": true,
+      "text": "MESSUNG TD-Mauer: Netz unter den Teilen nach Auffrischung"
+    },
+    {
+      "pruefe": "KernZugang",
+      "text": "MESSUNG TD-Mauer: nach Netzauffrischung"
+    },
+    {
+      "foto": "KZ-0_TD-Mauer"
+    },
+    {
+      "entferne": "spielbau",
+      "netzneu": true
+    },
+    {
+      "warte": 12
+    }
+  ]
+}
