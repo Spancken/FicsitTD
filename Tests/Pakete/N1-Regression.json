@@ -1,0 +1,5 @@
+{
+  "Name": "N1-Regression",
+  "_Hinweis": "22.11.: 0.13 N1 (Maschinen und Tuerme als Sperrflaeche) - Gegnerwege mit Fabrik (Fabrik-F1) und Festgefahren-Faelle (Wege-Marius-W06) gegen fruehere Laeufe.",
+  "Plaene": ["Wege-Marius-W06", "Fabrik-F1"]
+}
