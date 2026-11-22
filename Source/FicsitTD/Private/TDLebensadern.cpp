@@ -68,13 +68,26 @@ namespace
 	}
 }
 
-void UTDWaveSubsystem::PflegeLebensadern()
+void UTDWaveSubsystem::PflegeLebensadern(float DeltaTime)
 {
 	const ATDDefenseCore* Kern = mKern.Get();
 	if (!Kern || TDBalance::Wert(TEXT("KernZugang.Wegpruefung"), 1.f) <= 0.f)
 	{
 		return;
 	}
+	// 22.11. (Handspiel H4: Lags beim Bauen und in der Welle): nicht mehr in jedem Bild, sondern eine Richtung je
+	// KernZugang.LebensaderTakt s (0,25 s -> alle 16 in 4 s). In der Welle nur, wo Bauen erlaubt ist (Endlos, Bohrung) -
+	// im Einsatz ist das Verteidigungsfeld in der Welle gesperrt.
+	if (mLauf == ETDLauf::Welle && !mEndlos && !mBohrung)
+	{
+		return;
+	}
+	mLebensaderUhr -= DeltaTime;
+	if (mLebensaderUhr > 0.f)
+	{
+		return;
+	}
+	mLebensaderUhr = TDBalance::Wert(TEXT("KernZugang.LebensaderTakt"), 0.25f);
 	UNavigationSystemV1* Nav = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
 	if (!Nav || Nav->IsNavigationBuildInProgress())
 	{
@@ -89,8 +102,25 @@ void UTDWaveSubsystem::PflegeLebensadern()
 	const float Abstand = TDBalance::Wert(TEXT("KernZugang.LebensaderAbstand"), 120.f) * 100.f;
 	const FVector Start = Kern->GetActorLocation() + FRotator(0.f, 22.5f * i, 0.f).Vector() * Abstand;
 	bool bVoll = false;
+	const double T0 = FPlatformTime::Seconds();
 	TArray<FVector> Weg = UTDGegnerHirn::BerechneWeg(GetWorld(), Start, Kern, &bVoll);
+	const double Ms = (FPlatformTime::Seconds() - T0) * 1000.0;
+	mLebensaderMs += Ms;
+	mLebensaderMaxMs = FMath::Max(mLebensaderMaxMs, Ms);
+	++mLebensaderZahl;
 	mLebensadern[i] = bVoll ? MoveTemp(Weg) : TArray<FVector>();
+}
+
+void UTDWaveSubsystem::MeldeLebensaderKosten()
+{
+	if (mLebensaderZahl > 0)
+	{
+		UE_LOG(LogFicsitTD, Log, TEXT("Lebensadern: %d Wege seit der letzten Meldung, %.1f ms gesamt, im Mittel %.2f ms, laengster %.2f ms"),
+			mLebensaderZahl, mLebensaderMs, mLebensaderMs / mLebensaderZahl, mLebensaderMaxMs);
+	}
+	mLebensaderZahl = 0;
+	mLebensaderMs = 0.0;
+	mLebensaderMaxMs = 0.0;
 }
 
 int32 UTDWaveSubsystem::GetLebensadernZahl() const

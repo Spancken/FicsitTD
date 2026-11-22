@@ -1,7 +1,9 @@
 # 0.12 E4 (Marius 14.11. und 21.11.): Shop-Posten fuer den AWESOME-Shop, je Eintrag der Ladenliste einer.
 # Eine Quelle: Ladenliste, Spieler-Posten, Kategorien und Namen werden aus Source/FicsitTD/Private/TDEinsatz.cpp gelesen.
 # Erzeugt in /FicsitTD/Shop:
-#   SC_TD_Abwehr (Hauptkategorie "FICSIT-Abwehr") und SC_TD_<Unter> (Tuerme, Verteidigung, Produktion, Strom, Logistik, Pionier)
+#   22.11. (Handspiel H5, Marius: "Shop nach Bereichen aufteilen, so ist es sehr unuebersichtlich"): sechs Hauptkategorien
+#   SC_TD_<Bereich> (Tuerme, Verteidigung, Produktion, Strom, Logistik, Pionier) statt einer "FICSIT-Abwehr", darin
+#   Unterkategorien SC_TD_Sub_Kontingente / _Ausruestung / _Kern
 #   Shop_TD_<AssetName> je Posten: Typ EST_ResourceSink, Grundpreis in Coupons, Freischaltung UTDUnlockLaden (Schluessel,
 #   wiederholbar), Sichtbarkeit UTDShopAbhaengigkeit (Einsatz aktiv, Rezept da, Hoechstzahl nicht erreicht), Symbol des Gebaeudes/Items.
 # Texte deutsch im Asset, englisch in Scripts/uebersetzung_en.json (TDSprache::UebersetzeAssets).
@@ -124,12 +126,17 @@ try:
     if not unlock_klasse or not abh_klasse:
         raise RuntimeError("TDUnlockLaden / TDShopAbhaengigkeit fehlen - Editor nicht neu gebaut?")
     uebers = {}
-    haupt = kategorie(f"{ZIEL}/SC_TD_Abwehr", "FICSIT-Abwehr", -10)
-    uebers["FICSIT-Abwehr"] = "FICSIT Defense"
-    unter = {}
+    # Bereiche als Hauptkategorien (links im Shop), Prioritaet negativ: vor den (im Einsatz ausgeblendeten) Spielkategorien
+    bereich = {}
     for sk, nde, nen, prio in UNTER:
-        unter[prio] = kategorie(f"{ZIEL}/SC_TD_{sk}", nde, prio)
+        bereich[prio] = kategorie(f"{ZIEL}/SC_TD_{sk}", nde, prio - 20)
         uebers[nde] = nen
+    sub = {
+        "kont": kategorie(f"{ZIEL}/SC_TD_Sub_Kontingente", "Kontingente", 0),
+        "aus": kategorie(f"{ZIEL}/SC_TD_Sub_Ausruestung", "Ausrüstung", 1),
+        "kern": kategorie(f"{ZIEL}/SC_TD_Sub_Kern", "Kern und Festplatten", 2),
+    }
+    uebers["Kontingente"] = "Quotas"; uebers["Ausrüstung"] = "Equipment"; uebers["Kern und Festplatten"] = "Core and Hard Drives"
     n = 0
     for nr, (key, grund, aufschlag, paket, rezept) in enumerate(laden):
         if key == "Panzersperre":
@@ -158,8 +165,9 @@ try:
         c.set_editor_property("mDependenciesBlocksSchematicAccess", True)
         c.set_editor_property("mHiddenUntilDependenciesMet", True)
         c.set_editor_property("mRelevantShopSchematics", [])
-        c.set_editor_property("mSchematicCategory", haupt)
-        c.set_editor_property("mSubCategories", [unter[idx]])
+        c.set_editor_property("mSchematicCategory", bereich[idx])
+        art = "aus" if sp is not None else ("kern" if key in ("Kernreparatur", "Festplatte") else "kont")
+        c.set_editor_property("mSubCategories", [sub[art]])
         textur = symbol_fuer(key, rezept, sp)
         if textur:
             pinsel = c.get_editor_property("mSchematicIcon"); pinsel.set_editor_property("resource_object", textur)
@@ -170,7 +178,7 @@ try:
         uebers[name_de] = name_en
         uebers[text_de] = text_en
         n += 1
-        log(f"OK {pfad}: {name_de} / {name_en}, {grund} Coupons, Unterkategorie {idx}, Symbol {'ja' if textur else 'NEIN'}")
+        log(f"OK {pfad}: {name_de} / {name_en}, {grund} Coupons, Bereich {idx}, Unterkategorie {art}, Symbol {'ja' if textur else 'NEIN'}")
     # Uebersetzungen ergaenzen (vorhandene Eintraege bleiben)
     pj = f"{MOD}/Scripts/uebersetzung_en.json"
     alt = json.load(io.open(pj, encoding="utf-8"))

@@ -117,7 +117,7 @@ void UTDWaveSubsystem::PflegeRingSignale(float DeltaTime)
 		{
 			return;
 		}
-		const float Radius = TDBalance::Wert(TEXT("Einsatz.Ring.Radius"), 40.f) * 100.f;
+		const float Radius = TDBalance::Wert(TEXT("Einsatz.Ring.Radius"), 60.f) * 100.f;
 		const int32 Anzahl = FMath::Clamp(FMath::RoundToInt(2.f * PI * Radius / (TDBalance::Wert(TEXT("Einsatz.Ring.SignalAbstand"), 6.f) * 100.f)), 12, 96);
 		const FLinearColor Orange = FLinearColor(FColor(250, 149, 73));
 		for (int32 i = 0; i < Anzahl; ++i)

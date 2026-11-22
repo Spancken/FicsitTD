@@ -3231,7 +3231,7 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 		}
 	}
 	// 0.13 K4: Lebensadern fuer die Wegpruefung beim Bauen (eine Richtung je Bild)
-	PflegeLebensadern();
+	PflegeLebensadern(DeltaTime);
 	// 0.13: Ring "instabiler Boden" als Leuchtsignale im Baumodus, Lueckensignale ausblenden
 	PflegeRingSignale(DeltaTime);
 	// Sperrflaechen abgerissener Bauten alle 3 s entfernen (sonst laufen Gegner um einen Bau herum, der nicht mehr steht)
@@ -3444,6 +3444,7 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 			}
 			SpawneKernWelle(mWelle);
 			MesseWellenStart();
+			MeldeLebensaderKosten();   // 22.11. (H4): Kosten der Wegpruefung in der Bauphase
 			SpeichereLauf();
 		}
 		return;
@@ -3991,9 +3992,12 @@ bool UTDWaveSubsystem::SperreKlippe(AActor* Klippe, const FVector* Stelle)
 						Naechster = k;
 					}
 				}
+				// 22.11. (Handspiel H7: sechs Verlegungen hintereinander zogen Front 1 von 270 m auf 85 m an den Kern - die Hogs erschienen
+				// "einfach so" kurz vor der Basis): nie naeher als Gegner.FrontMinAbstand (150 m); sonst bleibt der Startpunkt, die Klippe frei
+				const float FrontMin = FMath::Max(6000.f, TDBalance::Wert(TEXT("Gegner.FrontMinAbstand"), 150.f) * 100.f);
 				for (int32 k = Naechster; k < Weg.Num() - 1 && !bVerlegt; ++k)
 				{
-					if (!Schutz.IsInsideXY(Weg[k]) && FVector::Dist2D(Weg[k], Kern->GetActorLocation()) > 6000.f)
+					if (!Schutz.IsInsideXY(Weg[k]) && FVector::Dist2D(Weg[k], Kern->GetActorLocation()) > FrontMin)
 					{
 						UE_LOG(LogFicsitTD, Log, TEXT("Klippensperre: Startpunkt von Front %d hinter %s verlegt (%s -> %s)"), i + 1, *Modell,
 							*mFronten[i].Ort.ToCompactString(), *Weg[k].ToCompactString());

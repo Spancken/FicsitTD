@@ -676,7 +676,13 @@ private:
 	/** 0.13 K4: volle Wege aus 16 Richtungen (leer = kein voller Weg), reihum eine je Bild */
 	TArray<TArray<FVector>> mLebensadern;
 	int32 mLebensaderIndex = 0;
-	void PflegeLebensadern();
+	void PflegeLebensadern(float DeltaTime);
+	/** 22.11. (H4): Takt und Kosten der Lebensadern (Logzeile je Wellenstart) */
+	float mLebensaderUhr = 0.f;
+	int32 mLebensaderZahl = 0;
+	double mLebensaderMs = 0.0;
+	double mLebensaderMaxMs = 0.0;
+	void MeldeLebensaderKosten();
 	/** Ringsignale anlegen und im Baumodus zeigen, Lueckensignale ausblenden */
 	void PflegeRingSignale(float DeltaTime);
 	TWeakObjectPtr<AActor> mRingSignale;

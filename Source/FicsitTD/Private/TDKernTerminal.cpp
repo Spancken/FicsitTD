@@ -2058,8 +2058,8 @@ void UTDKernTerminal::BaueListen()
 		UHorizontalBox* Reihe = nullptr;
 		NeueKarte(mLaden, TDUI::ZeileA, Reihe);
 		Fuellen(Reihe, NeuerText(bShopSteht
-			? TDT(TEXT("Gekauft wird jetzt im AWESOME-Shop: Kontingente, Ausrüstung, Kernreparatur und Festplatten (Kategorie FICSIT-Abwehr). Den Stand deiner Kontingente siehst du rechts."),
-				TEXT("You now buy in the AWESOME Shop: quotas, gear, Core repairs and Hard Drives (category FICSIT Defense). Your quotas are listed on the right."))
+			? TDT(TEXT("Gekauft wird jetzt im AWESOME-Shop: Kontingente, Ausrüstung, Kernreparatur und Festplatten (Bereiche Türme, Verteidigung, Produktion, Strom, Logistik, Pionier und Kern). Den Stand deiner Kontingente siehst du rechts."),
+				TEXT("You now buy in the AWESOME Shop: quotas, gear, Core repairs and Hard Drives (sections Turrets, Defense, Production, Power, Logistics, Pioneer and Core). Your quotas are listed on the right."))
 			: UTDKernplatz::IstAbwehr(this)
 			? TDT(TEXT("Im Freien Spiel mit Abwehr gibt es keinen Laden: Coupons aus dem AWESOME-Sink bezahlen Abwehr-Forschung im MAM und Turmlevel."),
 				TEXT("Free play with defense has no shop: Coupons from the AWESOME Sink pay for defense research in the MAM and turret levels."))

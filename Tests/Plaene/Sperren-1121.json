@@ -35,6 +35,13 @@
       "text": "Fundament am Kern gesperrt, 100 m daneben frei"
     },
     {
+      "pruefe": "Bausperre",
+      "klasse": "/Game/FactoryGame/Buildable/Factory/Mam/Build_Mam.Build_Mam_C",
+      "ort": "fern",
+      "soll": "Kontingent",
+      "text": "22.11. (H2): MAM vor Welle 2 gesperrt (Kontingent 0)"
+    },
+    {
       "gib": "/Game/FactoryGame/Resource/Parts/ResourceSinkCoupon/Desc_ResourceSinkCoupon.Desc_ResourceSinkCoupon_C",
       "anzahl": 20
     },

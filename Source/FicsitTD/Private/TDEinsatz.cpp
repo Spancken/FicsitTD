@@ -264,7 +264,7 @@ static const TCHAR* StartRezepte[] = {
 	TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_PowerLine.Recipe_PowerLine_C"),
 	TEXT("/Game/FactoryGame/Recipes/Smelter/Recipe_IngotIron.Recipe_IngotIron_C"),
 	TEXT("/Game/FactoryGame/Recipes/Constructor/Recipe_IronRod.Recipe_IronRod_C"),
-	TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_Mam.Recipe_Mam_C"),
+	// 22.11. (Handspiel H2): das MAM-Rezept kommt erst nach Welle 2 (FreigabeMam, Einsatz.Mam.AbWelle)
 	TEXT("/Game/FactoryGame/Recipes/Constructor/Recipe_Biomass_Leaves.Recipe_Biomass_Leaves_C"),
 	TEXT("/Game/FactoryGame/Recipes/Constructor/Recipe_Biomass_Wood.Recipe_Biomass_Wood_C"),
 	TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_TradingPost.Recipe_TradingPost_C"),
@@ -326,7 +326,7 @@ static FText TDTextWellenSperre() { return TDTX(TEXT("Während der Welle ist Bau
 // 0.13 K2 (Marius 21.11.: Lore - der Boden um den Bohrer ist nicht stabil genug fuer Fabriken)
 static FText TDTextBodenInstabil()
 {
-	const int32 Meter = FMath::RoundToInt(TDBalance::Wert(TEXT("Einsatz.Ring.Radius"), 40.f));
+	const int32 Meter = FMath::RoundToInt(TDBalance::Wert(TEXT("Einsatz.Ring.Radius"), 60.f));
 	return TDFX(TEXT("Boden instabil: Das Bohrbeben des Abwehrkerns trägt hier keine Fabrik. Fabrikgebäude erst ab %d m vom Kern, Abwehrbauten gehen."),
 		TEXT("Unstable ground: the Defense Core's drilling tremors cannot carry a factory here. Factory buildings only from %d m away, defenses are fine."), Meter);
 }
@@ -405,6 +405,12 @@ bool TDPlattformAbrissGesperrtAn(UWorld* World, const UClass* Klasse, const FVec
 {
 	const UTDEinsatzSubsystem* Einsatz = World ? World->GetSubsystem<UTDEinsatzSubsystem>() : nullptr;
 	const ATDDefenseCore* Kern = Einsatz && Einsatz->IstAktiv() ? Einsatz->GetKern() : nullptr;
+	// 22.11. (Handspiel H1: Fundamente liessen sich abreissen, solange der Kernplatz noch auf das Netz wartete): auch den wartenden Kern
+	if (!Kern)
+	{
+		const UTDKernplatz* Platz = World ? UTDKernplatz::Get(World) : nullptr;
+		Kern = Platz ? Platz->GetWartenderKern() : nullptr;
+	}
 	if (!Kern || !Klasse || !Klasse->IsChildOf(AFGBuildableFoundation::StaticClass()) || TDBalance::Wert(TEXT("Einsatz.Plattform.AbrissSperren"), 1.f) < 1.f)
 	{
 		return false;
@@ -706,6 +712,16 @@ int32 UTDEinsatzSubsystem::Grenze(const FString& Key) const
 		}
 	}
 	const ATDDefenseCore* Kern = mKern.Get();
+	// 22.11. (Handspiel H2: MAM liess sich sofort bauen): vor Einsatz.Mam.AbWelle kein MAM, auch wenn die HUB-Stufen das Rezept geben
+	if (Key == TEXT("MAM"))
+	{
+		const UTDWaveSubsystem* MamWaves = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
+		const int32 Geschafft = MamWaves ? (MamWaves->LaeuftWelle() ? MamWaves->GetWelle() - 1 : MamWaves->GetWelle()) : 0;
+		if (Geschafft < TDBalance::Ganz(TEXT("Einsatz.Mam.AbWelle"), 2))
+		{
+			return 0;
+		}
+	}
 	const FTDLadenEintrag* Laden = LadenFuer(Key);
 	const int32* Gekauft = Kern ? Kern->mKontingentGekauft.Find(Key) : nullptr;
 	int32 Geschenk = 0;
@@ -1789,13 +1805,33 @@ void UTDEinsatzSubsystem::FreigabeShop()
 	Rezepte->AddAvailableRecipe(Rezept);
 	UE_LOG(LogFicsitTD, Log, TEXT("Einstieg: AWESOME-Shop freigegeben nach Welle %d"), Geschafft);
 	TDAda::Sage(this, mKern.Get(), TEXT("AufgabeShop"));   // 0.12 E5: ADA mit Stimme, einmal je Kern (mAdaGesagt)
-	Melde(TDT(TEXT("AUFGABE: Baue den AWESOME-Shop (kostenlos, Baumenü Spezial, mindestens 40 m vom Kern). Dort kaufst du ab jetzt Kontingente, Ausrüstung und Festplatten. Der Kern verkauft nur noch, bis dein Shop steht."),
-		TEXT("TASK: Build the AWESOME Shop (free, build menu Special, at least 40 m from the Core). From now on you buy quotas, gear and Hard Drives there. The Core only sells until your Shop is built.")));
+	Melde(TDT(TEXT("AUFGABE: Baue den AWESOME-Shop (kostenlos, Baumenü Spezial, mindestens 60 m vom Kern). Dort kaufst du ab jetzt Kontingente, Ausrüstung und Festplatten. Der Kern verkauft nur noch, bis dein Shop steht."),
+		TEXT("TASK: Build the AWESOME Shop (free, build menu Special, at least 60 m from the Core). From now on you buy quotas, gear and Hard Drives there. The Core only sells until your Shop is built.")));
+}
+
+void UTDEinsatzSubsystem::FreigabeMam()
+{
+	// 22.11. (Handspiel H2): MAM-Rezept nach Einsatz.Mam.AbWelle geben (vorher Startrezept) - auch in alten Spielstaenden
+	if (!mAktiv)
+	{
+		return;
+	}
+	const UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
+	const int32 Geschafft = Waves ? (Waves->LaeuftWelle() ? Waves->GetWelle() - 1 : Waves->GetWelle()) : 0;
+	AFGRecipeManager* Rezepte = AFGRecipeManager::Get(GetWorld());
+	UClass* Rezept = LoadClass<UFGRecipe>(nullptr, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_Mam.Recipe_Mam_C"));
+	if (!Rezepte || !Rezept || Geschafft < TDBalance::Ganz(TEXT("Einsatz.Mam.AbWelle"), 2) || Rezepte->IsRecipeAvailable(Rezept))
+	{
+		return;
+	}
+	Rezepte->AddAvailableRecipe(Rezept);
+	UE_LOG(LogFicsitTD, Log, TEXT("Einstieg: MAM freigegeben nach Welle %d"), Geschafft);
 }
 
 void UTDEinsatzSubsystem::AktualisiereToDo()
 {
 	FreigabeShop();
+	FreigabeMam();
 	// neu freigeschaltete Logistik-Rezepte (z. B. Band Mk2 aus dem MAM) ebenfalls kostenlos machen
 	AktualisiereGratisRezepte();
 	SchalteScannerFrei();
@@ -1909,8 +1945,8 @@ void UTDEinsatzSubsystem::AktualisiereToDo()
 			mHubGemeldet = true;
 			UE_LOG(LogFicsitTD, Log, TEXT("Einstieg: Aufgabe HUB zu Beginn (Welle %d geschafft)"), Geschafft);
 			TDAda::Sage(this, mKern.Get(), TEXT("AufgabeHub"));
-			Melde(TDT(TEXT("AUFGABE: Baue die HUB (kostenlos, Baumenü Spezial, mindestens 40 m vom Kern). Ihre Biomasse-Brenner liefern Strom, und sie ist dein Wiedereinstiegspunkt."),
-				TEXT("TASK: Build the HUB (free, build menu Special, at least 40 m from the Core). Its biomass burners provide power, and it is your respawn point.")));
+			Melde(TDT(TEXT("AUFGABE: Baue die HUB (kostenlos, Baumenü Spezial, mindestens 60 m vom Kern). Ihre Biomasse-Brenner liefern Strom, und sie ist dein Wiedereinstiegspunkt."),
+				TEXT("TASK: Build the HUB (free, build menu Special, at least 60 m from the Core). Its biomass burners provide power, and it is your respawn point.")));
 		}
 		bool bMamSteht = false;
 		for (TActorIterator<AFGBuildableMAM> It(GetWorld()); It; ++It)
@@ -1924,8 +1960,8 @@ void UTDEinsatzSubsystem::AktualisiereToDo()
 			mMamGemeldet = true;
 			UE_LOG(LogFicsitTD, Log, TEXT("Einstieg: Aufgabe MAM nach Welle %d"), Geschafft);
 			TDAda::Sage(this, mKern.Get(), TEXT("AufgabeMam"));
-			Melde(TDT(TEXT("AUFGABE: Baue das MAM (kostenlos, Baumenü Spezial, mindestens 40 m vom Kern). Dort setzt du Festplatten für neue Technik ein."),
-				TEXT("TASK: Build the MAM (free, build menu Special, at least 40 m from the Core). Spend Hard Drives there on new technology.")));
+			Melde(TDT(TEXT("AUFGABE: Baue das MAM (kostenlos, Baumenü Spezial, mindestens 60 m vom Kern). Dort setzt du Festplatten für neue Technik ein."),
+				TEXT("TASK: Build the MAM (free, build menu Special, at least 60 m from the Core). Spend Hard Drives there on new technology.")));
 		}
 		mHudZeile = bHubAufgabe ? TDT(TEXT("AUFGABE: Baue die HUB (kostenlos) - Strom und Wiedereinstieg"), TEXT("TASK: Build the HUB (free) - power and respawn point"))
 			: bShopAufgabe ? TDT(TEXT("AUFGABE: Baue den AWESOME-Shop (kostenlos) - dort kaufst du ab jetzt"), TEXT("TASK: Build the AWESOME Shop (free) - buy there from now on"))
@@ -2054,7 +2090,7 @@ FString UTDEinsatzSubsystem::SperrGrund(UClass* BauKlasse, const FVector& Ort, i
 	// 0.13 K2 (Marius 21.11.): Ring "instabiler Boden" - Fabrikgebaeude nicht naeher als Einsatz.Ring.Radius am Kern (Einsatz und
 	// Endlos; Bestand bleibt stehen, gesperrt ist nur der Neubau). Vor dem Kontingent, weil nicht jedes Fabrikgebaeude einen Schluessel hat.
 	if (const ATDDefenseCore* RingKern = mKern.Get(); RingKern && TDBalance::Wert(TEXT("Einsatz.Ring.Aktiv"), 1.f) > 0.f && IstFabrikgebaeude(BauKlasse)
-		&& FVector::Dist2D(Ort, RingKern->GetActorLocation()) < TDBalance::Wert(TEXT("Einsatz.Ring.Radius"), 40.f) * 100.f)
+		&& FVector::Dist2D(Ort, RingKern->GetActorLocation()) < TDBalance::Wert(TEXT("Einsatz.Ring.Radius"), 60.f) * 100.f)
 	{
 		return TEXT("Boden");
 	}

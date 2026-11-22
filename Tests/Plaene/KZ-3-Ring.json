@@ -1,6 +1,6 @@
 {
   "Name": "KZ-3-Ring",
-  "_Hinweis": "0.13 K2 (Marius 21.11.): Ring 'instabiler Boden' 40 m - Fabrikgebaeude des Spiels im Ring gesperrt (Disqualifier UTDCDBodenInstabil), Abwehrbauten und Logistik erlaubt. Prueft SperrGrund wie PruefeHologramm. 22.11.: Ringsignale (Lampen im Baumodus) und ADA-Ansage RingInstabil beim ersten Versuch.",
+  "_Hinweis": "0.13 K2 (Marius 21.11.): Ring 'instabiler Boden' 60 m - Fabrikgebaeude des Spiels im Ring gesperrt (Disqualifier UTDCDBodenInstabil), Abwehrbauten und Logistik erlaubt. Prueft SperrGrund wie PruefeHologramm. 22.11.: Ringsignale (Lampen im Baumodus) und ADA-Ansage RingInstabil beim ersten Versuch.",
   "NeuesSpiel": {
     "Startort": "Grass Fields",
     "Modus": 1
@@ -28,16 +28,16 @@
     {
       "pruefe": "Bausperre",
       "klasse": "/Game/FactoryGame/Buildable/Factory/ConstructorMk1/Build_ConstructorMk1.Build_ConstructorMk1_C",
-      "abstand": 39,
+      "abstand": 59,
       "soll": "Boden",
-      "text": "Konstruktor 39 m: Boden instabil"
+      "text": "Konstruktor 59 m: Boden instabil"
     },
     {
       "pruefe": "Bausperre",
       "klasse": "/Game/FactoryGame/Buildable/Factory/ConstructorMk1/Build_ConstructorMk1.Build_ConstructorMk1_C",
-      "abstand": 41,
+      "abstand": 61,
       "soll": "",
-      "text": "Konstruktor 41 m: erlaubt"
+      "text": "Konstruktor 61 m: erlaubt"
     },
     {
       "pruefe": "Bausperre",
@@ -93,7 +93,7 @@
     },
     {
       "pruefe": "Ringsignale",
-      "min": 30,
+      "min": 50,
       "sichtbar": false,
       "text": "Ringsignale angelegt, ohne Baumodus ausgeblendet"
     },
@@ -107,7 +107,7 @@
     },
     {
       "pruefe": "Ringsignale",
-      "min": 30,
+      "min": 50,
       "sichtbar": true,
       "text": "Ringsignale sichtbar (wie im Baumodus)"
     },

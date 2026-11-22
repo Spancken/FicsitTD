@@ -101,8 +101,8 @@ namespace
 			TEXT("Second wave repelled. Build the MAM now, it is free of charge. It turns Hard Drives into new technology. Generosity of this kind is rare at FICSIT. Use it.") },
 		// 0.13 K2 (Marius 22.11.): beim ersten Versuch, im Ring "instabiler Boden" ein Fabrikgebaeude zu bauen
 		{ TEXT("RingInstabil"), TEXT(""),
-			TEXT("Dort nicht. Das Bohrbeben des Kerns lockert den Boden im Umkreis von vierzig Metern, eine Fabrik würde darin versinken. Türme und Mauern stehen auf Tiefankern. Die leuchtenden Signale zeigen die Grenze."),
-			TEXT("Not there. The Core's drilling tremors loosen the ground within forty meters, a factory would sink into it. Turrets and walls stand on deep anchors. The glowing signals mark the boundary.") },
+			TEXT("Dort nicht. Das Bohrbeben des Kerns lockert den Boden im Umkreis von sechzig Metern, eine Fabrik würde darin versinken. Türme und Mauern stehen auf Tiefankern. Die leuchtenden Signale zeigen die Grenze."),
+			TEXT("Not there. The Core's drilling tremors loosen the ground within sixty meters, a factory would sink into it. Turrets and walls stand on deep anchors. The glowing signals mark the boundary.") },
 		// Endlos ab Welle 60: die Bosse kommen reihum wieder - ein kurzer Satz statt Wiederholung
 		{ TEXT("BossWieder"), TEXT(""),
 			TEXT("Bosswelle. FICSIT hat aufgehört, die Bosse zu zählen. Sie bitte nicht."),

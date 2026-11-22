@@ -610,5 +610,8 @@
   "Hover-Pack": "Hover Pack",
   "Hover-Pack, kommt ins Inventar. Einmal kaufbar.": "Hover Pack, goes to your inventory. One purchase.",
   "Kernreparatur": "Core Repair",
-  "Repariert 25 % der Kern-LP. Nur da, wenn der Kern beschädigt ist. Jeder Kauf wird teurer.": "Repairs 25 % of the Core HP. Only shown while the Core is damaged. Every purchase costs more."
+  "Repariert 25 % der Kern-LP. Nur da, wenn der Kern beschädigt ist. Jeder Kauf wird teurer.": "Repairs 25 % of the Core HP. Only shown while the Core is damaged. Every purchase costs more.",
+  "Kontingente": "Quotas",
+  "Ausrüstung": "Equipment",
+  "Kern und Festplatten": "Core and Hard Drives"
 }

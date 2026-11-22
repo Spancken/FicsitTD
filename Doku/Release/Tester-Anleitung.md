@@ -34,7 +34,7 @@
 - **Also new in 0.11:** one ammo item lasts for several shots (basic 4, advanced 3, special 2); the turret window shows consumption per minute. Power Storage in the shop (Coal Power research), Miner Mk.2/Mk.3 and belts up to Mk.5 in the MAM. Turrets and defenses cannot be dismantled near the Core during a wave. Wave saves carry the session name.
 
 ### Coming in 0.12 (development build only, not on ficsit.app yet)
-- **AWESOME Shop:** after wave 1 ADA asks you to build the game's AWESOME Shop (free, one per operation). From then on quotas, gear, core repairs and Hard Drives are bought there in the category FICSIT Defense; the Core stops selling. Base game shop items are hidden during an operation.
+- **AWESOME Shop:** after wave 1 ADA asks you to build the game's AWESOME Shop (free, one per operation). From then on quotas, gear, core repairs and Hard Drives are bought there in six sections (Turrets, Defense, Production, Power, Logistics, Pioneer and Core); the Core stops selling. Base game shop items are hidden during an operation.
 - **Getting started (order since 0.13):** first ADA asks for the HUB, after wave 1 for the shop, after wave 2 for the MAM. The second line of the status bar shows the current task (replaces the mod's To-do block).
 - **Boss waves:** a window with the phase report and three bonus cards; one talent point per boss wave.
 - The core platform cannot be dismantled during an operation.
@@ -42,9 +42,9 @@
 
 ### Coming in 0.13 (development build only)
 - **Core access:** if your buildings seal off the Core, the wave (or the drilling) does not start; the blocking spot is on the map. A building that would close the last path is red in the hologram. Defense walls may close it.
-- **Unstable ground:** no factory buildings within 40 m of the Core during an operation.
+- **Unstable ground:** no factory buildings within 60 m of the Core during an operation.
 - Enemies walk around machines and turrets instead of getting stuck on them.
-- In build mode, small orange lights mark the 40 m ring; when a building would close the last path, green lights show that path.
+- In build mode, small orange lights mark the 60 m ring; when a building would close the last path, green lights show that path.
 - Questions: Was it clear why a wave did not start? Did the red hologram ever block something you did not expect?
 
 ### What we want to know
@@ -99,7 +99,7 @@ Full list in the handbook: https://spancken.github.io/FicsitTD/#issues (section 
 - **Außerdem neu in 0.11:** Ein Stück Munition reicht für mehrere Schuss (Grund 4, Stufe 2 drei, Spezial 2); das Turmfenster zeigt den Verbrauch pro Minute. Akku im Laden (Forschung Kohlekraft), Miner Mk2/Mk3 und Bänder bis Mk5 im MAM. Türme und Abwehrbauten lassen sich während der Welle am Kern nicht abreißen. Wellen-Spielstände tragen den Namen des Spiels.
 
 ### Kommt mit 0.12 (nur Entwicklungsstand, noch nicht auf ficsit.app)
-- **AWESOME-Shop:** Nach Welle 1 bittet ADA dich, den AWESOME-Shop des Spiels zu bauen (kostenlos, einer je Einsatz). Ab dann kaufst du Kontingente, Ausrüstung, Kernreparatur und Festplatten dort in der Kategorie FICSIT-Abwehr; der Kern verkauft nicht mehr. Artikel des Grundspiels sind im Einsatz ausgeblendet.
+- **AWESOME-Shop:** Nach Welle 1 bittet ADA dich, den AWESOME-Shop des Spiels zu bauen (kostenlos, einer je Einsatz). Ab dann kaufst du Kontingente, Ausrüstung, Kernreparatur und Festplatten dort in sechs Bereichen (Türme, Verteidigung, Produktion, Strom, Logistik, Pionier und Kern); der Kern verkauft nicht mehr. Artikel des Grundspiels sind im Einsatz ausgeblendet.
 - **Einstieg (Reihenfolge seit 0.13):** Zuerst bittet ADA um die HUB, nach Welle 1 um den Shop, nach Welle 2 um das MAM. Die zweite Zeile der Statusleiste zeigt die aktuelle Aufgabe (statt des Blocks in der To-do-Liste).
 - **Bosswellen:** ein Fenster mit Phasenbericht und drei Bonus-Karten; ein Talentpunkt je Bosswelle.
 - Die Kernplattform lässt sich im Einsatz nicht abreißen.
@@ -107,9 +107,9 @@ Full list in the handbook: https://spancken.github.io/FicsitTD/#issues (section 
 
 ### Kommt mit 0.13 (nur Entwicklungsstand)
 - **Kern-Zugang:** Riegeln deine Bauten den Kern ab, startet die Welle (oder die Bohrung) nicht; die Sperrstelle steht auf der Karte. Ein Bau, der den letzten Weg schließen würde, ist im Hologramm rot. Abwehrmauern dürfen schließen.
-- **Instabiler Boden:** Im Einsatz keine Fabrikgebäude in 40 m um den Kern.
+- **Instabiler Boden:** Im Einsatz keine Fabrikgebäude in 60 m um den Kern.
 - Gegner laufen um Maschinen und Türme herum, statt an ihnen hängen zu bleiben.
-- Im Baumodus zeigen kleine orange Leuchtsignale den 40-m-Ring; würde ein Bau den letzten Weg schließen, zeigen grüne Signale diesen Weg.
+- Im Baumodus zeigen kleine orange Leuchtsignale den 60-m-Ring; würde ein Bau den letzten Weg schließen, zeigen grüne Signale diesen Weg.
 - Fragen: War klar, warum eine Welle nicht startete? Hat das rote Hologramm etwas gesperrt, das du nicht erwartet hast?
 
 ### Was wir wissen wollen

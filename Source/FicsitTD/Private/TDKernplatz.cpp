@@ -1603,6 +1603,7 @@ void UTDKernplatz::BaueJetzt()
 		TEXT("%s: platform (6 x 6, up to %d stacked, %d foundations) built with %d ramps, %d corner pieces and the Defense Core, %d plants cleared within 60 m."),
 		*mId, Stapel, Gesetzt, Rampen, Ecken, Geraeumt));
 	mNeuerKern = Cast<ATDDefenseCore>(Kern);
+	mWartetAufNetz = mNeuerKern.IsValid();
 	mEinsatzWarten = 0;
 	mNetzAufgefrischt = false;
 	if (!mNeuerKern.IsValid())
@@ -1676,6 +1677,7 @@ void UTDKernplatz::WarteNetzFuerEinsatz()
 			TEXT("Difficulty %s is still untested: only tuned in the simulation, a full run in the game is still missing. Feedback helps!"), *TDStufeAnzeige(Stufe)));
 	}
 	Kern->mLaufPlatz = mId;
+	mWartetAufNetz = false;   // ab jetzt sperrt der laufende Einsatz die Plattform
 	Einsatz->Starte(Kern, Stufe, IstEndlos(this) ? 0 : TDBalance::Ganz(TEXT("Einsatz.WellenStandard"), 50), mSpieler.Get(), Meldungen);
 	for (const FString& M : Meldungen)
 	{

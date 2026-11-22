@@ -29,6 +29,8 @@ class FICSITTD_API UTDKernplatz : public UWorldSubsystem
 	GENERATED_BODY()
 public:
 	static UTDKernplatz* Get(const UObject* WorldContext);
+	/** 22.11. (Handspiel H1): Kern, dessen Plattform steht, waehrend der Einsatz noch auf das Navigationsnetz wartet (sonst nullptr) */
+	class ATDDefenseCore* GetWartenderKern() const { return mWartetAufNetz ? mNeuerKern.Get() : nullptr; }
 	virtual void OnWorldBeginPlay(UWorld& InWorld) override;
 	/** 0.69.1 (S4): ist die Spieleinstellung "FICSIT Tower Defense" an? */
 	static bool TowerDefenseAn(const UObject* WorldContext);
@@ -115,6 +117,8 @@ private:
 	/** 0.69.1: Einsatz erst starten, wenn das Navigationsnetz um den neuen Kern steht (Test 0.69.0: Ansage "0 von 16") */
 	void WarteNetzFuerEinsatz();
 	TWeakObjectPtr<class ATDDefenseCore> mNeuerKern;
+	/** 22.11. (H1): Plattform steht, Einsatz wartet noch auf das Netz */
+	bool mWartetAufNetz = false;
 	int32 mEinsatzWarten = 0;
 	bool mNetzAufgefrischt = false;   // 0.9.4: Netz um die neue Plattform einmal neu erzeugen lassen
 	TWeakObjectPtr<AActor> mInvoker;

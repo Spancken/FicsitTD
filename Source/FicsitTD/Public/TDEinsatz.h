@@ -318,6 +318,8 @@ private:
 	bool mMamGemeldet = false;
 	/** 0.13: Aufgabe HUB schon gemeldet (je Spielsitzung; die Stimme sagt TDAda nur einmal je Kern) */
 	bool mHubGemeldet = false;
+	/** 22.11. (H2): MAM-Rezept nach Einsatz.Mam.AbWelle */
+	void FreigabeMam();
 	bool mAktiv = false;
 	bool mFrei = false;
 	TMap<FString, int32> mBelegt;
