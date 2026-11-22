@@ -45,7 +45,7 @@
 - **Unstable ground:** no factory buildings within 60 m of the Core during an operation.
 - Enemies walk around machines and turrets instead of getting stuck on them.
 - In build mode, small orange lights mark the 60 m ring; when a building would close the last path, green lights show that path.
-- **MAM research tree untangled:** the Industry tree has six entry points (manufacturing, copper, belts, power, sulfur, quartz) and no forced chain: Belt Mk.2 no longer needs copper, the Refinery hangs on Coal Power, Sulfur brings Black Powder. Bolt, Tesla and Rifle lines open from wave 3. Shield Generator and Jammer Projector are no longer a branch.
+- **MAM research tree untangled:** the Industry tree has six entry points (manufacturing, copper, belts, power, sulfur, quartz) and no forced chain: Belt Mk.2 no longer needs copper, the Refinery hangs on Coal Power, Sulfur brings Black Powder. Bolt and Tesla lines open from wave 3, the Rifle Turret from wave 5. Shield Generator and Jammer Projector are no longer a branch.
 - **Return Hard Drives:** in the AWESOME Shop (Pioneer and Core) you can trade a spare Hard Drive for 12 Coupons.
 - Questions on research: On your first MAM visit after wave 2, did you have to pick a line? Did you ever have to research something you did not want? Were Hard Drives left over, and what would you have spent them on?
 - Questions: Was it clear why a wave did not start? Did the red hologram ever block something you did not expect?
@@ -113,7 +113,7 @@ Full list in the handbook: https://spancken.github.io/FicsitTD/#issues (section 
 - **Instabiler Boden:** Im Einsatz keine Fabrikgebäude in 60 m um den Kern.
 - Gegner laufen um Maschinen und Türme herum, statt an ihnen hängen zu bleiben.
 - Im Baumodus zeigen kleine orange Leuchtsignale den 60-m-Ring; würde ein Bau den letzten Weg schließen, zeigen grüne Signale diesen Weg.
-- **MAM-Baum entflochten:** Der Industrie-Baum hat sechs Einstiege (Fertigung, Kupfer, Bänder, Strom, Schwefel, Quarz) und keine Pflichtkette mehr. Band Mk2 braucht kein Kupfer mehr, die Raffinerie hängt am Kohlekraftwerk, Schwefel bringt Schwarzpulver. Bolzen-, Tesla- und Gewehrlinie gehen ab Welle 3. Schildgenerator und Störfeld-Projektor sind keine Gabelung mehr.
+- **MAM-Baum entflochten:** Der Industrie-Baum hat sechs Einstiege (Fertigung, Kupfer, Bänder, Strom, Schwefel, Quarz) und keine Pflichtkette mehr. Band Mk2 braucht kein Kupfer mehr, die Raffinerie hängt am Kohlekraftwerk, Schwefel bringt Schwarzpulver. Bolzen- und Tesla-Linie gehen ab Welle 3, der Gewehrturm ab Welle 5. Schildgenerator und Störfeld-Projektor sind keine Gabelung mehr.
 - **Festplatten abgeben:** Im AWESOME-Shop (Pionier und Kern) tauschst du eine übrige Festplatte gegen 12 Coupons.
 - Fragen zur Forschung: Musstest du dich beim ersten MAM-Besuch nach Welle 2 für eine Linie entscheiden? Musstest du je etwas erforschen, das du nicht wolltest? Lagen Festplatten herum, und wofür hättest du sie gern ausgegeben?
 - Fragen: War klar, warum eine Welle nicht startete? Hat das rote Hologramm etwas gesperrt, das du nicht erwartet hast?

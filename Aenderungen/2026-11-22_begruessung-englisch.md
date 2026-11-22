@@ -5,7 +5,7 @@ modi: einsatz, endlos
 sichtbar: nein
 doku: nein
 simulation: nicht-noetig
-tests: ReleaseEn, Neustart
+tests: Neustart, MAMBild
 experiment:
 ---
 

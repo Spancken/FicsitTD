@@ -71,7 +71,7 @@ static const FTDForschungAbWelle TDForschungAbWelle[] = {
 	{ TEXT("/FicsitTD/Research/Logistik/Research_TD_MinerMk2.Research_TD_MinerMk2_C"), TEXT("MinerMk2"), 25 },
 	{ TEXT("/FicsitTD/Research/Logistik/Research_TD_MinerMk3.Research_TD_MinerMk3_C"), TEXT("MinerMk3"), 35 },
 	{ TEXT("/FicsitTD/Research/Ballistik/Research_TD_Durchschlagbolzen.Research_TD_Durchschlagbolzen_C"), TEXT("Durchschlagbolzen"), 3 },
-	{ TEXT("/FicsitTD/Research/Ballistik/Research_TD_Gewehrturm.Research_TD_Gewehrturm_C"), TEXT("Gewehrturm"), 3 },
+	{ TEXT("/FicsitTD/Research/Ballistik/Research_TD_Gewehrturm.Research_TD_Gewehrturm_C"), TEXT("Gewehrturm"), 5 },
 	{ TEXT("/FicsitTD/Research/Ballistik/Research_TD_Panzerbrechend.Research_TD_Panzerbrechend_C"), TEXT("Panzerbrechend"), 10 },
 	{ TEXT("/FicsitTD/Research/Chemie/Research_TD_NobeliskWerfer.Research_TD_NobeliskWerfer_C"), TEXT("NobeliskWerfer"), 10 },
 	{ TEXT("/FicsitTD/Research/Ballistik/Research_TD_Brandmunition.Research_TD_Brandmunition_C"), TEXT("Brandmunition"), 15 },

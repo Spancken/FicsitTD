@@ -359,7 +359,7 @@ namespace TDBalanceIntern
 		{ TEXT("Tuerme.Bolzenturm.GeschossGroesse"), 3.f }, { TEXT("Forschung.Kohlekraft.AbWelle"), 3.f }, { TEXT("Forschung.Tor.AbWelle"), 6.f }, { TEXT("Forschung.Lockfeuer.AbWelle"), 8.f }, { TEXT("Forschung.Oelschlick.AbWelle"), 15.f }, { TEXT("Forschung.UpgBolzen.AbWelle"), 3.f },
 		// 0.83 Bauten P2/P3
 		{ TEXT("Forschung.Elektrozaun.AbWelle"), 12.f }, { TEXT("Forschung.Funkmast.AbWelle"), 12.f }, { TEXT("Forschung.Schildgenerator.AbWelle"), 25.f }, { TEXT("Forschung.Himmelsturm.AbWelle"), 35.f }, { TEXT("Forschung.Stoerfeld.AbWelle"), 35.f }, { TEXT("Forschung.Singularitaet.AbWelle"), 51.f }, { TEXT("Forschung.Dimensionslager.AbWelle"), 51.f },
-		{ TEXT("Forschung.Gewehrturm.AbWelle"), 3.f }, { TEXT("Forschung.Teslaspule.AbWelle"), 3.f }, { TEXT("Forschung.Raffinerie.AbWelle"), 15.f },
+		{ TEXT("Forschung.Gewehrturm.AbWelle"), 5.f }, { TEXT("Forschung.Teslaspule.AbWelle"), 3.f }, { TEXT("Forschung.Raffinerie.AbWelle"), 15.f },
 		{ TEXT("Forschung.Treibstoffkraft.AbWelle"), 15.f }, { TEXT("Forschung.Flammenwerfer.AbWelle"), 15.f }, { TEXT("Forschung.Schwefel.AbWelle"), 5.f }, { TEXT("Forschung.Quarz.AbWelle"), 10.f }, { TEXT("Forschung.Caterium.AbWelle"), 10.f }, { TEXT("Forschung.Bauxit.AbWelle"), 25.f }, { TEXT("Forschung.Schwerindustrie.AbWelle"), 25.f }, { TEXT("Forschung.Mischtechnik.AbWelle"), 35.f }, { TEXT("Forschung.Explosivbolzen.AbWelle"), 25.f },
 		{ TEXT("Forschung.NobeliskWerfer.AbWelle"), 10.f }, { TEXT("Forschung.GasNobelisk.AbWelle"), 15.f }, { TEXT("Forschung.PulsNobelisk.AbWelle"), 15.f },
 		{ TEXT("Forschung.Kettenblitz.AbWelle"), 6.f }, { TEXT("Forschung.Ueberlast.AbWelle"), 6.f }, { TEXT("Forschung.Panzerbrechend.AbWelle"), 10.f },   // A6 22.11.

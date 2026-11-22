@@ -5,7 +5,7 @@ modi: einsatz, endlos
 sichtbar: nein
 doku: ja
 simulation: ja
-tests:
+tests: keine
 experiment:
 ---
 

@@ -5,7 +5,7 @@ modi: alle
 sichtbar: ja
 doku: ja
 simulation: nicht-noetig
-tests:
+tests: keine
 experiment:
 ---
 

@@ -375,7 +375,7 @@ AB_WELLE = {
     ("Industrie", "BandMk3"): 10,
     ("Industrie", "BandMk4"): 25, ("Industrie", "BandMk5"): 30, ("Industrie", "MinerMk2"): 25, ("Industrie", "MinerMk3"): 35,
     ("Ballistik", "Durchschlagbolzen"): 3,
-    ("Ballistik", "Gewehrturm"): 3,
+    ("Ballistik", "Gewehrturm"): 5,   # 22.11. abends (Marius, Analyse-A6-Simulation B2): Gewehr ab 5, Bolzen und Tesla ab 3
     ("Ballistik", "Panzerbrechend"): 10,   # A6: Gabel mit Zielsuch (Caterium ab 10) gleichzeitig waehlbar
     ("Ballistik", "NobeliskWerfer"): 10,   # 0.73: Artillerie-Linie vor der Doktrin waehlbar
     ("Ballistik", "Brandmunition"): 15,

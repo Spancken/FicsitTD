@@ -67,7 +67,8 @@ def pruefe_zettel(zettel, streng):
             melde(f"Zettel {n}: Doku noch nicht nachgezogen")
         if z.get("simulation") == "nein":
             melde(f"Zettel {n}: Simulation noch nicht nachgezogen")
-        for plan in [x.strip() for x in z.get("tests", "").split(",") if x.strip()]:
+        # 22.11.2026: "keine" = Aenderung ohne Selbsttest im Spiel (Handbuch, Simulator); der Nachweis steht dann im Zettel
+        for plan in [x.strip() for x in z.get("tests", "").split(",") if x.strip() and x.strip() != "keine"]:
             if not os.path.exists(os.path.join(PLAENE, plan + ".json")):
                 fehler.append(f"Zettel {n}: Testplan '{plan}' fehlt in Tests/Plaene")
         if z.get("sichtbar") == "ja" and "**Changelog EN:**" not in z["_text"]:

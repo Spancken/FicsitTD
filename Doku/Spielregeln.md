@@ -176,7 +176,7 @@
 - **Freigabe-Welle:** Ein Knoten ist erst ab einer bestimmten Welle erforschbar. Er erbt die Welle von seinen Eltern und Voraussetzungen. Der Status steht im Knotentitel.
 - **Gabelungen:** Bei jedem Paar ist nur eine Seite je Einsatz erforschbar. Das ist endgültig. Gabelungen: Streubolzen/Schockbolzen, Zielsuch/Panzerbrechend (beide ab Welle 10), Gas-/Puls-Nobelisk, Kettenblitz/Überlast, Reparatur-/Kampfdrohnen, Kern-Schild/Kern-Geschütz, Doktrin. Schildgenerator und Störfeld-Projektor sind seit 0.13 keine Gabelung mehr.
   - **Freies Spiel mit Abwehr** *(0.13, A6 Entscheidung 8)*: Dort sperrt eine gewählte Seite die andere nicht. Die Gegenseite kostet das Doppelte in Coupons (`Abwehr.GabelFaktor` 2).
-- **Einstieg (0.13, A6):** Die erste Forschung ist vor Welle 3 möglich. Kohlekraftwerk, Teslaspule, Durchschlagbolzen und Gewehrturm sind ab Welle 3 frei (vorher 5 bzw. 6) und kosten damit 3 Festplatten. Beim ersten Besuch reicht es für genau eine der billigen Linien (Bolzen oder Tesla). Kettenblitz und Überlast ab Welle 6, Caterium und Panzerbrechend ab Welle 10.
+- **Einstieg (0.13, A6):** Die erste Forschung ist vor Welle 3 möglich. Kohlekraftwerk, Teslaspule und Durchschlagbolzen sind ab Welle 3 frei (vorher 5 bzw. 6) und kosten damit 3 Festplatten. Der Gewehrturm kommt ab Welle 5 (Marius 22.11. abends: in der Simulation bremste er ab Welle 3 die Mischlinien). Beim ersten Besuch reicht es für genau eine der billigen Linien (Bolzen oder Tesla). Kettenblitz und Überlast ab Welle 6, Caterium und Panzerbrechend ab Welle 10.
 - **Alte Spielstände:** Beim Laden bekommt jeder erforschte FicsitTD-Knoten alle Rezepte, die er im heutigen Baum freischaltet (z. B. Schwarzpulver jetzt am Schwefel). Erforschtes bleibt erforscht.
 - **Festplatte abgeben** *(0.13, A6 E7)*: Im AWESOME-Shop (Bereich Pionier und Kern) gibt man eine Festplatte gegen 12 Coupons ab (`Einsatz.Laden.Festplatte.Rückgabe`; Schlüssel `Einsatz.Laden.Festplatte.Rueckgabe`). Der Shop zeigt 1 Coupon als Preis, der kommt mit zurück. Nur im Einsatz und im Endlos-Modus. Kaufen (ab 40) und Abgeben (12) hintereinander lohnt nie.
 - **Doktrin:** Eine Turmlinie wird zur Hauptlinie. Sie bekommt mehr Schaden, billigere Level und Level 5 früher. **Heute** ist sie eine Gabelung mit fünf Seiten und endgültig. **Beschlossen:** wechselbar im Kern-Menü, einmal je Einsatz für 50 Coupons *(geplant, ohne Termin)*.
@@ -541,7 +541,7 @@ Preis aus der Phase der effektiven Freigabe-Welle (Eltern und Voraussetzungen ei
 | Industrie | MinerMk2 | Miner Mk2 | 25 | 8 |  |
 | Industrie | MinerMk3 | Miner Mk3 | 35 | 10 |  |
 | Ballistik | Durchschlagbolzen | Durchschlagbolzen | 3 | 3 |  |
-| Ballistik | Gewehrturm | Gewehrturm | 3 | 3 |  |
+| Ballistik | Gewehrturm | Gewehrturm | 5 | 4 |  |
 | Ballistik | Explosivbolzen | Explosivbolzen | 25 | 8 |  |
 | Ballistik | Streubolzen | Streubolzen | 10 | 4 | Schockbolzen |
 | Ballistik | Zielsuchmunition | Zielsuchmunition | 10 | 4 | Panzerbrechend |
@@ -588,6 +588,6 @@ Preis aus der Phase der effektiven Freigabe-Welle (Eltern und Voraussetzungen ei
 | Festung | Schildgenerator | Schildgenerator | 25 | 8 |  |
 | Festung | Stoerfeld | Störfeld-Projektor | 35 | 10 |  |
 
-Alle Knoten zusammen: 383 FP.
+Alle Knoten zusammen: 384 FP.
 
 <!-- ZAHLEN-ENDE -->
