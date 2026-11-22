@@ -1,5 +1,5 @@
 {
-  "datum": "2026-11-22 10:04",
+  "datum": "2026-11-22 10:48",
   "hinweis": "SHA-256 der Quelldateien, gegen die sim_alle_modi.py zuletzt gerechnet hat",
   "code_stand": {
     "Source/FicsitTD/Private/TDBalance.cpp": "c9ae9ffdbf9f0a2e902c154fd3f0cb9ca6899a6210526135b96eda1ca22bb881",
