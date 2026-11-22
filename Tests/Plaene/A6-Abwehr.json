@@ -1,0 +1,75 @@
+{
+  "Name": "A6-Abwehr",
+  "_Hinweis": "A6 Entscheidung 8 (Marius 22.11.): im Freien Spiel mit Abwehr sperrt eine gewaehlte Gabelseite die andere nicht, die Gegenseite kostet Abwehr.GabelFaktor (2) mal so viele Coupons. Industrie bleibt verborgen, Himmelsturm ist eigene Wurzel. Festplatte abgeben gibt es hier nicht (Shop-Posten nur mit aktivem Einsatz, ShopSichtbar).",
+  "NeuesSpiel": {
+    "Startort": "Grass Fields",
+    "Modus": 3
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 8,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warte": 10
+    },
+    {
+      "pruefe": "BaumFrei",
+      "baum": "Industrie",
+      "erwartet": false,
+      "text": "Industrie-Baum im Freien Spiel verborgen"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Abwehr: Forschungskosten von",
+      "min": 1,
+      "text": "Forschungskosten auf Coupons umgestellt"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Abwehr: Gabelpreise gesetzt, 0 Gegenseiten",
+      "min": 1,
+      "text": "ohne gewaehlte Seite kein Aufschlag"
+    },
+    {
+      "erforsche": "Teslaspule"
+    },
+    {
+      "erforsche": "Ueberlast"
+    },
+    {
+      "warte": 5
+    },
+    {
+      "pruefe": "ForschungZustand",
+      "knoten": "Kettenblitz",
+      "soll": "ZuFrueh",
+      "text": "Kettenblitz nach Ueberlast nicht ausgeschlossen (Wellenanzeige im Freien Spiel ohne Wirkung)"
+    },
+    {
+      "pruefe": "ForschungStartbar",
+      "schematic": "/FicsitTD/Research/Energie/Research_TD_Kettenblitz.Research_TD_Kettenblitz_C",
+      "text": "Gegenseite Kettenblitz startbar"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Abwehr: Gabelpreise gesetzt, 1 Gegenseiten mit Faktor 2.0",
+      "min": 1,
+      "text": "Gegenseite kostet doppelt"
+    },
+    {
+      "pruefe": "MAMKosten",
+      "knoten": "Kettenblitz",
+      "coupons": true,
+      "text": "Gegenseite kostet Coupons"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}

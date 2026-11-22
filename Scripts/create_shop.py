@@ -68,6 +68,9 @@ def texte(key, paket, sp, name_de, name_en):
     if art == 3:
         return (f"Repariert {paket} % der Kern-LP. Nur da, wenn der Kern beschädigt ist. Jeder Kauf wird teurer.",
                 f"Repairs {paket} % of the Core HP. Only shown while the Core is damaged. Every purchase costs more.")
+    if key == "Festplattenabgabe":
+        return ("Gib eine Festplatte ab und bekomm 12 Coupons. Der Shop zeigt 1 Coupon an, den bekommst du mit zurück. Nur im Einsatz und im Endlos-Modus.",
+                "Return a Hard Drive and get 12 Coupons. The Shop shows 1 Coupon, which you get back. Only in operations and Endless mode.")
     if key == "Festplatte":
         return ("Eine Festplatte für das MAM. Jede weitere kostet 10 Coupons mehr.",
                 "One Hard Drive for the MAM. Each further one costs 10 Coupons more.")
@@ -166,7 +169,8 @@ try:
         c.set_editor_property("mHiddenUntilDependenciesMet", True)
         c.set_editor_property("mRelevantShopSchematics", [])
         c.set_editor_property("mSchematicCategory", bereich[idx])
-        art = "aus" if sp is not None else ("kern" if key in ("Kernreparatur", "Festplatte") else "kont")
+        # A6 22.11.: Kern und Festplatten zuerst pruefen (sie sind auch Spieler-Posten und landeten sonst unter Ausruestung)
+        art = "kern" if key in ("Kernreparatur", "Festplatte", "Festplattenabgabe") else ("aus" if sp is not None else "kont")
         c.set_editor_property("mSubCategories", [sub[art]])
         textur = symbol_fuer(key, rezept, sp)
         if textur:

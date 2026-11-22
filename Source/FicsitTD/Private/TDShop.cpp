@@ -341,6 +341,11 @@ static void TDShopNachKauf(bool bErgebnis, AFGBuildableResourceSinkShop* Self, U
 	{
 		Inventar->Remove(Sink->GetCouponClass(), Differenz);
 	}
+	// A6 E7: Posten mit Preis 0 (Festplatte abgeben) zeigen im Shop mindestens 1 Coupon (SetzePreis) - den bekommt der Spieler zurueck
+	if (Differenz < 0 && Inventar && Sink && Sink->GetCouponClass())
+	{
+		Inventar->AddStack(FInventoryStack(-Differenz, Sink->GetCouponClass()), true);
+	}
 	for (const TPair<FString, int32>& P : Kauf.Stueck)
 	{
 		const FString Text = Einsatz ? Einsatz->WirkeKauf(P.Key, P.Value, Kauf.Soll.FindRef(P.Key)) : FString();

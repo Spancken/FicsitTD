@@ -354,6 +354,12 @@ class Spieler:
 
     def plane(self, n=1):
         """Bauphase vor Welle n: forschen (Reihenfolge, Freigabewelle und Voraussetzungen), dann Tuerme oder Level kaufen"""
+        # A6 (22.11.): Messgroessen fuer "Wahl" - offene Knoten (freigegeben, Voraussetzungen erfuellt, keine Gegenseite gewaehlt)
+        # und davon mit den Festplatten zu Beginn der Bauphase bezahlbare; nach dem Forschen bleibt self.fp ungenutzt
+        offen = [k for k, kn in self.info.items() if k not in self.erforscht and n >= kn["AbWelle"]
+                 and all(v in self.erforscht for v in kn["Braucht"]) and not any(v in self.erforscht for v in kn["Andere"])]
+        self.knoten_offen = len(offen)
+        self.knoten_bezahlbar = sum(1 for k in offen if self.info[k]["FP"] <= self.fp)
         for name in self.reihenfolge:
             if name in self.erforscht:
                 continue
@@ -449,6 +455,7 @@ def simuliere(B, A, katalog, phasen, ab_welle, stufe, laeufe, seed, mono=None):
                 "Mix": "/".join(f"{sum(1 for t in sp.tuerme if t['Typ'] == typ)}" for typ in sp.gekauft),
                 "Level": statistics.mean(stufen) if stufen else 0, "Coupons_Level": sp.ep_level,
                 "Forschung": len(sp.erforscht), "EP_Turm_offen": sp.ep_turm,
+                "FP_ungenutzt": sp.fp, "Knoten_offen": sp.knoten_offen, "Knoten_bezahlbar": sp.knoten_bezahlbar,
             })
             sp.welle_beendet(n, A["Spieler"]["KernAnteilProzent"])
     return reihen
@@ -459,7 +466,8 @@ def zusammenfassen(reihen):
     for n, rs in reihen.items():
         qs = sorted(r["Q"] for r in rs)
         z = {"Welle": n}
-        for k in ("Gegner", "Elite", "LP", "EHP", "K", "Tuerme", "Fronten", "Level", "Coupons_Level", "Forschung", "EP_Turm_offen"):
+        for k in ("Gegner", "Elite", "LP", "EHP", "K", "Tuerme", "Fronten", "Level", "Coupons_Level", "Forschung", "EP_Turm_offen",
+                  "FP_ungenutzt", "Knoten_offen", "Knoten_bezahlbar"):
             z[k] = statistics.mean(r[k] for r in rs)
         z["Q"] = statistics.median(qs)
         z["Q_p10"] = qs[int(0.1 * (len(qs) - 1))]
@@ -669,7 +677,7 @@ def main():
     os.makedirs(args.aus, exist_ok=True)
     with open(os.path.join(args.aus, "Simulation.csv"), "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f, delimiter=";")
-        spalten = ["Welle", "Gegner", "Elite", "Fronten", "LP", "EHP", "Tuerme", "Mix", "Level", "Forschung", "K", "Q", "Q_p10", "Q_p90"]
+        spalten = ["Welle", "Gegner", "Elite", "Fronten", "LP", "EHP", "Tuerme", "Mix", "Level", "Forschung", "K", "Q", "Q_p10", "Q_p90", "FP_ungenutzt", "Knoten_offen", "Knoten_bezahlbar"]
         w.writerow(["Stufe"] + spalten)
         for st, zs in ergebnisse.items():
             for z in zs:

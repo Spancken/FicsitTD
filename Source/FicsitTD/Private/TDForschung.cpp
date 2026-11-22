@@ -9,6 +9,7 @@
 #include "Unlocks/FGUnlockInfoOnly.h"
 #include "FicsitTDModule.h"
 #include "TDSprache.h"
+#include "TDKernplatz.h"
 
 #include "TDForschungInfo.inl"
 
@@ -102,7 +103,8 @@ namespace TDForschung
 		{
 			return ETDForschungZustand::Erforscht;
 		}
-		if (!GewaehlteAndere(WorldContext, K).IsEmpty())
+		// A6 Entscheidung 8: im Freien Spiel mit Abwehr kostet die Gegenseite doppelt, statt gesperrt zu sein
+		if (!GewaehlteAndere(WorldContext, K).IsEmpty() && !UTDKernplatz::IstAbwehr(WorldContext))
 		{
 			return ETDForschungZustand::Ausgeschlossen;
 		}

@@ -85,6 +85,7 @@ void UTDAbwehrSubsystem::Pruefe()
 		return;
 	}
 	TauscheKosten();
+	SetzeGabelPreise();
 	ZieheIndustrieNach();
 	if (ATDSpielstand* Stand = ATDSpielstand::Get(this))
 	{
@@ -176,6 +177,46 @@ void UTDAbwehrSubsystem::TauscheKosten()
 		}
 	}
 	UE_LOG(LogFicsitTD, Log, TEXT("Abwehr: Forschungskosten von %d Knoten auf Coupons umgestellt (%d Coupons je Festplatte)"), Getauscht, JeFestplatte);
+}
+
+void UTDAbwehrSubsystem::SetzeGabelPreise()
+{
+	if (!mGetauscht)
+	{
+		return;
+	}
+	UClass* Festplatte = UTDEinsatzSubsystem::FPKlasse();
+	UClass* Coupon = UTDEinsatzSubsystem::CouponKlasse();
+	const int32 JeFestplatte = FMath::Max(1, TDBalance::Ganz(TEXT("Abwehr.CouponsJeFestplatte"), 10));
+	const float Faktor = FMath::Max(1.f, TDBalance::Wert(TEXT("Abwehr.GabelFaktor"), 2.f));
+	int32 Aufschlag = 0;
+	for (const FTDForschungKnoten& Knoten : TDForschung::Alle())
+	{
+		if (Knoten.Andere.IsEmpty() || IstIndustrieKnoten(Knoten.Pfad))
+		{
+			continue;
+		}
+		UClass* Schematic = LoadClass<UFGSchematic>(nullptr, *Knoten.Pfad);
+		const TArray<FItemAmount>* Original = mOriginalKosten.Find(Schematic);
+		TArray<FItemAmount>* Kosten = SchematicKosten(Schematic);
+		if (!Original || !Kosten || !Festplatte || !Coupon)
+		{
+			continue;
+		}
+		const bool bGegenseite = !TDForschung::Hat(this, *Knoten.Key) && !TDForschung::GewaehlteAndere(this, Knoten).IsEmpty();
+		TArray<FItemAmount> Neu;
+		for (const FItemAmount& K : *Original)
+		{
+			Neu.Add(K.ItemClass == Festplatte ? FItemAmount(Coupon, FMath::RoundToInt(K.Amount * JeFestplatte * (bGegenseite ? Faktor : 1.f))) : K);
+		}
+		*Kosten = Neu;
+		Aufschlag += bGegenseite ? 1 : 0;
+	}
+	if (Aufschlag != mGabelAufschlag)
+	{
+		UE_LOG(LogFicsitTD, Log, TEXT("Abwehr: Gabelpreise gesetzt, %d Gegenseiten mit Faktor %.1f"), Aufschlag, Faktor);
+		mGabelAufschlag = Aufschlag;
+	}
 }
 
 void UTDAbwehrSubsystem::StelleKostenWiederHer()

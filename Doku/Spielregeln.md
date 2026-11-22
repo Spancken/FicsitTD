@@ -169,19 +169,23 @@
 
 ## 7. Forschung (MAM)
 
-- **4 Bäume:** Industrie, Ballistik, Elementar, Festung, alle ab Start im MAM. Jeder Baum wächst aus 2–3 Wurzeln: Industrie aus Kohlekraftwerk, Assembler und Kupfer; Ballistik aus Durchschlagbolzen, Gewehrturm und Nobelisk-Werfer; Elementar aus Teslaspule und Flammenwerfer; Festung aus Kern-Panzerung, Verstärkten Mauern und Turmfertigung II. Alle anderen Knoten hängen mit einer Linie an einem Elternknoten.
+- **4 Bäume:** Industrie, Ballistik, Elementar, Festung, alle ab Start im MAM. Jeder Baum wächst aus mehreren Wurzeln: Industrie seit 0.13 (A6, Marius 22.11.) aus sechs Einstiegen ohne Pflichtkette, nämlich Assembler (Fertigung), Kupfer, Förderband Mk2, Kohlekraftwerk (Strom und Öl: Raffinerie und Treibstoffkraftwerk hängen daran), Schwefel und Quarz; Ballistik aus Durchschlagbolzen, Gewehrturm, Nobelisk-Werfer und Himmelsturm; Elementar aus Teslaspule und Flammenwerfer; Festung aus Kern-Panzerung, Verstärkten Mauern und Turmfertigung II. Alle anderen Knoten hängen mit einer Linie an einem Elternknoten.
 - **Sichtbarkeit:** Ein Knoten zeigt sein Icon erst, wenn sein Elternknoten erforscht ist; vorher ist er ein grauer Platzhalter. Knoten mit Voraussetzung aus einem anderen Baum (z. B. Ballistik braucht den Assembler, Elementar das Kohlekraftwerk) bleiben grau, bis sie erfüllt ist.
 - **Infokarten je Knoten:** „Herstellung“ (Zutaten, Maschine, Stück pro Minute, Zutaten der Zutaten, Ziel-Turm), „Bauen“ (Baukosten) und „Vorher“ (nötige Forschung und Freigabe-Welle).
 - **Bezahlt wird nur mit Festplatten** (seit 0.10.0, vorher FICSIT-Kampfdaten). Der Preis richtet sich nach der Freigabe-Welle des Knotens (Preisstufen ab Welle 0, 5, 15, 25, 35). Insgesamt gibt es bewusst mehr Knoten, als FP hereinkommen.
 - **Freigabe-Welle:** Ein Knoten ist erst ab einer bestimmten Welle erforschbar. Er erbt die Welle von seinen Eltern und Voraussetzungen. Der Status steht im Knotentitel.
-- **Gabelungen:** Bei jedem Paar ist nur eine Seite je Einsatz erforschbar. Das ist endgültig.
+- **Gabelungen:** Bei jedem Paar ist nur eine Seite je Einsatz erforschbar. Das ist endgültig. Gabelungen: Streubolzen/Schockbolzen, Zielsuch/Panzerbrechend (beide ab Welle 10), Gas-/Puls-Nobelisk, Kettenblitz/Überlast, Reparatur-/Kampfdrohnen, Kern-Schild/Kern-Geschütz, Doktrin. Schildgenerator und Störfeld-Projektor sind seit 0.13 keine Gabelung mehr.
+  - **Freies Spiel mit Abwehr** *(0.13, A6 Entscheidung 8)*: Dort sperrt eine gewählte Seite die andere nicht. Die Gegenseite kostet das Doppelte in Coupons (`Abwehr.GabelFaktor` 2).
+- **Einstieg (0.13, A6):** Die erste Forschung ist vor Welle 3 möglich. Kohlekraftwerk, Teslaspule, Durchschlagbolzen und Gewehrturm sind ab Welle 3 frei (vorher 5 bzw. 6) und kosten damit 3 Festplatten. Beim ersten Besuch reicht es für genau eine der billigen Linien (Bolzen oder Tesla). Kettenblitz und Überlast ab Welle 6, Caterium und Panzerbrechend ab Welle 10.
+- **Alte Spielstände:** Beim Laden bekommt jeder erforschte FicsitTD-Knoten alle Rezepte, die er im heutigen Baum freischaltet (z. B. Schwarzpulver jetzt am Schwefel). Erforschtes bleibt erforscht.
+- **Festplatte abgeben** *(0.13, A6 E7)*: Im AWESOME-Shop (Bereich Pionier und Kern) gibt man eine Festplatte gegen 12 Coupons ab (`Einsatz.Laden.Festplatte.Rückgabe`; Schlüssel `Einsatz.Laden.Festplatte.Rueckgabe`). Der Shop zeigt 1 Coupon als Preis, der kommt mit zurück. Nur im Einsatz und im Endlos-Modus. Kaufen (ab 40) und Abgeben (12) hintereinander lohnt nie.
 - **Doktrin:** Eine Turmlinie wird zur Hauptlinie. Sie bekommt mehr Schaden, billigere Level und Level 5 früher. **Heute** ist sie eine Gabelung mit fünf Seiten und endgültig. **Beschlossen:** wechselbar im Kern-Menü, einmal je Einsatz für 50 Coupons *(geplant, ohne Termin)*.
 - **Kern-Forschung (Festung):**
   - Kern-Panzerung: Kern-LP × 1,3.
   - Notreparatur: Nach jeder abgewehrten Welle repariert sich der Kern um 10 % seiner LP.
   - Gabelung Kern-Schild oder Kern-Geschütz. Der Schild fängt in jeder Welle die ersten 2000 Schaden am Kern ab und lädt sich zum Start der nächsten Welle neu. Das Geschütz schießt alle 1,5 s einen Bolzen mit 60 Schaden auf den nächsten Gegner in 30 m.
 - **Belohnungen** im MAM zeigen nur echte Freischaltungen. Die Schuss-Rezepte der Türme kommen still mit dem Knoten.
-- **Bänder und Lifte** rüsten nach der Forschung Band Mk2/Mk3/Mk4/Mk5 automatisch auf (Mk4 ab W25 mit Schwerindustrie, Mk5 ab W30; Mk6 gibt es nicht, er braucht Ficsit). **Miner Mk2** (ab W25, nach Band Mk4) und **Miner Mk3** (ab W35, mit Mischtechnik) im Industrie-Baum; gekauft wird weiter das Kontingent Miner, das Baumaterial kommt passend zur höchsten Miner-Stufe mit *(17.11., Marius, P10)*.
+- **Bänder und Lifte** rüsten nach der Forschung Band Mk2/Mk3/Mk4/Mk5 automatisch auf (Mk4 ab W25 mit Schwerindustrie, Mk5 ab W30; Mk6 gibt es nicht, er braucht Ficsit). **Miner Mk2** (ab W25, nach Band Mk4; der Schlüssel `Forschung.MinerMk2.AbWelle` steht seit 0.13 auch auf 25) und **Miner Mk3** (ab W35, mit Mischtechnik) im Industrie-Baum; gekauft wird weiter das Kontingent Miner, das Baumaterial kommt passend zur höchsten Miner-Stufe mit *(17.11., Marius, P10)*.
 
 ## 8. Beute
 
@@ -310,6 +314,7 @@ Preis = Grundpreis × (1 + Aufschlag × bisher gekauft); Paket = Gebäude je Kau
 | Elektrozaun | 5 | 0,3 | 1 | 0 |
 | Fertiger | 14 | 0,5 | 1 | 0 |
 | Festplatte | 40 | 0,25 | 1 | 0 |
+| Festplattenabgabe | 0 | 0 | 1 | 0 |
 | Flammenturm | 8 | 0,3 | 1 | 0 |
 | Fluessigkeitspuffer | 3 | 0,3 | 1 | 0 |
 | Foerderanlage | 6 | 0,4 | 3 | 0 |
@@ -516,7 +521,7 @@ Preis aus der Phase der effektiven Freigabe-Welle (Eltern und Voraussetzungen ei
 
 | Baum | Knoten | Name | ab Welle | Festplatten | Gabelung mit |
 |---|---|---|---|---|---|
-| Industrie | Kohlekraft | Kohlekraftwerk | 6 | 4 |  |
+| Industrie | Kohlekraft | Kohlekraftwerk | 3 | 3 |  |
 | Industrie | Assembler | Assembler und Eisenteile | 0 | 3 |  |
 | Industrie | Kupfer | Kupferverarbeitung | 0 | 3 |  |
 | Industrie | BandMk2 | Förderband Mk2 | 0 | 3 |  |
@@ -527,7 +532,7 @@ Preis aus der Phase der effektiven Freigabe-Welle (Eltern und Voraussetzungen ei
 | Industrie | Treibstoffkraft | Treibstoffkraftwerk | 15 | 6 |  |
 | Industrie | Schwefel | Schwefel | 5 | 4 |  |
 | Industrie | Quarz | Quarzverarbeitung | 10 | 4 |  |
-| Industrie | Caterium | Caterium | 12 | 4 |  |
+| Industrie | Caterium | Caterium | 10 | 4 |  |
 | Industrie | Bauxit | Bauxit und Aluminium | 25 | 8 |  |
 | Industrie | Schwerindustrie | Schwerindustrie | 25 | 8 |  |
 | Industrie | Mischtechnik | Mischtechnik | 35 | 10 |  |
@@ -535,14 +540,14 @@ Preis aus der Phase der effektiven Freigabe-Welle (Eltern und Voraussetzungen ei
 | Industrie | BandMk5 | Förderband Mk5 | 30 | 8 |  |
 | Industrie | MinerMk2 | Miner Mk2 | 25 | 8 |  |
 | Industrie | MinerMk3 | Miner Mk3 | 35 | 10 |  |
-| Ballistik | Durchschlagbolzen | Durchschlagbolzen | 5 | 4 |  |
-| Ballistik | Gewehrturm | Gewehrturm | 5 | 4 |  |
+| Ballistik | Durchschlagbolzen | Durchschlagbolzen | 3 | 3 |  |
+| Ballistik | Gewehrturm | Gewehrturm | 3 | 3 |  |
 | Ballistik | Explosivbolzen | Explosivbolzen | 25 | 8 |  |
 | Ballistik | Streubolzen | Streubolzen | 10 | 4 | Schockbolzen |
-| Ballistik | Zielsuchmunition | Zielsuchmunition | 12 | 4 | Panzerbrechend |
-| Ballistik | Panzerbrechend | Panzerbrechende Munition | 5 | 4 | Zielsuchmunition |
+| Ballistik | Zielsuchmunition | Zielsuchmunition | 10 | 4 | Panzerbrechend |
+| Ballistik | Panzerbrechend | Panzerbrechende Munition | 10 | 4 | Zielsuchmunition |
 | Ballistik | NobeliskWerfer | Nobelisk-Werfer | 10 | 4 |  |
-| Ballistik | Schockbolzen | Schockbolzen | 12 | 4 | Streubolzen |
+| Ballistik | Schockbolzen | Schockbolzen | 10 | 4 | Streubolzen |
 | Ballistik | Brandmunition | Brandmunition | 15 | 6 |  |
 | Ballistik | GasNobelisk | Gas-Nobelisk | 15 | 6 | PulsNobelisk |
 | Ballistik | PulsNobelisk | Puls-Nobelisk | 15 | 6 | GasNobelisk |
@@ -550,7 +555,7 @@ Preis aus der Phase der effektiven Freigabe-Welle (Eltern und Voraussetzungen ei
 | Ballistik | StreuNobelisk | Streu-Nobelisk | 25 | 8 |  |
 | Ballistik | Himmelsturm | Himmelsturm | 35 | 10 |  |
 | Ballistik | Singularitaet | Singularitätswerfer | 51 | 10 |  |
-| Elementar | Teslaspule | Teslaspule | 6 | 4 |  |
+| Elementar | Teslaspule | Teslaspule | 3 | 3 |  |
 | Elementar | Kettenblitz | Kettenblitz | 6 | 4 | Ueberlast |
 | Elementar | Ueberlast | Überlast | 6 | 4 | Kettenblitz |
 | Elementar | Akkubank | Akkubank | 15 | 6 |  |
@@ -580,9 +585,9 @@ Preis aus der Phase der effektiven Freigabe-Welle (Eltern und Voraussetzungen ei
 | Festung | Tor | Tor | 6 | 4 |  |
 | Festung | Lockfeuer | Lockfeuer | 8 | 4 |  |
 | Festung | Funkmast | Funkmast | 12 | 4 |  |
-| Festung | Schildgenerator | Schildgenerator | 25 | 8 | Stoerfeld |
-| Festung | Stoerfeld | Störfeld-Projektor | 35 | 10 | Schildgenerator |
+| Festung | Schildgenerator | Schildgenerator | 25 | 8 |  |
+| Festung | Stoerfeld | Störfeld-Projektor | 35 | 10 |  |
 
-Alle Knoten zusammen: 387 FP.
+Alle Knoten zusammen: 383 FP.
 
 <!-- ZAHLEN-ENDE -->

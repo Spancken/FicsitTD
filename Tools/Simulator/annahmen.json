@@ -163,19 +163,19 @@
     ]
   },
   "Forschung": {
-    "_Hinweis": "Reihenfolge, in der der Modell-Spieler Festplatten ausgibt. Kosten (FP), Freigabewelle und Voraussetzungen kommen seit 16.11.2026 aus TDForschungInfo.inl (Balance Forschung.<Knoten>.AbWelle geht vor); fehlende Voraussetzungen werden davor eingereiht, die andere Seite einer Gabelung wird uebersprungen. Turmfertigung II-IV schalten Level 3-5 frei.",
+    "_Hinweis": "Reihenfolge, in der der Modell-Spieler Festplatten ausgibt. Kosten (FP), Freigabewelle und Voraussetzungen kommen seit 16.11.2026 aus TDForschungInfo.inl (Balance Forschung.<Knoten>.AbWelle geht vor); fehlende Voraussetzungen werden davor eingereiht, die andere Seite einer Gabelung wird uebersprungen. Turmfertigung II-IV schalten Level 3-5 frei. A6 22.11.: Bolzen und Tesla zuerst (beide ab Welle 3 ohne Kupfer), Gewehr danach, Panzerbrechend ab Welle 10.",
     "Reihenfolge": [
       "Assembler",
       "Durchschlagbolzen",
-      "Kupfer",
       "Kohlekraft",
-      "Gewehrturm",
-      "Panzerbrechend",
       "Teslaspule",
+      "Kupfer",
+      "Gewehrturm",
       "Giesserei",
       "NobeliskWerfer",
       "Turmfertigung2",
       "Schockbolzen",
+      "Panzerbrechend",
       "Raffinerie",
       "Flammenwerfer",
       "Brandmunition",

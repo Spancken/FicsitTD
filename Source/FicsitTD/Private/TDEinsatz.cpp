@@ -167,6 +167,9 @@ static const FTDLadenEintrag LadenListe[] = {
 	{ TEXT("Nobelisken"), 5, 0.2f, 5, TEXT("/Game/FactoryGame/Recipes/Smelter/Recipe_IngotCaterium.Recipe_IngotCaterium_C") },
 	// 0.12 E4 (Marius 14./15.11.: Festplatten im Shop, 40 Coupons, jede weitere 10 teurer): nur im AWESOME-Shop, nicht am Kern
 	{ TEXT("Festplatte"), 40, 0.25f, 1, TEXT("/FicsitTD/Buildings/BoltTurret/Recipe_TD_BoltTurret.Recipe_TD_BoltTurret_C") },
+	// A6 E7 (Marius 22.11., Bericht-A6-Forschungsbaum 5.6): Senke fuer uebrige Festplatten. Preis 0 (der Shop zeigt mindestens 1 Coupon,
+	// den erstattet TDShopNachKauf), Lohn Einsatz.Laden.Festplatte.Rueckgabe Coupons je Stueck. Nur im AWESOME-Shop, nur Einsatz und Endlos.
+	{ TEXT("Festplattenabgabe"), 0, 0.f, 1, TEXT("/FicsitTD/Buildings/BoltTurret/Recipe_TD_BoltTurret.Recipe_TD_BoltTurret_C") },
 	// 18.11. (Marius: Bewegung spaeter kaufen): Jetpack erst mit Oel (Raffinerie im MAM, der Jetpack fliegt mit Treibstoff), danach das
 	// Hover-Pack mit dem Fertiger (spaetes Spiel, braucht Stromleitungen in der Naehe)
 	{ TEXT("Jetpack"), 16, 0.f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_OilRefinery.Recipe_OilRefinery_C") },
@@ -175,7 +178,8 @@ static const FTDLadenEintrag LadenListe[] = {
 	{ TEXT("Kernreparatur"), 15, 0.5f, 25, TEXT("/FicsitTD/Buildings/DefenseCore/Recipe_TD_DefenseCore.Recipe_TD_DefenseCore_C") },
 };
 
-/** Spieler-Posten: Wirkung statt Kontingent. Art 0 = Ausruestung ins Inventar, 1 = Inventarplaetze, 2 = Handplatz, 3 = Kern heilen (Prozent).
+/** Spieler-Posten: Wirkung statt Kontingent. Art 0 = Ausruestung ins Inventar, 1 = Inventarplaetze, 2 = Handplatz, 3 = Kern heilen (Prozent),
+ *  4 = Festplatte abgeben (Item aus dem Inventar gegen Coupons).
  *  Max 0 = unbegrenzt */
 struct FTDSpielerPosten
 {
@@ -198,6 +202,7 @@ static const FTDSpielerPosten SpielerPosten[] = {
 		TEXT("/Game/FactoryGame/Resource/Parts/NobeliskExplosive/Desc_NobeliskExplosive.Desc_NobeliskExplosive_C"), 10 },
 	{ TEXT("Nobelisken"), 0, 0, TEXT("/Game/FactoryGame/Resource/Parts/NobeliskExplosive/Desc_NobeliskExplosive.Desc_NobeliskExplosive_C") },
 	{ TEXT("Festplatte"), 0, 0, TEXT("/Game/FactoryGame/Resource/Environment/CrashSites/Desc_HardDrive.Desc_HardDrive_C") },
+	{ TEXT("Festplattenabgabe"), 4, 0, TEXT("/Game/FactoryGame/Resource/Environment/CrashSites/Desc_HardDrive.Desc_HardDrive_C") },
 	{ TEXT("Jetpack"), 0, 1, TEXT("/Game/FactoryGame/Resource/Equipment/JetPack/BP_EquipmentDescriptorJetPack.BP_EquipmentDescriptorJetPack_C") },
 	{ TEXT("Hover-Pack"), 0, 1, TEXT("/Game/FactoryGame/Resource/Equipment/HoverPack/BP_EquipmentDescriptorHoverPack.BP_EquipmentDescriptorHoverPack_C") },
 	{ TEXT("Kernreparatur"), 3, 0, TEXT("/Game/FactoryGame/Resource/Parts/IronPlateReinforced/Desc_IronPlateReinforced.Desc_IronPlateReinforced_C") },
@@ -287,6 +292,7 @@ static FString TDAnzeige(const FString& Key)
 			{ TEXT("Singularitaet"), TEXT("Singularitätswerfer") }, { TEXT("Oelpumpe"), TEXT("Ölpumpe") }, { TEXT("Abfueller"), TEXT("Abfüller") },
 			{ TEXT("Foerderanlage"), TEXT("Förderanlage") }, { TEXT("Fluessigkeitspuffer"), TEXT("Flüssigkeitspuffer") },
 			{ TEXT("Flammenturm"), TEXT("Flammenwerfer") }, { TEXT("Splitter"), TEXT("Förderbandsplitter") }, { TEXT("Wasserpumpe"), TEXT("Wasserextraktor") },
+			{ TEXT("Festplattenabgabe"), TEXT("Festplatte abgeben") },
 		};
 		const FString* Name = De.Find(Key);
 		return Name ? *Name : Key;
@@ -310,7 +316,7 @@ static FString TDAnzeige(const FString& Key)
 		{ TEXT("Raffinerie"), TEXT("Refinery") }, { TEXT("Abfueller"), TEXT("Packager") }, { TEXT("Mischer"), TEXT("Blender") },
 		{ TEXT("Fabrik"), TEXT("Factory") }, { TEXT("Fluessigkeitspuffer"), TEXT("Fluid Buffer") }, { TEXT("Inventarplätze"), TEXT("Inventory Slots") },
 		{ TEXT("Handplatz"), TEXT("Hand Slot") }, { TEXT("Armierpistole"), TEXT("Rebar Gun") }, { TEXT("Klingenläufer"), TEXT("Blade Runners") },
-		{ TEXT("Gewehr"), TEXT("Rifle") }, { TEXT("Nobelisken-Zünder"), TEXT("Nobelisk Detonator") }, { TEXT("Nobelisken"), TEXT("Nobelisks") }, { TEXT("Festplatte"), TEXT("Hard Drive") }, { TEXT("AWESOME-Shop"), TEXT("AWESOME Shop") }, { TEXT("Kernreparatur"), TEXT("Core Repair") },
+		{ TEXT("Gewehr"), TEXT("Rifle") }, { TEXT("Nobelisken-Zünder"), TEXT("Nobelisk Detonator") }, { TEXT("Nobelisken"), TEXT("Nobelisks") }, { TEXT("Festplatte"), TEXT("Hard Drive") }, { TEXT("Festplattenabgabe"), TEXT("Return Hard Drive") }, { TEXT("AWESOME-Shop"), TEXT("AWESOME Shop") }, { TEXT("Kernreparatur"), TEXT("Core Repair") },
 		{ TEXT("Jetpack"), TEXT("Jetpack") }, { TEXT("Hover-Pack"), TEXT("Hover Pack") },
 	};
 	const FString* Gefunden = En.Find(Key);
@@ -1174,6 +1180,23 @@ bool UTDEinsatzSubsystem::HoleTurmErbe(const FString& Turm, int32& Kills, int32&
 
 FString UTDEinsatzSubsystem::SpielerWirkung(const FTDSpielerPosten& P, int32 Menge)
 {
+	// A6 E7: Festplatten aus dem Inventar gegen Coupons (nie mehr als vorhanden)
+	if (P.Art == 4)
+	{
+		UFGInventoryComponent* Inventar = SpielerInventar(GetWorld());
+		UClass* FP = FPKlasse();
+		const int32 Weg = Inventar && FP ? FMath::Min(Menge, Inventar->GetNumItems(FP)) : 0;
+		const int32 Lohn = Weg * FMath::Max(0, TDBalance::Ganz(TEXT("Einsatz.Laden.Festplatte.Rueckgabe"), 12));
+		if (Weg > 0)
+		{
+			Inventar->Remove(FP, Weg);
+			GibEP(Lohn, TEXT("Festplatte abgegeben"));
+		}
+		UE_LOG(LogFicsitTD, Log, TEXT("Einsatz: Festplattenabgabe %d von %d Stueck, +%d Coupons, Festplatten im Inventar %d"), Weg, Menge, Lohn, FPImInventar());
+		return Weg > 0
+			? TDF(TEXT("Abgegeben: %d Festplatte(n), +%d Coupons."), TEXT("Returned: %d Hard Drive(s), +%d Coupons."), Weg, Lohn)
+			: TDT(TEXT("Keine Festplatte im Inventar, nichts abgegeben."), TEXT("No Hard Drive in your inventory, nothing returned."));
+	}
 	if (P.Art == 3)
 	{
 		ATDDefenseCore* Kern = mKern.Get();
@@ -1288,7 +1311,7 @@ TArray<FTDLadenZeile> UTDEinsatzSubsystem::LadenZeilen() const
 	{
 		// 0.72.1: Panzersperre entfernt (Eintrag bleibt fuer das Kontingent gebauter Sperren alter Spielstaende)
 		// 0.12 E4: Festplatte nur im AWESOME-Shop
-		if (FCString::Strcmp(E.Key, TEXT("Panzersperre")) == 0 || FCString::Strcmp(E.Key, TEXT("Festplatte")) == 0)
+		if (FCString::Strcmp(E.Key, TEXT("Panzersperre")) == 0 || FCString::Strcmp(E.Key, TEXT("Festplatte")) == 0 || FCString::Strcmp(E.Key, TEXT("Festplattenabgabe")) == 0)
 		{
 			continue;
 		}
@@ -1306,7 +1329,7 @@ TArray<FTDLadenZeile> UTDEinsatzSubsystem::LadenZeilen() const
 		if (const FTDSpielerPosten* SP = SpielerFuer(E.Key))
 		{
 			Z.Einheit = SP->Art == 1 ? TDT(TEXT("Inventarplätze"), TEXT("inventory slots")) : SP->Art == 2 ? TDT(TEXT("Handplatz"), TEXT("hand slot"))
-				: SP->Art == 3 ? TDT(TEXT("% Kern-LP"), TEXT("% Core HP")) : SP->Max == 0 ? TDT(TEXT("Stück"), TEXT("pcs")) : TDT(TEXT("Ausrüstung"), TEXT("equipment"));
+				: SP->Art == 3 ? TDT(TEXT("% Kern-LP"), TEXT("% Core HP")) : SP->Art == 4 ? TDT(TEXT("Festplatte"), TEXT("Hard Drive")) : SP->Max == 0 ? TDT(TEXT("Stück"), TEXT("pcs")) : TDT(TEXT("Ausrüstung"), TEXT("equipment"));
 			Z.Max = SpielerMax(*SP);
 			// Marius 03.11.2026: eine gekaufte Waffe noch einmal anzubieten ergibt keinen Sinn
 			if (Z.Max > 0 && Z.Gekauft >= Z.Max)
@@ -1485,9 +1508,9 @@ FString UTDEinsatzSubsystem::Kaufe(const FString& Name, int32 Anzahl)
 		return TDF(TEXT("Unbekannt: %s (Liste: /td laden)"), TEXT("Unknown: %s (list: /td laden)"), *Name);
 	}
 	// 0.12 E4.1: Pruefen, Preis und Wirkung getrennt - der AWESOME-Shop nutzt dieselben Funktionen (TDShop.cpp)
-	if (FCString::Strcmp(E->Key, TEXT("Festplatte")) == 0)
+	if (FCString::Strcmp(E->Key, TEXT("Festplatte")) == 0 || FCString::Strcmp(E->Key, TEXT("Festplattenabgabe")) == 0)
 	{
-		return TDT(TEXT("Festplatten gibt es nur im AWESOME-Shop."), TEXT("Hard Drives are sold only in the AWESOME Shop."));
+		return TDT(TEXT("Festplatten gibt es nur im AWESOME-Shop, dort lassen sie sich auch abgeben."), TEXT("Hard Drives are traded only in the AWESOME Shop, where you can also return them."));
 	}
 	if (KernVerkauftNicht())
 	{
@@ -1565,6 +1588,12 @@ bool UTDEinsatzSubsystem::KaufErlaubt(const FString& Key, FString& OutGrund) con
 		OutGrund = FCString::Strcmp(SP->Key, TEXT("Nobelisken")) == 0
 			? TDT(TEXT("Nobelisken gibt es im Laden erst mit dem Nobelisken-Zünder."), TEXT("Nobelisks are sold only once you have the Nobelisk Detonator."))
 			: TDF(TEXT("%s hast du schon."), TEXT("You already have %s."), *TDAnzeige(E->Key));
+		return false;
+	}
+	// A6 E7: Abgabe nur mit einer Festplatte im Inventar
+	if (SP && SP->Art == 4 && FPImInventar() < 1)
+	{
+		OutGrund = TDT(TEXT("Keine Festplatte im Inventar."), TEXT("No Hard Drive in your inventory."));
 		return false;
 	}
 	// 0.11 (Gegencheck Einsatz A7): nach der Niederlage kostete die Reparatur Coupons und heilte nichts
@@ -1662,6 +1691,11 @@ FString UTDEinsatzSubsystem::WirkeKauf(const FString& Key, int32 Gekauft, int32 
 	TDShop::SetzePreise(this);
 	if (const FTDSpielerPosten* SP = SpielerFuer(E->Key))
 	{
+		if (SP->Art == 4)
+		{
+			const FString Wirkung = SpielerWirkung(*SP, Gekauft * LadenPaket(*E));
+			return TDF(TEXT("%s Konto %d Coupons."), TEXT("%s Balance %d Coupons."), *Wirkung, Konto());
+		}
 		return TDF(TEXT("Gekauft: %s für %d Coupons. %s Konto %d Coupons."), TEXT("Bought: %s for %d Coupons. %s Balance %d Coupons."),
 			*TDAnzeige(E->Key), Kosten, *SpielerWirkung(*SP, Gekauft * LadenPaket(*E)), Konto());
 	}

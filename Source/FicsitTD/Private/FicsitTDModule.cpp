@@ -85,10 +85,12 @@ bool FFicsitTDModule::IstGemerkteWellenKreatur(const void* Adresse)
 /** Abzweigungen im MAM (Einsatz-Konzept 5, Marius: endgueltig je Durchlauf) und Voraussetzungen: aus Scripts/create_research.py */
 #include "FGRecipeManager.h"
 #include "FGUnlockSubsystem.h"
+#include "Unlocks/FGUnlockRecipe.h"
 #include "FGRecipe.h"
 #include "TDForschung.h"
 #include "TDSprache.h"
 #include "TDForschungVoraussetzungen.inl"
+#include "TDAbwehr.h"
 #include "Equipment/FGBuildGunDismantle.h"
 #include "TDEinsatz.h"
 
@@ -110,6 +112,38 @@ void TDForschung::GibStilleRezepte(const UObject* WorldContext)
 		{
 			Rezepte->AddAvailableRecipe(Rezept);
 			++Neu;
+		}
+	}
+	// A6 (Marius 22.11.): Rezepte, die ein Knoten erst seit dem Umbau des Baums bringt (z. B. Schwarzpulver jetzt am Schwefel),
+	// bekommen alte Spielstaende nachgezogen - Freischaltungen wirken sonst nur beim Kauf
+	{
+		TArray<TSubclassOf<UFGSchematic>> Erforscht;
+		Schemata->GetAllPurchasedSchematics(Erforscht);
+		TArray<FString> Nachgezogen;
+		for (const TSubclassOf<UFGSchematic>& S : Erforscht)
+		{
+			if (!S || !S->GetPathName().StartsWith(TEXT("/FicsitTD/Research/")))
+			{
+				continue;
+			}
+			for (UFGUnlock* Freigabe : UFGSchematic::GetUnlocks(S))
+			{
+				if (const UFGUnlockRecipe* R = Cast<UFGUnlockRecipe>(Freigabe))
+				{
+					for (const TSubclassOf<UFGRecipe>& Rezept : R->GetRecipesToUnlock())
+					{
+						if (Rezept && !Rezepte->IsRecipeAvailable(Rezept))
+						{
+							Rezepte->AddAvailableRecipe(Rezept);
+							Nachgezogen.Add(FString::Printf(TEXT("%s (%s)"), *Rezept->GetName(), *S->GetName()));
+						}
+					}
+				}
+			}
+		}
+		if (Nachgezogen.Num() > 0)
+		{
+			UE_LOG(LogFicsitTD, Log, TEXT("Forschung nachgezogen: %d Rezepte erforschter Knoten (%s)"), Nachgezogen.Num(), *FString::Join(Nachgezogen, TEXT(", ")));
 		}
 	}
 	// 0.75 (Selbsttest: Turm nahm keine Energiesplitter an, "Splitter erlaubt 0"): Uebertakten ist im Spiel an die MAM-Forschung
@@ -192,7 +226,8 @@ static bool FremdeFestplattenForschung(const AFGResearchManager* Forschung, UCla
 /** Ist die andere Seite der Abzweigung schon erforscht oder in Arbeit? */
 static bool AndereSeiteGewaehlt(const AFGResearchManager* Forschung, UClass* Schematic)
 {
-	if (!Forschung || !Schematic)
+	// A6 Entscheidung 8 (Marius 22.11.): im Freien Spiel mit Abwehr ist die Gegenseite kaeuflich, zum doppelten Preis (TDAbwehr)
+	if (!Forschung || !Schematic || UTDKernplatz::IstAbwehr(Forschung))
 	{
 		return false;
 	}
@@ -707,6 +742,14 @@ void FFicsitTDModule::StartupModule()
 	// Rueckerstattung bekam ueber die Interface-Verschiebung einen ungueltigen Zeiger (Absturz 0.28.3 in der Abriss-Vorschau).
 	SUBSCRIBE_METHOD(AFGResearchManager::CanResearchBeInitiated, [](auto& Scope, const AFGResearchManager* Self, TSubclassOf<UFGSchematic> Schematic)
 	{
+		// A6 Entscheidung 8: Gabelpreise im Freien Spiel mit Abwehr vor dem Start frisch setzen (sonst erst im 3-s-Takt)
+		if (UTDKernplatz::IstAbwehr(Self))
+		{
+			if (UTDAbwehrSubsystem* Abwehr = UTDAbwehrSubsystem::Get(Self))
+			{
+				Abwehr->SetzeGabelPreise();
+			}
+		}
 		if (AndereSeiteGewaehlt(Self, Schematic) || VoraussetzungFehlt(Self, Schematic) || WelleZuFrueh(Self, Schematic)
 			|| FremdeFestplattenForschung(Self, Schematic))
 		{
