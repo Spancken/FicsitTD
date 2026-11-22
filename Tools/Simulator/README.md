@@ -45,6 +45,16 @@ python strategien.py --stand 091 --laeufe 3        # Strategie-Prüfstand Einsat
 - Der Einsatz ist dabei nicht aktiv: keine Coupons, **keine Grundreparatur** zwischen den Wellen. Der Kernverlust summiert sich über alle Wellen.
 - Geprüft wird ein fester Aufbau ohne Kern-Ausbau, Doktrin und Stützbauten, Munition voll versorgt. Ausgabe: Mindestzahl Türme je Aufbau und Stufe; Erz und Erstlohn stehen nur als Kennzahl dabei.
 
+### Modell-Spieler „guter Spieler“ (22.11.2026, Schalter `Spielerwahl`)
+
+Anlass: Nach dem A6-Umbau des Baums rechnete die Simulation den Einsatz viel schwerer. Der Grund war der gierige Modell-Spieler, der jede Forschung sofort nutzte (`Notizen/Analyse-A6-Simulation-2026-11-22.md`). Mit `Spielerwahl` 1 in `strategie_annahmen.json` (Standard) spielt er wie ein guter Spieler. Mit 0 kommt das alte Verhalten zurück.
+
+- **Forschung nach Bedarf** (`Lauf._forschungsplan`): Kupfer und Kohlekraftwerk nur, wenn die Linie sie braucht (Voraussetzungen reiht `add()` selbst davor). Das Kohlekraftwerk für die Fabrik kommt nach Turmfertigung II.
+- **Strom nach Kosten** (`Lauf.fabrik`): Mit Kohlekraftwerk wählt er Kohlestrom nur, wenn die Biomasse für die Welle nicht reicht oder Kohle billiger ist. Im Einsatz zählen zuerst Coupons, im Endlos-Modus zuerst die Gebäude, also Bauzeit (`fabrik_schluessel`).
+- **Munition nur, wenn sie sich rechnet** (`Lauf.stelle_munition_um`): Der Schadensgewinn an allen Türmen des Typs je Aufwand muss mindestens so groß sein wie ein weiterer Turm mit der bisherigen Munition. Aufwand heißt im Einsatz Coupons, im Endlos-Modus Gebäude (`aufwand`). Das gilt auch für den ersten Wechsel weg von der Grundmunition.
+- Wirkung (A6-Baum): Einsatz Hart 58 → 86 %, Albtraum 38 → 76 %, Endlos Hart W11 → W11,5. Im alten Baum steigen die Werte mit dem guten Spieler ebenfalls (Hart 85 → 93 %).
+- Noch gierig: Der Spieler baut eine neue Turmart seiner Linie, sobald sie erforscht ist (Gewichte der Linie, `baue()`), samt Munitionskette. Deshalb kostet der Gewehrturm ab Welle 3 die Mischlinien im Endlos-Modus Bauzeit. Mit dem Gewehrturm ab Welle 6 liegt alles auf dem alten Stand.
+
 ### Was am Modell geändert wurde (16.11.2026)
 
 - **Turmlevel statt Stufen** (`simulator.py` `Spieler`): Level 1–5, gekauft mit Coupons. Preise `Tuerme.Level.Preis2..5` (Standard aus `ATDTurretBase::LevelPreis`), Doktrin-Rabatt. Wirkung `Tuerme.Level.<Turm>.L<n>.<Wert>` mit Standards aus `TDLevelStandards[]` in `TDTurretBase.cpp` (`LevelWertBis`). Nenn-DPS = Schaden × `SchadenBonus` × `TaktBonus` wie `NennDPS()`. Level-Grenze wie `LevelMax`: 2 mit dem Turm, 3/4 mit Turmfertigung II/III, 5 mit IV oder Doktrin. Der Modell-Spieler wählt je Kauf das Beste aus „neuer Turm“ und „ein Level mehr“ (Nenn-DPS je Coupon). Der alte KeyError `Tuerme.Stufen.SchadenJeStufe` ist damit weg. Der Prüfstand (`strategien.py`) hatte Level schon.

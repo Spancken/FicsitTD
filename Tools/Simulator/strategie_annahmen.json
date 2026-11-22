@@ -351,5 +351,10 @@
   "EndlosVorziehenUnterQ": {
     "Wert": 0.25,
     "Quelle": "16.11.2026, Annahme Spielerverhalten (Variante 'Vorziehen'): die naechste Welle wird nur vorgezogen, wenn die letzte Welle locker war (wirksames Q unter 0,25, Kern ab 90 %) und Bauzeit uebrig ist; vorgezogen wird hoechstens die ungenutzte Bauzeit."
+  },
+  "Spielerwahl": {
+    "Wert": 1,
+    "Quelle": "22.11.2026, Analyse-A6-Simulation (Marius: erst Modell nachziehen)",
+    "Hinweis": "1 = guter Spieler: Kupfer/Kohlekraftwerk nur nach Bedarf, Kohlestrom nur wenn billiger oder Biomasse knapp, neue Munition nur wenn sie je Coupon so viel bringt wie ein weiterer Turm. 0 = Verhalten bis 22.11. (alles Erforschte sofort nutzen)"
   }
 }

@@ -45,6 +45,14 @@ class EndlosLauf(st.Lauf):
         self.gebaut = 0
         self.zeit_fehlt = 0
 
+    def aufwand(self, fehl, coupons):
+        """22.11.2026 (Spielerwahl): im Endlos-Modus ist die Bauzeit knapp - Abwaegung je Gebaeude, nicht je Coupon"""
+        return max(1, len(fehl))
+
+    def fabrik_schluessel(self, fehl):
+        """22.11.2026 (Spielerwahl): im Endlos-Modus zaehlt zuerst die Bauzeit (Gebaeude), dann die Coupons"""
+        return (len(fehl), st.Lauf.kosten(self, fehl))
+
     def kosten(self, fehl):
         if len(fehl) * self.Z["BauSekundenJeGebaeude"] > self.bauzeit + 1e-9:
             self.zeit_fehlt += 1

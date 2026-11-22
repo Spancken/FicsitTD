@@ -406,7 +406,12 @@ class Lauf:
                 for v in self.K[k]["vor"]:
                     add(v)
                 plan.append(k)
-        add("Assembler"); add("Kupfer"); add("Kohlekraft")   # Strom: ohne Kohlekraft nur Biomasse-Generatoren
+        # 22.11.2026 (Spielerwahl, Analyse-A6-Simulation): der gute Spieler forscht Kupfer und Kohlekraftwerk nur, wenn seine Linie
+        # sie braucht (add() reiht Voraussetzungen selbst davor); das Kohlekraftwerk fuer die Fabrik kommt nach Turmfertigung II
+        if self.Z.get("Spielerwahl"):
+            add("Assembler")
+        else:
+            add("Assembler"); add("Kupfer"); add("Kohlekraft")   # Strom: ohne Kohlekraft nur Biomasse-Generatoren
         for t in sorted(s["Gewichte"], key=lambda t: -s["Gewichte"][t]):
             add(TURM_FORSCHUNG[t])
             if t == "Bolzenturm":
@@ -423,6 +428,8 @@ class Lauf:
                 if t in STUETZBAU:
                     add(STUETZBAU[t][1])
         add("Turmfertigung2")
+        if self.Z.get("Spielerwahl"):
+            add("Kohlekraft")
         if s["Kern"]:
             add("KernPanzer"); add("KernNotrep"); add(s["Gabel"]["Kern"])
         if s["Doktrin"]:
@@ -607,12 +614,53 @@ class Lauf:
             alt = self.mun_aktiv.get(typ)
             self.mun_aktiv[typ] = frei[-1]
             bed, strom = self.bedarf(self.tuerme, zyklus, D)
-            geb, _, _ = self.wi.gebaeude(bed, strom, n, self.erforscht)
-            if not self.gebaeude_ok(geb) or self.kosten(self.fehlende_kontingente(geb)) > self.ep - self.Z["Reserve"]:
+            geb, _, _ = self.fabrik(bed, strom, n)
+            kosten = self.kosten(self.fehlende_kontingente(geb)) if self.gebaeude_ok(geb) else None
+            lohnt = True
+            if kosten is not None and self.Z.get("Spielerwahl"):
+                # ohne ausdrueckliche Wahl schiesst der Turm die Grundmunition (beste_munition_fuer_wirtschaft: frei[0])
+                bisher = alt if alt is not None else frei[0]
+                # 22.11.2026 (Spielerwahl): Gewinn der neuen Munition an allen Tuermen des Typs je Coupon gegen einen weiteren Turm
+                # mit der alten Munition (nur Turmpreis, ohne dessen Fabrik - der Vergleich bevorzugt also eher den Umstieg nicht)
+                dokt, gabel = self.doktrin_aktiv() and self.s["Doktrin"] == typ, self.s["Gabel"]
+                gewinn = sum(self.dps_l(t, lv, frei[-1], dokt, gabel) - self.dps_l(t, lv, bisher, dokt, gabel) for t, lv in self.tuerme if t == typ)
+                lv_neu = 2 if TURM_FORSCHUNG[typ] in self.erforscht or typ == "Bolzenturm" else 1
+                fehl = self.fehlende_kontingente(geb)
+                je_turm = self.dps_l(typ, lv_neu, bisher, dokt, gabel) / max(1e-9, self.aufwand([typ], self.preis(typ) + self.levelpreis(typ, 1, lv_neu)))
+                lohnt = gewinn / max(1e-9, self.aufwand(fehl, kosten)) >= je_turm
+                if not lohnt:
+                    self.nutzung["MunitionAufgeschoben"] += 1
+            if kosten is None or kosten > self.ep - self.Z["Reserve"] or not lohnt:
                 if alt is None:
                     self.mun_aktiv.pop(typ)
                 else:
                     self.mun_aktiv[typ] = alt
+
+    def aufwand(self, fehl, coupons):
+        """Knappe Waehrung fuer Abwaegungen (Spielerwahl): im Einsatz Coupons (EndlosLauf: Gebaeude, also Bauzeit)"""
+        return max(1, coupons)
+
+    def fabrik_schluessel(self, fehl):
+        """Was eine Fabrik-Variante kostet: im Einsatz zuerst Coupons, dann Gebaeude (EndlosLauf: zuerst Bauzeit)"""
+        return (Lauf.kosten(self, fehl), len(fehl))
+
+    def fabrik(self, bed, strom, n):
+        """Gebaeude (geb, roh, last) fuer einen Bedarf. 22.11.2026 (Spielerwahl): mit Kohlekraftwerk waehlt der gute Spieler
+        Kohlestrom nur, wenn er billiger ist als Biomasse oder die Biomasse fuer die Welle nicht reicht (vorher immer Kohle)"""
+        kohle = self.wi.gebaeude(bed, strom, n, self.erforscht)
+        if not self.Z.get("Spielerwahl") or "Kohlekraft" not in self.erforscht:
+            return kohle
+        bio = self.wi.gebaeude(bed, strom, n, self.erforscht - {"Kohlekraft"})
+        if bio[0] == kohle[0]:
+            return kohle
+        bio_mw = min(bio[2], bio[0].get("Biomassegenerator", 0) * 30)
+        zyklus = getattr(self, "welle_zyklus", 5.0)
+        brauche = bio_mw * self.Z["StromMittelAnteil"] * zyklus * 60 / self.Z["BiomasseMJ"]
+        if brauche > self.biomasse:
+            return kohle
+        if self.fabrik_schluessel(self.fehlende_kontingente(bio[0])) <= self.fabrik_schluessel(self.fehlende_kontingente(kohle[0])):
+            return bio
+        return kohle
 
     def gebaeude_ok(self, geb):
         """Gebäude, die eine Forschung brauchen, die fehlt -> nicht baubar"""
@@ -644,9 +692,10 @@ class Lauf:
         """Bauphase vor Welle n: erst Fabrik für die vorhandenen Türme, dann Türme oder Level nach Stil"""
         self.welle_n = n
         self.welle_D = D
+        self.welle_zyklus = zyklus
         def fabrik_fuer(tuerme):
             bed, strom = self.bedarf(tuerme, zyklus, D)
-            geb, _, _ = self.wi.gebaeude(bed, strom, n, self.erforscht)
+            geb, _, _ = self.fabrik(bed, strom, n)
             return geb
         self.stelle_munition_um(zyklus, D, n)
         geb = fabrik_fuer(self.tuerme)
@@ -673,7 +722,7 @@ class Lauf:
         D2 = D + self.Z["WellenJe"]
         zyklus2 = zyklus_min(self.Z, n + 1, D2)
         bed2, strom2 = self.bedarf(self.tuerme, zyklus2, D2)
-        vorhalt = self.kosten(self.fehlende_kontingente(self.wi.gebaeude(bed2, strom2, n + 1, self.erforscht)[0])) * self.Z.get("Vorhalt", 1.0)
+        vorhalt = self.kosten(self.fehlende_kontingente(self.fabrik(bed2, strom2, n + 1)[0])) * self.Z.get("Vorhalt", 1.0)
         if self.neu:
             vorhalt += self.spar_vorhalt(zyklus, D, n)
             self.kaufe_stuetzbauten(fabrik_fuer, vorhalt)
@@ -733,7 +782,7 @@ class Lauf:
         alt = self.mun_aktiv.get("Flammenwerfer")
         self.mun_aktiv["Flammenwerfer"] = ziel
         bed, strom = self.bedarf(self.tuerme, zyklus, D)
-        geb, _, _ = self.wi.gebaeude(bed, strom, n, self.erforscht)
+        geb, _, _ = self.fabrik(bed, strom, n)
         if alt is None:
             self.mun_aktiv.pop("Flammenwerfer")
         else:
@@ -784,7 +833,7 @@ class Lauf:
         """Biomasse für die Biomassegeneratoren dieser Welle verbrauchen; fehlt sie, fehlt Strom -> Versorgung sinkt.
         Energie = Spitzenlast x mittlere Auslastung (Live 03./04.11.: Verbrauch/Spitze im Mittel 0,75) x Zykluszeit"""
         bed, strom = self.bedarf(self.tuerme, zyklus, D)
-        geb, _, last = self.wi.gebaeude(bed, strom, n, self.erforscht)
+        geb, _, last = self.fabrik(bed, strom, n)
         bio_mw = min(last, geb.get("Biomassegenerator", 0) * 30)
         if bio_mw <= 0:
             return
