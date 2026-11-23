@@ -1,4 +1,5 @@
 #include "TDWaveSubsystem.h"
+#include "TDStrom.h"
 #include "TDAda.h"
 #include "GameFramework/Character.h"
 #include "Components/CapsuleComponent.h"
@@ -4272,6 +4273,13 @@ int32 UTDWaveSubsystem::GeschosseGesamt = 0;
 
 void UTDWaveSubsystem::Tick(float DeltaTime)
 {
+	// 23.11. (Marius, Stromzweig): Kraftwerke je Brennstoff (TDStrom.cpp), alle Strom.Takt s
+	mStromUhr -= DeltaTime;
+	if (mStromUhr <= 0.f)
+	{
+		mStromUhr = TDBalance::Wert(TEXT("Strom.Takt"), 2.f);
+		FTDStrom::Pflege(GetWorld());
+	}
 	// 0.65: Statuskarten im MAM (erforschbar / gesperrt ab Welle / Voraussetzung) einmal je Sekunde nachfuehren
 	mMamTakt -= DeltaTime;
 	if (mMamTakt <= 0.f)

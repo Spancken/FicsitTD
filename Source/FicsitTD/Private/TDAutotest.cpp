@@ -4,6 +4,7 @@
 #include "TDTurretBase.h"
 #include "TDForschung.h"
 #include "TDSprache.h"
+#include "TDStrom.h"
 #include "TDWaveSubsystem.h"
 #include "Misc/App.h"
 #include "FGDismantleInterface.h"
@@ -857,6 +858,24 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 			Zustand->SetCheatNoPower(S->GetBoolField(TEXT("stromfrei")));
 		}
 		Ergebnis(TEXT("Pruefstand"), TEXT("Strom frei"), Zustand != nullptr);
+		return true;
+	}
+	// 23.11. (Marius, Stromzweig): {"kraftwerk": "<Brennstoff-Klasse>", "menge": 50, "soll": 325} - naechstes Brennstoff-Kraftwerk
+	// zum Kern befuellen, laden und die Leistung pruefen (TDStrom.cpp: MW je Brennstoff)
+	if (S->TryGetStringField(TEXT("kraftwerk"), Wort))
+	{
+		ATDDefenseCore* KernK = nullptr;
+		for (TActorIterator<ATDDefenseCore> It(World); It && !KernK; ++It)
+		{
+			KernK = *It;
+		}
+		UClass* Brennstoff = LoadClass<UFGItemDescriptor>(nullptr, *Wort);
+		const int32 Menge = S->HasField(TEXT("menge")) ? static_cast<int32>(S->GetNumberField(TEXT("menge"))) : 10;
+		FString Text;
+		const float MW = FTDStrom::TestBefuelle(World, KernK ? KernK->GetActorLocation() : FVector::ZeroVector, Brennstoff, Menge, Text);
+		const float Soll = S->HasField(TEXT("soll")) ? static_cast<float>(S->GetNumberField(TEXT("soll"))) : -1.f;
+		const bool bOk = MW >= 0.f && (Soll < 0.f || FMath::Abs(MW - Soll) <= 1.f);
+		Ergebnis(TEXT("Kraftwerk"), S->HasField(TEXT("text")) ? S->GetStringField(TEXT("text")) : Wort, bOk, Text);
 		return true;
 	}
 	if (S->TryGetStringField(TEXT("baue"), Wort))

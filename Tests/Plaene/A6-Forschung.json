@@ -57,7 +57,7 @@
     { "befehl": "td kaufe Festplattenabgabe", "antwortEnthaelt": "nur im AWESOME-Shop", "text": "Festplatte abgeben nicht am Kern", "antwortEnthaeltEn": "only in the AWESOME Shop" },
     { "baue": "Shop", "klasse": "/Game/FactoryGame/Buildable/Factory/ResourceSinkShop/Build_ResourceSinkShop.Build_ResourceSinkShop_C", "baurezept": "/Game/FactoryGame/Recipes/Buildings/Recipe_ResourceSinkShop.Recipe_ResourceSinkShop_C" },
     { "warte": 3 },
-    { "pruefe": "LogEnthaelt", "suche": "Shop: 48 von 48 Posten eingetragen", "min": 1, "text": "E7: neuer Posten Festplatte abgeben eingetragen" },
+    { "pruefe": "LogEnthaelt", "suche": "Shop: 50 von 50 Posten eingetragen", "min": 1, "text": "E7: neuer Posten Festplatte abgeben eingetragen" },
     { "shopkauf": "Festplattenabgabe", "text": "eine Festplatte abgeben" },
     { "pruefe": "LogEnthaelt", "suche": "Festplattenabgabe 1 von 1 Stueck, +12 Coupons", "min": 1, "text": "E7: +12 Coupons, Festplatte weg" },
     { "pruefe": "LogEnthaelt", "suche": "Spiel 1 + Staffel -1 = 0 Coupons", "min": 1, "text": "E7: angezeigter Mindestpreis von 1 Coupon erstattet" },

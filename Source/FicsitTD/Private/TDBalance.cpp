@@ -38,7 +38,11 @@ namespace TDBalanceIntern
 		// ---- Wellen: Budget = Stufe.Budget x (Grund + JeWelle x N + Quadrat x N^2); Gegner-LP x (1 + LPJeWelle x (N-1)) ----
 		// 0.56 (Lauf 03.11.: Q 0,06 statt 0,2-0,3, Wellen viel zu leicht): Simulation Q W5 0,12 / W10 0,28 bei Standard-Turmzahl
 		{ TEXT("Wellen.BudgetGrund"), 12.f }, { TEXT("Wellen.BudgetJeWelle"), 5.f }, { TEXT("Wellen.BudgetQuadrat"), 0.15f },
-		{ TEXT("Wellen.LPJeWelle"), 0.35f }, /* 23.11. (Marius: Einsatz schwerer): Endlos behaelt die Werte vor dem 23.11. ueber eigene Schluessel */ { TEXT("Endlos.LPJeWelle"), 0.25f }, { TEXT("Endlos.Erkundung.LPFaktor"), 1.f }, { TEXT("Endlos.Normal.LPFaktor"), 0.8333f }, { TEXT("Endlos.Hart.LPFaktor"), 0.8333f }, { TEXT("Endlos.Albtraum.LPFaktor"), 0.8462f }, { TEXT("Wellen.EliteLP"), 2.5f }, { TEXT("Wellen.MaxGegner"), 60.f },
+		{ TEXT("Wellen.LPJeWelle"), 0.35f },
+		/* 23.11. (Marius, Stromzweig): MW je Kraftwerk = Grundleistung x Faktor des Brennstoffs (TDStrom.cpp); nicht im Modus Aus */
+		{ TEXT("Strom.Aktiv"), 1.f }, { TEXT("Strom.Takt"), 2.f }, { TEXT("Strom.Kohle.Faktor"), 1.f }, { TEXT("Strom.Kompaktkohle.Faktor"), 1.3333f }, { TEXT("Strom.Petrolkoks.Faktor"), 1.6667f },
+		{ TEXT("Strom.Treibstoff.Faktor"), 1.f }, { TEXT("Strom.Biotreibstoff.Faktor"), 1.f }, { TEXT("Strom.Turbotreibstoff.Faktor"), 1.3f }, { TEXT("Strom.Raketentreibstoff.Faktor"), 1.6f }, { TEXT("Strom.Ionisiert.Faktor"), 2.f },
+		{ TEXT("Strom.Uran.Faktor"), 1.f }, { TEXT("Strom.Plutonium.Faktor"), 1.3f }, { TEXT("Strom.Ficsonium.Faktor"), 1.f }, /* 23.11. (Marius: Einsatz schwerer): Endlos behaelt die Werte vor dem 23.11. ueber eigene Schluessel */ { TEXT("Endlos.LPJeWelle"), 0.25f }, { TEXT("Endlos.Erkundung.LPFaktor"), 1.f }, { TEXT("Endlos.Normal.LPFaktor"), 0.8333f }, { TEXT("Endlos.Hart.LPFaktor"), 0.8333f }, { TEXT("Endlos.Albtraum.LPFaktor"), 0.8462f }, { TEXT("Wellen.EliteLP"), 2.5f }, { TEXT("Wellen.MaxGegner"), 60.f },
 		// T5 Stroeme: Gesamtzahl je Welle, gleichzeitig lebende hoechstens, Nachschub alle NachschubTakt s je NachschubPaket Gegner
 		{ TEXT("Wellen.MaxGesamt"), 120.f }, { TEXT("Wellen.MaxGleichzeitig"), 60.f }, { TEXT("Wellen.NachschubTakt"), 0.25f }, { TEXT("Wellen.NachschubPaket"), 5.f },
 		{ TEXT("Wellen.BossAlphaAnzahl"), 3.f }, { TEXT("Wellen.BossAlphaLP"), 4.f }, { TEXT("Wellen.BossJohnnyLP"), 2.f },
@@ -273,6 +277,8 @@ namespace TDBalanceIntern
 		// 21.11. (Marius, A5 Nr. 6): Fundamente und Rampen der Kernplattform im Einsatz nicht abreissbar (1 = an)
 		{ TEXT("Einsatz.Plattform.AbrissSperren"), 1.f }, { TEXT("Einsatz.Plattform.Radius"), 3600.f },   // cm um die Kernmitte
 		{ TEXT("Einsatz.Laden.Treibstoffkraftwerk.Grundpreis"), 8.f }, { TEXT("Einsatz.Laden.Treibstoffkraftwerk.Aufschlag"), 0.4f }, { TEXT("Einsatz.Laden.Treibstoffkraftwerk.Paket"), 1.f },
+		/* 23.11. Stromzweig */ { TEXT("Einsatz.Laden.Atomkraftwerk.Grundpreis"), 40.f }, { TEXT("Einsatz.Laden.Atomkraftwerk.Aufschlag"), 0.6f }, { TEXT("Einsatz.Laden.Atomkraftwerk.Paket"), 1.f },
+		{ TEXT("Einsatz.Laden.Teilchenbeschleuniger.Grundpreis"), 40.f }, { TEXT("Einsatz.Laden.Teilchenbeschleuniger.Aufschlag"), 0.6f }, { TEXT("Einsatz.Laden.Teilchenbeschleuniger.Paket"), 1.f },
 		// 0.9.1 Endgame-Konzept: spaete Maschinen (Schwerindustrie W25, Mischtechnik W35), Fluessigkeitspuffer mit der Raffinerie
 		{ TEXT("Einsatz.Laden.Fluessigkeitspuffer.Grundpreis"), 3.f }, { TEXT("Einsatz.Laden.Fluessigkeitspuffer.Aufschlag"), 0.3f }, { TEXT("Einsatz.Laden.Fluessigkeitspuffer.Paket"), 1.f },
 		{ TEXT("Einsatz.Laden.Fertiger.Grundpreis"), 14.f }, { TEXT("Einsatz.Laden.Fertiger.Aufschlag"), 0.5f }, { TEXT("Einsatz.Laden.Fertiger.Paket"), 1.f },
@@ -356,7 +362,7 @@ namespace TDBalanceIntern
 		{ TEXT("Pionier.Reparatur.Rate"), 0.05f }, { TEXT("Pionier.Reparatur.Radius"), 8.f }, { TEXT("Pionier.Reparatur.LPJePlatte"), 300.f },
 		{ TEXT("Pionier.Nachschub.Radius"), 20.f }, { TEXT("Pionier.Nachschub.Menge"), 10.f },
 		{ TEXT("Pionier.Jaeger.Schwachstelle"), 1.25f }, { TEXT("Pionier.Jaeger.SchwachDauer"), 5.f }, { TEXT("Pionier.Jaeger.Hinrichtung"), 0.15f },
-		{ TEXT("Tuerme.Bolzenturm.GeschossGroesse"), 3.f }, { TEXT("Forschung.Kohlekraft.AbWelle"), 3.f }, { TEXT("Forschung.Tor.AbWelle"), 6.f }, { TEXT("Forschung.Lockfeuer.AbWelle"), 8.f }, { TEXT("Forschung.Oelschlick.AbWelle"), 15.f }, { TEXT("Forschung.UpgBolzen.AbWelle"), 3.f },
+		{ TEXT("Tuerme.Bolzenturm.GeschossGroesse"), 3.f }, { TEXT("Forschung.Kohlekraft.AbWelle"), 3.f }, /* 23.11. Stromzweig */ { TEXT("Forschung.Kompaktkohle.AbWelle"), 10.f }, { TEXT("Forschung.Petrolkoks.AbWelle"), 20.f }, { TEXT("Forschung.TurboFeuerung.AbWelle"), 25.f }, { TEXT("Forschung.RaketenFeuerung.AbWelle"), 35.f }, { TEXT("Forschung.Kernkraft.AbWelle"), 51.f }, { TEXT("Forschung.Plutonium.AbWelle"), 56.f }, { TEXT("Forschung.Tor.AbWelle"), 6.f }, { TEXT("Forschung.Lockfeuer.AbWelle"), 8.f }, { TEXT("Forschung.Oelschlick.AbWelle"), 15.f }, { TEXT("Forschung.UpgBolzen.AbWelle"), 3.f },
 		// 0.83 Bauten P2/P3
 		{ TEXT("Forschung.Elektrozaun.AbWelle"), 12.f }, { TEXT("Forschung.Funkmast.AbWelle"), 12.f }, { TEXT("Forschung.Schildgenerator.AbWelle"), 25.f }, { TEXT("Forschung.Himmelsturm.AbWelle"), 35.f }, { TEXT("Forschung.Stoerfeld.AbWelle"), 35.f }, { TEXT("Forschung.Singularitaet.AbWelle"), 51.f }, { TEXT("Forschung.Dimensionslager.AbWelle"), 51.f },
 		{ TEXT("Forschung.Gewehrturm.AbWelle"), 5.f }, { TEXT("Forschung.Teslaspule.AbWelle"), 3.f }, { TEXT("Forschung.Raffinerie.AbWelle"), 15.f },

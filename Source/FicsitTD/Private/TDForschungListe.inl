@@ -1,12 +1,12 @@
 // Erzeugt von Scripts/create_research.py - nicht von Hand bearbeiten
 static const TCHAR* TDForschungsBaeume[] = {
 	TEXT("/FicsitTD/Research/BPD_ResearchTree_TD_Industrie.BPD_ResearchTree_TD_Industrie_C"),
+	TEXT("/FicsitTD/Research/BPD_ResearchTree_TD_Energie.BPD_ResearchTree_TD_Energie_C"),
 	TEXT("/FicsitTD/Research/BPD_ResearchTree_TD_Ballistik.BPD_ResearchTree_TD_Ballistik_C"),
 	TEXT("/FicsitTD/Research/BPD_ResearchTree_TD_Elementar.BPD_ResearchTree_TD_Elementar_C"),
 	TEXT("/FicsitTD/Research/BPD_ResearchTree_TD_Festung.BPD_ResearchTree_TD_Festung_C"),
 };
 static const TCHAR* TDForschungsSchemata[] = {
-	TEXT("/FicsitTD/Research/Energie/Research_TD_Kohlekraft.Research_TD_Kohlekraft_C"),
 	TEXT("/FicsitTD/Research/Produktion/Research_TD_Assembler.Research_TD_Assembler_C"),
 	TEXT("/FicsitTD/Research/Produktion/Research_TD_Kupfer.Research_TD_Kupfer_C"),
 	TEXT("/FicsitTD/Research/Produktion/Research_TD_BandMk2.Research_TD_BandMk2_C"),
@@ -14,7 +14,6 @@ static const TCHAR* TDForschungsSchemata[] = {
 	TEXT("/FicsitTD/Research/Produktion/Research_TD_Giesserei.Research_TD_Giesserei_C"),
 	TEXT("/FicsitTD/Research/Logistik/Research_TD_BandMk3.Research_TD_BandMk3_C"),
 	TEXT("/FicsitTD/Research/Produktion/Research_TD_Raffinerie.Research_TD_Raffinerie_C"),
-	TEXT("/FicsitTD/Research/Energie/Research_TD_Treibstoffkraft.Research_TD_Treibstoffkraft_C"),
 	TEXT("/FicsitTD/Research/Produktion/Research_TD_Schwefel.Research_TD_Schwefel_C"),
 	TEXT("/FicsitTD/Research/Produktion/Research_TD_Quarz.Research_TD_Quarz_C"),
 	TEXT("/FicsitTD/Research/Produktion/Research_TD_Caterium.Research_TD_Caterium_C"),
@@ -25,6 +24,14 @@ static const TCHAR* TDForschungsSchemata[] = {
 	TEXT("/FicsitTD/Research/Logistik/Research_TD_BandMk5.Research_TD_BandMk5_C"),
 	TEXT("/FicsitTD/Research/Logistik/Research_TD_MinerMk2.Research_TD_MinerMk2_C"),
 	TEXT("/FicsitTD/Research/Logistik/Research_TD_MinerMk3.Research_TD_MinerMk3_C"),
+	TEXT("/FicsitTD/Research/Energie/Research_TD_Kohlekraft.Research_TD_Kohlekraft_C"),
+	TEXT("/FicsitTD/Research/Energie/Research_TD_Kompaktkohle.Research_TD_Kompaktkohle_C"),
+	TEXT("/FicsitTD/Research/Energie/Research_TD_Petrolkoks.Research_TD_Petrolkoks_C"),
+	TEXT("/FicsitTD/Research/Energie/Research_TD_Treibstoffkraft.Research_TD_Treibstoffkraft_C"),
+	TEXT("/FicsitTD/Research/Energie/Research_TD_TurboFeuerung.Research_TD_TurboFeuerung_C"),
+	TEXT("/FicsitTD/Research/Energie/Research_TD_RaketenFeuerung.Research_TD_RaketenFeuerung_C"),
+	TEXT("/FicsitTD/Research/Energie/Research_TD_Kernkraft.Research_TD_Kernkraft_C"),
+	TEXT("/FicsitTD/Research/Energie/Research_TD_Plutonium.Research_TD_Plutonium_C"),
 	TEXT("/FicsitTD/Research/Ballistik/Research_TD_Durchschlagbolzen.Research_TD_Durchschlagbolzen_C"),
 	TEXT("/FicsitTD/Research/Ballistik/Research_TD_Gewehrturm.Research_TD_Gewehrturm_C"),
 	TEXT("/FicsitTD/Research/Ballistik/Research_TD_Explosivbolzen.Research_TD_Explosivbolzen_C"),

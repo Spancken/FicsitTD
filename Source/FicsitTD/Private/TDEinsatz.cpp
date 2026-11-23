@@ -147,6 +147,9 @@ static const FTDLadenEintrag LadenListe[] = {
 	{ TEXT("Oelpumpe"), 6, 0.4f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_OilPump.Recipe_OilPump_C") },
 	{ TEXT("Raffinerie"), 8, 0.4f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_OilRefinery.Recipe_OilRefinery_C") },
 	{ TEXT("Treibstoffkraftwerk"), 8, 0.4f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_GeneratorFuel.Recipe_GeneratorFuel_C") },
+	// 23.11. (Marius, Stromzweig): Kernkraft in den Ueberstunden (Baum Energie, Kernkraft ab W51, Plutonium ab W56)
+	{ TEXT("Atomkraftwerk"), 40, 0.6f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_GeneratorNuclear.Recipe_GeneratorNuclear_C") },
+	{ TEXT("Teilchenbeschleuniger"), 40, 0.6f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_HadronCollider.Recipe_HadronCollider_C") },
 	// 0.9.1 Endgame-Konzept (Marius 09.11.2026): spaete Maschinen. Ohne sie waren Schild, Himmelsturm, Stoerfeld nicht herstellbar.
 	{ TEXT("Fluessigkeitspuffer"), 3, 0.3f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_PipeStorageTank.Recipe_PipeStorageTank_C") },
 	{ TEXT("Fertiger"), 14, 0.5f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_ManufacturerMk1.Recipe_ManufacturerMk1_C") },
@@ -311,7 +314,7 @@ static FString TDAnzeige(const FString& Key)
 		{ TEXT("Teslaspule"), TEXT("Tesla Coil") }, { TEXT("Nobelisk-Werfer"), TEXT("Nobelisk Launcher") }, { TEXT("Reparaturstation"), TEXT("Repair Station") }, { TEXT("Drohnenplatz"), TEXT("Drone Pad") },
 		{ TEXT("Lockfeuer"), TEXT("Lure Fire") }, { TEXT("Oelschlick"), TEXT("Oil Slick Field") }, { TEXT("Wasserpumpe"), TEXT("Water Extractor") }, { TEXT("Akku"), TEXT("Power Storage") },
 		{ TEXT("Oelpumpe"), TEXT("Oil Extractor") }, { TEXT("Kohlekraftwerk"), TEXT("Coal-Powered Generator") },
-		{ TEXT("Treibstoffkraftwerk"), TEXT("Fuel-Powered Generator") }, { TEXT("Atomkraftwerk"), TEXT("Nuclear Power Plant") }, { TEXT("Kraftwerk"), TEXT("Power Generator") },
+		{ TEXT("Treibstoffkraftwerk"), TEXT("Fuel-Powered Generator") }, { TEXT("Atomkraftwerk"), TEXT("Nuclear Power Plant") }, { TEXT("Teilchenbeschleuniger"), TEXT("Particle Accelerator") }, { TEXT("Kraftwerk"), TEXT("Power Generator") },
 		{ TEXT("Giesserei"), TEXT("Foundry") }, { TEXT("Assembler"), TEXT("Assembler") }, { TEXT("Fertiger"), TEXT("Manufacturer") },
 		{ TEXT("Raffinerie"), TEXT("Refinery") }, { TEXT("Abfueller"), TEXT("Packager") }, { TEXT("Mischer"), TEXT("Blender") },
 		{ TEXT("Fabrik"), TEXT("Factory") }, { TEXT("Fluessigkeitspuffer"), TEXT("Fluid Buffer") }, { TEXT("Inventarplätze"), TEXT("Inventory Slots") },
@@ -598,6 +601,7 @@ void UTDEinsatzSubsystem::PruefeForschungsbaeume()
 	}
 	static const TCHAR* Baeume[] = {
 		TEXT("/FicsitTD/Research/BPD_ResearchTree_TD_Industrie.BPD_ResearchTree_TD_Industrie_C"),
+		TEXT("/FicsitTD/Research/BPD_ResearchTree_TD_Energie.BPD_ResearchTree_TD_Energie_C"),   // 23.11. Stromzweig
 		TEXT("/FicsitTD/Research/BPD_ResearchTree_TD_Ballistik.BPD_ResearchTree_TD_Ballistik_C"),
 		TEXT("/FicsitTD/Research/BPD_ResearchTree_TD_Elementar.BPD_ResearchTree_TD_Elementar_C"),
 		TEXT("/FicsitTD/Research/BPD_ResearchTree_TD_Festung.BPD_ResearchTree_TD_Festung_C"),
@@ -712,6 +716,7 @@ FString UTDEinsatzSubsystem::Schluessel(const UClass* BauKlasse)
 		if (Name.Contains(TEXT("Refinery"))) return TEXT("Raffinerie");
 		if (Name.Contains(TEXT("Packager"))) return TEXT("Abfueller");
 		if (Name.Contains(TEXT("Blender"))) return TEXT("Mischer");
+		if (Name.Contains(TEXT("HadronCollider"))) return TEXT("Teilchenbeschleuniger");   // 23.11. Stromzweig (Plutonium)
 		return TEXT("Fabrik");
 	}
 	if (BauKlasse->IsChildOf(AFGBuildableStorage::StaticClass())) return TEXT("Lager");
@@ -1307,7 +1312,7 @@ static int32 LadenKategorie(const FString& Key)
 {
 	static const TCHAR* Tuerme[] = { TEXT("Bolzenturm"), TEXT("Gewehrturm"), TEXT("Teslaspule"), TEXT("Himmelsturm"), TEXT("Flammenturm"), TEXT("Nobelisk-Werfer"), TEXT("Singularitaet") };
 	static const TCHAR* Abwehr[] = { TEXT("Mauer"), TEXT("Panzersperre"), TEXT("Tor"), TEXT("Lockfeuer"), TEXT("Oelschlick"), TEXT("Elektrozaun"), TEXT("Funkmast"), TEXT("Schildgenerator"), TEXT("Stoerfeld"), TEXT("Drohnenplatz") };
-	static const TCHAR* Strom[] = { TEXT("Biomassegenerator"), TEXT("Kohlekraftwerk"), TEXT("Treibstoffkraftwerk") };
+	static const TCHAR* Strom[] = { TEXT("Biomassegenerator"), TEXT("Kohlekraftwerk"), TEXT("Treibstoffkraftwerk"), TEXT("Atomkraftwerk") };
 	static const TCHAR* Logistik[] = { TEXT("Lager"), TEXT("Splitter"), TEXT("Verbinder"), TEXT("Fluessigkeitspuffer") };
 	for (const TCHAR* K : Tuerme)   { if (Key == K) return 0; }
 	for (const TCHAR* K : Abwehr)   { if (Key == K) return 1; }

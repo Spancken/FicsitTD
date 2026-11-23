@@ -49,6 +49,7 @@
 - Questions on research: On your first MAM visit after wave 2, did you have to pick a line? Did you ever have to research something you did not want? Were Hard Drives left over, and what would you have spent them on?
 - Questions: Was it clear why a wave did not start? Did the red hologram ever block something you did not expect?
 - **Harder difficulty:** on Normal, Hard and Nightmare enemies have more health and gain it faster per wave; the Core on Normal has 15,000 HP. Endless waves stay as before. Question: Is Normal still fair, and do Hard and Nightmare feel like a real challenge?
+- **New Power tree:** coal, oil and (after wave 50) nuclear power in their own MAM tree, nothing locks anything out. Better fuels give every generator more output: Compacted Coal 100 MW, Petroleum Coke 125 MW, Turbofuel 325 MW, Rocket Fuel 400 MW. Questions: Did you build up one power line or mix coal and oil? Did the Tesla Coil feel too strong with cheaper power?
 - **Fixes from the review:** a core sealed off by an old save is reported shortly after loading; the core menu's research tab is in English; handing in a Hard Drive also works without Coupons.
 
 ### What we want to know
@@ -118,6 +119,7 @@ Full list in the handbook: https://spancken.github.io/FicsitTD/#issues (section 
 - Fragen zur Forschung: Musstest du dich beim ersten MAM-Besuch nach Welle 2 für eine Linie entscheiden? Musstest du je etwas erforschen, das du nicht wolltest? Lagen Festplatten herum, und wofür hättest du sie gern ausgegeben?
 - Fragen: War klar, warum eine Welle nicht startete? Hat das rote Hologramm etwas gesperrt, das du nicht erwartet hast?
 - **Mehr Herausforderung:** In Normal, Hart und Albtraum haben Gegner mehr Leben und legen je Welle schneller zu; der Kern hat in Normal 15 000 LP. Die Endlos-Wellen bleiben wie bisher. Frage: Ist Normal noch fair, und fühlen sich Hart und Albtraum wie eine echte Herausforderung an?
+- **Neuer Baum Energie:** Kohle, Öl und (nach Welle 50) Kernkraft in einem eigenen MAM-Baum, nichts wird ausgeschlossen. Bessere Brennstoffe geben jedem Kraftwerk mehr Leistung: Kompaktkohle 100 MW, Petrolkoks 125 MW, Turbotreibstoff 325 MW, Raketentreibstoff 400 MW. Fragen: Hast du eine Stromlinie ausgebaut oder Kohle und Öl gemischt? War die Teslaspule mit billigerem Strom zu stark?
 - **Fehlerbehebungen aus dem Gegencheck:** Ein abgeriegelter Kern aus einem alten Spielstand meldet sich kurz nach dem Laden. Der Forschungsreiter im Kern-Menü ist auf Englisch. Festplatten lassen sich auch ohne Coupons abgeben.
 
 ### Was wir wissen wollen

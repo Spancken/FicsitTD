@@ -24,6 +24,12 @@
       "text": "Industrie-Baum im Freien Spiel verborgen"
     },
     {
+      "pruefe": "BaumFrei",
+      "baum": "Energie",
+      "erwartet": false,
+      "text": "Energie-Baum im Freien Spiel verborgen (der HUB vergibt die Kraftwerke, 23.11. Stromzweig)"
+    },
+    {
       "pruefe": "LogEnthaelt",
       "suche": "Abwehr: Forschungskosten von",
       "min": 1,

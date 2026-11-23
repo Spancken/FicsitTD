@@ -1,6 +1,6 @@
 {
   "Name": "ReleaseEn",
-  "_Hinweis": "Pruefstufe G2 auf Englisch: Teste-Mod.ps1 -Paket ReleaseEn -Sprache en. Textlastige Plaene mit Fotos (Kern-Menue, MAM, Turmfenster, Pionier). Fotos auf deutsche Reste und abgeschnittene Texte pruefen. Stand 0.9.8 (14.11.2026). 21.11.: Schadensleiste zuerst - die Logzeile 'Wellenleiste Schaden' kommt je Spielstart und Turmart nur einmal, ein frueherer Plan mit Welle (Review-0961) nahm sie ihr weg. 23.11.: Shop, Ring und A6 auf Englisch (Fehlliste danach pruefen).",
+  "_Hinweis": "Pruefstufe G2 auf Englisch: Teste-Mod.ps1 -Paket ReleaseEn -Sprache en. Textlastige Plaene mit Fotos (Kern-Menue, MAM, Turmfenster, Pionier). Fotos auf deutsche Reste und abgeschnittene Texte pruefen. Stand 0.9.8 (14.11.2026). 21.11.: Schadensleiste zuerst - die Logzeile 'Wellenleiste Schaden' kommt je Spielstart und Turmart nur einmal, ein frueherer Plan mit Welle (Review-0961) nahm sie ihr weg. 23.11.: Shop, Ring und A6 auf Englisch (Fehlliste danach pruefen). 23.11. mittags: Plan Energie (Stromzweig).",
   "Plaene": [
     "Schadensleiste",
     "Neustart",
@@ -10,6 +10,7 @@
     "Melden",
     "Shop",
     "KZ-3-Ring",
-    "A6-Forschung"
+    "A6-Forschung",
+    "Energie"
   ]
 }

@@ -55,6 +55,14 @@ def tabellen(B, ns):
     z += ["", "| Phase | Bosse | Boss-LP × |", "|---|---|---|"]
     for p in range(1, 6):
         z.append(f"| {p} | {w(f'Phasen.{p}.BossAnzahl')} | {w(f'Phasen.{p}.BossLP')} |")
+    # 23.11.2026 (Marius, Stromzweig): MW je Kraftwerk und Brennstoff (TDStrom.cpp)
+    z += ["", "### Strom je Brennstoff", "", "| Kraftwerk | Brennstoff | Faktor | MW |", "|---|---|---|---|"]
+    for werk, grund, stoffe in (("Kohlekraftwerk", 75, ("Kohle", "Kompaktkohle", "Petrolkoks")),
+                                ("Treibstoffkraftwerk", 250, ("Treibstoff", "Biotreibstoff", "Turbotreibstoff", "Raketentreibstoff", "Ionisiert")),
+                                ("Atomkraftwerk", 2500, ("Uran", "Plutonium", "Ficsonium"))):
+        for st in stoffe:
+            f = B.get(f"Strom.{st}.Faktor", 1.0)
+            z.append(f"| {werk} | {st} | {zahl(f)} | {zahl(round(grund * f))} |")
     # Belohnung
     z += ["", "### Belohnung je Welle", "",
           f"- **Coupons** = {w('Einsatz.EP.Grund')} + {w('Einsatz.EP.JeWelle')} × N, +{w('Einsatz.EP.KernVoll')} bei vollem Kern bzw. +{w('Einsatz.EP.KernAb75')} ab 75 %; Bosswelle × {w('Einsatz.EP.BossFaktor')} + {w('Einsatz.EP.BossBonus')}",

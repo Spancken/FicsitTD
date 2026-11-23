@@ -135,6 +135,7 @@ namespace TDForschung
 			return De;
 		}
 		if (De == TEXT("Industrie")) return TEXT("Industry");
+		if (De == TEXT("Energie")) return TEXT("Power");
 		if (De == TEXT("Ballistik")) return TEXT("Ballistics");
 		if (De == TEXT("Elementar")) return TEXT("Elemental");
 		if (De == TEXT("Festung")) return TEXT("Fortress");

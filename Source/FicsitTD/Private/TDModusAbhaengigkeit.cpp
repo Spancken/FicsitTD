@@ -18,7 +18,8 @@ bool UTDModusAbhaengigkeit::AreDependenciesMet(UObject* worldContext) const
 	{
 		for (const UObject* O = GetOuter(); O; O = O->GetOuter())
 		{
-			if (O->GetName().Contains(TEXT("TD_Industrie")))
+			// 23.11. (Stromzweig): der Baum Energie (Kraftwerke) folgt dort ebenso dem HUB
+			if (O->GetName().Contains(TEXT("TD_Industrie")) || O->GetName().Contains(TEXT("TD_Energie")))
 			{
 				return false;
 			}

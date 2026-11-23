@@ -38,6 +38,13 @@ static const TCHAR* TDIndustrieKnoten[] = {
 	TEXT("/FicsitTD/Research/Logistik/Research_TD_BandMk5.Research_TD_BandMk5_C"),
 	TEXT("/FicsitTD/Research/Logistik/Research_TD_MinerMk2.Research_TD_MinerMk2_C"),
 	TEXT("/FicsitTD/Research/Logistik/Research_TD_MinerMk3.Research_TD_MinerMk3_C"),
+	// 23.11. (Marius, Stromzweig): Baum Energie ist im Freien Spiel wie Industrie verborgen und folgt dem HUB
+	TEXT("/FicsitTD/Research/Energie/Research_TD_Kompaktkohle.Research_TD_Kompaktkohle_C"),
+	TEXT("/FicsitTD/Research/Energie/Research_TD_Petrolkoks.Research_TD_Petrolkoks_C"),
+	TEXT("/FicsitTD/Research/Energie/Research_TD_TurboFeuerung.Research_TD_TurboFeuerung_C"),
+	TEXT("/FicsitTD/Research/Energie/Research_TD_RaketenFeuerung.Research_TD_RaketenFeuerung_C"),
+	TEXT("/FicsitTD/Research/Energie/Research_TD_Kernkraft.Research_TD_Kernkraft_C"),
+	TEXT("/FicsitTD/Research/Energie/Research_TD_Plutonium.Research_TD_Plutonium_C"),
 };
 
 static bool IstIndustrieKnoten(const FString& Pfad)

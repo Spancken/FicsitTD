@@ -4,7 +4,7 @@
 
 ## English (ficsit.app)
 
-**FICSIT Tower Defense 0.13: AWESOME Shop, a new start, core access rules, an untangled research tree and a harder difficulty.**
+**FICSIT Tower Defense 0.13: AWESOME Shop, a new start, core access rules, an untangled research tree with a new Power tree, and a harder difficulty.**
 
 ### New
 - **AWESOME Shop:** after wave 1 ADA asks you to build the game's AWESOME Shop (free, one per operation). Quotas, gear, core repairs and Hard Drives are bought there in six sections. The Core no longer sells, and base game items are hidden during an operation.
@@ -14,6 +14,7 @@
 - **Unstable ground:** during an operation and in Endless waves, factory buildings cannot be placed within 60 m of the Defense Core. Defenses and logistics still can. In build mode, small orange lights mark the ring.
 - Enemies walk around machines and turrets instead of getting stuck on them.
 - **Return Hard Drives:** in the AWESOME Shop (Pioneer and Core) you trade a spare Hard Drive for 12 Coupons, also without Coupons in your inventory.
+- **Power tree:** coal, oil and (after wave 50) nuclear power have their own MAM tree. Nothing locks anything out, and coal and oil can run side by side. Building up a line pays off: better fuels give every generator more output (Compacted Coal 100 MW, Petroleum Coke 125 MW, Turbofuel 325 MW, Rocket Fuel 400 MW, Ionized Fuel 500 MW, Plutonium 3250 MW). The Shop sells Nuclear Power Plants and Particle Accelerators from wave 51.
 - **Player guide:** the full research tree sits behind a spoiler button, plus a planner for Hard Drives and Talent Points by wave.
 
 ### Changed
@@ -30,6 +31,7 @@
 ### Fixed
 - The status bar replaces the mod's block in the To-do notes, which could stay in German and show outdated values.
 - The Caterium research node now says that it unlocks the Nobelisk Detonator.
+- The Fuel-Powered Generator node said 150 MW; it produces 250 MW.
 - The core menu's research tab is in English on English games.
 - A Core sealed off in an older save is reported shortly after loading, not only when the wave should start.
 - The path check covers the whole way to the fronts and the full hologram outline.
@@ -50,6 +52,7 @@
 - Instabiler Boden: keine Fabrikgebäude in 60 m um den Kern.
 - Gegner laufen um Maschinen und Türme herum.
 - Festplatten abgeben: 12 Coupons je Stück, auch ohne Coupons im Inventar.
+- Neuer Baum Energie: Kohle, Öl und nach Welle 50 Kernkraft, ohne Sperre. Bessere Brennstoffe geben jedem Kraftwerk mehr MW (Kompaktkohle 100, Petrolkoks 125, Turbotreibstoff 325, Raketentreibstoff 400). Im Shop gibt es Atomkraftwerk und Teilchenbeschleuniger ab Welle 51.
 - MAM-Baum entflochten: sechs Einstiege, Bolzen und Tesla ab Welle 3, Gewehrturm ab Welle 5.
 - Im Freien Spiel mit Abwehr ist die Gegenseite einer Gabel zum doppelten Coupon-Preis erforschbar.
 - Mehr Herausforderung: mehr Gegnerleben in Normal, Hart und Albtraum, der Kern hat in Normal 15 000 LP. Die Endlos-Wellen bleiben wie bisher.

@@ -16,7 +16,7 @@ from unittest import mock
 HIER = os.path.dirname(os.path.abspath(__file__))
 JSON = os.path.join(HIER, "uebersetzung_en.json")
 
-BAUM_EN = {"Industrie": "Industry", "Ballistik": "Ballistics", "Elementar": "Elemental", "Festung": "Fortress"}
+BAUM_EN = {"Industrie": "Industry", "Energie": "Power", "Ballistik": "Ballistics", "Elementar": "Elemental", "Festung": "Fortress"}
 
 # Neue oder geaenderte deutsche Knoten-, Baum- und Kurztexte (A6 22.11.)
 NEU_EN = {
@@ -35,6 +35,29 @@ NEU_EN = {
     "Neues Gebäude: verbraucht reanimiertes SAM (1 Barren je 60 s), solange Gegner in 15 m sind, und bremst sie alle um 40 %. Braucht Mischtechnik und 80 MW.":
         "New building: consumes Reanimated SAM (1 ingot per 60 s) while enemies are within 15 m, and slows them all by 40%. Requires Blending Technology and 80 MW.",
     "Schwefel und Schwarzpulver": "Sulfur and Black Powder",
+    # 23.11. (Marius, Stromzweig): Baum Energie
+    "Was deine Fabrik herstellen kann: Teile, Stahl, Öl und schnellere Bänder. Hier wird nichts ausgeschlossen. Sechs Einstiege: Fertigung, Kupfer, Bänder, Öl und zwei Rohstoffe. Strom steht im Baum Energie.":
+        "What your factory can produce: parts, steel, oil and faster belts. Nothing is excluded here. Six entry points: manufacturing, copper, belts, oil and two raw resources. Power has its own tree, Power.",
+    "Strom für Fabrik und Türme: Kohle, Öl und nach Welle 50 Kernkraft. Nichts wird ausgeschlossen, Kohle und Öl gehen gleichzeitig. Bessere Brennstoffe geben jedem Kraftwerk mehr Leistung: Wer eine Linie ausbaut, braucht weniger Kraftwerke.":
+        "Power for factory and turrets: coal, oil and, after wave 50, nuclear. Nothing is excluded, coal and oil work side by side. Better fuels give every generator more output: build up a line and you need fewer generators.",
+    "Kompaktkohle (5 Kohle + 5 Schwefel im Assembler) im Kohlekraftwerk: 100 statt 75 MW je Kraftwerk. Kompaktkohle ist auch die Zutat für Turbotreibstoff.":
+        "Compacted Coal (5 Coal + 5 Sulfur in the Assembler) in the Coal-Powered Generator: 100 instead of 75 MW per generator. Compacted Coal is also the ingredient for Turbofuel.",
+    "Petrolkoks aus Schwerölrückstand (Raffinerie) im Kohlekraftwerk: 125 MW je Kraftwerk. Verbindet Kohle und Öl: Der Rückstand aus der Kunststoff- und Treibstoffherstellung wird Strom.":
+        "Petroleum Coke from Heavy Oil Residue (Refinery) in the Coal-Powered Generator: 125 MW per generator. Links coal and oil: the residue from plastic and fuel production becomes power.",
+    "Treibstoffkraftwerk (250 MW, im Laden kaufbar): verbrennt Treibstoff aus der Raffinerie. Hochspannung für die Teslaspule braucht es.":
+        "Fuel-Powered Generator (250 MW, available in the Shop): burns Fuel from the Refinery. High Voltage for the Tesla Coil requires it.",
+    "Turbotreibstoff (Treibstoff + Kompaktkohle in der Raffinerie) im Treibstoffkraftwerk: 325 statt 250 MW je Kraftwerk. Derselbe Turbotreibstoff stärkt auch den Flammenwerfer.":
+        "Turbofuel (Fuel + Compacted Coal in the Refinery) in the Fuel-Powered Generator: 325 instead of 250 MW per generator. The same Turbofuel also boosts the Flamethrower.",
+    "Raketentreibstoff (Turbotreibstoff + Salpetersäure im Mischer) im Treibstoffkraftwerk: 400 MW je Kraftwerk, ionisierter Treibstoff aus der Plasmaflamme sogar 500 MW.":
+        "Rocket Fuel (Turbofuel + Nitric Acid in the Blender) in the Fuel-Powered Generator: 400 MW per generator, Ionized Fuel from the Plasma Flame even 500 MW.",
+    "Atomkraftwerk (2500 MW, im Laden kaufbar) mit Uran-Brennstäben: Uran, Schwefelsäure, Beton, Stator und KI-Begrenzer. Erst in den Überstunden nach Welle 50. Atommüll lässt sich nicht verwerten, Vorsicht vor der Strahlung.":
+        "Nuclear Power Plant (2500 MW, available in the Shop) with Uranium Fuel Rods: Uranium, Sulfuric Acid, Concrete, Stator and AI Limiter. Only in overtime after wave 50. Nuclear Waste cannot be sunk, beware of the radiation.",
+    "Plutonium-Brennstäbe aus Atommüll (Teilchenbeschleuniger, im Laden kaufbar): 3250 statt 2500 MW je Atomkraftwerk. Verwertet den Müll der Uran-Stäbe.":
+        "Plutonium Fuel Rods from Nuclear Waste (Particle Accelerator, available in the Shop): 3250 instead of 2500 MW per Nuclear Power Plant. Puts the waste of the Uranium rods to use.",
+    "Im Laden: Atomkraftwerk": "In the Shop: Nuclear Power Plant", "Atomkraftwerk": "Nuclear Power Plant",
+    "Im Laden: Teilchenbeschleuniger": "In the Shop: Particle Accelerator", "Teilchenbeschleuniger": "Particle Accelerator",
+    "Kompaktkohle-Feuerung": "Compacted Coal Firing", "Petrolkoks-Feuerung": "Petroleum Coke Firing", "Turbo-Feuerung": "Turbofuel Firing",
+    "Raketen-Feuerung": "Rocket Fuel Firing", "Kernkraft": "Nuclear Power", "Plutonium-Brennstab": "Plutonium Fuel Rod",
 }
 
 # 23.11. (Gegencheck 0.13, Fund 6): Kurztexte der Knoten (Kartentitel im MAM, Handbuch-Planer) auf Englisch
@@ -49,7 +72,13 @@ KURZ_EN = {
     "Miner Mk2: doppelter Abbau": "Miner Mk.2: double output",
     "Miner Mk3: vierfacher Abbau": "Miner Mk.3: four times the output",
     "Ölpumpe, Raffinerie, Kunststoff": "Oil Extractor, Refinery, Plastic",
-    "Treibstoffkraftwerk 150 MW": "Fuel-Powered Generator 150 MW",
+    "Treibstoffkraftwerk 250 MW": "Fuel-Powered Generator 250 MW",
+    "Kohlekraftwerk 100 MW mit Kompaktkohle": "Coal-Powered Generator 100 MW with Compacted Coal",
+    "Kohlekraftwerk 125 MW mit Petrolkoks": "Coal-Powered Generator 125 MW with Petroleum Coke",
+    "Treibstoffkraftwerk 325 MW mit Turbotreibstoff": "Fuel-Powered Generator 325 MW with Turbofuel",
+    "Treibstoffkraftwerk 400 MW mit Raketentreibstoff": "Fuel-Powered Generator 400 MW with Rocket Fuel",
+    "Atomkraftwerk 2500 MW (Uran)": "Nuclear Power Plant 2500 MW (Uranium)",
+    "Atomkraftwerk 3250 MW (Plutonium)": "Nuclear Power Plant 3250 MW (Plutonium)",
     "Bolzen St. 2: trifft 3 in Reihe": "Bolt tier 2: hits 3 in a row",
     "Neuer Turm: Dauerfeuer": "New turret: sustained fire",
     "Bolzen St. 3: großer Flächenschaden": "Bolt tier 3: large area damage",
@@ -120,6 +149,8 @@ def main():
     tab = json.load(io.open(JSON, encoding="utf-8"))
     ns = lade_baum()
     paare = zeilen_paare(tab)
+    # 23.11.: neue Zeilen "Im Laden"/"Gut gegen" aus NEU_EN (noch nicht in der Tabelle)
+    paare.update({k: v for k, v in NEU_EN.items() if k.startswith(("Im Laden: ", "Gut gegen: "))})
     fehlt, neu = [], {}
 
     # Knotentext allein steht oft nur als Anfang einer vollen Beschreibung in der Tabelle (vor der ersten Leerzeile)

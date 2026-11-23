@@ -169,7 +169,7 @@
 
 ## 7. Forschung (MAM)
 
-- **4 Bäume:** Industrie, Ballistik, Elementar, Festung, alle ab Start im MAM. Jeder Baum wächst aus mehreren Wurzeln: Industrie seit 0.13 (A6, Marius 22.11.) aus sechs Einstiegen ohne Pflichtkette, nämlich Assembler (Fertigung), Kupfer, Förderband Mk2, Kohlekraftwerk (Strom und Öl: Raffinerie und Treibstoffkraftwerk hängen daran), Schwefel und Quarz; Ballistik aus Durchschlagbolzen, Gewehrturm, Nobelisk-Werfer und Himmelsturm; Elementar aus Teslaspule und Flammenwerfer; Festung aus Kern-Panzerung, Verstärkten Mauern und Turmfertigung II. Alle anderen Knoten hängen mit einer Linie an einem Elternknoten.
+- **5 Bäume** *(seit 0.13, 23.11.: Energie neu)*: Industrie, Energie, Ballistik, Elementar, Festung, alle ab Start im MAM. Jeder Baum wächst aus mehreren Wurzeln: Industrie seit 0.13 (A6, Marius 22.11.) aus sechs Einstiegen ohne Pflichtkette, nämlich Assembler (Fertigung), Kupfer, Förderband Mk2, Raffinerie (braucht das Kohlekraftwerk aus Energie), Schwefel und Quarz; Energie aus Kohlekraftwerk, Treibstoffkraftwerk und Kernkraft; Ballistik aus Durchschlagbolzen, Gewehrturm, Nobelisk-Werfer und Himmelsturm; Elementar aus Teslaspule und Flammenwerfer; Festung aus Kern-Panzerung, Verstärkten Mauern und Turmfertigung II. Alle anderen Knoten hängen mit einer Linie an einem Elternknoten.
 - **Sichtbarkeit:** Ein Knoten zeigt sein Icon erst, wenn sein Elternknoten erforscht ist; vorher ist er ein grauer Platzhalter. Knoten mit Voraussetzung aus einem anderen Baum (z. B. Ballistik braucht den Assembler, Elementar das Kohlekraftwerk) bleiben grau, bis sie erfüllt ist.
 - **Infokarten je Knoten:** „Herstellung“ (Zutaten, Maschine, Stück pro Minute, Zutaten der Zutaten, Ziel-Turm), „Bauen“ (Baukosten) und „Vorher“ (nötige Forschung und Freigabe-Welle).
 - **Bezahlt wird nur mit Festplatten** (seit 0.10.0, vorher FICSIT-Kampfdaten). Der Preis richtet sich nach der Freigabe-Welle des Knotens (Preisstufen ab Welle 0, 5, 15, 25, 35). Insgesamt gibt es bewusst mehr Knoten, als FP hereinkommen.
@@ -177,6 +177,13 @@
 - **Gabelungen:** Bei jedem Paar ist nur eine Seite je Einsatz erforschbar. Das ist endgültig. Gabelungen: Streubolzen/Schockbolzen, Zielsuch/Panzerbrechend (beide ab Welle 10), Gas-/Puls-Nobelisk, Kettenblitz/Überlast, Reparatur-/Kampfdrohnen, Kern-Schild/Kern-Geschütz, Doktrin. Schildgenerator und Störfeld-Projektor sind seit 0.13 keine Gabelung mehr.
   - **Freies Spiel mit Abwehr** *(0.13, A6 Entscheidung 8)*: Dort sperrt eine gewählte Seite die andere nicht. Die Gegenseite kostet das Doppelte in Coupons (`Abwehr.GabelFaktor` 2).
 - **Einstieg (0.13, A6):** Die erste Forschung ist vor Welle 3 möglich. Kohlekraftwerk, Teslaspule und Durchschlagbolzen sind ab Welle 3 frei (vorher 5 bzw. 6) und kosten damit 3 Festplatten. Der Gewehrturm kommt ab Welle 5 (Marius 22.11. abends: in der Simulation bremste er ab Welle 3 die Mischlinien). Beim ersten Besuch reicht es für genau eine der billigen Linien (Bolzen oder Tesla). Kettenblitz und Überlast ab Welle 6, Caterium und Panzerbrechend ab Welle 10.
+- **Energie und Brennstoffe** *(0.13, Marius 23.11., `Notizen/Konzept-Stromzweig-2026-11-23.md`)*: drei Strom-Linien ohne Sperre. Kohle und Öl gehen gleichzeitig.
+  - **Kohle:** Kohlekraftwerk (W3), Kompaktkohle-Feuerung (W10, braucht Schwefel), Petrolkoks-Feuerung (W20, braucht die Raffinerie).
+  - **Öl:** Treibstoffkraftwerk (W15, braucht die Raffinerie), Turbo-Feuerung (W25), Raketen-Feuerung (W35, braucht Mischtechnik).
+  - **Kernkraft:** Kernkraft (W51) und Plutonium-Brennstab (W56). Im Laden gibt es dafür Atomkraftwerk und Teilchenbeschleuniger.
+  - **Mod-Regel:** Bessere Brennstoffe geben jedem Kraftwerk mehr MW: Leistung = Grundleistung × `Strom.<Brennstoff>.Faktor` (Werte unter „Zahlen“). Der Brennstoff verbrennt entsprechend schneller (Brenndauer = Energie / Leistung). Je MW bleibt der bessere Brennstoff also sparsamer, und man braucht weniger Kraftwerke.
+  - Gilt im Einsatz, im Endlos und im Freien Spiel mit Abwehr, nicht im Modus Aus (`TDStrom.cpp`, alle `Strom.Takt` s). Turbotreibstoff, Raketentreibstoff und ionisierter Treibstoff aus dem Flammenwerfer-Zweig geben ihren Strombonus genauso.
+  - **Freies Spiel mit Abwehr:** Der Baum Energie ist dort wie Industrie verborgen, der HUB vergibt die Kraftwerke.
 - **Alte Spielstände:** Beim Laden bekommt jeder erforschte FicsitTD-Knoten alle Rezepte, die er im heutigen Baum freischaltet (z. B. Schwarzpulver jetzt am Schwefel). Erforschtes bleibt erforscht.
 - **Festplatte abgeben** *(0.13, A6 E7)*: Im AWESOME-Shop (Bereich Pionier und Kern) gibt man eine Festplatte gegen 12 Coupons ab (Schlüssel `Einsatz.Laden.Festplatte.Rueckgabe`). Der Shop zeigt 1 Coupon als Preis, der kommt mit zurück. Nur im Einsatz und im Endlos-Modus. Kaufen (ab 40) und Abgeben (12) hintereinander lohnt nie.
 - **Doktrin:** Eine Turmlinie wird zur Hauptlinie. Sie bekommt mehr Schaden, billigere Level und Level 5 früher. **Heute** ist sie eine Gabelung mit fünf Seiten und endgültig. **Beschlossen:** wechselbar im Kern-Menü, einmal je Einsatz für 50 Coupons *(geplant, ohne Termin)*.
@@ -286,6 +293,22 @@ Stand 16.11.2026 (Mod 0.11-dev; Berichte `Testberichte6-11-16_*`). Die langen 
 | 4 | 1 | 15 |
 | 5 | 2 | 2 |
 
+### Strom je Brennstoff
+
+| Kraftwerk | Brennstoff | Faktor | MW |
+|---|---|---|---|
+| Kohlekraftwerk | Kohle | 1 | 75 |
+| Kohlekraftwerk | Kompaktkohle | 1,3333 | 100 |
+| Kohlekraftwerk | Petrolkoks | 1,6667 | 125 |
+| Treibstoffkraftwerk | Treibstoff | 1 | 250 |
+| Treibstoffkraftwerk | Biotreibstoff | 1 | 250 |
+| Treibstoffkraftwerk | Turbotreibstoff | 1,3 | 325 |
+| Treibstoffkraftwerk | Raketentreibstoff | 1,6 | 400 |
+| Treibstoffkraftwerk | Ionisiert | 2 | 500 |
+| Atomkraftwerk | Uran | 1 | 2500 |
+| Atomkraftwerk | Plutonium | 1,3 | 3250 |
+| Atomkraftwerk | Ficsonium | 1 | 2500 |
+
 ### Belohnung je Welle
 
 - **Coupons** = 8 + 2 × N, +5 bei vollem Kern bzw. +2 ab 75 %; Bosswelle × 2 + 20
@@ -309,6 +332,7 @@ Preis = Grundpreis × (1 + Aufschlag × bisher gekauft); Paket = Gebäude je Kau
 | Akku | 10 | 0,4 | 1 | 0 |
 | Armierpistole | 6 | 0 | 1 | 0 |
 | Assembler | 8 | 0,4 | 1 | 0 |
+| Atomkraftwerk | 40 | 0,6 | 1 | 0 |
 | Biomassegenerator | 6 | 0,4 | 1 | 1 |
 | Bolzenturm | 4 | 0,3 | 1 | 1 |
 | Drohnenplatz | 14 | 0,5 | 1 | 0 |
@@ -348,6 +372,7 @@ Preis = Grundpreis × (1 + Aufschlag × bisher gekauft); Paket = Gebäude je Kau
 | Singularitaet | 20 | 0,6 | 1 | 0 |
 | Splitter | 2 | 0,2 | 2 | 0 |
 | Stoerfeld | 14 | 0,5 | 1 | 0 |
+| Teilchenbeschleuniger | 40 | 0,6 | 1 | 0 |
 | Teslaspule | 10 | 0,4 | 1 | 0 |
 | Tor | 4 | 0,3 | 1 | 0 |
 | Treibstoffkraftwerk | 8 | 0,4 | 1 | 0 |
@@ -522,7 +547,6 @@ Preis aus der Phase der effektiven Freigabe-Welle (Eltern und Voraussetzungen ei
 
 | Baum | Knoten | Name | ab Welle | Festplatten | Gabelung mit |
 |---|---|---|---|---|---|
-| Industrie | Kohlekraft | Kohlekraftwerk | 3 | 3 |  |
 | Industrie | Assembler | Assembler und Eisenteile | 0 | 3 |  |
 | Industrie | Kupfer | Kupferverarbeitung | 0 | 3 |  |
 | Industrie | BandMk2 | Förderband Mk2 | 0 | 3 |  |
@@ -530,7 +554,6 @@ Preis aus der Phase der effektiven Freigabe-Welle (Eltern und Voraussetzungen ei
 | Industrie | Giesserei | Gießerei und Stahl | 0 | 3 |  |
 | Industrie | BandMk3 | Förderband Mk3 | 10 | 4 |  |
 | Industrie | Raffinerie | Raffinerie und Öl | 15 | 6 |  |
-| Industrie | Treibstoffkraft | Treibstoffkraftwerk | 15 | 6 |  |
 | Industrie | Schwefel | Schwefel | 5 | 4 |  |
 | Industrie | Quarz | Quarzverarbeitung | 10 | 4 |  |
 | Industrie | Caterium | Caterium | 10 | 4 |  |
@@ -541,6 +564,14 @@ Preis aus der Phase der effektiven Freigabe-Welle (Eltern und Voraussetzungen ei
 | Industrie | BandMk5 | Förderband Mk5 | 30 | 8 |  |
 | Industrie | MinerMk2 | Miner Mk2 | 25 | 8 |  |
 | Industrie | MinerMk3 | Miner Mk3 | 35 | 10 |  |
+| Energie | Kohlekraft | Kohlekraftwerk | 3 | 3 |  |
+| Energie | Kompaktkohle | Kompaktkohle-Feuerung | 10 | 4 |  |
+| Energie | Petrolkoks | Petrolkoks-Feuerung | 20 | 6 |  |
+| Energie | Treibstoffkraft | Treibstoffkraftwerk | 15 | 6 |  |
+| Energie | TurboFeuerung | Turbo-Feuerung | 25 | 8 |  |
+| Energie | RaketenFeuerung | Raketen-Feuerung | 35 | 10 |  |
+| Energie | Kernkraft | Kernkraft | 51 | 10 |  |
+| Energie | Plutonium | Plutonium-Brennstab | 56 | 10 |  |
 | Ballistik | Durchschlagbolzen | Durchschlagbolzen | 3 | 3 |  |
 | Ballistik | Gewehrturm | Gewehrturm | 5 | 4 |  |
 | Ballistik | Explosivbolzen | Explosivbolzen | 25 | 8 |  |
@@ -589,6 +620,6 @@ Preis aus der Phase der effektiven Freigabe-Welle (Eltern und Voraussetzungen ei
 | Festung | Schildgenerator | Schildgenerator | 25 | 8 |  |
 | Festung | Stoerfeld | Störfeld-Projektor | 35 | 10 |  |
 
-Alle Knoten zusammen: 384 FP.
+Alle Knoten zusammen: 432 FP.
 
 <!-- ZAHLEN-ENDE -->

@@ -681,6 +681,8 @@ private:
 	float mBauRaeumUhr = 0.f;
 	/** 0.13 K4: volle Wege aus 16 Richtungen (leer = kein voller Weg), reihum eine je Bild */
 	TArray<TArray<FVector>> mLebensadern;
+	/** 23.11. (Stromzweig): Takt der Kraftwerkspflege (TDStrom.cpp) */
+	float mStromUhr = 0.f;
 	int32 mLebensaderIndex = 0;
 	void PflegeLebensadern(float DeltaTime);
 	/** 22.11. (H4): Takt und Kosten der Lebensadern (Logzeile je Wellenstart) */

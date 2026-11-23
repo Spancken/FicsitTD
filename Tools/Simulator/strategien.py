@@ -110,6 +110,7 @@ REZEPTE = {
     "Streu-Nobelisk": ("Assembler", 8, {"Nobelisk": 2, "Rauchschwaches Pulver": 2}, 1),
     "Treibstoff": ("Raffinerie", 6, {"Rohöl": 6}, 4),
     "Kompaktkohle": ("Assembler", 12, {"Kohle": 5, "Schwefel": 5}, 5),
+    "Petrolkoks": ("Raffinerie", 6, {"Schwerölrückstand": 4}, 12),   # 23.11. Stromzweig: Recipe_PetroleumCoke
     "Turbotreibstoff": ("Raffinerie", 16, {"Treibstoff": 6, "Kompaktkohle": 4}, 5),
     # 0.9.1 E2, Mengen aus dem Spiel-Datenexport (CommunityResources/Docs/en-US.json): Recipe_RocketFuel, Recipe_NitricAcid,
     # Recipe_IonizedFuel. Nebenprodukt Kompaktkohle (1 bzw. 2 je Takt) wird nicht verwertet.
@@ -217,10 +218,44 @@ class Wirtschaft:
     def __init__(self, B, Z):
         self.B, self.Z, self.cache = B, Z, {}
 
-    def gebaeude(self, bedarf, strom_tuerme, n, erforscht):
-        key = (tuple(sorted((k, round(v, 2)) for k, v in bedarf.items())), round(strom_tuerme), "Kohlekraft" in erforscht, "Treibstoffkraft" in erforscht)
+    # 23.11.2026 (Stromzweig): Brennstoffe je Kraftwerk - (Name, Forschung(en), Brennwert MJ je Einheit, Strom-Schluessel)
+    KOHLE_BRENNSTOFFE = [("Kohle", (), 300, "Kohle"), ("Kompaktkohle", ("Kompaktkohle",), 630, "Kompaktkohle"),
+                         ("Petrolkoks", ("Petrolkoks",), 180, "Petrolkoks")]
+    OEL_BRENNSTOFFE = [("Treibstoff", (), 750, "Treibstoff"), ("Turbotreibstoff", ("TurboFeuerung", "Turbotreibstoff"), 2000, "Turbotreibstoff"),
+                       ("Raketentreibstoff", ("RaketenFeuerung", "Raketentreibstoff"), 3600, "Raketentreibstoff")]
+
+    def varianten(self, erforscht):
+        """Kraftwerks-Varianten, die mit dieser Forschung gehen (Spielerwahl); [None] = Verhalten bis 22.11."""
+        if not self.Z.get("Spielerwahl"):
+            return [None]
+        v = []
+        if "Kohlekraft" in erforscht:
+            v += [("Kohlekraftwerk", b) for b in self.KOHLE_BRENNSTOFFE if all(f in erforscht for f in b[1][:1])
+                  and (b[0] != "Petrolkoks" or "Raffinerie" in erforscht)]
+        if "Treibstoffkraft" in erforscht:
+            v += [("Treibstoffkraftwerk", b) for b in self.OEL_BRENNSTOFFE if (not b[1] or any(f in erforscht for f in b[1]))
+                  and (b[0] != "Raketentreibstoff" or "Mischtechnik" in erforscht)]
+        return v or [None]
+
+    def gebaeude(self, bedarf, strom_tuerme, n, erforscht, variante="beste"):
+        """23.11.2026 (Stromzweig): mit Spielerwahl rechnet der gute Spieler jede erforschte Kraftwerks-Variante (Kohle mit dem
+        besten Kohle-Brennstoff, Treibstoff mit dem besten Treibstoff) und nimmt die mit den wenigsten Gebaeuden"""
+        rel = tuple(sorted(k for k in erforscht if k in ("Kohlekraft", "Treibstoffkraft", "Kompaktkohle", "Petrolkoks", "TurboFeuerung",
+                                                       "Turbotreibstoff", "RaketenFeuerung", "Raketentreibstoff", "Raffinerie", "Mischtechnik")))
+        key = (tuple(sorted((k, round(v, 2)) for k, v in bedarf.items())), round(strom_tuerme), rel, None if variante == "beste" else repr(variante))
         if key in self.cache:
             return self.cache[key]
+        varianten = self.varianten(erforscht) if variante == "beste" else [variante]
+        best = None
+        for v in varianten:
+            e = self._gebaeude(bedarf, strom_tuerme, n, erforscht, v)
+            if best is None or (sum(e[0].values()), e[2]) < (sum(best[0].values()), best[2]):
+                best = e
+        self.cache[key] = best
+        return best
+
+    def _gebaeude(self, bedarf, strom_tuerme, n, erforscht, variante):
+        """variante: None = Verhalten bis 22.11. (Biomasse, sonst Kohle), sonst (Kraftwerk, Brennstoff-Eintrag)"""
         Z = self.Z
         masch, roh_basis = kette(bedarf)
         geb = collections.Counter()
@@ -231,13 +266,23 @@ class Wirtschaft:
             # Rohstoffe = Produktion + Brennstoff der Kraftwerke aus dem letzten Durchgang
             roh = collections.Counter(roh_basis)
             roh["Biomasse"] += kraft["Biomassegenerator"] * Z["BiomasseJeGenerator"]
-            roh["Kohle"] += kraft["Kohlekraftwerk"] * 15
             roh["Wasser"] += kraft["Kohlekraftwerk"] * 45
             g = collections.Counter(geb)
+            # Brennstoff je Kraftwerk und Minute = MW x 60 / Brennwert (das Spiel verbrennt bei hoeherer Leistung schneller)
+            brennstoff = {}
+            if kraft["Kohlekraftwerk"]:
+                b = variante[1] if variante and variante[0] == "Kohlekraftwerk" else self.KOHLE_BRENNSTOFFE[0]
+                brennstoff[b[0]] = kraft["Kohlekraftwerk"] * self.mw("Kohlekraftwerk", b) * 60 / b[2]
             if kraft["Treibstoffkraftwerk"]:
-                m2, r2 = kette({"Treibstoff": kraft["Treibstoffkraftwerk"] * 12})
+                b = variante[1] if variante and variante[0] == "Treibstoffkraftwerk" else self.OEL_BRENNSTOFFE[0]
+                brennstoff[b[0]] = kraft["Treibstoffkraftwerk"] * self.mw("Treibstoffkraftwerk", b) * 60 / b[2]
+            if brennstoff.get("Kohle"):
+                roh["Kohle"] += brennstoff.pop("Kohle")
+            if brennstoff:
+                m2, r2 = kette(brennstoff)
                 roh.update(r2)
-                g["Raffinerie"] += math.ceil(m2["Treibstoff"] - 1e-9)
+                for item, x in m2.items():
+                    g[REZEPTE[item][0]] += math.ceil(x - 1e-9)
             g["Miner"] = sum(math.ceil(roh[r] / Z["MinerRate"] - 1e-9) for r, art in ROH.items() if art == "Miner")   # alle Erze (07.11.: Quarz, Caterium, Schwefel, Bauxit im Szenario)
             g["Oelpumpe"] = math.ceil(roh["Rohöl"] / 120 - 1e-9)
             g["Wasserpumpe"] = math.ceil(roh["Wasser"] / 120 - 1e-9)
@@ -249,17 +294,26 @@ class Wirtschaft:
             last = sum(z * GEB_STROM.get(k, 0) for k, z in g.items()) + strom_tuerme + druck
             kraft = collections.Counter()
             rest = last
-            if Z["TreibstoffkraftNutzen"] and "Treibstoffkraft" in erforscht and rest > 150:
-                kraft["Treibstoffkraftwerk"] = math.ceil(rest / 150)
+            if variante and variante[0] == "Treibstoffkraftwerk":
+                kraft["Biomassegenerator"] = min(int(self.B.get("Einsatz.Start.Biomassegenerator", 1)), math.floor(rest / 30))
+                kraft["Treibstoffkraftwerk"] = max(0, math.ceil((rest - kraft["Biomassegenerator"] * 30) / self.mw("Treibstoffkraftwerk", variante[1]) - 1e-9))
+            elif variante and variante[0] == "Kohlekraftwerk":
+                kraft["Biomassegenerator"] = min(int(self.B.get("Einsatz.Start.Biomassegenerator", 1)), math.floor(rest / 30))
+                kraft["Kohlekraftwerk"] = max(0, math.ceil((rest - kraft["Biomassegenerator"] * 30) / self.mw("Kohlekraftwerk", variante[1]) - 1e-9))
+            elif Z["TreibstoffkraftNutzen"] and "Treibstoffkraft" in erforscht and rest > 250:
+                kraft["Treibstoffkraftwerk"] = math.ceil(rest / 250)
             elif "Kohlekraft" in erforscht:
                 kraft["Biomassegenerator"] = min(int(self.B.get("Einsatz.Start.Biomassegenerator", 1)), math.floor(rest / 30))
                 kraft["Kohlekraftwerk"] = max(0, math.ceil((rest - kraft["Biomassegenerator"] * 30) / 75 - 1e-9))
             else:
                 kraft["Biomassegenerator"] = math.ceil(rest / 30 - 1e-9)
         g.update(kraft)
-        ergebnis = ({k: v for k, v in g.items() if v > 0}, dict(roh), last)
-        self.cache[key] = ergebnis
-        return ergebnis
+        return ({k: v for k, v in g.items() if v > 0}, dict(roh), last)
+
+    def mw(self, werk, brennstoff):
+        """MW je Kraftwerk mit diesem Brennstoff (TDStrom.cpp: Grundleistung x Strom.<Brennstoff>.Faktor)"""
+        grund = {"Kohlekraftwerk": 75, "Treibstoffkraftwerk": 250}[werk]
+        return grund * self.B.get(f"Strom.{brennstoff[3]}.Faktor", 1.0)
 
 
 # ---------------------------------------------------------------- Türme
@@ -473,6 +527,19 @@ class Lauf:
                     return              # sparen statt anderes zu forschen
                 self.fp -= preis
                 self.erforscht.add("Kohlekraft")
+        # 23.11.2026 (Stromzweig): ab Z["StromAusbauAbKraftwerken"] Kohlekraftwerken baut der gute Spieler die Stromlinie aus
+        # (Kompaktkohle, Petrolkoks), ab doppelt so vielen und mit Raffinerie zusaetzlich die Oel-Linie - wenn die Festplatten reichen
+        if self.Z.get("Spielerwahl"):
+            ab = self.Z.get("StromAusbauAbKraftwerken", 4)
+            kohle = self.besitz.get("Kohlekraftwerk", 0) + self.besitz.get("Treibstoffkraftwerk", 0) * 3
+            for k, schwelle in (("Kompaktkohle", ab), ("Petrolkoks", ab * 2), ("Treibstoffkraft", ab * 2), ("TurboFeuerung", ab * 3)):
+                kn = self.K.get(k)
+                if not kn or k in self.erforscht or kohle < schwelle or kn["ab"] > n or any(v not in self.erforscht for v in kn["vor"]):
+                    continue
+                preis = kn["fp"] * self.Z["FPPreisFaktor"]
+                if self.fp >= preis:
+                    self.fp -= preis
+                    self.erforscht.add(k)
         for k in self.plan_forschung:
             if k in self.erforscht or k in self.gesperrt:
                 continue
@@ -663,7 +730,10 @@ class Lauf:
     def fabrik(self, bed, strom, n):
         """Gebaeude (geb, roh, last) fuer einen Bedarf. 22.11.2026 (Spielerwahl): mit Kohlekraftwerk waehlt der gute Spieler
         Kohlestrom nur, wenn er billiger ist als Biomasse oder die Biomasse fuer die Welle nicht reicht (vorher immer Kohle)"""
-        kohle = self.wi.gebaeude(bed, strom, n, self.erforscht)
+        # 23.11.2026 (Stromzweig): der gute Spieler waehlt Kraftwerk und Brennstoff nach dem, was ihn am wenigsten kostet
+        # (Einsatz: Coupons, Endlos: Bauzeit - fabrik_schluessel), nicht nach der Zahl der Gebaeude
+        kandidaten = [self.wi.gebaeude(bed, strom, n, self.erforscht, variante=v) for v in self.wi.varianten(self.erforscht)]
+        kohle = min(kandidaten, key=lambda e: self.fabrik_schluessel(self.fehlende_kontingente(e[0])))
         if not self.Z.get("Spielerwahl") or "Kohlekraft" not in self.erforscht:
             return kohle
         bio = self.wi.gebaeude(bed, strom, n, self.erforscht - {"Kohlekraft"})
