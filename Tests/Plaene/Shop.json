@@ -31,12 +31,14 @@
     {
       "befehl": "td kaufe Bolzenturm",
       "antwortEnthaelt": "Gekauft",
-      "text": "vor dem Shop verkauft der Kern (4 Coupons)"
+      "text": "vor dem Shop verkauft der Kern (4 Coupons)",
+      "antwortEnthaeltEn": "Bought"
     },
     {
       "befehl": "td kaufe Festplatte",
       "antwortEnthaelt": "nur im AWESOME-Shop",
-      "text": "Festplatte nicht am Kern"
+      "text": "Festplatte nicht am Kern",
+      "antwortEnthaeltEn": "only in the AWESOME Shop"
     },
     {
       "baue": "Shop",
@@ -49,7 +51,8 @@
     {
       "befehl": "td kaufe Mauer",
       "antwortEnthaelt": "AWESOME-Shop",
-      "text": "nach dem Bau des Shops verkauft der Kern nicht mehr"
+      "text": "nach dem Bau des Shops verkauft der Kern nicht mehr",
+      "antwortEnthaeltEn": "AWESOME Shop"
     },
     {
       "shopkauf": "Bolzenturm",
@@ -59,7 +62,8 @@
       "pruefe": "LogEnthaelt",
       "suche": "Gekauft: Bolzenturm +1 für 5 Coupons",
       "min": 1,
-      "text": "Kauf im Shop wirkt wie am Kern (Kontingent, Material)"
+      "text": "Kauf im Shop wirkt wie am Kern (Kontingent, Material)",
+      "sucheEn": "Bought: Bolt Turret +1 for 5 Coupons"
     },
     {
       "shopkauf": "Bolzenturm",
@@ -80,7 +84,8 @@
       "pruefe": "LogEnthaelt",
       "suche": "Gekauft: Festplatte für 40 Coupons",
       "min": 1,
-      "text": "Festplatte gekauft"
+      "text": "Festplatte gekauft",
+      "sucheEn": "Bought: Hard Drive for 40 Coupons"
     },
     {
       "shopkauf": "Gewehrturm",
@@ -91,7 +96,8 @@
       "pruefe": "LogEnthaelt",
       "suche": "ist noch nicht erforscht",
       "min": 1,
-      "text": "Grund der Ablehnung im Chat"
+      "text": "Grund der Ablehnung im Chat",
+      "sucheEn": "is not researched yet"
     },
     {
       "oeffne": "Shop"

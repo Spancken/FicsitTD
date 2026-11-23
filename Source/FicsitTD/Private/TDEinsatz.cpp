@@ -310,7 +310,7 @@ static FString TDAnzeige(const FString& Key)
 		{ TEXT("Foerderanlage"), TEXT("Resource Well") }, { TEXT("Fluessigkeitspuffer"), TEXT("Fluid Buffer") },
 		{ TEXT("Teslaspule"), TEXT("Tesla Coil") }, { TEXT("Nobelisk-Werfer"), TEXT("Nobelisk Launcher") }, { TEXT("Reparaturstation"), TEXT("Repair Station") }, { TEXT("Drohnenplatz"), TEXT("Drone Pad") },
 		{ TEXT("Lockfeuer"), TEXT("Lure Fire") }, { TEXT("Oelschlick"), TEXT("Oil Slick Field") }, { TEXT("Wasserpumpe"), TEXT("Water Extractor") }, { TEXT("Akku"), TEXT("Power Storage") },
-		{ TEXT("Oelpumpe"), TEXT("Oil Extractor") }, { TEXT("Foerderanlage"), TEXT("Extractor") }, { TEXT("Kohlekraftwerk"), TEXT("Coal-Powered Generator") },
+		{ TEXT("Oelpumpe"), TEXT("Oil Extractor") }, { TEXT("Kohlekraftwerk"), TEXT("Coal-Powered Generator") },
 		{ TEXT("Treibstoffkraftwerk"), TEXT("Fuel-Powered Generator") }, { TEXT("Atomkraftwerk"), TEXT("Nuclear Power Plant") }, { TEXT("Kraftwerk"), TEXT("Power Generator") },
 		{ TEXT("Giesserei"), TEXT("Foundry") }, { TEXT("Assembler"), TEXT("Assembler") }, { TEXT("Fertiger"), TEXT("Manufacturer") },
 		{ TEXT("Raffinerie"), TEXT("Refinery") }, { TEXT("Abfueller"), TEXT("Packager") }, { TEXT("Mischer"), TEXT("Blender") },
@@ -340,6 +340,18 @@ static FText TDTextBodenInstabil()
 UTDCDBodenInstabil::UTDCDBodenInstabil()
 {
 	mDisqfualifyingText = TDTextBodenInstabil();
+}
+
+// 23.11. (Gegencheck 0.13): MAM vor Welle 2
+static FText TDTextMamFrueh()
+{
+	return TDFX(TEXT("Das MAM kommt nach Welle %d: Dann gibt es die ersten Festplatten für neue Technik."),
+		TEXT("The MAM comes after wave %d: that is when the first Hard Drives for new technology arrive."), TDBalance::Ganz(TEXT("Einsatz.Mam.AbWelle"), 2));
+}
+
+UTDCDMamFrueh::UTDCDMamFrueh()
+{
+	mDisqfualifyingText = TDTextMamFrueh();
 }
 
 // 0.13 K4
@@ -452,6 +464,7 @@ static void TDAktualisiereSperrTexte()
 	Feld->SetPropertyValue_InContainer(GetMutableDefault<UTDCDBlaupause>(), TDTextBlaupause());
 	Feld->SetPropertyValue_InContainer(GetMutableDefault<UTDCDPlattform>(), TDTextPlattform());
 	Feld->SetPropertyValue_InContainer(GetMutableDefault<UTDCDBodenInstabil>(), TDTextBodenInstabil());
+	Feld->SetPropertyValue_InContainer(GetMutableDefault<UTDCDMamFrueh>(), TDTextMamFrueh());
 	Feld->SetPropertyValue_InContainer(GetMutableDefault<UTDCDKernAbriegelung>(), TDTextKernAbriegelung());
 }
 
@@ -1677,6 +1690,15 @@ FString UTDEinsatzSubsystem::WirkeKauf(const FString& Key, int32 Gekauft, int32 
 	{
 		return FString();
 	}
+	// 23.11. (Gegencheck 0.13): Festplatte abgeben zaehlt nur Stuecke, die wirklich im Inventar lagen (keine Scheinkaeufe im Laufprotokoll)
+	if (FCString::Strcmp(E->Key, TEXT("Festplattenabgabe")) == 0)
+	{
+		Gekauft = FMath::Min(Gekauft, FPImInventar());
+		if (Gekauft <= 0)
+		{
+			return TDT(TEXT("Keine Festplatte im Inventar, nichts abgegeben."), TEXT("No Hard Drive in your inventory, nothing returned."));
+		}
+	}
 	int32& Bisher = Kern->mKontingentGekauft.FindOrAdd(E->Key);
 	for (int32 i = 0; i < Gekauft; ++i)
 	{
@@ -1997,7 +2019,13 @@ void UTDEinsatzSubsystem::AktualisiereToDo()
 			Melde(TDT(TEXT("AUFGABE: Baue das MAM (kostenlos, Baumenü Spezial, mindestens 60 m vom Kern). Dort setzt du Festplatten für neue Technik ein."),
 				TEXT("TASK: Build the MAM (free, build menu Special, at least 60 m from the Core). Spend Hard Drives there on new technology.")));
 		}
-		mHudZeile = bHubAufgabe ? TDT(TEXT("AUFGABE: Baue die HUB (kostenlos) - Strom und Wiedereinstieg"), TEXT("TASK: Build the HUB (free) - power and respawn point"))
+		// 23.11. (Gegencheck 0.13): ohne gebaute HUB verdeckte die HUB-Aufgabe Shop und MAM - mehrere offene Aufgaben in einer Zeile
+		TArray<FString> Aufgaben;
+		if (bHubAufgabe) { Aufgaben.Add(TDT(TEXT("HUB"), TEXT("HUB"))); }
+		if (bShopAufgabe) { Aufgaben.Add(TDT(TEXT("AWESOME-Shop"), TEXT("AWESOME Shop"))); }
+		if (bMamAufgabe) { Aufgaben.Add(TDT(TEXT("MAM"), TEXT("MAM"))); }
+		mHudZeile = Aufgaben.Num() > 1 ? TDF(TEXT("AUFGABEN: Baue %s (kostenlos, mindestens 60 m vom Kern)"), TEXT("TASKS: Build %s (free, at least 60 m from the Core)"), *FString::Join(Aufgaben, TEXT(", ")))
+			: bHubAufgabe ? TDT(TEXT("AUFGABE: Baue die HUB (kostenlos) - Strom und Wiedereinstieg"), TEXT("TASK: Build the HUB (free) - power and respawn point"))
 			: bShopAufgabe ? TDT(TEXT("AUFGABE: Baue den AWESOME-Shop (kostenlos) - dort kaufst du ab jetzt"), TEXT("TASK: Build the AWESOME Shop (free) - buy there from now on"))
 			: bMamAufgabe ? TDT(TEXT("AUFGABE: Baue das MAM (kostenlos) - dort setzt du Festplatten ein"), TEXT("TASK: Build the MAM (free) - spend Hard Drives there"))
 			: Block[3];
@@ -2094,7 +2122,18 @@ void UTDEinsatzSubsystem::PruefeHologramm(AFGHologram* Hologramm)
 		return;
 	}
 	// Mehrere auf einmal (Mauern ziehen): alle muessen ins Kontingent passen (Test 0.19.1: "Mauer 6/5")
-	const FString Grund = SperrGrund(Hologramm->GetBuildClass(), Hologramm->GetActorLocation(), FMath::Max(1, Hologramm->GetBaseCostMultiplier()));
+	FString Grund = SperrGrund(Hologramm->GetBuildClass(), Hologramm->GetActorLocation(), FMath::Max(1, Hologramm->GetBaseCostMultiplier()));
+	// 23.11. (Gegencheck 0.13): Ring am Umriss des Gebaeudes, nicht nur am Mittelpunkt (sichtbare Modellteile wie bei der Wegpruefung)
+	if (Grund != TEXT("Boden") && !mFrei && mKern.IsValid() && TDBalance::Wert(TEXT("Einsatz.Ring.Aktiv"), 1.f) > 0.f && IstFabrikgebaeude(Hologramm->GetBuildClass()))
+	{
+		const FBox Kasten = UTDWaveSubsystem::HologrammKasten(Hologramm);
+		const FVector KernOrt = mKern->GetActorLocation();
+		const FVector Naechster = Kasten.GetClosestPointTo(FVector(KernOrt.X, KernOrt.Y, Kasten.GetCenter().Z));
+		if (Kasten.IsValid && FVector::Dist2D(Naechster, KernOrt) < TDBalance::Wert(TEXT("Einsatz.Ring.Radius"), 60.f) * 100.f)
+		{
+			Grund = TEXT("Boden");
+		}
+	}
 	if (Grund == TEXT("Welle"))
 	{
 		Hologramm->AddConstructDisqualifier(UTDCDWellenSperre::StaticClass());
@@ -2108,6 +2147,10 @@ void UTDEinsatzSubsystem::PruefeHologramm(AFGHologram* Hologramm)
 	else if (Grund == TEXT("Sink"))
 	{
 		Hologramm->AddConstructDisqualifier(UTDCDSinkGesperrt::StaticClass());
+	}
+	else if (Grund == TEXT("MamFrueh"))
+	{
+		Hologramm->AddConstructDisqualifier(UTDCDMamFrueh::StaticClass());
 	}
 	else if (Grund == TEXT("Kontingent"))
 	{
@@ -2132,6 +2175,16 @@ FString UTDEinsatzSubsystem::SperrGrund(UClass* BauKlasse, const FVector& Ort, i
 	if (Key.IsEmpty())
 	{
 		return FString();
+	}
+	// 23.11. (Gegencheck 0.13): MAM vor Einsatz.Mam.AbWelle (z. B. ueber ein HUB-Rezept) - eigener Grund statt "Kontingent erschoepft"
+	if (Key == TEXT("MAM"))
+	{
+		const UTDWaveSubsystem* MamWaves = GetWorld() ? GetWorld()->GetSubsystem<UTDWaveSubsystem>() : nullptr;
+		const int32 Geschafft = MamWaves ? (MamWaves->LaeuftWelle() ? MamWaves->GetWelle() - 1 : MamWaves->GetWelle()) : 0;
+		if (Geschafft < TDBalance::Ganz(TEXT("Einsatz.Mam.AbWelle"), 2))
+		{
+			return TEXT("MamFrueh");
+		}
 	}
 	// Bausperre im Verteidigungsfeld waehrend einer Welle
 	const ATDDefenseCore* Kern = mKern.Get();

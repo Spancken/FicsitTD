@@ -324,6 +324,8 @@ public:
 	FTDKernZugang PruefeKernZugangVon(const ATDDefenseCore* Kern, const TArray<FVector>& Starts, bool bRingprobe) const;
 	const FTDKernZugang& GetKernZugang() const { return mKernZugang; }
 	static const TCHAR* KernZugangName(ETDKernZugang Zustand);
+	/** 23.11.: Kasten der sichtbaren Modellteile eines Hologramms (ohne Reichweitenringe und Pruefkaesten) - Wegpruefung und Ring */
+	static FBox HologrammKasten(const class AFGHologram* Holo);
 	/** Zeile fuer Kern-Menue und Chat in der Spielsprache, z. B. "Kern-Zugang: abgeriegelt durch Konstruktor, 24 m Nordosten" */
 	FString KernZugangText(const FTDKernZugang& Z, const ATDDefenseCore* FuerKern = nullptr) const;
 	/** Wellenstart wartet gerade, weil der Kern abgeriegelt ist */
@@ -667,6 +669,10 @@ private:
 	bool mZugangGemeldet = false;
 	/** so lange haelt der Start schon wegen eines laufenden Netzumbaus (KernZugang.WarteNetz) */
 	float mZugangNetzWarte = 0.f;
+	/** 23.11. (Gegencheck 0.13 F4): einmal nach Laden/Start pruefen, ob Bestand den Kern abriegelt (-1 = nicht geplant) */
+	float mZugangLadeUhr = -1.f;
+	int32 mZugangLadeVersuche = 0;
+	bool mZugangLadeGeprueft = false;
 	/** 0.13 N1: Bau -> Sperrkasten (eigener Actor, nicht gespeichert) */
 	TMap<TWeakObjectPtr<AFGBuildable>, TWeakObjectPtr<AActor>> mBauSperren;
 	bool mBauVerbunden = false;

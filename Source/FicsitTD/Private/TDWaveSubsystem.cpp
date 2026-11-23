@@ -2746,12 +2746,17 @@ void UTDWaveSubsystem::SpawneKernWelle(int32 Nummer)
 	const FTDStufe& S = GetStufe(mStufe);
 	mElites = 0;
 	// 0.9.1 (Simulation 09.11.): ab W31 waechst das Leben schneller, Phase 4-5 hatte im Modell zu viel Luft. Im Spiel nachmessen.
-	const float JeWelle = TDBalance::Wert(TEXT("Wellen.LPJeWelle"), 0.08f);
+	// 23.11. (Marius: Einsatz schwerer): Endlos behaelt seinen eigenen Zuwachs (Endlos.LPJeWelle), der Einsatz nutzt Wellen.LPJeWelle
+	const float JeWelle = mEndlos ? TDBalance::Wert(TEXT("Endlos.LPJeWelle"), TDBalance::Wert(TEXT("Wellen.LPJeWelle"), 0.08f))
+		: TDBalance::Wert(TEXT("Wellen.LPJeWelle"), 0.08f);
 	float LPFaktor = S.LP * (1.f + JeWelle * FMath::Min(Nummer - 1, 30) + TDBalance::Wert(TEXT("Wellen.LPJeWelleAb31"), 0.1f) * FMath::Max(Nummer - 31, 0));
 	// 16.11. (Fahrplan P2, Simulation): Endlos - nach W50 waechst die Gegnerzahl nicht mehr (Wellen.MaxGesamt), die Coupons aber weiter;
 	// ohne Wachstum gab es keinen Bestwert. Ab Endlos.LPWachstumAbWelle je Welle Endlos.LPWachstum mehr Leben (zinsartig).
 	if (mEndlos)
 	{
+		// 23.11. (Marius: Einsatz schwerer, Gegencheck 0.13): Endlos eigener Faktor je Stufe, damit die Stufen-LP des Einsatzes Endlos
+		// nicht mitziehen (Endlos Normal lag schon unter dem Band)
+		LPFaktor *= TDBalance::Wert(FString::Printf(TEXT("Endlos.%s.LPFaktor"), S.Name), 1.f);
 		LPFaktor *= FMath::Pow(1.f + TDBalance::Wert(TEXT("Endlos.LPWachstum"), 0.03f),
 			static_cast<float>(FMath::Max(0, Nummer - TDBalance::Ganz(TEXT("Endlos.LPWachstumAbWelle"), 50))));
 	}
@@ -3232,6 +3237,30 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 	}
 	// 0.13 K4: Lebensadern fuer die Wegpruefung beim Bauen (eine Richtung je Bild)
 	PflegeLebensadern(DeltaTime);
+	// 23.11. (Gegencheck 0.13 F4): einmalige Pruefung nach dem Laden
+	if (mZugangLadeUhr >= 0.f && mLauf == ETDLauf::Aufbau && TDBalance::Wert(TEXT("KernZugang.Aktiv"), 1.f) > 0.f)
+	{
+		mZugangLadeUhr -= DeltaTime;
+		if (mZugangLadeUhr < 0.f)
+		{
+			const FTDKernZugang& Z = PruefeKernZugang(true);
+			if (Z.Zustand == ETDKernZugang::NetzNichtBereit && ++mZugangLadeVersuche < 6)
+			{
+				mZugangLadeUhr = 5.f;   // Netz noch im Umbau: spaeter noch einmal
+			}
+			else
+			{
+				mZugangLadeGeprueft = true;
+				UE_LOG(LogFicsitTD, Log, TEXT("Kern-Zugang nach dem Laden: %s (Sperre %s, %s)"), KernZugangName(Z.Zustand), Z.Sperre.IsEmpty() ? TEXT("-") : *Z.Sperre, *Z.SperreKlasse);
+				if (Z.IstGesperrt() && Z.bBau)
+				{
+					TDNetz::Melde(TDNetz::EArt::Abriegelung);
+					Ansage(KernZugangText(Z));
+					MarkiereSperrstelle(true);
+				}
+			}
+		}
+	}
 	// 0.13: Ring "instabiler Boden" als Leuchtsignale im Baumodus, Lueckensignale ausblenden
 	PflegeRingSignale(DeltaTime);
 	// Sperrflaechen abgerissener Bauten alle 3 s entfernen (sonst laufen Gegner um einen Bau herum, der nicht mehr steht)
@@ -3250,6 +3279,13 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 			// 0.13 N1: Maschinen und Tuerme als Sperrflaeche ins Gegnernetz (auch nach dem Laden, die Kaesten werden nicht gespeichert)
 			VerbindeBauSperren();
 			SperreBautenUm(mKern->GetActorLocation());
+			// 23.11. (Gegencheck 0.13 F4): Riegelt ein Bestand (alter Spielstand) den Kern ab, erfaehrt der Spieler es jetzt beim Laden,
+			// nicht erst beim Wellenstart. Erst nach dem Netzumbau fuer die Sperrflaechen pruefen.
+			if (!mZugangLadeGeprueft && mZugangLadeUhr < 0.f)
+			{
+				mZugangLadeUhr = TDBalance::Wert(TEXT("KernZugang.LadePruefungNach"), 15.f);
+				mZugangLadeVersuche = 0;
+			}
 			PlaneWelle(mWelle + 1);
 			// 0.12-dev (Marius 16.11.): ADA meldet neue Gegnerarten und Bosse der naechsten Welle zu Beginn der Bauphase
 			TDAda::VorWelle(this, mKern.Get(), mWelle + 1, mPlan);

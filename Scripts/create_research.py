@@ -467,7 +467,8 @@ def beschreibung(b_key, k_key, k_text, eltern):
     if vor:
         zeilen.append("Braucht: " + ", ".join(f"{TITEL[vb]} > {NAMEN[(vb, vk)]}" for vb, vk in vor))
     if andere_von(b_key, k_key):
-        zeilen.append("Abzweigung: schließt " + ", ".join(NAMEN[(b_key, a)] for a in andere_von(b_key, k_key)) + " für diesen Einsatz aus")
+        # 23.11. (Gegencheck 0.13 F2): im Freien Spiel mit Abwehr ist die Gegenseite zum doppelten Preis kaeuflich
+        zeilen.append("Abzweigung: schließt " + ", ".join(NAMEN[(b_key, a)] for a in andere_von(b_key, k_key)) + " im Einsatz aus (im Freien Spiel mit Abwehr: Gegenseite zum doppelten Preis)")
     return "\n".join(z for z in zeilen).strip()
 
 def icon_von(item_pfad):
@@ -852,7 +853,7 @@ for b_key, b_name, b_text, b_icon, knoten in BAEUME:
 info.append("};")
 with open(r"E:\Modding\SatisfactoryModLoader\Mods\FicsitTD\Source\FicsitTD\Private\TDForschungInfo.inl", "w", encoding="utf-8-sig") as f:
     f.write("\n".join(info) + "\n")
-log(f"Forschungsinfo: {len(info) - 6} Knoten")
+log(f"Forschungsinfo: {sum(1 for z in info if z.startswith(chr(9) + '{ TEXT('))} Knoten")   # 23.11.: vorher len(info) - 6, zaehlte einen zu viel
 log(f"Voraussetzungen: {sum(len(v) for v in VORAUSSETZUNGEN.values())}")
 log("ENDE")
 with open(r"E:\Modding\Logs\create_research.txt", "w", encoding="utf-8") as f:

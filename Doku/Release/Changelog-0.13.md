@@ -1,0 +1,61 @@
+# Changelog 0.13 (Entwurf)
+
+> Entwurf vom 23.11.2026, noch kein Release. Zusammengefasst aus den Änderungszetteln in `Aenderungen\` (sichtbar: ja) auf dem **Endstand**. Überholte Zwischenstände fehlen: 40-m-Ring, Shop nach Welle 2, MAM nach Welle 1. 0.12 erscheint nicht einzeln, ihr Inhalt ist hier enthalten. Rohliste: `python Tests\pruefe_konsistenz.py --changelog`. Der englische Teil geht als `changelog.md` zu ficsit.app.
+
+## English (ficsit.app)
+
+**FICSIT Tower Defense 0.13: AWESOME Shop, a new start, core access rules, an untangled research tree and a harder difficulty.**
+
+### New
+- **AWESOME Shop:** after wave 1 ADA asks you to build the game's AWESOME Shop (free, one per operation). Quotas, gear, core repairs and Hard Drives are bought there in six sections. The Core no longer sells, and base game items are hidden during an operation.
+- **New start order:** ADA first asks for the HUB (power and respawn point), after wave 1 for the AWESOME Shop, after wave 2 for the MAM. She voices each task. The second line of the status bar shows the current task.
+- **Boss waves:** a window shows the phase report and three bonus cards. You get one Talent Point per boss wave.
+- **Core access:** if your buildings seal off the Core, the wave (or the drilling) does not start until a gap is open. The blocking spot is marked on the map. A building that would close the last path is red in the hologram. Defense walls may still close it.
+- **Unstable ground:** during an operation and in Endless waves, factory buildings cannot be placed within 60 m of the Defense Core. Defenses and logistics still can. In build mode, small orange lights mark the ring.
+- Enemies walk around machines and turrets instead of getting stuck on them.
+- **Return Hard Drives:** in the AWESOME Shop (Pioneer and Core) you trade a spare Hard Drive for 12 Coupons, also without Coupons in your inventory.
+- **Player guide:** the full research tree sits behind a spoiler button, plus a planner for Hard Drives and Talent Points by wave.
+
+### Changed
+- **MAM research tree untangled:**
+  - Industry has six entry points and no forced chain. Belt Mk.2 needs no copper, the Refinery follows Coal Power, and Sulfur brings Black Powder.
+  - The Bolt and Tesla lines open from wave 3, the Rifle Turret from wave 5.
+  - Shield Generator and Jammer Projector are no longer a branch.
+- **Free Play with Defense:** the other side of a research branch can be researched too, at double the Coupon price.
+- The Core platform cannot be dismantled during an operation.
+
+### Balance
+- **Harder difficulty:** on Normal, Hard and Nightmare, enemies have more health and gain it faster per wave. The Defense Core on Normal has 15,000 HP. Endless waves stay as before.
+
+### Fixed
+- The status bar replaces the mod's block in the To-do notes, which could stay in German and show outdated values.
+- The Caterium research node now says that it unlocks the Nobelisk Detonator.
+- The core menu's research tab is in English on English games.
+- A Core sealed off in an older save is reported shortly after loading, not only when the wave should start.
+- The path check covers the whole way to the fronts and the full hologram outline.
+- Talents of older saves are reset once to the new boss points, with a chat note.
+- Free Play with Defense: missing industry nodes (Belt Mk.4/Mk.5, Miner Mk.2/Mk.3) are added, and the other side of a branch no longer shows as locked.
+
+### Saves
+- Saves from 0.11.x load. A Core that an existing ring of machines seals off is reported after loading. The wave starts once a path is open.
+
+## Deutsch (README)
+
+**0.13: AWESOME-Shop, neuer Einstieg, Regeln für den Kern-Zugang, entflochtener Forschungsbaum und mehr Herausforderung.**
+
+- AWESOME-Shop nach Welle 1: Kontingente, Ausrüstung, Kernreparatur und Festplatten. Der Kern verkauft nicht mehr.
+- Einstieg: HUB, nach Welle 1 der Shop, nach Welle 2 das MAM. ADA sagt die Aufgaben an, die Statusleiste zeigt sie.
+- Bosswellen mit Phasenbericht, drei Bonus-Karten und einem Talentpunkt.
+- Kern-Zugang: Ein abgeriegelter Kern startet keine Welle. Das Hologramm wird rot, wenn ein Bau den letzten Weg schließen würde.
+- Instabiler Boden: keine Fabrikgebäude in 60 m um den Kern.
+- Gegner laufen um Maschinen und Türme herum.
+- Festplatten abgeben: 12 Coupons je Stück, auch ohne Coupons im Inventar.
+- MAM-Baum entflochten: sechs Einstiege, Bolzen und Tesla ab Welle 3, Gewehrturm ab Welle 5.
+- Im Freien Spiel mit Abwehr ist die Gegenseite einer Gabel zum doppelten Coupon-Preis erforschbar.
+- Mehr Herausforderung: mehr Gegnerleben in Normal, Hart und Albtraum, der Kern hat in Normal 15 000 LP. Die Endlos-Wellen bleiben wie bisher.
+- Fehlerbehebungen:
+  - Forschungsreiter auf Englisch
+  - Ladeprüfung des Kern-Zugangs
+  - Wegprüfung bis zur Front
+  - Talente alter Stände
+  - fehlende Industrie-Knoten im Freien Spiel

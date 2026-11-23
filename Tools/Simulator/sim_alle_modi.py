@@ -148,7 +148,8 @@ def rechne_einsatz(stufe, Z, baender, zb_tests, liste):
 
 # ---------------------------------------------------------------- Endlos
 def rechne_endlos(daten, stufe, baender, max_wellen):
-    erg = sm.endlos_lauf(daten, stufe, max_wellen=max_wellen, laeufe=1)
+    # 23.11. (Gegencheck 0.13): 3 Laeufe je Linie statt 1 - Endlos streute um 1-2 Wellen je Lauf
+    erg = sm.endlos_lauf(daten, stufe, max_wellen=max_wellen, laeufe=3)
     ohne = [r for r in erg if not r["Vorziehen"]]
     mit = [r for r in erg if r["Vorziehen"]]
     w_med = median(r["Welle"] for r in ohne)

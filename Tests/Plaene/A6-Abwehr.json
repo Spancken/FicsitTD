@@ -1,6 +1,6 @@
 {
   "Name": "A6-Abwehr",
-  "_Hinweis": "A6 Entscheidung 8 (Marius 22.11.): im Freien Spiel mit Abwehr sperrt eine gewaehlte Gabelseite die andere nicht, die Gegenseite kostet Abwehr.GabelFaktor (2) mal so viele Coupons. Industrie bleibt verborgen, Himmelsturm ist eigene Wurzel. Festplatte abgeben gibt es hier nicht (Shop-Posten nur mit aktivem Einsatz, ShopSichtbar).",
+  "_Hinweis": "A6 Entscheidung 8 (Marius 22.11.): im Freien Spiel mit Abwehr sperrt eine gewaehlte Gabelseite die andere nicht, die Gegenseite kostet Abwehr.GabelFaktor (2) mal so viele Coupons. Industrie bleibt verborgen, Himmelsturm ist eigene Wurzel. Festplatte abgeben gibt es hier nicht (Shop-Posten nur mit aktivem Einsatz, ShopSichtbar). 23.11.: KnotenFrei prueft die Abhaengigkeiten wie das MAM.",
   "NeuesSpiel": {
     "Startort": "Grass Fields",
     "Modus": 3
@@ -47,8 +47,13 @@
     {
       "pruefe": "ForschungZustand",
       "knoten": "Kettenblitz",
-      "soll": "ZuFrueh",
-      "text": "Kettenblitz nach Ueberlast nicht ausgeschlossen (Wellenanzeige im Freien Spiel ohne Wirkung)"
+      "soll": "Moeglich",
+      "text": "Gegenseite Kettenblitz im Freien Spiel erforschbar, ohne Wellen-Sperre (Gegencheck F2)"
+    },
+    {
+      "pruefe": "KnotenFrei",
+      "knoten": "Kettenblitz",
+      "text": "MAM zeigt die Gegenseite nicht grau (Gegencheck F1)"
     },
     {
       "pruefe": "ForschungStartbar",

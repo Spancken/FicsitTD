@@ -250,6 +250,8 @@ struct FTDShopKauf
 	TMap<FString, int32> Soll;
 	int32 SollSumme = 0;
 	int32 SpielSumme = 0;
+	/** 23.11. (Gegencheck 0.13 F8): Coupons, die der Hook vor dem Kauf geliehen hat (Mindestpreis der Festplattenabgabe ohne Coupons) */
+	int32 Vorschuss = 0;
 	bool bAktiv = false;
 };
 static FTDShopKauf GTDShopKauf;
@@ -322,6 +324,14 @@ static bool TDShopVorKauf(AFGBuildableResourceSinkShop* Self, UFGInventoryCompon
 	GTDShopKauf.SollSumme = Soll;
 	GTDShopKauf.SpielSumme = Spiel;
 	GTDShopKauf.bAktiv = true;
+	// 23.11. (Gegencheck 0.13 F8): Posten mit Preis 0 (Festplatte abgeben) zeigen im Shop mindestens 1 Coupon, den das Spiel vor dem
+	// Hook verlangt. Fehlt er, leiht der Hook ihn vor; TDShopNachKauf rechnet ihn gegen die Erstattung (oder nimmt ihn bei Abbruch zurueck)
+	const int32 SpielKosten = Sink ? Sink->GetCostOfSchematics(Liste) : Spiel;
+	if (Soll < Spiel && Coupons < SpielKosten && Inventar && Sink && Sink->GetCouponClass())
+	{
+		GTDShopKauf.Vorschuss = Inventar->AddStack(FInventoryStack(SpielKosten - Coupons, Sink->GetCouponClass()), true);
+		UE_LOG(LogFicsitTD, Log, TEXT("Shop: Vorschuss %d Coupons fuer den Mindestpreis"), GTDShopKauf.Vorschuss);
+	}
 	return false;
 }
 
@@ -331,6 +341,14 @@ static void TDShopNachKauf(bool bErgebnis, AFGBuildableResourceSinkShop* Self, U
 	GTDShopKauf = FTDShopKauf();
 	if (!bErgebnis || !Kauf.bAktiv || !Self)
 	{
+		// 23.11. (F8): Kauf abgebrochen - geliehene Coupons zurueck
+		if (Kauf.Vorschuss > 0 && Inventar && Self)
+		{
+			if (const AFGResourceSinkSubsystem* SinkAb = AFGResourceSinkSubsystem::Get(Self->GetWorld()))
+			{
+				Inventar->Remove(SinkAb->GetCouponClass(), FMath::Min(Kauf.Vorschuss, Inventar->GetNumItems(SinkAb->GetCouponClass())));
+			}
+		}
 		return;
 	}
 	UTDEinsatzSubsystem* Einsatz = TDShopEinsatz(Self);
@@ -342,9 +360,11 @@ static void TDShopNachKauf(bool bErgebnis, AFGBuildableResourceSinkShop* Self, U
 		Inventar->Remove(Sink->GetCouponClass(), Differenz);
 	}
 	// A6 E7: Posten mit Preis 0 (Festplatte abgeben) zeigen im Shop mindestens 1 Coupon (SetzePreis) - den bekommt der Spieler zurueck
-	if (Differenz < 0 && Inventar && Sink && Sink->GetCouponClass())
+	// 23.11. (F8): ein Vorschuss vor dem Kauf ist schon im Inventar - nur den Rest erstatten
+	const int32 Erstattung = -Differenz - Kauf.Vorschuss;
+	if (Differenz < 0 && Erstattung > 0 && Inventar && Sink && Sink->GetCouponClass())
 	{
-		Inventar->AddStack(FInventoryStack(-Differenz, Sink->GetCouponClass()), true);
+		Inventar->AddStack(FInventoryStack(Erstattung, Sink->GetCouponClass()), true);
 	}
 	for (const TPair<FString, int32>& P : Kauf.Stueck)
 	{

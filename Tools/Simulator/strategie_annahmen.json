@@ -325,8 +325,8 @@
     "Quelle": "16.11.2026: Die Verlustkurve (verlust_fit.py, 07.11.) ist an Einsaetzen der Stufe Normal gemessen, Kern-LP damals und heute 20000 (TDBalance.cpp Stufen.Normal.KernLP, seit 0.76 unveraendert). Verlust in % wird mit 20000 / Kern-LP der Stufe bzw. Bohrung umgerechnet; vorher galt fuer alle Stufen derselbe Prozentwert."
   },
   "BauSekundenJeGebaeude": {
-    "Wert": 111,
-    "Quelle": "16.11.2026, Annahme fuer Endlos-Wellen (sim_modi.kalibriere_bauzeit): Im Einsatz wartete Marius im Median 195 s je Bauphase (BauphaseSekunden), der Modell-Spieler kauft im Einsatz Normal W2-30 im Mittel 1,75 Kontingente je Bauphase -> 195 / 1,75 = 111 s je Gebaeude (Turm, Fabrikgebaeude, Kraftwerk, Stuetzbau). Obergrenze: die Bauphase enthielt auch Warten, Verlegen, Versorgen. Level im Turmfenster kosten keine Bauzeit."
+    "Wert": 117,
+    "Quelle": "16.11.2026, Annahme fuer Endlos-Wellen (sim_modi.kalibriere_bauzeit): Im Einsatz wartete Marius im Median 195 s je Bauphase (BauphaseSekunden), der Modell-Spieler kauft im Einsatz Normal W2-30 im Mittel 1,75 Kontingente je Bauphase -> 195 / 1,75 = 111 s je Gebaeude (Turm, Fabrikgebaeude, Kraftwerk, Stuetzbau). Obergrenze: die Bauphase enthielt auch Warten, Verlegen, Versorgen. Level im Turmfenster kosten keine Bauzeit. 23.11.2026 (Gegencheck 0.13): mit dem guten Spieler (Spielerwahl) neu geeicht: im Mittel 1,66 Kontingente je Bauphase -> 195 / 1,66 = 117 s (Median waere 1,0 -> 195 s)."
   },
   "BauAnteilInWelle": {
     "Wert": 0.5,

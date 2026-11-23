@@ -1,0 +1,71 @@
+{
+  "Name": "A6-Abgabe-Endlos",
+  "_Hinweis": "23.11. (Gegencheck 0.13): Festplatte abgeben im Endlos-Modus, ohne Coupons (Vorschuss des Mindestpreises).",
+  "NeuesSpiel": {
+    "Startort": "Grass Fields",
+    "Modus": 2
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 8,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warteBis": "EinsatzAktiv",
+      "max": 120
+    },
+    {
+      "gib": "/Game/FactoryGame/Resource/Environment/CrashSites/Desc_HardDrive.Desc_HardDrive_C",
+      "anzahl": 3
+    },
+    {
+      "gib": "/Game/FactoryGame/Resource/Parts/ResourceSinkCoupon/Desc_ResourceSinkCoupon.Desc_ResourceSinkCoupon_C",
+      "anzahl": -100000
+    },
+    {
+      "baue": "Shop",
+      "klasse": "/Game/FactoryGame/Buildable/Factory/ResourceSinkShop/Build_ResourceSinkShop.Build_ResourceSinkShop_C",
+      "baurezept": "/Game/FactoryGame/Recipes/Buildings/Recipe_ResourceSinkShop.Recipe_ResourceSinkShop_C"
+    },
+    {
+      "warte": 3
+    },
+    {
+      "shopkauf": "Festplattenabgabe",
+      "anzahl": 2,
+      "text": "zwei Festplatten im Endlos abgeben, ohne Coupons"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Festplattenabgabe 2 von 2 Stueck, +24 Coupons",
+      "min": 1,
+      "text": "Endlos: +24 Coupons"
+    },
+    {
+      "pruefe": "Inventar",
+      "item": "/Game/FactoryGame/Resource/Environment/CrashSites/Desc_HardDrive.Desc_HardDrive_C",
+      "min": 1,
+      "max": 1,
+      "text": "eine Festplatte bleibt"
+    },
+    {
+      "shopkauf": "Festplattenabgabe",
+      "anzahl": 3,
+      "text": "drei Stueck, aber nur eine im Inventar"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Festplattenabgabe 1 von 1 Stueck, +12 Coupons",
+      "min": 1,
+      "text": "nur, was im Inventar liegt, zaehlt (keine Scheinkaeufe)"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}

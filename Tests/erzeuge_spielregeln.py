@@ -43,6 +43,9 @@ def tabellen(B, ns):
     z += ["", "### Wellen", "",
           f"- Budget = Stufe × ({w('Wellen.BudgetGrund')} + {w('Wellen.BudgetJeWelle')} × N + {w('Wellen.BudgetQuadrat')} × N²)",
           f"- Gegner-LP × (1 + {w('Wellen.LPJeWelle')} × (N − 1)) bis Welle 31, danach + {w('Wellen.LPJeWelleAb31')} je weitere Welle; Elite-LP × {w('Wellen.EliteLP')}",
+          # 23.11.2026 (Marius: Einsatz schwerer): Endlos hat eigenen Zuwachs und je Stufe einen Ausgleich, damit es auf dem Stand vor dem 23.11. bleibt
+          f"- Endlos-Wellen: Zuwachs {w('Endlos.LPJeWelle')} statt {w('Wellen.LPJeWelle')} je Welle, Gegner-LP zusätzlich × "
+          + " / ".join(f"{s} {w(f'Endlos.{s}.LPFaktor', '1')}" for s in ("Erkundung", "Normal", "Hart", "Albtraum")),
           f"- Bosswellen: Gegnerbudget × {w('Wellen.BossBudget')} plus Boss",
           f"- höchstens {w('Wellen.MaxGleichzeitig')} gleichzeitig, {w('Wellen.MaxGesamt')} je Welle (Nachschub alle {w('Wellen.NachschubTakt')} s je {w('Wellen.NachschubPaket')})",
           f"- Standardlänge eines Einsatzes: {w('Einsatz.WellenStandard', '50')} Wellen", ""]

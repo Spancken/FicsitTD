@@ -94,7 +94,7 @@ void UTDWaveSubsystem::PflegeRingSignale(float DeltaTime)
 	}
 	mRingSignalUhr = 0.25f;
 	const UTDEinsatzSubsystem* Einsatz = World->GetSubsystem<UTDEinsatzSubsystem>();
-	const bool bRing = Kern && Einsatz && Einsatz->IstAktiv() && TDBalance::Wert(TEXT("Einsatz.Ring.Aktiv"), 1.f) > 0.f
+	const bool bRing = Kern && Einsatz && Einsatz->IstAktiv() && !Einsatz->IstFrei() && TDBalance::Wert(TEXT("Einsatz.Ring.Aktiv"), 1.f) > 0.f
 		&& TDBalance::Wert(TEXT("Einsatz.Ring.Signale"), 1.f) > 0.f;
 	if (!bRing)
 	{

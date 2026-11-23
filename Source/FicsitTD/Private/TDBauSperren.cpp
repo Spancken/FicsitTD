@@ -15,6 +15,7 @@
 #include "TDGate.h"
 #include "TDBautenErweitert.h"
 #include "FicsitTDModule.h"
+#include "Misc/ScopeExit.h"
 #include "Buildables/FGBuildable.h"
 #include "Buildables/FGBuildableFactoryBuilding.h"
 #include "FGBuildableSubsystem.h"
@@ -109,12 +110,29 @@ bool UTDWaveSubsystem::SperreBau(AFGBuildable* Bau)
 	return true;
 }
 
+// 23.11. (Gegencheck 0.13, H4): Aufwand der Sperrflaechen messen - Zahl der Umbauten, Zeit, neue Kaesten (Meldung je Wellenstart)
+static int32 GTDSperrUmbauten = 0, GTDSperrNeu = 0;
+static double GTDSperrMs = 0.0, GTDSperrMaxMs = 0.0;
+void TDBauSperrenKosten(int32& OutUmbauten, int32& OutNeu, double& OutMs, double& OutMaxMs)
+{
+	OutUmbauten = GTDSperrUmbauten; OutNeu = GTDSperrNeu; OutMs = GTDSperrMs; OutMaxMs = GTDSperrMaxMs;
+	GTDSperrUmbauten = 0; GTDSperrNeu = 0; GTDSperrMs = 0.0; GTDSperrMaxMs = 0.0;
+}
+
 int32 UTDWaveSubsystem::SperreBautenUm(const FVector& Mitte)
 {
 	if (TDBalance::Wert(TEXT("Gegner.BauSperren"), 1.f) <= 0.f)
 	{
 		return 0;
 	}
+	const double T0 = FPlatformTime::Seconds();
+	ON_SCOPE_EXIT
+	{
+		const double Ms = (FPlatformTime::Seconds() - T0) * 1000.0;
+		++GTDSperrUmbauten;
+		GTDSperrMs += Ms;
+		GTDSperrMaxMs = FMath::Max(GTDSperrMaxMs, Ms);
+	};
 	RaeumeBauSperren(false);
 	const float Radius = TDBalance::Wert(TEXT("Gegner.BauSperrenRadius"), 250.f) * 100.f;
 	int32 Neu = 0;
@@ -129,6 +147,7 @@ int32 UTDWaveSubsystem::SperreBautenUm(const FVector& Mitte)
 	{
 		UE_LOG(LogFicsitTD, Log, TEXT("BauSperren: %d neu im Netz (%d gesamt, Umkreis %.0f m)"), Neu, mBauSperren.Num(), Radius / 100.f);
 	}
+	GTDSperrNeu += Neu;
 	return Neu;
 }
 

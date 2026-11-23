@@ -315,6 +315,25 @@ void UTDPionier::PruefeAlteTalente()
 		Melde(TDF(TEXT("Der Talentbaum ist neu (Schütze, Kommandant, Techniker, Jäger). Deine %d Punkte sind wieder frei: Kern-Menü, Reiter Pionier."),
 			TEXT("The talent tree is new (Marksman, Commander, Engineer, Hunter). Your %d points are free again: Core Menu, Pioneer tab."), FreiePunkte()));
 	}
+	// 23.11. (Gegencheck 0.13 F7): Seit 21.11. gibt es Talentpunkte nur aus Bosswellen und der Bohrung. Alte Staende haben oft mehr
+	// Stufen vergeben (damals aus dem Rang) - einmal zuruecksetzen, mit Hinweis, statt still mehr zu behalten, als die Regel gibt
+	if (!TalenteAusRang())
+	{
+		int32 Vergeben = 0;
+		for (int32 i = 0; i < 4; ++i)
+		{
+			Vergeben += GetStufe(i);
+		}
+		const int32 Gesamt = FMath::Min(K->mPionierBonusPunkte, TDBalance::Ganz(TEXT("Pionier.MaxPunkte"), 15));
+		if (Vergeben > Gesamt)
+		{
+			K->mTalente.Reset();
+			Wirke();
+			UE_LOG(LogFicsitTD, Log, TEXT("Pionier: %d alte Talentstufen zurueckgesetzt (Regel 1 je Bosswelle), jetzt %d Punkte frei"), Vergeben, FreiePunkte());
+			Melde(TDF(TEXT("Talentpunkte gibt es jetzt nur noch für geschaffte Bosswellen und Erfolge in der Bohrung. Deine Talente sind zurückgesetzt, %d Punkte frei: Kern-Menü, Reiter Pionier."),
+				TEXT("Talent Points now come only from cleared boss waves and drilling successes. Your talents were reset, %d points free: Core Menu, Pioneer tab."), FreiePunkte()));
+		}
+	}
 }
 
 void UTDPionier::Melde(const FString& Text) const

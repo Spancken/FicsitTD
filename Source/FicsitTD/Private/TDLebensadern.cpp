@@ -22,6 +22,8 @@
 #include "Engine/World.h"
 #include "Components/InstancedStaticMeshComponent.h"
 
+void TDBauSperrenKosten(int32& OutUmbauten, int32& OutNeu, double& OutMs, double& OutMaxMs);   // TDBauSperren.cpp
+
 namespace
 {
 	/** Wuerde ein Bau dieser Klasse den Weg der Gegner sperren und darf er das nicht? (TD-Hindernisse duerfen, Logistik ist frei) */
@@ -68,6 +70,27 @@ namespace
 	}
 }
 
+FBox UTDWaveSubsystem::HologrammKasten(const AFGHologram* Holo)
+{
+	return Holo ? TDLAHologrammKasten(Holo) : FBox(ForceInit);
+}
+
+/** 23.11. (Gegencheck 0.13 F3): Startabstand der Lebensadern. Vorher fest KernZugang.LebensaderAbstand (120 m), die Fronten liegen aber
+ *  seit H7 bei mindestens 150 m - ein Riegel zwischen 120 m und der Front blieb gruen. Jetzt starten die Adern an der naechsten Front
+ *  (5 m davor, damit der Punkt im Netz liegt), mindestens LebensaderAbstand, hoechstens KernZugang.LebensaderMax (300 m). */
+static float TDLAStartAbstand(const TArray<FTDFront>& Fronten, const FVector& Kern)
+{
+	const float Grund = TDBalance::Wert(TEXT("KernZugang.LebensaderAbstand"), 120.f) * 100.f;
+	const float Max = FMath::Max(Grund, TDBalance::Wert(TEXT("KernZugang.LebensaderMax"), 300.f) * 100.f);
+	float Naechste = -1.f;
+	for (const FTDFront& F : Fronten)
+	{
+		const float D = FVector::Dist2D(F.Ort, Kern);
+		Naechste = Naechste < 0.f ? D : FMath::Min(Naechste, D);
+	}
+	return Naechste < 0.f ? Grund : FMath::Clamp(Naechste - 500.f, Grund, Max);
+}
+
 void UTDWaveSubsystem::PflegeLebensadern(float DeltaTime)
 {
 	const ATDDefenseCore* Kern = mKern.Get();
@@ -87,6 +110,8 @@ void UTDWaveSubsystem::PflegeLebensadern(float DeltaTime)
 	{
 		return;
 	}
+	// 23.11.: fester Takt. Ein langsamerer Takt ohne Bau-Pistole (2 s) liess die Adern nach einem Umbau bis 32 s veralten
+	// (KZ-4 rot: Ring gebaut, Adern liefen noch geradeaus). Gemessen kostet eine Wegsuche im Mittel 0,2 ms, hoechstens 0,7 ms.
 	mLebensaderUhr = TDBalance::Wert(TEXT("KernZugang.LebensaderTakt"), 0.25f);
 	UNavigationSystemV1* Nav = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
 	if (!Nav || Nav->IsNavigationBuildInProgress())
@@ -99,7 +124,7 @@ void UTDWaveSubsystem::PflegeLebensadern(float DeltaTime)
 	}
 	const int32 i = mLebensaderIndex;
 	mLebensaderIndex = (mLebensaderIndex + 1) % 16;
-	const float Abstand = TDBalance::Wert(TEXT("KernZugang.LebensaderAbstand"), 120.f) * 100.f;
+	const float Abstand = TDLAStartAbstand(mFronten, Kern->GetActorLocation());
 	const FVector Start = Kern->GetActorLocation() + FRotator(0.f, 22.5f * i, 0.f).Vector() * Abstand;
 	bool bVoll = false;
 	const double T0 = FPlatformTime::Seconds();
@@ -121,6 +146,14 @@ void UTDWaveSubsystem::MeldeLebensaderKosten()
 	mLebensaderZahl = 0;
 	mLebensaderMs = 0.0;
 	mLebensaderMaxMs = 0.0;
+	int32 Umbauten = 0, Neu = 0;
+	double Ms = 0.0, MaxMs = 0.0;
+	TDBauSperrenKosten(Umbauten, Neu, Ms, MaxMs);
+	if (Umbauten > 0)
+	{
+		UE_LOG(LogFicsitTD, Log, TEXT("Sperrflaechen: %d Umbauten seit der letzten Meldung, %d neue Kaesten, %.1f ms gesamt, laengster %.2f ms, %d Kaesten stehen"),
+			Umbauten, Neu, Ms, MaxMs, mBauSperren.Num());
+	}
 }
 
 int32 UTDWaveSubsystem::GetLebensadernZahl() const
@@ -180,7 +213,7 @@ bool UTDWaveSubsystem::PruefeHologrammZugang(AFGHologram* Holo)
 	{
 		return false;
 	}
-	const float Pruefradius = (TDBalance::Wert(TEXT("KernZugang.LebensaderAbstand"), 120.f) + 20.f) * 100.f;
+	const float Pruefradius = TDLAStartAbstand(mFronten, Kern->GetActorLocation()) + 2000.f;
 	if (FVector::Dist2D(Holo->GetActorLocation(), Kern->GetActorLocation()) > Pruefradius)
 	{
 		return false;

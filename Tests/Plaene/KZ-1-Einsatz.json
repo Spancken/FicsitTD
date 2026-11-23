@@ -1,6 +1,6 @@
 {
   "Name": "KZ-1-Einsatz",
-  "_Hinweis": "0.13 K1 (Fahrplan-0.13): Pruefung 'Kern erreichbar' im Einsatz. 22.11. nach den Messlaeufen: Spielwaende sperren das Netz, Maschinen nicht. Ring aus Spielwaenden 20 m auf der flachen Kernplattform (auf Gelaende blieben Luecken), ueber das Hologramm gebaut: mit Luecke frei, geschlossen Unpassierbar, Wellenstart wartet, Sperrstelle, Fronten bleiben; nach dem Entfernen startet die Welle.",
+  "_Hinweis": "0.13 K1 (Fahrplan-0.13): Pruefung 'Kern erreichbar' im Einsatz. 22.11. nach den Messlaeufen: Spielwaende sperren das Netz, Maschinen nicht. Ring aus Spielwaenden 20 m auf der flachen Kernplattform (auf Gelaende blieben Luecken), ueber das Hologramm gebaut: mit Luecke frei, geschlossen Unpassierbar, Wellenstart wartet, Sperrstelle, Fronten bleiben; nach dem Entfernen startet die Welle. 23.11. (Gegencheck 0.13, Ausreisser 1441): vor der Pruefung mit Luecke laenger auf das Netz warten (20 s + 5 s).",
   "NeuesSpiel": {
     "Startort": "Grass Fields",
     "Modus": 1
@@ -34,11 +34,14 @@
       "text": "Ring aus Spielwaenden 20 m auf der Plattform, eine Luecke im Osten"
     },
     {
-      "warte": 12
+      "warte": 20
     },
     {
       "netzunterbau": true,
       "text": "Netz unter den Waenden"
+    },
+    {
+      "warte": 5
     },
     {
       "pruefe": "KernZugang",

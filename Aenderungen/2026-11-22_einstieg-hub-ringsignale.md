@@ -12,11 +12,11 @@ experiment:
 **Was:**
 - **Einstieg neu** (Marius 22.11.): zu Beginn die Aufgabe „Baue die HUB“ (Strom aus den Biomasse-Brennern, Wiedereinstiegspunkt), nach Welle 1 der AWESOME-Shop (`Einsatz.Shop.AbWelle` 1, vorher 2), nach Welle 2 das MAM (`Einsatz.Mam.AbWelle` 2, vorher nach Welle 1).
   - Jede Aufgabe kommt einmal im Chat und von ADA mit Stimme (`AufgabeHub` neu, `AufgabeShop` und `AufgabeMam` umformuliert) und steht in der HUD-Zeile, Reihenfolge HUB, Shop, MAM.
-  - Die Aufgabentexte nennen „mindestens 40 m vom Kern“.
+  - Die Aufgabentexte nennen „mindestens 60 m vom Kern“ (ursprünglich 40 m, seit H3 60 m).
 - **ADA-Begrüßung** neu, 8 Sätze DE/EN mit Stimme und Untertiteln:
-  - neu: Boden 40 m, „lassen Sie den Kreaturen einen Weg“, Reihenfolge HUB, Shop, MAM, „bis Ihr Shop steht, verkauft der Kern“
+  - neu: Boden 60 m (zuerst 40 m, H3), „lassen Sie den Kreaturen einen Weg“, Reihenfolge HUB, Shop, MAM, „bis Ihr Shop steht, verkauft der Kern“
   - Quelle `Scripts/Audio/saetze_begruessung.json`
-- **Ringsignale:** kleine orange Leuchtsignale (Lampenkopf `SM_TD_StatusLight` vierfach vergrößert, ≈ 1 m, alle 6 m) markieren den 40-m-Ring. Sie sind nur sichtbar, solange die Bau-Pistole im Baumodus ist (Einsatz, Endlos), Schalter `Einsatz.Ring.Signale*`.
+- **Ringsignale:** kleine orange Leuchtsignale (Lampenkopf `SM_TD_StatusLight` vierfach vergrößert, ≈ 1 m, alle 6 m) markieren den Ring (60 m). Sie sind nur sichtbar, solange die Bau-Pistole im Baumodus ist (Einsatz, Endlos), Schalter `Einsatz.Ring.Signale*`.
 - **Ring-Ansage:** Beim ersten Versuch, im Ring ein Fabrikgebäude zu bauen, sagt ADA mit Stimme, warum das nicht geht (`RingInstabil`, einmal je Kern).
 - **Lückenmarke:** Ist ein Hologramm rot, weil es den letzten Weg schließen würde, zeigen grüne Signale entlang des letzten Wegs (25 m um das Hologramm, alle 3 m), wo die Gegner durch müssen. Schalter `KernZugang.LueckeMarkieren`.
 - Selbsttest: Prüfung `Ringsignale` (`min`, `sichtbar`), Plan `KZ-3-Ring` (Signale, Ansage einmal), `KZ-4-Wegpruefung` (Lückenmarke), `EinsatzPhase` (HUB-Aufgabe), Paket `Einstieg-013`.
@@ -26,9 +26,9 @@ experiment:
 - „Ring mit kleinen leuchtenden Signalen im Baumodus“, „ADA-Ansage beim ersten Versuch im Ring zu bauen“, „letzte Lücke markieren: ja“.
 - Die HUB war nie gesperrt, nur ihre Meilensteine (Entscheidung 12.11.). Damit ist T2-5 („Errichte die HUB“ als Spielziel) erledigt, denn die HUB ist jetzt die erste Aufgabe.
 
-**Changelog EN:** New start order: ADA asks for the HUB first (power and respawn point), the AWESOME Shop after wave 1 and the MAM after wave 2. A new ADA briefing explains the order and the unstable ground. In build mode small orange lights mark the 40 m ring, and green lights show the last path when a building would close it.
+**Changelog EN:** New start order: ADA asks for the HUB first (power and respawn point), the AWESOME Shop after wave 1 and the MAM after wave 2. A new ADA briefing explains the order and the unstable ground. In build mode small orange lights mark the 60 m ring, and green lights show the last path when a building would close it.
 
-**Changelog DE:** Neuer Einstieg: ADA bittet zuerst um die HUB (Strom und Wiedereinstiegspunkt), nach Welle 1 um den AWESOME-Shop, nach Welle 2 um das MAM. Eine neue ADA-Begrüßung erklärt die Reihenfolge und den instabilen Boden. Im Baumodus markieren kleine orange Leuchtsignale den 40-m-Ring, und grüne Signale zeigen den letzten Weg, wenn ein Bau ihn schließen würde.
+**Changelog DE:** Neuer Einstieg: ADA bittet zuerst um die HUB (Strom und Wiedereinstiegspunkt), nach Welle 1 um den AWESOME-Shop, nach Welle 2 um das MAM. Eine neue ADA-Begrüßung erklärt die Reihenfolge und den instabilen Boden. Im Baumodus markieren kleine orange Leuchtsignale den 60-m-Ring, und grüne Signale zeigen den letzten Weg, wenn ein Bau ihn schließen würde.
 
 **Nachweis (22.11. mittags):**
 - Paket `Einstieg-013` (`2026-11-22_1230`): KZ-3, KZ-4, EinsatzPhase, Shop und Grundtest grün.

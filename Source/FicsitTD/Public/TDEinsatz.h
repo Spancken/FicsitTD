@@ -103,6 +103,15 @@ public:
 	UTDCDBodenInstabil();
 };
 
+/** 23.11. (Gegencheck 0.13): MAM vor Einsatz.Mam.AbWelle (statt "Kontingent erschoepft") */
+UCLASS()
+class FICSITTD_API UTDCDMamFrueh : public UFGConstructDisqualifier
+{
+	GENERATED_BODY()
+public:
+	UTDCDMamFrueh();
+};
+
 /** 0.13 K4 (Marius 21.11.): Bau abgelehnt - er wuerde den letzten Weg der Gegner zum Kern schliessen */
 UCLASS()
 class FICSITTD_API UTDCDKernAbriegelung : public UFGConstructDisqualifier

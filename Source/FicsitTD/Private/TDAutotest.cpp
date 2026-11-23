@@ -3,6 +3,7 @@
 #include "TDDefenseCore.h"
 #include "TDTurretBase.h"
 #include "TDForschung.h"
+#include "TDSprache.h"
 #include "TDWaveSubsystem.h"
 #include "Misc/App.h"
 #include "FGDismantleInterface.h"
@@ -628,7 +629,8 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		bool bOk = Status == EExecutionStatus::COMPLETED;
 		// 16.11.: optional "antwortEnthaelt" - die Antwort muss diesen Text enthalten (z. B. Ablehnung ohne Entwicklermodus)
 		FString Erwartet;
-		if (S->TryGetStringField(TEXT("antwortEnthaelt"), Erwartet))
+		// 23.11.: bei englischer Spielsprache gilt "antwortEnthaeltEn", falls angegeben (Chattexte folgen der Sprache)
+		if ((TDSprache::Englisch() && S->TryGetStringField(TEXT("antwortEnthaeltEn"), Erwartet)) || S->TryGetStringField(TEXT("antwortEnthaelt"), Erwartet))
 		{
 			bOk = bOk && mSender->Antworten.ContainsByPredicate([&Erwartet](const FString& A) { return A.Contains(Erwartet); });
 		}
@@ -1243,6 +1245,18 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		APlayerController* PC = World->GetFirstPlayerController();
 		AFGCharacterPlayer* Spieler = PC ? Cast<AFGCharacterPlayer>(PC->GetPawn()) : nullptr;
 		const int32 Anzahl = S->HasField(TEXT("anzahl")) ? static_cast<int32>(S->GetNumberField(TEXT("anzahl"))) : 1;
+		// 23.11. (Gegencheck 0.13): negative Anzahl nimmt weg (z. B. alle Coupons fuer "Festplatte abgeben ohne Coupons")
+		if (Anzahl < 0 && Klasse && Spieler && Spieler->GetInventory())
+		{
+			UFGInventoryComponent* Inv = Spieler->GetInventory();
+			const int32 Weg = FMath::Min(-Anzahl, Inv->GetNumItems(Klasse));
+			if (Weg > 0)
+			{
+				Inv->Remove(Klasse, Weg);
+			}
+			Ergebnis(TEXT("Spieler"), FString::Printf(TEXT("nimm %d"), -Anzahl), true, FString::Printf(TEXT("%d x %s weg, %d bleiben"), Weg, *FPaths::GetBaseFilename(Wort), Inv->GetNumItems(Klasse)));
+			return true;
+		}
 		const int32 Rein = Klasse && Spieler && Spieler->GetInventory() ? Spieler->GetInventory()->AddStack(FInventoryStack(Anzahl, Klasse), true) : 0;
 		Ergebnis(TEXT("Spieler"), FString::Printf(TEXT("gib %d"), Anzahl), Rein > 0, FString::Printf(TEXT("%d x %s"), Rein, *FPaths::GetBaseFilename(Wort)));
 		return true;
@@ -2410,6 +2424,16 @@ bool UTDAutotest::Pruefe(UWorld* World, const TSharedPtr<FJsonObject>& S, FStrin
 		OutIst = !Klasse ? FString(TEXT("Schematic nicht gefunden")) : FString::Printf(TEXT("%s %s"), *Klasse->GetName(), bIst ? TEXT("startbar") : TEXT("gesperrt"));
 		return Klasse && bIst == bSoll;
 	}
+	if (Name == TEXT("KnotenFrei"))
+	{
+		// 23.11. (Gegencheck 0.13 F1): Abhaengigkeiten eines MAM-Knotens wie im MAM (grau oder nicht), "knoten", "erwartet"
+		const FTDForschungKnoten* K = TDForschung::Finde(S->GetStringField(TEXT("knoten")));
+		UClass* Klasse = K ? LoadClass<UFGSchematic>(nullptr, *K->Pfad) : nullptr;
+		const bool bSoll = !S->HasField(TEXT("erwartet")) || S->GetBoolField(TEXT("erwartet"));
+		const bool bIst = Klasse && UFGSchematic::AreSchematicDependenciesMet(Klasse, World);
+		OutIst = !Klasse ? FString(TEXT("Knoten unbekannt")) : FString::Printf(TEXT("%s %s"), *K->Key, bIst ? TEXT("Abhaengigkeiten erfuellt") : TEXT("Abhaengigkeit fehlt (im MAM grau)"));
+		return Klasse && bIst == bSoll;
+	}
 	if (Name == TEXT("BaumFrei"))
 	{
 		// 0.11 (Modus Aus): ist ein TD-Forschungsbaum freigeschaltet? "baum" = Industrie|Ballistik|Elementar|Festung, "erwartet"
@@ -2655,7 +2679,13 @@ bool UTDAutotest::Pruefe(UWorld* World, const TSharedPtr<FJsonObject>& S, FStrin
 	{
 		// 0.10.1: kommt der Text im Log dieses Plans vor? "suche", "min" (Standard 1), optional "max"
 		FString Erste;
-		const int32 N = mLog ? mLog->Zaehle(S->GetStringField(TEXT("suche")), Erste) : 0;
+		// 23.11.: "sucheEn" fuer Chattexte bei englischer Spielsprache (Logzeilen bleiben deutsch)
+		FString Suche = S->GetStringField(TEXT("suche"));
+		if (TDSprache::Englisch() && S->HasField(TEXT("sucheEn")))
+		{
+			Suche = S->GetStringField(TEXT("sucheEn"));
+		}
+		const int32 N = mLog ? mLog->Zaehle(Suche, Erste) : 0;
 		const int32 Min = S->HasField(TEXT("min")) ? int32(S->GetNumberField(TEXT("min"))) : 1;
 		const int32 Max = S->HasField(TEXT("max")) ? int32(S->GetNumberField(TEXT("max"))) : MAX_int32;
 		OutIst = FString::Printf(TEXT("%d Zeilen%s"), N, Erste.IsEmpty() ? TEXT("") : *(TEXT(": ") + Erste.Left(160)));

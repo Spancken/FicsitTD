@@ -1304,7 +1304,7 @@ void UTDKernTerminal::BaueForschung()
 		if (Kn.Baum != Baum || !Raster)
 		{
 			Baum = Kn.Baum;
-			Abschnitt(NeuerText(Kn.BaumName, 16, TDUI::Akzent, true), 6.f);
+			Abschnitt(NeuerText(TDForschung::Anzeige(Kn.BaumName), 16, TDUI::Akzent, true), 6.f);   // 23.11. Gegencheck F5
 			Raster = WidgetTree->ConstructWidget<UWrapBox>();
 			Raster->SetInnerSlotPadding(FVector2D(10.f, 10.f));
 			Abschnitt(Raster, 16.f);
@@ -1362,16 +1362,16 @@ void UTDKernTerminal::BaueForschung()
 				S->SetPadding(FMargin(0.f, 0.f, 0.f, Unten));
 			}
 		};
-		Zeile(Kn.Name, 14, TDUI::Hell, true, 2.f);
+		Zeile(TDForschung::Anzeige(Kn.Name), 14, TDUI::Hell, true, 2.f);
 		Zeile(Lage, 12, LageFarbe, true, 4.f);
-		Zeile(Kn.Text, 12, TDUI::Hell, false, 3.f);
+		Zeile(TDForschung::Anzeige(Kn.Text), 12, TDUI::Hell, false, 3.f);
 		if (!Kn.Laden.IsEmpty())
 		{
-			Zeile(TDT(TEXT("Im Laden: "), TEXT("In shop: ")) + Kn.Laden, 12, TDUI::Gut, false, 1.f);
+			Zeile(TDT(TEXT("Im Laden: "), TEXT("In shop: ")) + TDForschung::Anzeige(Kn.Laden), 12, TDUI::Gut, false, 1.f);
 		}
 		if (!Kn.Gegen.IsEmpty())
 		{
-			Zeile(TDT(TEXT("Gut gegen: "), TEXT("Good against: ")) + Kn.Gegen, 12, TDUI::Grau, false, 1.f);
+			Zeile(TDT(TEXT("Gut gegen: "), TEXT("Good against: ")) + TDForschung::Anzeige(Kn.Gegen), 12, TDUI::Grau, false, 1.f);
 		}
 		Raster->AddChildToWrapBox(Breite);
 	}

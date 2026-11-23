@@ -47,7 +47,7 @@ experiment:
 **Changelog DE:** Der MAM-Baum ist entflochten: Die Industrie hat sechs Einstiege und keine Pflichtkette mehr (Band Mk2 ohne Kupfer, Raffinerie nach dem Kohlekraftwerk, Schwefel bringt Schwarzpulver). Die erste Forschung kommt vor Welle 3, Bolzen- und Tesla-Linie gehen ab Welle 3, der Gewehrturm ab Welle 5. Schildgenerator und Störfeld-Projektor sind keine Gabelung mehr. Übrige Festplatten lassen sich im AWESOME-Shop für 12 Coupons abgeben. Im Freien Spiel mit Abwehr ist die Gegenseite einer Gabelung zum doppelten Preis erforschbar.
 
 **Nachweis (22.11. nachmittags):**
-- Editor: `create_research.py` (67 Knoten, 39 Voraussetzungen) und `create_shop.py` (48 Posten) ohne Fehler. Alte Assets gesichert in `E:\Modding\Backup\A6_vor_Forschungsbaum_1122`.
+- Editor: `create_research.py` (66 Knoten, 39 Voraussetzungen; das Editor-Log sagte 67, ein Zählfehler der Logzeile, behoben 23.11.) und `create_shop.py` (48 Posten) ohne Fehler. Alte Assets gesichert in `E:\Modding\Backup\A6_vor_Forschungsbaum_1122`.
 - Bau grün (`Pipeline Schnell` `2026-11-22_1543`). Rot ist wie immer nur die Simulation (bekannte Bandverletzungen).
 - Paket `A6-Forschungsbaum` (`2026-11-22_1542`): 5 von 6 Plänen grün. `A6-Forschung` hatte eine Warnung, weil die Schlüssel `Einsatz.Laden.Festplattenabgabe.*` fehlten. Nach dem Nachtrag lief `A6-Forschung` allein grün (`_1546`).
   - Band Mk2 ohne Kupfer, Bolzen und Tesla ab Welle 3 je 3 Festplatten, Raffinerie „ZuFrueh“ statt „Gesperrt“, Schwefel und Quarz als Wurzeln, Schwarzpulver mit dem Schwefel.
@@ -69,3 +69,4 @@ experiment:
   - Forschung neu erzeugt, Bau grün (`Pipeline Schnell`).
   - Simulation mit gutem Spieler: Einsatz Hart 90 %, Albtraum 81 %, Endlos Hart W14 (im Band).
   - Selbsttest am 23.11. morgens: Paket `A6-Forschungsbaum` (`2026-11-23_0556`) mit 6 von 6 Plänen grün. Der Gewehrturm kostet jetzt 4 Festplatten (Preisstufe ab Welle 5).
+- **Hinweis Gegencheck 23.11.:** Die Zahlen „vorher/nachher“ vom 22.11. (Einsatz Hart 85 → 58 %) stammen vom gierigen Modell-Spieler, die Zahlen im Nachtrag (90/81 %) vom guten Spieler (`Spielerwahl`). Diese beiden Reihen nicht miteinander vergleichen.

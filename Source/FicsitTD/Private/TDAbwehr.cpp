@@ -33,6 +33,11 @@ static const TCHAR* TDIndustrieKnoten[] = {
 	TEXT("/FicsitTD/Research/Produktion/Research_TD_Bauxit.Research_TD_Bauxit_C"),
 	TEXT("/FicsitTD/Research/Produktion/Research_TD_Schwerindustrie.Research_TD_Schwerindustrie_C"),
 	TEXT("/FicsitTD/Research/Produktion/Research_TD_Mischtechnik.Research_TD_Mischtechnik_C"),
+	// 23.11. (Gegencheck 0.13 F6): seit P10 (17.11.) im Industrie-Baum, fehlten hier - im Freien Spiel folgen sie jetzt auch dem HUB
+	TEXT("/FicsitTD/Research/Logistik/Research_TD_BandMk4.Research_TD_BandMk4_C"),
+	TEXT("/FicsitTD/Research/Logistik/Research_TD_BandMk5.Research_TD_BandMk5_C"),
+	TEXT("/FicsitTD/Research/Logistik/Research_TD_MinerMk2.Research_TD_MinerMk2_C"),
+	TEXT("/FicsitTD/Research/Logistik/Research_TD_MinerMk3.Research_TD_MinerMk3_C"),
 };
 
 static bool IstIndustrieKnoten(const FString& Pfad)

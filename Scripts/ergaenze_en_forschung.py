@@ -37,6 +37,54 @@ NEU_EN = {
     "Schwefel und Schwarzpulver": "Sulfur and Black Powder",
 }
 
+# 23.11. (Gegencheck 0.13, Fund 6): Kurztexte der Knoten (Kartentitel im MAM, Handbuch-Planer) auf Englisch
+KURZ_EN = {
+    "Kohlekraftwerk 75 MW": "Coal-Powered Generator 75 MW",
+    "Assembler, Eisenplatten, Rotoren": "Assembler, Iron Plates, Rotors",
+    "Kupfer, Draht, Kabel": "Copper, Wire, Cable",
+    "Bänder Mk2 (120/min), Umbau automatisch": "Belts Mk.2 (120/min), upgraded automatically",
+    "Bänder Mk3 (270/min), Umbau automatisch": "Belts Mk.3 (270/min), upgraded automatically",
+    "Bänder Mk4 (480/min), Umbau automatisch": "Belts Mk.4 (480/min), upgraded automatically",
+    "Bänder Mk5 (780/min), Umbau automatisch": "Belts Mk.5 (780/min), upgraded automatically",
+    "Miner Mk2: doppelter Abbau": "Miner Mk.2: double output",
+    "Miner Mk3: vierfacher Abbau": "Miner Mk.3: four times the output",
+    "Ölpumpe, Raffinerie, Kunststoff": "Oil Extractor, Refinery, Plastic",
+    "Treibstoffkraftwerk 150 MW": "Fuel-Powered Generator 150 MW",
+    "Bolzen St. 2: trifft 3 in Reihe": "Bolt tier 2: hits 3 in a row",
+    "Neuer Turm: Dauerfeuer": "New turret: sustained fire",
+    "Bolzen St. 3: großer Flächenschaden": "Bolt tier 3: large area damage",
+    "Bolzen St. 2: 3 Splitter (Quarz)": "Bolt tier 2: 3 shards (Quartz)",
+    "Gewehr St. 2: trifft immer (Caterium)": "Rifle tier 2: always hits (Caterium)",
+    "Bolzen St. 2: Strom, betäubt 3 s (Caterium)": "Bolt tier 2: electric, stuns 3 s (Caterium)",
+    "Quarzkristall": "Quartz Crystal",
+    "Caterium, Turbodraht": "Caterium, Quickwire",
+    "Aluminiumgehäuse": "Aluminum Casing",
+    "Fertiger, Computer, Schwere Rahmen": "Manufacturer, Computers, Heavy Frames",
+    "Mischer, Abfüller, Stickstoff": "Blender, Packager, Nitrogen",
+    "Neuer Turm: Nobelisk im Bogen": "New turret: lobbed Nobelisks",
+    "Gewehrmunition spät: doppelte Feuerrate": "Late rifle ammo: double fire rate",
+    "Giftwolke, Schaden über Zeit": "Poison cloud, damage over time",
+    "Druckwelle betäubt 2 s": "Shockwave stuns 2 s",
+    "Nobelisk St. 3: Streusprengsätze": "Nobelisk tier 3: cluster charges",
+    "Neuer Turm: Kettenblitz, 125 MW": "New turret: chain lightning, 125 MW",
+    "Neuer Turm: Flammenkegel": "New turret: cone of flame",
+    "Flamme St. 2: Turbotreibstoff": "Flame tier 2: Turbofuel",
+    "Gewehr St. 2: Durchschlag statt Kugel": "Rifle tier 2: piercing instead of bullet",
+    "Gewehrmunition: Treffer brennen, zündet Ölschlick": "Rifle ammo: hits burn, ignite Oil Slick",
+    "Flamme St. 3: 140/s (Stickstoff)": "Flame tier 3: 140/s (Nitrogen)",
+    "Flamme St. 4: 160/s, betäubt": "Flame tier 4: 160/s, stuns",
+    "Tor: Engstelle für Bolzen": "Gate: choke point for bolts",
+    "Lockt an, Sammelpunkt für Explosionen": "Lures enemies, rally point for explosions",
+    "Bremst um 35 %, Kombo Ölbrand": "Slows by 35 %, Oil Fire combo",
+    "Mauer mit Stromschlag, leitet Tesla": "Wall with electric shock, conducts Tesla",
+    "Türme in 30 m +10 % Reichweite": "Turrets within 30 m +10 % range",
+    "Kuppel schluckt 3000 Schaden": "Dome absorbs 3000 damage",
+    "Bremst alles in 15 m um 40 % (SAM)": "Slows everything within 15 m by 40 % (SAM)",
+    "Munition ohne Band in 30 m": "Ammo without belts within 30 m",
+    "Neuer Turm: Flugabwehr (noch ohne Ziele)": "New turret: anti-air (no targets yet)",
+    "Neuer Turm: Ficsonium-Singularität": "New turret: Ficsonium singularity",
+}
+
 # Herstellungskarten: Schwarzpulver kommt jetzt mit dem Knoten Schwefel (HERSTELLER nimmt den ersten Knoten mit dem Rezept)
 KARTEN_ERSETZEN = [
     ("Schwarzpulver: 1 Kohle + 1 Schwefel im Fabrikator (Assembler) (Forschung Nobelisk-Werfer).",
@@ -101,12 +149,19 @@ def main():
             neu.setdefault(b_text, en_von(b_text))
         for k_key, k_name, k_text, _, eltern, _, _, _, _ in knoten:
             haupt_en = en_von(k_text)
-            # Knotentext allein nur fuer neue Texte eintragen (Forschungsuebersicht im Kern-Menue)
-            if haupt_en and k_text in NEU_EN:
+            # 23.11. (Gegencheck 0.13 F5): Knotentext allein fuer alle Knoten - der Kern-Reiter Forschung schlaegt ihn einzeln nach
+            if haupt_en:
                 neu.setdefault(k_text, haupt_en)
             kurz = ns["KURZ"].get(k_key)
-            if kurz and kurz in NEU_EN:
-                neu.setdefault(kurz, NEU_EN[kurz])
+            if kurz and (kurz in NEU_EN or kurz in KURZ_EN):
+                neu.setdefault(kurz, NEU_EN.get(kurz) or KURZ_EN[kurz])
+            elif kurz and not tab.get(kurz):
+                fehlt.append("Kurztext: " + kurz)
+            # Werte "Im Laden" und "Gut gegen" einzeln (Kern-Reiter Forschung)
+            for vorsilbe, tabelle in (("Im Laden: ", ns["LADEN"]), ("Gut gegen: ", ns["GEGEN"])):
+                wert = tabelle.get(k_key)
+                if wert and (vorsilbe + wert) in paare:
+                    neu.setdefault(wert, paare[vorsilbe + wert].split(": ", 1)[1])
             # Beschreibung im MAM
             de = ns["beschreibung"](b_key, k_key, k_text, eltern)
             if not tab.get(de) and haupt_en:
@@ -125,7 +180,7 @@ def main():
                         teile = [f"{BAUM_EN[vb]} > {name_en(vb, vk)}" for vb, vk in ns["braucht"](b_key, k_key, eltern)]
                         aus.append("Requires: " + ", ".join(teile))
                     elif z.startswith("Abzweigung: "):
-                        aus.append("Branch: excludes " + ", ".join(name_en(b_key, a) for a in ns["andere_von"](b_key, k_key)) + " for this operation")
+                        aus.append("Branch: excludes " + ", ".join(name_en(b_key, a) for a in ns["andere_von"](b_key, k_key)) + " in an operation (in Free play with defense: other side at double price)")
                     else:
                         fehlt.append(z)
                         aus = None
