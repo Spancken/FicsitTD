@@ -355,6 +355,7 @@ class Lauf:
         # Brennstoff der Biomassegeneratoren: Startkit 300 Biomasse + 200 Blätter (15 MJ) + 100 Holz (100 MJ), je Welle +100 (TDEinsatz.cpp:493)
         self.biomasse = Z["BiomasseStart"]
         self.biomasse_mangel = 0
+        self.bio_brauche = 0.0      # 23.11.: Biomasse der letzten Welle (fuer den Strom-Engpass in forsche)
         self.reparaturen = 0
         self.versorgung = 1.0
         self.ep_fehlt = 0
@@ -456,7 +457,22 @@ class Lauf:
         add("Turmfertigung4")
         return plan
 
+    def strom_knapp(self):
+        """23.11.2026 (Gegencheck-Balance, Gewehr+Nobelisk 0 von 24 mit Kohlekraftwerk): reicht die Biomasse nicht mehr fuer
+        Z["StromVorlaufWellen"] Wellen (oder fehlte sie schon), braucht der gute Spieler das Kohlekraftwerk jetzt"""
+        return self.biomasse_mangel > 0 or self.biomasse < self.Z.get("StromVorlaufWellen", 3) * self.bio_brauche
+
     def forsche(self, n, gabeln):
+        # 23.11.2026: der gute Spieler zieht das Kohlekraftwerk vor, sobald der Biomasse-Strom knapp wird - vorher stand es fest
+        # hinter Turmfertigung II, und Linien mit langer Forschungsliste (Gewehr+Nobelisk) kamen nie dorthin (Biomasse leer)
+        if self.Z.get("Spielerwahl") and "Kohlekraft" in self.plan_forschung and "Kohlekraft" not in self.erforscht and self.strom_knapp():
+            kn = self.K["Kohlekraft"]
+            if kn["ab"] <= n and all(v in self.erforscht for v in kn["vor"]):
+                preis = kn["fp"] * self.Z["FPPreisFaktor"]
+                if self.fp < preis:
+                    return              # sparen statt anderes zu forschen
+                self.fp -= preis
+                self.erforscht.add("Kohlekraft")
         for k in self.plan_forschung:
             if k in self.erforscht or k in self.gesperrt:
                 continue
@@ -838,6 +854,7 @@ class Lauf:
         if bio_mw <= 0:
             return
         brauche = bio_mw * self.Z["StromMittelAnteil"] * zyklus * 60 / self.Z["BiomasseMJ"]
+        self.bio_brauche = brauche
         if brauche <= self.biomasse:
             self.biomasse -= brauche
             return

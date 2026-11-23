@@ -356,5 +356,9 @@
     "Wert": 1,
     "Quelle": "22.11.2026, Analyse-A6-Simulation (Marius: erst Modell nachziehen)",
     "Hinweis": "1 = guter Spieler: Kupfer/Kohlekraftwerk nur nach Bedarf, Kohlestrom nur wenn billiger oder Biomasse knapp, neue Munition nur wenn sie je Coupon so viel bringt wie ein weiterer Turm. 0 = Verhalten bis 22.11. (alles Erforschte sofort nutzen)"
+  },
+  "StromVorlaufWellen": {
+    "Wert": 3,
+    "Quelle": "23.11.2026 (Gewehr+Nobelisk erforschte in 0 von 24 Laeufen das Kohlekraftwerk, Biomasse leer): reicht die Biomasse nicht mehr fuer so viele Wellen wie die letzte, zieht der gute Spieler das Kohlekraftwerk in der Forschung vor (nur mit Spielerwahl)."
   }
 }
