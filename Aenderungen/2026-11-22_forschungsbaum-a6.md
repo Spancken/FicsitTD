@@ -68,4 +68,4 @@ experiment:
 - **Nachtrag 22.11. abends, Gewehrturm ab Welle 5:**
   - Forschung neu erzeugt, Bau grün (`Pipeline Schnell`).
   - Simulation mit gutem Spieler: Einsatz Hart 90 %, Albtraum 81 %, Endlos Hart W14 (im Band).
-  - Selbsttest im Spiel steht aus (Marius: „heute nicht mehr im Spiel testen“). Morgen Paket `A6-Forschungsbaum`.
+  - Selbsttest am 23.11. morgens: Paket `A6-Forschungsbaum` (`2026-11-23_0556`) mit 6 von 6 Plänen grün. Der Gewehrturm kostet jetzt 4 Festplatten (Preisstufe ab Welle 5).
