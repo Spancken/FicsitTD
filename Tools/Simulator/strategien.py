@@ -409,6 +409,10 @@ class Lauf:
         # Brennstoff der Biomassegeneratoren: Startkit 300 Biomasse + 200 Blätter (15 MJ) + 100 Holz (100 MJ), je Welle +100 (TDEinsatz.cpp:493)
         self.biomasse = Z["BiomasseStart"]
         self.biomasse_mangel = 0
+        # 23.11.2026 (Talentbaum): aktiver Spieler (Z["SpielerAktiv"]), Talentpunkte je geschaffter Bosswelle
+        self.talente = collections.Counter()
+        self.talent_punkte = 0
+        self.spieler_anteile = []
         self.bio_brauche = 0.0      # 23.11.: Biomasse der letzten Welle (fuer den Strom-Engpass in forsche)
         self.reparaturen = 0
         self.versorgung = 1.0
@@ -434,9 +438,75 @@ class Lauf:
     def neu(self):
         return self.Z.get("Stand", "090") == "091"
 
+    # ------------------------------------------------ 23.11.2026: Spieler und Talentbaum (TDPionier.cpp, vier Rollen-Zweige)
+    def talent_stufe(self, zweig):
+        return self.talente.get(zweig, 0)
+
+    def wellen_wachstum(self, n):
+        """wie UTDWaveSubsystem::mWellenWachstum: LP-Faktor der Welle ohne den Faktor der Stufe"""
+        B = self.B
+        return 1 + B.get("Wellen.LPJeWelle", 0.08) * min(n - 1, 30) + B.get("Wellen.LPJeWelleAb31", 0.1) * max(n - 31, 0)
+
+    def spieler_dps(self, n, gegner, elite):
+        """Handwaffe des aktiven Spielers (Annahme SpielerDPS, Gewehr mit Nachladen), waechst mit Pionier.WellenAnteil wie im Mod.
+        Schuetze: Kopftreffer, Schnellladen, Durchschlag, Sprengmantel; Jaeger: x1,5 gegen Elite und Boss (Anteil Elite der Welle)"""
+        Z, B = self.Z, self.B
+        d = Z.get("SpielerDPS", 30.0) * (1 + B.get("Pionier.WellenAnteil", 0.5) * max(0.0, self.wellen_wachstum(n) - 1))
+        sch = self.talent_stufe("Schuetze")
+        if sch >= 1:
+            d *= 1 + Z.get("KopftrefferAnteil", 0.3) * (B.get("Pionier.Kopftreffer", 1.5) - 1)
+        if sch >= 2:
+            d *= Z.get("SchnellladenFaktor", 1.33)
+        if sch >= 3:
+            d *= 1 + 0.5 * Z.get("DurchschlagTrefferAnteil", 0.5)   # halber Schaden am naechsten Gegner
+        if sch >= 5:
+            d *= 1 + 0.2 * Z.get("SprengmantelZiele", 1.0)        # jeder fuenfte Treffer explodiert
+        if self.talent_stufe("Jaeger") >= 1:
+            anteil = (elite + (1 if n % 10 == 0 else 0)) / max(1, len(gegner))
+            d *= 1 + (B.get("Pionier.Jaeger.Faktor", 1.5) - 1) * min(1.0, anteil * Z.get("JaegerZielAnteil", 3.0))
+        return d
+
+    def turm_talentfaktor(self, n):
+        """Wirkung der Talente auf alle Tuerme: Kommandant (Markierung +15 %, Sprung), Techniker (Uebersteuern), Jaeger (Schwachstelle im Boss)"""
+        Z, B = self.Z, self.B
+        f = 1.0
+        kom = self.talent_stufe("Kommandant")
+        if kom >= 2:
+            anteil = Z.get("MarkiertAnteil", 0.25) * (Z.get("MarkiertSprungFaktor", 1.6) if kom >= 3 else 1.0)
+            f *= 1 + (B.get("Pionier.Markierung.Bonus", 1.15) - 1) * min(1.0, anteil)
+        if self.talent_stufe("Techniker") >= 3:
+            dauer, pause = B.get("Pionier.Uebersteuern.Dauer", 10), B.get("Pionier.Uebersteuern.Pause", 60)
+            reichweite = Z.get("UebersteuernAnteil", 0.3) * (Z.get("UebersteuernFlaecheFaktor", 2.0) if kom >= 5 else 1.0)
+            f *= 1 + (B.get("Pionier.Uebersteuern.Takt", 1.5) - 1) * dauer / (dauer + pause) * reichweite
+        if self.talent_stufe("Jaeger") >= 3 and n % 10 == 0:
+            f *= 1 + (B.get("Pionier.Jaeger.Schwachstelle", 1.25) - 1) * Z.get("SchwachstelleAnteil", 0.6)
+        return f
+
+    def talent_vergeben(self):
+        """1 Punkt je geschaffter Bosswelle (Pionier.PunkteJeBoss), hoechstens Pionier.MaxPunkte; Reihenfolge Z["TalentPlan"]"""
+        if not self.Z.get("SpielerAktiv"):
+            return
+        maxp = int(self.B.get("Pionier.MaxPunkte", 15))
+        self.talent_punkte = min(maxp, self.talent_punkte + int(self.B.get("Pionier.PunkteJeBoss", 1)))
+        plan = self.Z.get("TalentPlan", ["Kommandant", "Kommandant", "Jaeger", "Kommandant", "Jaeger", "Jaeger", "Schuetze", "Schuetze"])
+        while sum(self.talente.values()) < self.talent_punkte:
+            frei = [z for z in plan if self.talente[z] < 5]
+            if not frei:
+                return
+            # naechster Plan-Eintrag, der noch nicht so oft vergeben ist, wie er im Plan bis hierher steht
+            for i, z in enumerate(plan):
+                if self.talente[z] < plan[:i + 1].count(z) and self.talente[z] < 5:
+                    self.talente[z] += 1
+                    break
+            else:
+                self.talente[frei[0]] += 1
+
     def extra(self):
         """Zusatzfelder nur für 0.9.1 oder den Verlauf (die CSV von --stand 090 bleibt wie bisher)"""
         e = {}
+        if self.Z.get("SpielerAktiv"):
+            e["SpielerAnteil"] = round(statistics.median(self.spieler_anteile), 3) if self.spieler_anteile else 0.0
+            e["Talente"] = dict(self.talente)
         if self.neu:
             e.update({f"Nutzung_{k}": v for k, v in self.nutzung.items()})
             e.update({f"NutzungAb_{k}": v for k, v in self.nutzung_ab.items()})
@@ -961,6 +1031,14 @@ class Lauf:
         if "KernGeschuetz" in self.erforscht:
             kg = self.B.get("Forschung.KernGeschuetz.Schaden", 60) / 1.5
             tuerme.append((0, "Durchschlag", kg, kg))
+        if self.Z.get("SpielerAktiv"):
+            # 23.11.2026: Talente auf die Tuerme, dazu die Handwaffe des aktiven Spielers als eigener "Turm" (Kugel wie die Gewehrmunition)
+            tf = self.turm_talentfaktor(n)
+            tuerme = [(t[0], t[1], t[2] * tf, t[3] * tf) for t in tuerme]
+            sp = self.spieler_dps(n, gegner, elite)
+            gesamt = sum(t[2] for t in tuerme) + sp
+            self.spieler_anteile.append(sp / gesamt if gesamt else 0.0)
+            tuerme.append((0, ART["Gewehrturm"], sp, sp))
         K = sum(t[2] for t in tuerme)
         KN = sum(t[3] for t in tuerme)
         ehp = ehpn = 0.0
@@ -1072,6 +1150,8 @@ def spiele(s, wellen_liste, B, Z, K, gabeln, tw, wi, stufe, laenge, rng):
                     "Forschung": len(L.erforscht), "EPFehlt": L.ep_fehlt, "EPFehltWellen": L.ep_fehlt_wellen, "VersorgungMin": L.versorgung_min, "BiomasseMangel": L.biomasse_mangel, "Reparaturen": L.reparaturen, "HauptAb": L.haupt_ab or 99,
             "HauptFrei": K[TURM_FORSCHUNG[L.haupt]]["ab"] if TURM_FORSCHUNG[L.haupt] else 1, **{f"EP_{k}": v for k, v in L.ep_ausgegeben.items()}, **L.extra()}
         L.belohnung(n, len(gegner), elite, n % 10 == 0)
+        if n % 10 == 0:
+            L.talent_vergeben()
     return {"Erfolg": True, "Welle": laenge, "Ursache": "", "KernMin": L.kern_min, "Q_max": max(qs), "Q_Mittel": statistics.mean(qs),
             "Tuerme": len(L.tuerme), "Level": statistics.mean(lv for _, lv in L.tuerme), "EP_Rest": L.ep, "EP_Summe": L.ep_summe,
             "Forschung": len(L.erforscht), "EPFehlt": L.ep_fehlt, "EPFehltWellen": L.ep_fehlt_wellen, "VersorgungMin": L.versorgung_min, "BiomasseMangel": L.biomasse_mangel, "Reparaturen": L.reparaturen, "HauptAb": L.haupt_ab or 99,

@@ -1,6 +1,6 @@
 # ficsit.app – Texte für die Mod-Seite (zum Einfügen, Englisch)
 
-> **Live: 0.11.1** (21.11.2026, Patch; der Text der Mod-Seite ist seit 0.11.0 unverändert). **0.13** ist in Entwicklung: Text erst beim Release anpassen (Liste der Änderungen in `Changelog-0.13.md`). Beim Upload die Full description komplett ersetzen. Aufbau nach Marius 15.11.: zuerst Beschreibung, Bilder gesammelt unter „Screenshots“; Heldenbild, Marksman und Commander von Marius herausgenommen. Danach (Marius: „zu viele, zu groß“) nur drei Vorschaubilder 480 × 270 (`docs/img/klein/`) in einer Reihe, verlinkt auf die großen Fassungen. ficsit.app zeigt Bilder in Originalgröße, höchstens Spaltenbreite. Neu: englische Screenshots aus dem Plan `Screenshots-EN` (`hero`, `fight`, `wave-preview`, `pioneer-tab`, `role-*`, `core-menu` in `docs/img/`), Logistik-Satz korrigiert (Splitter/Verbinder/Lager mit Kontingent). Bilder liegen im Repo unter `docs/img/` und werden über GitHub Pages ausgeliefert (`https://spancken.github.io/FicsitTD/`). Sie erscheinen erst, wenn `docs/` gepusht und Pages eingeschaltet ist. `https://ko-fi.com/mariusspancken` durch die echte Ko-fi-Adresse ersetzen (auch in `docs/index.html`).
+> **Live: 0.11.1** (21.11.2026). **0.13.0** vorbereitet am 23.11.2026 für das Release am 27.11. (Full description unten auf 0.13 umgestellt, Changelog in `Changelog-0.13.md`). Beim Upload die Full description komplett ersetzen. Aufbau nach Marius 15.11.: zuerst Beschreibung, Bilder gesammelt unter „Screenshots“.
 
 Mod reference: `FicsitTD` (permanent). Name: **FICSIT Tower Defense**. Sichtbarkeit: **Hidden** (Fremdtest).
 
@@ -22,7 +22,15 @@ Factory-fed tower defense: real ammo chains feed your turrets. 50-wave operation
 
 FICSIT Tower Defense turns Satisfactory into a tower defense that lives off your factory. A FICSIT Defense Core stands in your start biome, and waves of native fauna attack it from up to three fronts. Every turret fires **real ammunition from your own production lines**, delivered by conveyor belt or pipe. Fifty waves lead you from simple iron rebar to plasma flames.
 
-## 🆕 What's new in 0.11
+## 🆕 What's new in 0.13
+- **AWESOME Shop:** after wave 1 you build the game's AWESOME Shop and buy quotas, gear, core repairs and Hard Drives there in six sections. The Core no longer sells. Spare Hard Drives can be returned for 12 Coupons.
+- **New start:** ADA asks for the HUB first, the Shop after wave 1 and the MAM after wave 2; the status bar shows the current task. Every boss wave brings a phase report, three bonus cards and one Talent Point.
+- **Core access:** a sealed-off Core does not start a wave, and the hologram turns red if a building would close the last path. **Unstable ground:** no factory buildings within 60 m of the Core. Enemies now walk around machines and turrets.
+- **Untangled research:** Industry has six entry points without a forced chain; Bolt and Tesla from wave 3, Rifle Turret from wave 5.
+- **New Power tree:** coal, oil and (after wave 50) nuclear power, nothing locked out. Better fuels give every generator more output – Compacted Coal 100 MW, Petroleum Coke 125 MW, Turbofuel 325 MW, Rocket Fuel 400 MW.
+- **Harder:** Normal, Hard and Nightmare have more enemy health that grows faster per wave. Endless waves stay as before.
+
+## What was new in 0.11
 - **Three ways to play:** right after landing, a start window asks how you want to play – **Operation** (50 waves), **Endless waves** (timed waves from one direction that never stop – how far can you get?), **Free play with defense** (regular Satisfactory with turrets; drill at resource nodes when *you* want a fight) or **Off** – and on which difficulty.
 - **Operation phases:** a short report and a bonus pick after every tenth wave, a final report and a best result per core site and difficulty.
 - **Ammo lasts longer:** one item fires several shots (basic 4, advanced 3, special 2). The turret window shows consumption per minute and how many turrets a Mk.1 belt feeds. Belts Mk.4/Mk.5 and Miners Mk.2/Mk.3 in the MAM.
@@ -68,12 +76,12 @@ Take two roles fully or three halfway. Your strongest role shows as a badge in t
 
 *Click a picture for full size.*
 
-## Status: Alpha (0.11.1)
+## Status: Alpha (0.13.0)
 
 **Requires Satisfactory 1.2.5.1** (build 520140). Older versions of the mod (0.10.2 and before) crash on this game version.
 - Steam and Epic, Windows. **Single-player only**; multiplayer and dedicated servers are not supported.
 - Balance is work in progress; the target length is 50 waves.
-- Hard and Nightmare are not fully balanced yet.
+- Hard and Nightmare are harder since 0.13 and not fully balanced yet.
 - **Known issues** (occasional stuck enemies, Sky Tower without flyers yet, Tesla power spikes, retry wave untested and more): https://spancken.github.io/FicsitTD/#issues
 
 ## Feedback – please report!

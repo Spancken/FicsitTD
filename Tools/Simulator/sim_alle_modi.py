@@ -206,6 +206,11 @@ def markdown(res, stand_datum):
         f = lambda x: f"{x:.2f}" if x is not None else "–"
         z.append(f"| {s} | {k['Laeufe']} | {k['Erfolg_W50']:.0%} | {k['Erfolg_W30']:.0%} | {k['Scheiterwelle_Median'] or '–'} | {k['KernMin_Median_Erfolg']:.0f} % | "
                  f"{f(q[10])} | {f(q[20])} | {f(q[30])} | {'ja' if e['ok'] else '**nein**'} |")
+    if res.get("aktiver_spieler"):
+        z += ["", "### Einsatz mit aktivem Spieler (Handwaffe und Talente, ohne Band: die Balance gilt für den passiven Spieler)", "",
+              "| Stufe | Erfolg W50 | Spieleranteil Median | 10–90 % |", "|---|---|---|---|"]
+        for s, e in res["aktiver_spieler"].items():
+            z.append(f"| {s} | {e['Erfolg_W50']:.0%} | {e['Anteil_Median']:.0%} | {e['Anteil_P10']:.0%}–{e['Anteil_P90']:.0%} |")
     z += ["", "## Endlos-Wellen (Modus 2)", "", "| Stufe | Welle (Median) | mit Vorziehen | beste | kippt ab | erster Überlauf | Kappung | Q W10 | Q W20 | ok |",
           "|---|---|---|---|---|---|---|---|---|---|"]
     for s, e in res["modi"]["Endlos"].items():
@@ -257,6 +262,16 @@ def main():
         for s in sm.BOHR_STUFEN:
             k, p = rechne_bohrung(daten, s, baender)
             modi["Bohrung"][s] = {"kennzahlen": k, "pruefungen": p, "ok": all(x[0] for x in p.values())}
+        # 23.11.2026 (Marius: Talentbaum in den Simulator): aktiver Spieler mit Handwaffe und Talenten als Zusatz, ohne Band -
+        # die Balance gilt fuer den passiven Spieler (Marius 12.11.); Ziel Spieleranteil 10-20 %
+        res["aktiver_spieler"] = {}
+        for s in STUFEN:
+            if s == "Erkundung":
+                continue
+            erg, _ = st.massenlauf(s, 50, 1, seed=7, z_ueber={"SpielerAktiv": 1}, strategie_liste=liste, stand="091")
+            ant = sorted(r.get("SpielerAnteil", 0.0) for r in erg)
+            res["aktiver_spieler"][s] = {"Erfolg_W50": round(sum(r["Erfolg"] for r in erg) / len(erg), 3),
+                                         "Anteil_Median": ant[len(ant) // 2], "Anteil_P10": ant[len(ant) // 10], "Anteil_P90": ant[len(ant) * 9 // 10]}
         modi["Aus"] = {"ok": True, "hinweis": "Spielmodus 0: normales Satisfactory, nichts zu simulieren"}
         res["ok"] = all(e["ok"] for m in ("Einsatz", "Endlos", "Bohrung") for e in modi[m].values())
         res["laufzeit_s"] = round(time.time() - t0, 1)

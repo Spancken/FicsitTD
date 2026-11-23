@@ -2,7 +2,7 @@
 
 Rechnet ohne Spiel, wie viel Gegnerdruck auf wie viel Abwehr trifft, für alle Spielmodi. Die Kennzahl ist die Druckquote **Q** (wie im Log: Gegner-EHP / (Σ Nenn-DPS × 60 s)). Nur Python-Standardbibliothek. Liest den Mod-Code direkt aus `Source\FicsitTD\Private` (Pfade relativ zum Repo), Änderungen an der Balance wirken also ohne Anpassung.
 
-## Stand 16.11.2026 (Code 0.11-dev / 0.12-dev, Turmlevel, Coupons, Festplatten)
+## Stand 23.11.2026 (Code 0.13.0: Strom, aktiver Spieler, Talente; davor 16.11. Turmlevel, Coupons, Festplatten)
 
 ### Aufruf
 
@@ -44,6 +44,31 @@ python strategien.py --stand 091 --laeufe 3        # Strategie-Prüfstand Einsat
 - Wellen `VonWelle..BisWelle` (Leicht 1–4, Mittel 15–19, Schwer 25–30) mit den Werten der Stufe **Normal** (`StarteKernVerteidigung(..., 1)`), Kern-LP 8000/12000/16000.
 - Der Einsatz ist dabei nicht aktiv: keine Coupons, **keine Grundreparatur** zwischen den Wellen. Der Kernverlust summiert sich über alle Wellen.
 - Geprüft wird ein fester Aufbau ohne Kern-Ausbau, Doktrin und Stützbauten, Munition voll versorgt. Ausgabe: Mindestzahl Türme je Aufbau und Stufe; Erz und Erstlohn stehen nur als Kennzahl dabei.
+
+### Stand 23.11.2026: Strom, aktiver Spieler und Talentbaum
+
+- **Strom (Baum Energie, `TDStrom.cpp`):**
+  - `Wirtschaft.varianten` liefert je erforschter Linie Kraftwerk und Brennstoff: Kohle, Kompaktkohle, Petrolkoks, Treibstoff, Turbo- und Raketentreibstoff.
+  - Die MW je Kraftwerk kommen aus `Strom.<Brennstoff>.Faktor`, der Brennstoff je Minute ist MW × 60 / Brennwert.
+  - `Lauf.fabrik` wählt die billigste Variante: im Einsatz nach Coupons, im Endlos nach Bauzeit.
+  - Der Ausbau (Kompaktkohle, Petrolkoks, Treibstoffkraftwerk, Turbo-Feuerung) beginnt ab `StromAusbauAbKraftwerken` (4).
+  - Das Kohlekraftwerk kommt vorgezogen, sobald die Biomasse knapp wird (`strom_knapp`, `StromVorlaufWellen`).
+  - Das Treibstoffkraftwerk liefert 250 MW (vorher fälschlich 150).
+- **Aktiver Spieler und Talente** (Schalter `SpielerAktiv`, Standard 0):
+  - Die Balance gilt für den passiven Spieler (Marius 12.11.).
+  - Mit `SpielerAktiv` 1 kämpft die Handwaffe als eigener „Turm“ mit: `SpielerDPS` 30, wächst mit `Pionier.WellenAnteil` wie im Mod.
+  - Je geschaffter Bosswelle gibt es einen Talentpunkt nach `TalentPlan`, höchstens 15.
+  - Wirkung der Zweige:
+    - Schütze: Kopftreffer, Schnellladen, Durchschlag, Sprengmantel
+    - Kommandant: Markierung +15 % auf den markierten Anteil
+    - Techniker: Übersteuern
+    - Jäger: ×1,5 gegen Elite und Boss, Schwachstelle im Boss
+  - Die Annahmen stehen in `strategie_annahmen.json`.
+  - `sim_alle_modi.py` zeigt eine Zusatztabelle „Einsatz mit aktivem Spieler“ (Siegquote und Spieleranteil, ohne Band).
+- **Werkzeuge:**
+  - `eiche_stufen.py`, `eiche_endlos.py` (Eichen je Stufe)
+  - `diagnose_endlos.py` (woran Endlos scheitert)
+  - `varianten_gewehr_nobelisk.py`
 
 ### Modell-Spieler „guter Spieler“ (22.11.2026, Schalter `Spielerwahl`)
 

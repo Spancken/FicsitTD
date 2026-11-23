@@ -357,6 +357,28 @@
     "Quelle": "22.11.2026, Analyse-A6-Simulation (Marius: erst Modell nachziehen)",
     "Hinweis": "1 = guter Spieler: Kupfer/Kohlekraftwerk nur nach Bedarf, Kohlestrom nur wenn billiger oder Biomasse knapp, neue Munition nur wenn sie je Coupon so viel bringt wie ein weiterer Turm. 0 = Verhalten bis 22.11. (alles Erforschte sofort nutzen)"
   },
+  "SpielerAktiv": {
+    "Wert": 0,
+    "Quelle": "23.11.2026 (Marius: Talentbaum in den Simulator). 0 = passiver Spieler: Die Balance und alle Zielbaender gelten fuer ihn (Marius 12.11., Analyse-Spieler-und-Pionier). 1 = aktiver Spieler mit Handwaffe und Talenten, Ziel 10-20 % Anteil am Wellenschaden. sim_alle_modi rechnet beides."
+  },
+  "SpielerDPS": {
+    "Wert": 30,
+    "Quelle": "23.11.2026, Annahme aus Analyse-Spieler-und-Pionier-2026-11-12 Abschnitt 1.3: Gewehr mit Standardmunition 60 DPS im Dauerfeuer, mit Nachladen und Zielwechsel etwa die Haelfte. Waechst mit Pionier.WellenAnteil (wie TDPionier.cpp HandFaktor)."
+  },
+  "TalentPlan": {
+    "Wert": ["Kommandant", "Kommandant", "Jaeger", "Kommandant", "Jaeger", "Jaeger", "Techniker", "Techniker", "Techniker", "Schuetze", "Schuetze", "Schuetze", "Kommandant", "Kommandant", "Jaeger"],
+    "Quelle": "23.11.2026, Annahme guter Spieler: zuerst die Turmhilfe (Kommandant 2: Markierte +15 %), dann Jaeger fuer die Bosse (Schwachstelle), dann Uebersteuern. Ein Punkt je geschaffter Bosswelle (Pionier.PunkteJeBoss), hoechstens 15."
+  },
+  "MarkiertAnteil": {"Wert": 0.25, "Quelle": "23.11.2026, Annahme: Anteil des Turmschadens auf vom Spieler markierte Gegner (Kommandant 2), mit Sprung (Kommandant 3) x MarkiertSprungFaktor"},
+  "MarkiertSprungFaktor": {"Wert": 1.6, "Quelle": "23.11.2026, Annahme: Markierung springt beim Tod auf den naechsten Gegner, mehr markierte Ziele"},
+  "UebersteuernAnteil": {"Wert": 0.3, "Quelle": "23.11.2026, Annahme: Anteil der Tuerme in 20 m um den Spieler (Techniker 3 Uebersteuern), mit Kommandant 5 x UebersteuernFlaecheFaktor"},
+  "UebersteuernFlaecheFaktor": {"Wert": 2.0, "Quelle": "23.11.2026, Annahme"},
+  "SchwachstelleAnteil": {"Wert": 0.6, "Quelle": "23.11.2026, Annahme: Anteil der Bosswelle, in dem der Boss vom Spieler getroffen ist (Jaeger 3 Schwachstelle +25 % fuer 5 s)"},
+  "KopftrefferAnteil": {"Wert": 0.3, "Quelle": "23.11.2026, Annahme: Anteil Kopftreffer (Schuetze 1 x1,5)"},
+  "SchnellladenFaktor": {"Wert": 1.33, "Quelle": "23.11.2026, Annahme: halbe Nachladezeit hebt die Dauerleistung um ein Drittel (Schuetze 2)"},
+  "DurchschlagTrefferAnteil": {"Wert": 0.5, "Quelle": "23.11.2026, Annahme: Anteil Treffer mit einem Gegner dahinter (Schuetze 3, halber Schaden)"},
+  "SprengmantelZiele": {"Wert": 1.0, "Quelle": "23.11.2026, Annahme: weitere Gegner im 4-m-Radius je Explosion (Schuetze 5, jeder fuenfte Treffer)"},
+  "JaegerZielAnteil": {"Wert": 3.0, "Quelle": "23.11.2026, Annahme: der Spieler zielt bevorzugt auf Elite und Boss - Anteil seiner Treffer = 3 x Anteil Elite in der Welle (hoechstens 1)"},
   "StromAusbauAbKraftwerken": {
     "Wert": 4,
     "Quelle": "23.11.2026 (Marius, Stromzweig): Annahme guter Spieler - ab 4 Kohlekraftwerken lohnt Kompaktkohle (4 Kraftwerke mit 100 statt 75 MW sparen eins), ab 8 Petrolkoks und das Treibstoffkraftwerk (zaehlt 3), ab 12 die Turbo-Feuerung. Nur mit Spielerwahl."

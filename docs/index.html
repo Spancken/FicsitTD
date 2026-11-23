@@ -149,7 +149,7 @@ footer { padding-block: 28px; color: var(--muted); font-size: .86rem; border-top
 <body>
 <header class="top"><div class="wrap">
   <a class="brand" href="#top"><img src="img/modicon.png" alt=""><span>FICSIT <b>TD</b></span></a>
-  <a class="ver" href="#versions" title="Version history">v0.11.1 · Alpha</a>
+  <a class="ver" href="#versions" title="Version history">v0.13.0 · Alpha</a>
   <nav class="toc">
     <a href="#start"><span class="en">Start</span><span class="de">Start</span></a>
     <a href="#operation"><span class="en">Operation</span><span class="de">Einsatz</span></a>
@@ -191,7 +191,7 @@ footer { padding-block: 28px; color: var(--muted); font-size: .86rem; border-top
 <section id="start"><div class="wrap">
   <h2><span class="en">Quick start</span><span class="de">Schnellstart</span></h2>
   <div class="steps">
-    <div><span class="en"><b>Install</b> with the Satisfactory Mod Manager (SMM). Back up your saves first, this is an alpha. Version 0.11.1 needs Satisfactory 1.2.5.1 and SML 3.12.1 (SMM installs it; older mod versions crash on 1.2.5.1).</span><span class="de"><b>Installieren</b> mit dem Satisfactory Mod Manager (SMM). Sichere vorher deine Spielstände, es ist eine Alpha. Version 0.11.1 braucht Satisfactory 1.2.5.1 und SML 3.12.1 (SMM installiert es mit; ältere Mod-Versionen stürzen auf 1.2.5.1 ab).</span></div>
+    <div><span class="en"><b>Install</b> with the Satisfactory Mod Manager (SMM). Back up your saves first, this is an alpha. Version 0.13.0 needs Satisfactory 1.2.5.1 and SML 3.12.1 (SMM installs it; older mod versions crash on 1.2.5.1).</span><span class="de"><b>Installieren</b> mit dem Satisfactory Mod Manager (SMM). Sichere vorher deine Spielstände, es ist eine Alpha. Version 0.13.0 braucht Satisfactory 1.2.5.1 und SML 3.12.1 (SMM installiert es mit; ältere Mod-Versionen stürzen auf 1.2.5.1 ab).</span></div>
     <div><span class="en">Start a <b>new game</b>. Right after landing, a window asks <b>how you want to play</b>: <b>Operation</b> (50 waves), <b>Endless waves</b>, <b>Free play with defense</b> or <b>Off</b>, plus the difficulty. You choose once per game. Existing worlds without a Defense Core stay regular Satisfactory.</span><span class="de">Starte ein <b>neues Spiel</b>. Direkt nach der Landung fragt ein Fenster, <b>wie du spielen willst</b>: <b>Einsatz</b> (50 Wellen), <b>Endlos-Wellen</b>, <b>Freies Spiel mit Abwehr</b> oder <b>Aus</b>, dazu die Stufe. Du wählst einmal je Spiel. Bestehende Welten ohne Abwehrkern bleiben normales Satisfactory.</span></div>
     <div><span class="en">After landing, the mod builds a platform with the <b>Defense Core</b> near your start, and ADA briefs you. You get a starter kit. ADA also warns you before a wave with a new enemy species or a boss.</span><span class="de">Nach der Landung baut der Mod nahe deinem Start eine Plattform mit dem <b>Abwehrkern</b>, und ADA weist dich ein. Du bekommst ein Startkit. ADA warnt dich außerdem vor einer Welle mit neuer Gegnerart oder einem Boss.</span></div>
     <div><span class="en">Build miners, smelters and constructors, then a <b>Bolt Turret</b>. Feed it rebar by conveyor and connect power.</span><span class="de">Baue Miner, Schmelzofen und Konstruktor, dann einen <b>Bolzenturm</b>. Versorge ihn per Band mit Armierungsbolzen und schließe Strom an.</span></div>
@@ -353,19 +353,21 @@ footer { padding-block: 28px; color: var(--muted); font-size: .86rem; border-top
     <div>
       <h3>MAM</h3>
       <ul class="en">
-        <li>Four trees: <b>Industry</b> (machines, steel, oil, belts), <b>Ballistics</b> (bolt, rifle, nobelisk), <b>Elemental</b> (tesla, flame), <b>Fortress</b> (core, walls, doctrines, turret fabrication).</li>
+        <li>Five trees: <b>Industry</b> (machines, steel, oil, belts), <b>Power</b> (coal, oil and nuclear power), <b>Ballistics</b> (bolt, rifle, nobelisk), <b>Elemental</b> (tesla, flame), <b>Fortress</b> (core, walls, doctrines, turret fabrication).</li>
         <li>Paid only with Hard Drives from waves (since 0.10.0 the game's own Hard Drive; the game's Hard Drive research for alternate recipes is locked during an operation). Nodes unlock from a certain wave.</li>
         <li><b>Branches</b>: only one side per operation. A red X marks the side you can no longer research. In Free play with defense the other side stays available at double the Coupon price.</li>
-        <li>Industry has six entry points without a forced chain (manufacturing, copper, belts, power and oil, sulfur, quartz). The first research is possible before wave 3: Bolt and Tesla lines open from wave 3, the Rifle Turret from wave 5.</li>
+        <li>Industry has six entry points without a forced chain (manufacturing, copper, belts, oil, sulfur, quartz). The first research is possible before wave 3: Bolt and Tesla lines open from wave 3, the Rifle Turret from wave 5.</li>
         <li>Spare Hard Drives: return them in the AWESOME Shop for 12 Coupons each (operation and Endless only).</li>
+        <li><b>Power</b>: coal (from wave 3), oil (from wave 15) and nuclear (after wave 50), nothing is locked out. Better fuels give every generator more output: coal 75, Compacted Coal 100, Petroleum Coke 125 MW; Fuel 250, Turbofuel 325, Rocket Fuel 400, Ionized Fuel 500 MW; Uranium 2500, Plutonium 3250 MW. Build up one line and you need fewer generators.</li>
         <li><b>Doctrine</b>: pick one main turret line for more damage and cheaper levels.</li>
       </ul>
       <ul class="de">
-        <li>Vier Bäume: <b>Industrie</b> (Maschinen, Stahl, Öl, Bänder), <b>Ballistik</b> (Bolzen, Gewehr, Nobelisk), <b>Elementar</b> (Tesla, Flamme), <b>Festung</b> (Kern, Mauern, Doktrinen, Turmfertigung).</li>
+        <li>Fünf Bäume: <b>Industrie</b> (Maschinen, Stahl, Öl, Bänder), <b>Energie</b> (Kohle, Öl und Kernkraft), <b>Ballistik</b> (Bolzen, Gewehr, Nobelisk), <b>Elementar</b> (Tesla, Flamme), <b>Festung</b> (Kern, Mauern, Doktrinen, Turmfertigung).</li>
         <li>Bezahlt nur mit Festplatten aus den Wellen (seit 0.10.0 die Festplatte des Spiels; deren eigene Forschung für Alternativrezepte ist im Einsatz gesperrt). Knoten werden ab einer bestimmten Welle frei.</li>
         <li><b>Gabelungen</b>: nur eine Seite je Einsatz. Ein rotes X markiert die Seite, die du nicht mehr erforschen kannst. Im Freien Spiel mit Abwehr bleibt die andere Seite erforschbar, zum doppelten Coupon-Preis.</li>
-        <li>Die Industrie hat sechs Einstiege ohne Pflichtkette (Fertigung, Kupfer, Bänder, Strom und Öl, Schwefel, Quarz). Die erste Forschung geht vor Welle 3: Bolzen- und Tesla-Linie sind ab Welle 3 frei, der Gewehrturm ab Welle 5.</li>
+        <li>Die Industrie hat sechs Einstiege ohne Pflichtkette (Fertigung, Kupfer, Bänder, Öl, Schwefel, Quarz). Die erste Forschung geht vor Welle 3: Bolzen- und Tesla-Linie sind ab Welle 3 frei, der Gewehrturm ab Welle 5.</li>
         <li>Übrige Festplatten: im AWESOME-Shop für je 12 Coupons abgeben (nur Einsatz und Endlos).</li>
+        <li><b>Energie</b>: Kohle (ab Welle 3), Öl (ab Welle 15) und Kernkraft (nach Welle 50), nichts wird ausgeschlossen. Bessere Brennstoffe geben jedem Kraftwerk mehr Leistung: Kohle 75, Kompaktkohle 100, Petrolkoks 125 MW; Treibstoff 250, Turbotreibstoff 325, Raketentreibstoff 400, ionisiert 500 MW; Uran 2500, Plutonium 3250 MW. Wer eine Linie ausbaut, braucht weniger Kraftwerke.</li>
         <li><b>Doktrin</b>: eine Hauptlinie wählen, mehr Schaden und billigere Level.</li>
       </ul>
     </div>
@@ -439,9 +441,29 @@ footer { padding-block: 28px; color: var(--muted); font-size: .86rem; border-top
 
 <section id="versions" class="versions"><div class="wrap">
   <h2><span class="en">Versions &amp; changes</span><span class="de">Versionen &amp; Änderungen</span></h2>
-  <p class="en">Current version: <b>0.11.1 (alpha)</b>, released on 21.11.2026. SMM shows your installed version in the mod list. All uploads: <a href="https://ficsit.app/mod/FicsitTD">ficsit.app → View Versions</a>.</p>
-  <p class="de">Aktuelle Version: <b>0.11.1 (Alpha)</b>, veröffentlicht am 21.11.2026. Die installierte Version zeigt SMM in der Mod-Liste. Alle Uploads: <a href="https://ficsit.app/mod/FicsitTD">ficsit.app → View Versions</a>.</p>
-  <details open><summary>0.11.1 <span class="en">– Rebuilt for SML 3.12.1, fixes</span><span class="de">– Neubau für SML 3.12.1, Fehlerbehebungen</span><small>21.11.2026</small></summary>
+  <p class="en">Current version: <b>0.13.0 (alpha)</b>, released on 27.11.2026. SMM shows your installed version in the mod list. All uploads: <a href="https://ficsit.app/mod/FicsitTD">ficsit.app → View Versions</a>.</p>
+  <p class="de">Aktuelle Version: <b>0.13.0 (Alpha)</b>, veröffentlicht am 27.11.2026. Die installierte Version zeigt SMM in der Mod-Liste. Alle Uploads: <a href="https://ficsit.app/mod/FicsitTD">ficsit.app → View Versions</a>.</p>
+  <details open><summary>0.13.0 <span class="en">– AWESOME Shop, new start, core access, untangled research with a Power tree, harder difficulty</span><span class="de">– AWESOME-Shop, neuer Einstieg, Kern-Zugang, entflochtene Forschung mit Baum Energie, mehr Herausforderung</span><small>27.11.2026</small></summary>
+    <ul class="en">
+      <li>New: <b>AWESOME Shop</b> after wave 1 – quotas, gear, core repairs and Hard Drives; the Core no longer sells. Return a spare Hard Drive for 12 Coupons.</li>
+      <li>New start order: ADA asks for the HUB, the Shop after wave 1 and the MAM after wave 2; the status bar shows the current task. Boss waves: phase report, three bonus cards and one Talent Point.</li>
+      <li>New: <b>Core access</b> – a sealed-off Core does not start a wave; the hologram turns red if a building would close the last path. <b>Unstable ground</b>: no factory buildings within 60 m of the Core. Enemies walk around machines and turrets.</li>
+      <li>Changed: <b>MAM research untangled</b> – six entry points in Industry, Bolt and Tesla from wave 3, Rifle Turret from wave 5. In Free play with defense the other side of a branch costs double.</li>
+      <li>New: <b>Power tree</b> – coal, oil and (after wave 50) nuclear, nothing locked out. Better fuels give every generator more output (Compacted Coal 100 MW, Petroleum Coke 125 MW, Turbofuel 325 MW, Rocket Fuel 400 MW).</li>
+      <li>Balance: harder Normal, Hard and Nightmare (more enemy health, faster growth); Endless waves stay as before.</li>
+      <li>Fixed: research tab in English, core check after loading, path check up to the fronts, talents of old saves, Fuel-Powered Generator 250 MW.</li>
+    </ul>
+    <ul class="de">
+      <li>Neu: <b>AWESOME-Shop</b> nach Welle 1 – Kontingente, Ausrüstung, Kernreparatur und Festplatten; der Kern verkauft nicht mehr. Übrige Festplatten gegen 12 Coupons abgeben.</li>
+      <li>Neuer Einstieg: ADA bittet um die HUB, nach Welle 1 um den Shop, nach Welle 2 um das MAM; die Statusleiste zeigt die Aufgabe. Bosswellen: Phasenbericht, drei Bonus-Karten und ein Talentpunkt.</li>
+      <li>Neu: <b>Kern-Zugang</b> – ein abgeriegelter Kern startet keine Welle; das Hologramm wird rot, wenn ein Bau den letzten Weg schließen würde. <b>Instabiler Boden</b>: keine Fabrikgebäude in 60 m um den Kern. Gegner laufen um Maschinen und Türme herum.</li>
+      <li>Geändert: <b>MAM-Baum entflochten</b> – sechs Einstiege in Industrie, Bolzen und Tesla ab Welle 3, Gewehrturm ab Welle 5. Im Freien Spiel mit Abwehr kostet die Gegenseite einer Gabel das Doppelte.</li>
+      <li>Neu: <b>Baum Energie</b> – Kohle, Öl und nach Welle 50 Kernkraft, ohne Sperre. Bessere Brennstoffe geben jedem Kraftwerk mehr Leistung (Kompaktkohle 100 MW, Petrolkoks 125 MW, Turbotreibstoff 325 MW, Raketentreibstoff 400 MW).</li>
+      <li>Balance: Normal, Hart und Albtraum schwerer (mehr Gegnerleben, schnellerer Zuwachs); die Endlos-Wellen bleiben wie bisher.</li>
+      <li>Behoben: Forschungsreiter auf Englisch, Kern-Prüfung nach dem Laden, Wegprüfung bis zur Front, Talente alter Stände, Treibstoffkraftwerk 250 MW.</li>
+    </ul>
+  </details>
+  <details><summary>0.11.1 <span class="en">– Rebuilt for SML 3.12.1, fixes</span><span class="de">– Neubau für SML 3.12.1, Fehlerbehebungen</span><small>21.11.2026</small></summary>
     <ul class="en">
       <li>Built against the official SML 3.12.1 headers for Satisfactory 1.2.5.1; requires SML 3.12.1 (SMM installs it).</li>
       <li>Nobelisk Detonator unlocks with Caterium research and comes with 10 Nobelisks; more Nobelisks in the shop once you own it. Blast boulders on resource nodes without the Nobelisk Launcher line.</li>
@@ -479,10 +501,11 @@ footer { padding-block: 28px; color: var(--muted); font-size: .86rem; border-top
 </div></section>
 
 <section id="issues"><div class="wrap">
-  <h2><span class="en">Known issues (0.11.1)</span><span class="de">Bekannte Fehler (0.11.1)</span></h2>
+  <h2><span class="en">Known issues (0.13.0)</span><span class="de">Bekannte Fehler (0.13.0)</span></h2>
   <ul class="en">
     <li><b>Stuck enemies:</b> now and then an enemy still gets stuck at a cliff or right at a front's start point. The mod blocks that cliff for following enemies and moves stuck ones back onto their path after a few seconds. Please report the spot with your log.</li>
-    <li><b>Hard and Nightmare</b> are not fully balanced yet.</li>
+    <li><b>Hard and Nightmare</b> are harder since 0.13 and not fully balanced yet. Endless waves on Normal end earlier than intended; feedback on how much you can build between two waves helps.</li>
+    <li><b>Nuclear power</b> (after wave 50) is only checked by tests, not yet in a full run.</li>
     <li><b>Sky Tower:</b> there are no flying enemies yet, so it never finds a target. Don't build it yet.</li>
     <li><b>Singularity Launcher:</b> unlocks after wave 50, so only in Endless mode.</li>
     <li><b>Tesla Coils and power:</b> each coil draws 125 MW while charging. Several coils can trip the fuse and silence every turret on that grid without a warning. Keep a power reserve or a separate grid.</li>
@@ -498,7 +521,8 @@ footer { padding-block: 28px; color: var(--muted); font-size: .86rem; border-top
   </ul>
   <ul class="de">
     <li><b>Hängende Gegner:</b> Gelegentlich bleibt ein Gegner noch an einer Klippe oder direkt am Startpunkt einer Front hängen. Die Mod sperrt die Klippe für nachfolgende Gegner und setzt hängende nach einigen Sekunden auf ihren Weg zurück. Bitte die Stelle mit Log melden.</li>
-    <li><b>Hart und Albtraum</b> sind noch nicht fertig eingestellt.</li>
+    <li><b>Hart und Albtraum</b> sind seit 0.13 schwerer und noch nicht fertig eingestellt. Endlos-Wellen auf Normal enden früher als gedacht; Rückmeldungen, wie viel du zwischen zwei Wellen baust, helfen.</li>
+    <li><b>Kernkraft</b> (nach Welle 50) ist nur über Tests geprüft, noch nicht in einem vollen Lauf.</li>
     <li><b>Himmelsturm:</b> Es gibt noch keine fliegenden Gegner, er findet nie ein Ziel. Vorerst nicht bauen.</li>
     <li><b>Singularitätswerfer:</b> wird erst nach Welle 50 frei, also nur im Endlos-Modus.</li>
     <li><b>Teslaspulen und Strom:</b> Jede Spule zieht beim Laden 125 MW. Mehrere Spulen können die Sicherung auslösen und alle Türme im Netz ohne Warnung verstummen lassen. Stromreserve oder eigenes Netz einplanen.</li>
@@ -524,7 +548,7 @@ footer { padding-block: 28px; color: var(--muted); font-size: .86rem; border-top
   <details><summary><span class="en">How do I report a bug or suggest an idea?</span><span class="de">Wie melde ich einen Fehler oder schlage etwas vor?</span></summary><p class="en">In the Core Menu, press <b>Report bug / idea</b>, choose bug or suggestion and describe it. The mod opens a prefilled GitHub issue in your browser (version, wave and language are added) and a folder with your log and a screenshot to drag into the issue. The mod itself sends nothing.</p><p class="de">Im Kern-Menü auf <b>Fehler melden / Idee</b> drücken, Fehler oder Vorschlag wählen und beschreiben. Die Mod öffnet im Browser ein ausgefülltes GitHub-Issue (Version, Welle und Sprache stehen schon drin) und einen Ordner mit Log und Bildschirmfoto zum Hineinziehen. Die Mod selbst sendet nichts.</p></details>
   <details><summary><span class="en">Where is the log?</span><span class="de">Wo liegt das Log?</span></summary><p><code>%LOCALAPPDATA%\FactoryGame\Saved\Logs\FactoryGame.log</code></p></details>
   <details><summary><span class="en">Which languages?</span><span class="de">Welche Sprachen?</span></summary><p class="en">English and German, following the game language.</p><p class="de">Englisch und Deutsch, je nach Spielsprache.</p></details>
-  <div class="note"><span class="en"><b>Status: alpha (0.11.1).</b> Balance is work in progress. Feedback and bug reports are very welcome on GitHub.</span><span class="de"><b>Stand: Alpha (0.11.1).</b> Die Balance ist in Arbeit. Rückmeldungen und Fehlerberichte sind auf GitHub sehr willkommen.</span></div>
+  <div class="note"><span class="en"><b>Status: alpha (0.13.0).</b> Balance is work in progress. Feedback and bug reports are very welcome on GitHub.</span><span class="de"><b>Stand: Alpha (0.13.0).</b> Die Balance ist in Arbeit. Rückmeldungen und Fehlerberichte sind auf GitHub sehr willkommen.</span></div>
 </div></section>
 </main>
 

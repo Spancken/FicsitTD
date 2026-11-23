@@ -119,6 +119,7 @@ def spiele_endlos(s, wellen, B, Z, K, gabeln, tw, wi, stufe, max_wellen, rng, vo
         geschafft = n
         L.belohnung(n, len(gegner), elite, boss)
         if boss:
+            L.talent_vergeben()   # 23.11.2026: Talentpunkt je Bosswelle (nur mit SpielerAktiv)
             # Bonuswahl (Annahme): Kern +30 %, wenn er unter EndlosBonusKernUnter steht, sonst Coupons
             if L.kern < Z["EndlosBonusKernUnter"]:
                 L.kern = min(100.0, L.kern + 100 * B.get("Endlos.Bonus.Kern", 0.3))
