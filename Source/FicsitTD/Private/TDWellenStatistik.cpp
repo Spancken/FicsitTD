@@ -1,4 +1,5 @@
 ﻿#include "TDWellenStatistik.h"
+#include "TDKernplatz.h"
 #include "FicsitTDModule.h"
 #include "TDDefenseCore.h"
 #include "TDEinsatz.h"
@@ -154,6 +155,12 @@ void UTDWellenStatistik::Tick(float DeltaTime)
 		return;
 	}
 	mTakt = 0.5f;
+	// 23.11. (Gegencheck Konzept R4-E): im Modus Aus keine Strommessung ueber alle Kraftwerke
+	if (!UTDKernplatz::ModAktiv(this))
+	{
+		mTakt = 5.f;
+		return;
+	}
 	float Kap = 0.f, Verbrauch = 0.f;
 	bool bUeber = false;
 	MesseStrom(Kap, Verbrauch, bUeber);

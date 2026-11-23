@@ -1,4 +1,4 @@
-﻿#include "TDKernplatz.h"
+#include "TDKernplatz.h"
 #include "TDSpielstand.h"
 #include "TDAutotest.h"
 #include "TDKernTerminal.h"
@@ -1120,6 +1120,47 @@ static const FTDFesterPlatz TDFestePlaetze[] = {
 	{ 3, TEXT("Duene-S8"),  294400.f, -144000.f,  4333.f },   // 16/16, 4,2 m
 };
 static const TCHAR* TDFundamentKlasse = TEXT("/Game/FactoryGame/Buildable/Building/Foundation/Build_Foundation_8x4_01.Build_Foundation_8x4_01_C");
+
+TArray<FString> UTDKernplatz::OelBericht(UWorld* World)
+{
+	TArray<FString> Zeilen;
+	if (!World)
+	{
+		return Zeilen;
+	}
+	struct FOel { FVector Ort; bool bBrunnen; EResourcePurity Reinheit; };
+	TArray<FOel> Oel;
+	for (TActorIterator<AFGResourceNode> It(World); It; ++It)
+	{
+		const UClass* Art = It->GetResourceClass();
+		if (Art && Art->GetName().Contains(TEXT("LiquidOil")))
+		{
+			// Ressourcenbrunnen (Fracking-Satellit) gegen normalen Knoten
+			Oel.Add({ It->GetActorLocation(), It->GetClass()->GetName().Contains(TEXT("Fracking")), It->GetResourcePurity() });
+		}
+	}
+	Zeilen.Add(FString::Printf(TEXT("Oel: %d Rohoel-Stellen in der geladenen Welt"), Oel.Num()));
+	for (const FTDFesterPlatz& P : TDFestePlaetze)
+	{
+		const FVector Ort(P.X, P.Y, P.Z);
+		float Knoten = -1.f, Brunnen = -1.f;
+		int32 Bis1km = 0;
+		for (const FOel& O : Oel)
+		{
+			const float D = FVector::Dist2D(O.Ort, Ort) / 100.f;
+			float& Ziel = O.bBrunnen ? Brunnen : Knoten;
+			Ziel = Ziel < 0.f ? D : FMath::Min(Ziel, D);
+			Bis1km += D <= 1000.f ? 1 : 0;
+		}
+		Zeilen.Add(FString::Printf(TEXT("Oel %s: naechster Knoten %s, naechste Quelle %s, %d Stellen bis 1 km"), P.Id,
+			Knoten < 0.f ? TEXT("-") : *FString::Printf(TEXT("%.0f m"), Knoten), Brunnen < 0.f ? TEXT("-") : *FString::Printf(TEXT("%.0f m"), Brunnen), Bis1km));
+	}
+	for (const FString& Z : Zeilen)
+	{
+		UE_LOG(LogFicsitTD, Log, TEXT("%s"), *Z);
+	}
+	return Zeilen;
+}
 static const TCHAR* TDFundamentRezept = TEXT("/Game/FactoryGame/Recipes/Buildings/Foundations/Recipe_Foundation_8x4_01.Recipe_Foundation_8x4_01_C");
 static const TCHAR* TDKernKlasse = TEXT("/FicsitTD/Buildings/DefenseCore/Build_TD_DefenseCore.Build_TD_DefenseCore_C");
 static const TCHAR* TDKernRezept = TEXT("/FicsitTD/Buildings/DefenseCore/Recipe_TD_DefenseCore.Recipe_TD_DefenseCore_C");
@@ -1620,14 +1661,17 @@ void UTDKernplatz::WarteNetzFuerEinsatz()
 {
 	ATDDefenseCore* Kern = mNeuerKern.Get();
 	const int32 Auf = NetzPunkte();
-	if (Kern && Auf < 14 && ++mEinsatzWarten < 30)
+	// 23.11. (Nachtest Gegencheck: Fels-S8 blieb nach dem Start bis 5 min ohne vollen Weg, erst gebaute Tuerme frischten das Netz auf):
+	// bis zu Kernplatz.NetzWarteSekunden warten (vorher 60 s)
+	const int32 MaxTakte = FMath::Max(1, FMath::RoundToInt(TDBalance::Wert(TEXT("Kernplatz.NetzWarteSekunden"), 120.f) / 2.f));
+	if (Kern && Auf < 14 && ++mEinsatzWarten < MaxTakte)
 	{
 		return;
 	}
 	// 0.9.4 (Selbsttest 09.11.: nach dem Start bis 4 min "0 von 16 Richtungen begehbar", alle Wege teilweise): das Netz liegt draussen,
 	// ist aber noch nicht mit der neuen Plattform verbunden. Erst ein Bau oder der Wellenstart frischt es auf. Darum hier pruefen, ob aus
 	// 100 m ein voller Weg zum Kern fuehrt, sonst das Gebiet um die Plattform einmal neu erzeugen lassen und weiter warten (hoechstens 60 s).
-	if (Kern && mEinsatzWarten < 30)
+	if (Kern && mEinsatzWarten < MaxTakte)
 	{
 		bool bVerbunden = false;
 		for (int32 r = 0; r < 8 && !bVerbunden; ++r)
@@ -1638,14 +1682,17 @@ void UTDKernplatz::WarteNetzFuerEinsatz()
 		}
 		if (!bVerbunden)
 		{
-			if (!mNetzAufgefrischt)
+			// 23.11.: nicht nur einmal - ein Umbau sehr frueh nach dem Bau bindet die Plattform manchmal nicht an (Fels-S8, 3 von 7 Laeufen).
+			// Alle Kernplatz.NetzAuffrischTakt s erneut, bis ein voller Weg da ist.
+			const int32 Takt = FMath::Max(1, FMath::RoundToInt(TDBalance::Wert(TEXT("Kernplatz.NetzAuffrischTakt"), 20.f) / 2.f));
+			if (!mNetzAufgefrischt || mEinsatzWarten % Takt == 0)
 			{
 				mNetzAufgefrischt = true;
 				if (UNavigationSystemV1* Nav = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld()))
 				{
 					Nav->AddDirtyArea(FBox::BuildAABB(Kern->GetActorLocation(), FVector(6000.f, 6000.f, 3000.f)), ENavigationDirtyFlag::All);
 				}
-				UE_LOG(LogFicsitTD, Log, TEXT("Kernplatz: kein voller Weg aus 100 m zum Kern - Netz um die Plattform wird neu erzeugt"));
+				UE_LOG(LogFicsitTD, Log, TEXT("Kernplatz: kein voller Weg aus 100 m zum Kern - Netz um die Plattform wird neu erzeugt (nach %d s)"), mEinsatzWarten * 2);
 			}
 			++mEinsatzWarten;
 			return;

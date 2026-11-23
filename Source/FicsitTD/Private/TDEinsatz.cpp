@@ -328,10 +328,11 @@ static FString TDAnzeige(const FString& Key)
 
 /** Sperrtexte der Bau-Hologramme: stehen am CDO. Im Konstruktor ist die Spielsprache evtl. noch nicht die endgueltige,
  *  deshalb setzt PruefeHologramm sie bei Bedarf neu (TDAktualisiereSperrTexte) */
-static FText TDTextKontingent() { return TDTX(TEXT("Kontingent erschöpft (/td einsatz status)"), TEXT("Quota used up (/td einsatz status)")); }
+// 23.11. (Gegencheck Konzept R5): Grund und Ausweg statt nur des Verbots
+static FText TDTextKontingent() { return TDTX(TEXT("Kontingent erschöpft: Weitere gibt es im AWESOME-Shop (vor dem Shop am Kern)."), TEXT("Quota used up: buy more in the AWESOME Shop (before the Shop: at the Core).")); }
 static FText TDTextSinkGesperrt() { return TDTX(TEXT("Im Einsatz gesperrt: FICSIT-Coupons gibt es nur vom Abwehrkern"), TEXT("Locked during an operation: FICSIT Coupons only come from the Defense Core")); }
-static FText TDTextBlaupause() { return TDTX(TEXT("Im Einsatz gesperrt: Blaupausen sind nicht erlaubt"), TEXT("Locked during an operation: blueprints are not allowed")); }
-static FText TDTextWellenSperre() { return TDTX(TEXT("Während der Welle ist Bauen am Kern gesperrt"), TEXT("Building near the Core is locked during a wave")); }
+static FText TDTextBlaupause() { return TDTX(TEXT("Im Einsatz gesperrt: Blaupausen würden die Kontingente umgehen."), TEXT("Locked during an operation: blueprints would bypass the quotas.")); }
+static FText TDTextWellenSperre() { return TDTX(TEXT("Während der Welle ist Bauen am Kern gesperrt: Die Abwehr steht, wenn die Gegner kommen. Zwischen den Wellen geht es wieder."), TEXT("Building near the Core is locked during a wave: your defense stands when the enemies arrive. It opens again between waves.")); }
 // 0.13 K2 (Marius 21.11.: Lore - der Boden um den Bohrer ist nicht stabil genug fuer Fabriken)
 static FText TDTextBodenInstabil()
 {
@@ -2374,6 +2375,9 @@ void UTDEinsatzSubsystem::Starte(ATDDefenseCore* Kern, int32 Stufe, int32 Wellen
 	ZeigeHud();
 	Meldungen.Append(StatusText());
 	UE_LOG(LogFicsitTD, Log, TEXT("Einsatz gestartet (Stufe %d, %d Wellen)"), Stufe, Wellen);
+	// 23.11. (Gegencheck Konzept R5, Marius: "keine Fundamente im Einsatz" bleibt): einmal je Einsatz erklaeren, warum
+	Melde(TDT(TEXT("Hinweis: Im Einsatz gibt es keine Fundamente, Wände und Rampen des Spiels. Sie würden den Gegnern jeden Weg versperren. Abwehrmauern und Tore gibt es im Shop."),
+		TEXT("Note: during an operation there are no foundations, walls or ramps from the base game. They would block every enemy path. Defense walls and gates are in the Shop.")));
 	// 0.12 E4: Shop-Preise aus den Kaufzaehlern (ohne Einsatz Grundpreise)
 	TDShop::SetzePreise(this);
 }

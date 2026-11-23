@@ -23,9 +23,36 @@ namespace TDNetz
 		return Namen[static_cast<int32>(Art)];
 	}
 
+	static int32 GHilfen[static_cast<int32>(EHilfe::Anzahl)] = {};
+
+	void MeldeHilfe(EHilfe Art)
+	{
+		++GHilfen[static_cast<int32>(Art)];
+	}
+
+	FString HilfenText()
+	{
+		static const TCHAR* Namen[] = { TEXT("Bewuchs geraeumt"), TEXT("Klippe gesperrt"), TEXT("Stau versetzt"), TEXT("Netzinsel"),
+			TEXT("Front verlegt"), TEXT("Rundungsrest"), };
+		static_assert(UE_ARRAY_COUNT(Namen) == static_cast<int32>(EHilfe::Anzahl), "Namen der Hilfen");
+		TArray<FString> Teile;
+		for (int32 i = 0; i < static_cast<int32>(EHilfe::Anzahl); ++i)
+		{
+			if (GHilfen[i] > 0)
+			{
+				Teile.Add(FString::Printf(TEXT("%s %d"), Namen[i], GHilfen[i]));
+			}
+		}
+		return Teile.Num() ? FString::Join(Teile, TEXT(", ")) : FString(TEXT("keine"));
+	}
+
 	void Zuruecksetzen()
 	{
 		for (int32& Z : GZaehler)
+		{
+			Z = 0;
+		}
+		for (int32& Z : GHilfen)
 		{
 			Z = 0;
 		}

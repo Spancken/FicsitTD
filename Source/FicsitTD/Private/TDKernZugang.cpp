@@ -286,6 +286,16 @@ FTDKernZugang UTDWaveSubsystem::PruefeZugangEinzeln(const ATDDefenseCore* Kern, 
 		bAlleTD &= K.bTD;
 	}
 	const FTDKZKandidat& S = Gewaehlt ? *Gewaehlt : Kandidaten[0];
+	// 23.11. (Labyrinth-Nachtest, auch Lauf 10:45: Fels-S8 braucht nach dem Bau der Plattform bis 95 s, bis das Netz sie anbindet; die
+	// Ladepruefung meldete in der Zeit "abgeriegelt durch Fundament 17 m Osten"): ein Fundament der eigenen Kernplattform riegelt nie ab,
+	// Spieler koennen dort im Einsatz keine Fundamente bauen. Endet der Weg an ihr, ist das Netz noch nicht fertig.
+	if (S.Klasse && TDPlattformAbrissGesperrtAn(World, S.Klasse, S.BauOrt))
+	{
+		Z.Zustand = ETDKernZugang::NetzNichtBereit;
+		Z.Sperrstelle = S.Ort;
+		Z.SperreKlasse = TEXT("Kernplattform (Netzumbau)");
+		return Z;
+	}
 	Z.bBau = true;
 	Z.Sperrstelle = S.Ort;
 	Z.Sperre = TDKZName(S);
@@ -372,8 +382,8 @@ const FTDKernZugang& UTDWaveSubsystem::PruefeKernZugang(bool bErzwingen)
 	mKernZugang = PruefeKernZugangVon(Kern, Starts, Starts.Num() == 0);
 	if (mKernZugang.Zustand != Alt.Zustand || mKernZugang.Sperre != Alt.Sperre || mZugangWarte <= 0.f)
 	{
-		UE_LOG(LogFicsitTD, Log, TEXT("KernZugang: Zustand %s, %d Wegsuchen, %.2f ms, Front %d, Sperre %s (%s)%s"), KernZugangName(mKernZugang.Zustand),
-			mKernZugang.Wegsuchen, mKernZugang.Ms, mKernZugang.Front, mKernZugang.Sperre.IsEmpty() ? TEXT("-") : *mKernZugang.Sperre, *mKernZugang.SperreKlasse,
+		UE_LOG(LogFicsitTD, Log, TEXT("KernZugang: Zustand %s, %d Wegsuchen, %.2f ms, Front %d, Suchgrenze bisher %d, Sperre %s (%s)%s"), KernZugangName(mKernZugang.Zustand),
+			mKernZugang.Wegsuchen, mKernZugang.Ms, mKernZugang.Front, UTDGegnerHirn::SuchgrenzeErreicht, mKernZugang.Sperre.IsEmpty() ? TEXT("-") : *mKernZugang.Sperre, *mKernZugang.SperreKlasse,
 			mKernZugang.Sperre.IsEmpty() || !Kern ? TEXT("")
 			: *FString::Printf(TEXT(" bei %.0f m %s"), FVector::Dist2D(mKernZugang.Sperrstelle, Kern->GetActorLocation()) / 100.f,
 				*TDKZRichtung(Kern->GetActorLocation(), mKernZugang.Sperrstelle, true)));
@@ -425,7 +435,8 @@ bool UTDWaveSubsystem::HalteStartFuerKernZugang(float DeltaTime)
 	// Ein erkannter Bau haelt den Start, bis der Weg frei ist. Ohne erkannten Bau (Gelaende, Loch im Netz) nur kurz - sonst sperrte
 	// ein Netzfehler den Einsatz fuer immer; danach laeuft der Start wie bisher (Nachzuegler-Netz). Ein laufender Netzumbau haelt
 	// den Start hoechstens KernZugang.WarteNetz s (danach urteilt die Pruefung wieder).
-	const bool bNetzumbau = Z.Zustand == ETDKernZugang::NetzNichtBereit && Z.SperreKlasse == TEXT("Netzumbau");
+	// 23.11.: auch ein Weg, der an der eigenen Kernplattform endet (Netz bindet sie noch nicht an), haelt wie ein Netzumbau
+	const bool bNetzumbau = Z.Zustand == ETDKernZugang::NetzNichtBereit && (Z.SperreKlasse == TEXT("Netzumbau") || Z.SperreKlasse == TEXT("Kernplattform (Netzumbau)"));
 	mZugangNetzWarte = bNetzumbau ? mZugangNetzWarte + DeltaTime : 0.f;
 	const bool bHalten = (Z.IstGesperrt() && (Z.bBau || mZugangWarte < TDBalance::Wert(TEXT("KernZugang.WarteOhneBau"), 20.f)))
 		|| (bNetzumbau && mZugangNetzWarte < TDBalance::Wert(TEXT("KernZugang.WarteNetz"), 10.f));

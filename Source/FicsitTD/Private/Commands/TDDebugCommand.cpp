@@ -1129,6 +1129,15 @@ EExecutionStatus ATDDebugCommand::ExecuteCommand_Implementation(UCommandSender* 
 		Antwort(Sender, FString::Printf(TEXT("%s in %.0f m: Level %d (%s)"), *Bester->GetTurmName(), FMath::Sqrt(BestAbstand) / 100.f, Bester->GetLevel(), *Bester->LevelSumme()));
 		return EExecutionStatus::COMPLETED;
 	}
+	// 23.11. (Marius: Oel nah am Kernplatz?): /td oel - Entfernung jedes festen Kernplatzes zum naechsten Rohoel
+	if (Arguments[0].Equals(TEXT("oel"), ESearchCase::IgnoreCase))
+	{
+		for (const FString& Z : UTDKernplatz::OelBericht(GetWorld()))
+		{
+			Antwort(Sender, Z);
+		}
+		return EExecutionStatus::COMPLETED;
+	}
 	// /td reichweite [an|aus]: Kreise an allen Bolzentuermen (ohne Angabe umschalten)
 	if (Arguments[0].Equals(TEXT("reichweite"), ESearchCase::IgnoreCase))
 	{

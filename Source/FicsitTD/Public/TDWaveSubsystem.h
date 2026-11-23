@@ -681,8 +681,19 @@ private:
 	float mBauRaeumUhr = 0.f;
 	/** 0.13 K4: volle Wege aus 16 Richtungen (leer = kein voller Weg), reihum eine je Bild */
 	TArray<TArray<FVector>> mLebensadern;
+	/** 23.11. (Marius: Flieger bauen, Spezifikation E5): fliegende Krabben der laufenden Welle. Bodentuerme suchen nur
+	 *  AFGCreature und treffen sie deshalb nicht, der Himmelsturm (ATDFlakTurret) sucht genau diese Klasse. */
+	TArray<TWeakObjectPtr<AActor>> mFlieger;
+	bool mFliegerAngesagt = false;
+	void SpawneFlieger(int32 Nummer);
+	/** Flieger am Kern: Schaden, Explosion; Rueckgabe: Zahl der lebenden */
+	int32 PflegeFlieger();
+	void EntferneFlieger();
 	/** 23.11. (Stromzweig): Takt der Kraftwerkspflege (TDStrom.cpp) */
 	float mStromUhr = 0.f;
+	/** 23.11. (Gegencheck Konzept R4-E): Modus Aus erkennen, ohne in jedem Bild nachzufragen */
+	float mModusUhr = 0.f;
+	bool mModusAktiv = true;
 	int32 mLebensaderIndex = 0;
 	void PflegeLebensadern(float DeltaTime);
 	/** 22.11. (H4): Takt und Kosten der Lebensadern (Logzeile je Wellenstart) */

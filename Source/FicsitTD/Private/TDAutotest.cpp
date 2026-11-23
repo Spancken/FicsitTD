@@ -1633,6 +1633,9 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		AFGBuildableSubsystem* Bau = AFGBuildableSubsystem::Get(World);
 		const float Radius = (S->HasField(TEXT("ring")) ? static_cast<float>(S->GetNumberField(TEXT("ring"))) : 40.f) * 100.f;
 		const bool bLuecke = S->HasField(TEXT("luecke")) && S->GetBoolField(TEXT("luecke"));
+		// 23.11. (Gegencheck Konzept, Marius: "Schlangenlinien - dann muss die Wegfindung sauber laufen"): "lueckeWinkel" legt die
+		// Luecke auf einen Winkel (0 = Osten, 180 = Westen). Mehrere Ringe mit wechselnder Luecke ergeben ein Labyrinth.
+		const float LueckeWinkel = S->HasField(TEXT("lueckeWinkel")) ? static_cast<float>(S->GetNumberField(TEXT("lueckeWinkel"))) : 0.f;
 		// 22.11. (Lauf Kern-Zugang-K1: per Code gesetzte Bauten erscheinen nicht im Navigationsnetz, nur in Kacheln, die aus anderem
 		// Grund neu gebaut werden - wie die Kernplattform, TDKernplatz AddDirtyArea): "echt": true baut ueber das Hologramm wie der
 		// Spieler (Construct), "netz": true erzeugt danach das Netz im Ring neu. Beides zusammen misst, ob echtes Bauen das Netz aktualisiert.
@@ -1648,7 +1651,7 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 			Stuecke = FMath::Max(6, FMath::CeilToInt(2.f * PI * Radius / Art->Abstand));
 			for (int32 k = bLuecke ? 1 : 0; k < Stuecke; ++k)
 			{
-				const float Winkel = 360.f * k / Stuecke;
+				const float Winkel = LueckeWinkel + 360.f * k / Stuecke;
 				FVector Ort = Mitte + FRotator(0.f, Winkel, 0.f).Vector() * Radius;
 				// Boden unter dem Platz (Gelaende und Bauten)
 				FHitResult Boden;
@@ -1904,7 +1907,10 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 		}
 		mSpielbau.Reset();
 		UE_LOG(LogFicsitTD, Log, TEXT("Autotest: Spielbau entfernt, %d von %d Stuecken"), Entfernt, Gesamt);
-		Ergebnis(TEXT("Spielbau"), TEXT("entferne"), Entfernt == Gesamt && Gesamt > 0, FString::Printf(TEXT("%d von %d entfernt"), Entfernt, Gesamt));
+		// 23.11. (Labyrinth-Nachtest: Gegner zerstoerten eine Mauer, "101 von 102"): "zerstoertErlaubt" laesst im Lauf zerstoerte Teile zu
+		const bool bZerstoertOk = S->HasField(TEXT("zerstoertErlaubt")) && S->GetBoolField(TEXT("zerstoertErlaubt"));
+		Ergebnis(TEXT("Spielbau"), TEXT("entferne"), Gesamt > 0 && (Entfernt == Gesamt || (bZerstoertOk && Entfernt > 0)),
+			FString::Printf(TEXT("%d von %d entfernt%s"), Entfernt, Gesamt, bZerstoertOk && Entfernt < Gesamt ? TEXT(" (Rest im Lauf zerstoert)") : TEXT("")));
 		return true;
 	}
 	if (S->HasField(TEXT("schadebau")))
@@ -2605,6 +2611,8 @@ bool UTDAutotest::Pruefe(UWorld* World, const TSharedPtr<FJsonObject>& S, FStrin
 		// 0.78.2: jede Ausloesung eines Sicherheitsnetzes ist ein Fehler mit Ursache (Ziel 0)
 		int32 Summe = 0;
 		OutIst = TDNetz::Text(&Summe);
+		// 23.11. (Gegencheck Konzept R3): Hilfen mit ausweisen, ohne Einfluss auf das Ergebnis
+		OutIst += FString::Printf(TEXT(" | Hilfen: %s"), *TDNetz::HilfenText());
 		return Summe == 0;
 	}
 	if (Name == TEXT("PlattformAbriss"))

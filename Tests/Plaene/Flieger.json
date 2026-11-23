@@ -1,0 +1,108 @@
+{
+  "Name": "Flieger",
+  "_Hinweis": "23.11.2026 (Marius: 'Flieger bauen', Spezifikation-Endgame-E4-E7 E5): fliegende Krabben ab Welle 43. Sprung auf Welle 43 (Entwicklermodus), Himmelsturm und Bolzentuerme bauen, eine Welle laufen lassen. Erwartet: Krabben gespawnt, Aggro aus, Himmelsturm trifft sie, Ansage FLIEGER, Welle wird abgewehrt. Nachtest 23.11.: wellenlauf ist die Zielwelle (43). Bodengegner per Balance auf 5 % LP, weil 8 Bolzentuerme W43 nicht halten und der Kern sonst faellt; danach zurueck auf 0.7. Nachtest 2: Startort Felsenwueste (Normal) statt Grasland - auf Gras-S8 bleiben grosse Gegner an der verlegten Front 1 (Nordosten, Klippenfeld bei X=-57570 Y=216277) haengen; das ist ein eigener offener Befund, kein Fliegerfehler.",
+  "NeuesSpiel": {
+    "Startort": "Rocky Desert",
+    "Modus": 1
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 20,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warteBis": "EinsatzAktiv",
+      "max": 120
+    },
+    {
+      "befehl": "td einsatz frei an"
+    },
+    {
+      "stromfrei": true
+    },
+    {
+      "versorgung": {
+        "Bolzenturm": 200,
+        "Himmelsturm": 200
+      }
+    },
+    {
+      "baue": "Himmelsturm",
+      "anzahl": 3,
+      "level": 2,
+      "rezept": "Recipe_TD_Flak_Shoot",
+      "ring": "innen"
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 8,
+      "level": 3,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "balance": {
+        "Stufen.Normal.GegnerLP": 0.05
+      },
+      "text": "Bodengegner schwach: der Plan prueft die Flieger, nicht die Bodenabwehr (Nachtest 23.11.: Kern fiel in W43)"
+    },
+    {
+      "befehl": "td kern springe 43"
+    },
+    {
+      "warte": 3
+    },
+    {
+      "wellenlauf": 43,
+      "zeitraffer": 2,
+      "max": 400
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Flieger: ",
+      "min": 1,
+      "text": "fliegende Krabben gespawnt"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Aggro aus",
+      "min": 1,
+      "text": "Krabben greifen den Spieler nicht an (Aggro-Radius 0)"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Ansage: FLIEGER",
+      "min": 1,
+      "text": "Ansage beim ersten Mal"
+    },
+    {
+      "pruefe": "TurmWert",
+      "turm": "Himmelsturm",
+      "wert": "Treffer",
+      "min": 1,
+      "text": "Himmelsturm trifft Flieger"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Flieger: Krabbe am Kern",
+      "min": 0,
+      "text": "Krabben am Kern (Diagnose, Schaden)"
+    },
+    {
+      "pruefe": "Sicherheitsnetze",
+      "text": "kein Sicherheitsnetz ausgeloest"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    },
+    {
+      "balance": {
+        "Stufen.Normal.GegnerLP": 1.25
+      }
+    }
+  ]
+}

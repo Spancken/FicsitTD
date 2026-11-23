@@ -78,6 +78,8 @@ public:
 	static int32 RagdollErzwungen;
 	/** Stresstest T2d: Gegner stehen am Ziel, ohne Angriffs-Montage und ohne Schaden (Gedraenge von Animation trennen) */
 	static bool bAngriffAus;
+	/** 23.11. (Labyrinth-Selbsttest): Teilwege, bei denen die A*-Suche an ihre Knotengrenze stiess (Diagnose, Ziel 0) */
+	static int32 SuchgrenzeErreicht;
 
 	/** Spawnt eine Kreatur der Klasse mit Gehirn. Weg = Punkte von der Front zum Kern (BerechneWeg). */
 	static AFGCreature* Spawne(UWorld* World, UClass* Klasse, const FVector& Ort, const TArray<FVector>& Weg, ATDDefenseCore* Kern, float LPFaktor);

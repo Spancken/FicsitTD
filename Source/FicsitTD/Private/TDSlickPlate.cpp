@@ -143,11 +143,12 @@ void ATDSlickPlate::Zuende(const ATDTurretBase* Zuender)
 	{
 		++mBraende;
 		UE_LOG(LogFicsitTD, Log, TEXT("Oelschlick %s: entzuendet von %s"), *GetName(), Zuender ? *Zuender->GetTurmName() : TEXT("?"));
-		// 0.9.1: Oelbrand ist die vierte Kombo (Ansage beim ersten Mal, Zaehler im Turmfenster der Platte und des Zuenders)
-		TDKombo::Melde(TEXT("Ölbrand"), this, 0.f);
+		// 0.9.1: Oelbrand ist die vierte Kombo (Ansage beim ersten Mal, Zaehler im Turmfenster der Platte und des Zuenders).
+		// 23.11. (Gegencheck Konzept C6a): Schluessel "Oelbrand" wie in TDTurretBase (Freigabe, Anzeige, Erklaersatz); vorher "Ölbrand"
+		TDKombo::Melde(TEXT("Oelbrand"), this, 0.f);
 		if (Zuender && Zuender != this)
 		{
-			TDKombo::Melde(TEXT("Ölbrand"), Zuender, 0.f);
+			TDKombo::Melde(TEXT("Oelbrand"), Zuender, 0.f);
 		}
 	}
 	mBrandBis = Jetzt() + TDBalance::Wert(TEXT("Tuerme.Oelschlick.BrandDauer"), 5.f);

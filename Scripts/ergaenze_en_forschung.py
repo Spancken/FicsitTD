@@ -54,6 +54,8 @@ NEU_EN = {
         "Nuclear Power Plant (2500 MW, available in the Shop) with Uranium Fuel Rods: Uranium, Sulfuric Acid, Concrete, Stator and AI Limiter. Only in overtime after wave 50. Nuclear Waste cannot be sunk, beware of the radiation.",
     "Plutonium-Brennstäbe aus Atommüll (Teilchenbeschleuniger, im Laden kaufbar): 3250 statt 2500 MW je Atomkraftwerk. Verwertet den Müll der Uran-Stäbe.":
         "Plutonium Fuel Rods from Nuclear Waste (Particle Accelerator, available in the Shop): 3250 instead of 2500 MW per Nuclear Power Plant. Puts the waste of the Uranium rods to use.",
+    "Neuer Turm: Flugabwehr gegen fliegende Gegner (60 m, 200 Schaden in 6 m). Munition: Flak-Kanister = Aluminiumgehäuse + 2 Schwarzpulver im Assembler. Greift keine Bodengegner an. Ab Welle 43 kommen fliegende Krabben, die Bodentürme nicht treffen. Braucht Schwerindustrie und 25 MW.":
+        "New turret: anti-air against flying enemies (60 m, 200 damage in 6 m). Ammo: Flak Canister = Aluminum Casing + 2 Black Powder in the Assembler. Does not attack ground enemies. From wave 43 flying crabs arrive that ground turrets cannot hit. Requires Heavy Industry and 25 MW.",
     "Im Laden: Atomkraftwerk": "In the Shop: Nuclear Power Plant", "Atomkraftwerk": "Nuclear Power Plant",
     "Im Laden: Teilchenbeschleuniger": "In the Shop: Particle Accelerator", "Teilchenbeschleuniger": "Particle Accelerator",
     "Kompaktkohle-Feuerung": "Compacted Coal Firing", "Petrolkoks-Feuerung": "Petroleum Coke Firing", "Turbo-Feuerung": "Turbofuel Firing",
@@ -111,6 +113,7 @@ KURZ_EN = {
     "Bremst alles in 15 m um 40 % (SAM)": "Slows everything within 15 m by 40 % (SAM)",
     "Munition ohne Band in 30 m": "Ammo without belts within 30 m",
     "Neuer Turm: Flugabwehr (noch ohne Ziele)": "New turret: anti-air (no targets yet)",
+    "Neuer Turm: Flugabwehr gegen Krabben (ab W43)": "New turret: anti-air against crabs (from W43)",
     "Neuer Turm: Ficsonium-Singularität": "New turret: Ficsonium singularity",
 }
 

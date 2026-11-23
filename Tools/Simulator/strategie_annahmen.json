@@ -357,6 +357,10 @@
     "Quelle": "22.11.2026, Analyse-A6-Simulation (Marius: erst Modell nachziehen)",
     "Hinweis": "1 = guter Spieler: Kupfer/Kohlekraftwerk nur nach Bedarf, Kohlestrom nur wenn billiger oder Biomasse knapp, neue Munition nur wenn sie je Coupon so viel bringt wie ein weiterer Turm. 0 = Verhalten bis 22.11. (alles Erforschte sofort nutzen)"
   },
+  "FliegerJeHimmelsturm": {
+    "Wert": 8,
+    "Quelle": "23.11.2026, Annahme: ein Himmelsturm (Flak, 200 Schaden in 6 m, 1,5 s Nachladen, 60 m) holt je Welle etwa 8 fliegende Krabben vom Himmel, bevor sie den Kern erreichen. Im Spiel messen (Plan Flieger, TurmWert Treffer)."
+  },
   "SpielerAktiv": {
     "Wert": 0,
     "Quelle": "23.11.2026 (Marius: Talentbaum in den Simulator). 0 = passiver Spieler: Die Balance und alle Zielbaender gelten fuer ihn (Marius 12.11., Analyse-Spieler-und-Pionier). 1 = aktiver Spieler mit Handwaffe und Talenten, Ziel 10-20 % Anteil am Wellenschaden. sim_alle_modi rechnet beides."
@@ -364,6 +368,10 @@
   "SpielerDPS": {
     "Wert": 30,
     "Quelle": "23.11.2026, Annahme aus Analyse-Spieler-und-Pionier-2026-11-12 Abschnitt 1.3: Gewehr mit Standardmunition 60 DPS im Dauerfeuer, mit Nachladen und Zielwechsel etwa die Haelfte. Waechst mit Pionier.WellenAnteil (wie TDPionier.cpp HandFaktor)."
+  },
+  "SpielerDPSArmier": {
+    "Wert": 20,
+    "Quelle": "23.11.2026 (Gegencheck Konzept D): bis zum Kauf des Gewehrs (nach der Forschung Gewehrturm, 10 Coupons) kaempft der Spieler mit der Armierpistole: Armierungsbolzen 40 Schaden (Turmtabelle, Spielregeln Handwaffen), ein Schuss, dann nachladen, etwa 2 s je Schuss."
   },
   "TalentPlan": {
     "Wert": ["Kommandant", "Kommandant", "Jaeger", "Kommandant", "Jaeger", "Jaeger", "Techniker", "Techniker", "Techniker", "Schuetze", "Schuetze", "Schuetze", "Kommandant", "Kommandant", "Jaeger"],

@@ -24,7 +24,7 @@ FICSIT Tower Defense turns Satisfactory into a tower defense that lives off your
 
 ## 🆕 What's new in 0.13
 - **AWESOME Shop:** after wave 1 you build the game's AWESOME Shop and buy quotas, gear, core repairs and Hard Drives there in six sections. The Core no longer sells. Spare Hard Drives can be returned for 12 Coupons.
-- **New start:** ADA asks for the HUB first, the Shop after wave 1 and the MAM after wave 2; the status bar shows the current task. Every boss wave brings a phase report, three bonus cards and one Talent Point.
+- **New start:** ADA asks for the HUB first, the Shop after wave 1 and the MAM after wave 2; the status bar shows the current task. Every boss wave brings a phase report, three bonus cards and two Talent Points.
 - **Core access:** a sealed-off Core does not start a wave, and the hologram turns red if a building would close the last path. **Unstable ground:** no factory buildings within 60 m of the Core. Enemies now walk around machines and turrets.
 - **Untangled research:** Industry has six entry points without a forced chain; Bolt and Tesla from wave 3, Rifle Turret from wave 5.
 - **New Power tree:** coal, oil and (after wave 50) nuclear power, nothing locked out. Better fuels give every generator more output – Compacted Coal 100 MW, Petroleum Coke 125 MW, Turbofuel 325 MW, Rocket Fuel 400 MW.
@@ -41,7 +41,7 @@ FICSIT Tower Defense turns Satisfactory into a tower defense that lives off your
 
 ### The Pioneer
 
-You are no longer just the builder. Fight next to your turrets and earn **Pioneer ranks** for your share of the damage, kills, assists and repairs. Every rank gives a Talent Point (up to 15 per operation) for one of **four roles**, five abilities each:
+You are no longer just the builder. Fight next to your turrets and earn **Pioneer ranks** for your share of the damage, kills, assists and repairs. Every cleared boss wave gives two Talent Points (10 in an operation, up to 15 with Endless waves and drilling) for one of **four roles**, five abilities each; ranks add health and speed:
 
 - **Marksman** – headshots, fast reload, piercing shots, ammo saving, explosive rounds
 - **Commander** – mark enemies for +15 % turret damage, marks jump on, **rally order** (nearby turrets fire at your target), overdrive for all turrets around you
@@ -82,7 +82,7 @@ Take two roles fully or three halfway. Your strongest role shows as a badge in t
 - Steam and Epic, Windows. **Single-player only**; multiplayer and dedicated servers are not supported.
 - Balance is work in progress; the target length is 50 waves.
 - Hard and Nightmare are harder since 0.13 and not fully balanced yet.
-- **Known issues** (occasional stuck enemies, Sky Tower without flyers yet, Tesla power spikes, retry wave untested and more): https://spancken.github.io/FicsitTD/#issues
+- **Known issues** (occasional stuck enemies, Tesla power spikes, retry wave untested and more): https://spancken.github.io/FicsitTD/#issues
 
 ## Feedback – please report!
 Every report helps. **In the game:** Core Menu → **Report bug / idea** opens a prefilled GitHub issue in your browser and a folder with your log and a screenshot to attach. **On the web:** [open an issue](https://github.com/Spancken/FicsitTD/issues/new). Before reporting, have a look at the [known issues](https://spancken.github.io/FicsitTD/#issues) and the [FAQ in the player guide](https://spancken.github.io/FicsitTD/#faq).

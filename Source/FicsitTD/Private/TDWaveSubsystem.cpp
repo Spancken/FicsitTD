@@ -1,5 +1,6 @@
 #include "TDWaveSubsystem.h"
 #include "TDStrom.h"
+#include "Creature/Enemy/FGFlyingBabyCrab.h"
 #include "TDAda.h"
 #include "GameFramework/Character.h"
 #include "Components/CapsuleComponent.h"
@@ -357,6 +358,7 @@ int32 UTDWaveSubsystem::StopAll()
 		}
 	}
 	mGegner.Reset();
+	EntferneFlieger();
 	return Removed;
 }
 
@@ -2750,7 +2752,11 @@ void UTDWaveSubsystem::SpawneKernWelle(int32 Nummer)
 	// 23.11. (Marius: Einsatz schwerer): Endlos behaelt seinen eigenen Zuwachs (Endlos.LPJeWelle), der Einsatz nutzt Wellen.LPJeWelle
 	const float JeWelle = mEndlos ? TDBalance::Wert(TEXT("Endlos.LPJeWelle"), TDBalance::Wert(TEXT("Wellen.LPJeWelle"), 0.08f))
 		: TDBalance::Wert(TEXT("Wellen.LPJeWelle"), 0.08f);
-	float LPFaktor = S.LP * (1.f + JeWelle * FMath::Min(Nummer - 1, 30) + TDBalance::Wert(TEXT("Wellen.LPJeWelleAb31"), 0.1f) * FMath::Max(Nummer - 31, 0));
+	// 23.11. (Gegencheck Konzept B1, Marius: auch nach W31 soll noch jemand scheitern): Einsatz mit Wellen.LPJeWelleAb31 1,5,
+	// Endlos behaelt seinen eigenen Zuwachs (Endlos.LPJeWelleAb31 0,1)
+	const float Ab31 = mEndlos ? TDBalance::Wert(TEXT("Endlos.LPJeWelleAb31"), TDBalance::Wert(TEXT("Wellen.LPJeWelleAb31"), 0.1f))
+		: TDBalance::Wert(TEXT("Wellen.LPJeWelleAb31"), 0.1f);
+	float LPFaktor = S.LP * (1.f + JeWelle * FMath::Min(Nummer - 1, 30) + Ab31 * FMath::Max(Nummer - 31, 0));
 	// 16.11. (Fahrplan P2, Simulation): Endlos - nach W50 waechst die Gegnerzahl nicht mehr (Wellen.MaxGesamt), die Coupons aber weiter;
 	// ohne Wachstum gab es keinen Bestwert. Ab Endlos.LPWachstumAbWelle je Welle Endlos.LPWachstum mehr Leben (zinsartig).
 	if (mEndlos)
@@ -2927,6 +2933,7 @@ void UTDWaveSubsystem::SpawneKernWelle(int32 Nummer)
 	}
 	mWellenZeit = 0.f;
 	mZeitBisSteuerung = 0.f;
+	SpawneFlieger(Nummer);   // 23.11. (Flieger, Spezifikation E5)
 	const FString GesamtText = mWellenGesamt > 0 ? FString::Printf(TEXT("/%d"), mWellenGesamt) : FString();
 	if (S.bZusammensetzung)
 	{
@@ -3501,6 +3508,8 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 			PruefeNachzuegler(G, Abstand, DeltaTime);
 		}
 	}
+	// 23.11. (Flieger): fliegende Krabben zaehlen zur Welle; am Kern richten sie Schaden an und explodieren
+	const int32 FliegerLebend = PflegeFlieger();
 	// T5: Nachschub - alle NachschubTakt s bis zu NachschubPaket Gegner, solange weniger als MaxGleichzeitig leben
 	if (mNachschubIndex < mNachschub.Num())
 	{
@@ -3538,7 +3547,7 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 		}
 	}
 	bool bUeberlauf = false;
-	if (Lebend > 0 || mNachschubIndex < mNachschub.Num())
+	if (Lebend > 0 || FliegerLebend > 0 || mNachschubIndex < mNachschub.Num())
 	{
 		// 0.11 (Gegencheck F3, Marius 15.11.): im Endlos-Modus zaehlt der Abstand ab Wellenbeginn - laeuft er ab, kommt die naechste
 		// Welle obendrauf (die Reste bleiben im Feld). So haelt auch ein ueberlebender Nachzuegler die Uhr nicht an.
@@ -3570,6 +3579,12 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 	}
 	if (mWellenGesamt > 0 && mWelle >= mWellenGesamt)
 	{
+		// 23.11. (Gegencheck Konzept D, Marius "Talente spuerbar"): auch die letzte Bosswelle (W50) bringt ihre Talentpunkte -
+		// vorher kehrte der Sieg vor der Vergabe zurueck (fuer die Ueberstunden ab W51)
+		if (!mEndlos && !mBohrung && mWelle % 10 == 0)
+		{
+			UTDPionier::BossGeschafft(this, mWelle);
+		}
 		mLauf = ETDLauf::Aus;
 		SpeichereLauf();
 		if (ATDDefenseCore* SiegKern = mKern.Get())
@@ -4036,6 +4051,7 @@ bool UTDWaveSubsystem::SperreKlippe(AActor* Klippe, const FVector* Stelle)
 				{
 					if (!Schutz.IsInsideXY(Weg[k]) && FVector::Dist2D(Weg[k], Kern->GetActorLocation()) > FrontMin)
 					{
+						TDNetz::MeldeHilfe(TDNetz::EHilfe::FrontVerlegt);
 						UE_LOG(LogFicsitTD, Log, TEXT("Klippensperre: Startpunkt von Front %d hinter %s verlegt (%s -> %s)"), i + 1, *Modell,
 							*mFronten[i].Ort.ToCompactString(), *Weg[k].ToCompactString());
 						mFronten[i].Ort = Weg[k];
@@ -4278,11 +4294,19 @@ void UTDWaveSubsystem::Tick(float DeltaTime)
 	if (mStromUhr <= 0.f)
 	{
 		mStromUhr = TDBalance::Wert(TEXT("Strom.Takt"), 2.f);
-		FTDStrom::Pflege(GetWorld());
+		FTDStrom::Pflege(GetWorld());   // auch im Modus Aus: setzt dort die Grundleistung zurueck
+	}
+	// 23.11. (Gegencheck Konzept R4-E): im Modus Aus keine Dauerarbeit fuer MAM-Karten und Turmstatus. Alle 2 s pruefen,
+	// ob der Modus aktiv ist (ModAktiv sieht auch einen von Hand gestarteten Einsatz). Welle, Rezepte und Lauf laufen weiter.
+	mModusUhr -= DeltaTime;
+	if (mModusUhr <= 0.f)
+	{
+		mModusUhr = 2.f;
+		mModusAktiv = UTDKernplatz::ModAktiv(this);
 	}
 	// 0.65: Statuskarten im MAM (erforschbar / gesperrt ab Welle / Voraussetzung) einmal je Sekunde nachfuehren
 	mMamTakt -= DeltaTime;
-	if (mMamTakt <= 0.f)
+	if (mMamTakt <= 0.f && mModusAktiv)
 	{
 		mMamTakt = 1.f;
 		TDForschung::AktualisiereMamKarten(this);
@@ -4329,7 +4353,7 @@ void UTDWaveSubsystem::Tick(float DeltaTime)
 	{
 		// Ohne Welle trotzdem alle 10 s den Turmstatus loggen (Diagnose: warum schiesst er nicht?)
 		mZeitBisLog -= DeltaTime;
-		if (mZeitBisLog <= 0.f)
+		if (mZeitBisLog <= 0.f && mModusAktiv)   // 23.11. R4-E: nicht im Modus Aus
 		{
 			mZeitBisLog = 10.f;
 			for (const FString& Line : GetWallStatusLines())
@@ -5019,3 +5043,110 @@ bool UTDWaveSubsystem::DoesSupportWorldType(const EWorldType::Type WorldType) co
 {
 	return WorldType == EWorldType::Game || WorldType == EWorldType::PIE;
 }
+
+// ---------------------------------------------------------------------------------------------------------------
+// 23.11.2026 (Marius: "Flieger bauen"; Notizen/Spezifikation-Endgame-E4-E7-2026-11-09.md E5): fliegende Krabben ab Welle 43.
+// Die Krabbe des Spiels (AFGFlyingBabyCrab) ist kein AFGCreature, sondern ein Projektil-Flieger mit eigener Steuerung durch das
+// Kreatur-System. Sie greift sonst Spieler an: der Aggro-Radius wird auf 0 gesetzt (Wellengegner greifen den Spieler nie an,
+// Marius 12.11.), ihr "Zuhause" ist ein Punkt ueber dem Kern - dorthin fliegt sie ohne Netz und ueber Mauern. Am Kern richtet
+// sie Flieger.KernSchaden x Wellenwachstum x Flieger.SchadenWachstum an und explodiert. Ein Treffer toetet sie (Spielverhalten).
+
+void UTDWaveSubsystem::SpawneFlieger(int32 Nummer)
+{
+	UWorld* World = GetWorld();
+	const ATDDefenseCore* Kern = mKern.Get();
+	if (!World || !Kern || mBohrung || TDBalance::Wert(TEXT("Flieger.Aktiv"), 1.f) <= 0.f)
+	{
+		return;
+	}
+	const int32 Ab = TDBalance::Ganz(TEXT("Katalog.Krabbe.AbWelle"), 43);
+	if (Nummer < Ab || mFronten.Num() == 0)
+	{
+		return;
+	}
+	UClass* Klasse = LoadClass<AActor>(nullptr, TEXT("/Game/FactoryGame/Character/Creature/Enemy/Crab/BabyCrab/BP_FlyingBabyCrab.BP_FlyingBabyCrab_C"));
+	if (!Klasse)
+	{
+		UE_LOG(LogFicsitTD, Warning, TEXT("Flieger: Klasse BP_FlyingBabyCrab nicht gefunden"));
+		return;
+	}
+	const FTDStufe& S = GetStufe(mStufe);
+	const int32 Anzahl = FMath::Clamp(FMath::RoundToInt((TDBalance::Wert(TEXT("Flieger.Anzahl"), 6.f) + TDBalance::Wert(TEXT("Flieger.JeWelle"), 0.5f) * (Nummer - Ab))
+		* TDBalance::Wert(FString::Printf(TEXT("Stufen.%s.Budget"), S.Name), 1.f)), 1, TDBalance::Ganz(TEXT("Flieger.Max"), 24));
+	const FVector Zuhause = Kern->GetActorLocation() + FVector(0.f, 0.f, TDBalance::Wert(TEXT("Flieger.ZielHoehe"), 4.f) * 100.f);
+	FFloatProperty* Aggro = FindFProperty<FFloatProperty>(Klasse, TEXT("mAggroRadius"));
+	FActorSpawnParameters Params;
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	int32 Gespawnt = 0;
+	for (int32 i = 0; i < Anzahl; ++i)
+	{
+		const FVector Front = mFronten[i % mFronten.Num()].Ort;
+		const FVector Ort = Front + FVector(FMath::FRandRange(-800.f, 800.f), FMath::FRandRange(-800.f, 800.f), TDBalance::Wert(TEXT("Flieger.Hoehe"), 6.f) * 100.f);
+		AActor* Krabbe = World->SpawnActor<AActor>(Klasse, Ort, (Zuhause - Ort).Rotation(), Params);
+		AFGFlyingBabyCrab* Flieger = Cast<AFGFlyingBabyCrab>(Krabbe);
+		if (!Flieger)
+		{
+			if (Krabbe)
+			{
+				Krabbe->Destroy();
+			}
+			continue;
+		}
+		if (Aggro)
+		{
+			Aggro->SetPropertyValue_InContainer(Flieger, 0.f);
+		}
+		Flieger->SetHomeLocation(Zuhause);
+		Flieger->Tags.AddUnique(TEXT("FicsitTD"));
+		mFlieger.Add(Flieger);
+		++Gespawnt;
+	}
+	UE_LOG(LogFicsitTD, Log, TEXT("Flieger: %d von %d fliegenden Krabben (Welle %d, %d Fronten, Aggro %s)"), Gespawnt, Anzahl, Nummer, mFronten.Num(),
+		Aggro ? TEXT("aus") : TEXT("nicht gefunden"));
+	if (Gespawnt > 0 && !mFliegerAngesagt)
+	{
+		mFliegerAngesagt = true;
+		Ansage(TDT(TEXT("FLIEGER! Fliegende Krabben greifen den Kern aus der Luft an. Bodentürme treffen sie nicht – der Himmelsturm und deine Handwaffen schon."),
+			TEXT("FLYERS! Flying crabs attack the Core from the air. Ground turrets can't hit them – the Sky Tower and your hand weapons can.")));
+	}
+}
+
+int32 UTDWaveSubsystem::PflegeFlieger()
+{
+	ATDDefenseCore* Kern = mKern.Get();
+	int32 Lebend = 0;
+	for (int32 i = mFlieger.Num() - 1; i >= 0; --i)
+	{
+		AFGFlyingBabyCrab* F = Cast<AFGFlyingBabyCrab>(mFlieger[i].Get());
+		if (!F || !IsValid(F) || F->IsActorBeingDestroyed())
+		{
+			mFlieger.RemoveAtSwap(i);
+			continue;
+		}
+		if (Kern && FVector::Dist(F->GetActorLocation(), Kern->GetActorLocation()) < TDBalance::Wert(TEXT("Flieger.Trefferabstand"), 12.f) * 100.f)
+		{
+			const float Schaden = TDBalance::Wert(TEXT("Flieger.KernSchaden"), 15.f)
+				* (1.f + TDBalance::Wert(TEXT("Flieger.SchadenWachstum"), 0.25f) * FMath::Max(0.f, mWellenWachstum - 1.f));
+			Kern->ApplyTDDamage(Schaden, F);
+			UE_LOG(LogFicsitTD, Log, TEXT("Flieger: Krabbe am Kern, %.0f Schaden"), Schaden);
+			F->Explode();
+			mFlieger.RemoveAtSwap(i);
+			continue;
+		}
+		++Lebend;
+	}
+	return Lebend;
+}
+
+void UTDWaveSubsystem::EntferneFlieger()
+{
+	for (const TWeakObjectPtr<AActor>& F : mFlieger)
+	{
+		if (AActor* A = F.Get())
+		{
+			A->Destroy();
+		}
+	}
+	mFlieger.Reset();
+}
+

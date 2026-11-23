@@ -218,9 +218,12 @@ void UTDPionier::BossGeschafft(const UObject* Kontext, int32 Welle)
 		return;
 	}
 	K->mPionierBonusPunkte += Punkte;
-	UE_LOG(LogFicsitTD, Log, TEXT("Pionier: Bosswelle %d geschafft, +%d Talentpunkt, jetzt %d frei (Bonuspunkte %d)"), Welle, Punkte, P->FreiePunkte(), K->mPionierBonusPunkte);
-	P->Melde(TDF(TEXT("Bosswelle geschafft: +%d Talentpunkt (%d frei, Kern-Menü, Reiter Pionier)."), TEXT("Boss wave cleared: +%d Talent Point (%d free, Core Menu, Pioneer tab)."),
-		Punkte, P->FreiePunkte()));
+	UE_LOG(LogFicsitTD, Log, TEXT("Pionier: Bosswelle %d geschafft, +%d Talentpunkt%s, jetzt %d frei (Bonuspunkte %d)"), Welle, Punkte, Punkte == 1 ? TEXT("") : TEXT("e"),
+		P->FreiePunkte(), K->mPionierBonusPunkte);
+	// 23.11.: seit 2 Punkten je Boss (Gegencheck Konzept Frage 3) mit Mehrzahl
+	P->Melde(Punkte == 1
+		? TDF(TEXT("Bosswelle geschafft: +%d Talentpunkt (%d frei, Kern-Menü, Reiter Pionier)."), TEXT("Boss wave cleared: +%d Talent Point (%d free, Core Menu, Pioneer tab)."), Punkte, P->FreiePunkte())
+		: TDF(TEXT("Bosswelle geschafft: +%d Talentpunkte (%d frei, Kern-Menü, Reiter Pionier)."), TEXT("Boss wave cleared: +%d Talent Points (%d free, Core Menu, Pioneer tab)."), Punkte, P->FreiePunkte()));
 }
 
 FString UTDPionier::Lerne(int32 Zweig)

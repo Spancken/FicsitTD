@@ -146,8 +146,8 @@ class Wellen:
     def lp_faktor(self, n):
         """LPFaktor in UTDWaveSubsystem (StarteWelle): bis W31 je Welle Wellen.LPJeWelle, danach Wellen.LPJeWelleAb31 (0.9.1)"""
         je = self.w("Endlos.LPJeWelle", self.w("Wellen.LPJeWelle", 0.08)) if self.endlos else self.w("Wellen.LPJeWelle", 0.08)   # 23.11.
-        f = self.s("GegnerLP") * (1 + je * min(n - 1, 30)
-                                  + self.w("Wellen.LPJeWelleAb31", 0.1) * max(n - 31, 0))
+        ab31 = self.w("Endlos.LPJeWelleAb31", self.w("Wellen.LPJeWelleAb31", 0.1)) if self.endlos else self.w("Wellen.LPJeWelleAb31", 0.1)   # 23.11.
+        f = self.s("GegnerLP") * (1 + je * min(n - 1, 30) + ab31 * max(n - 31, 0))
         if self.endlos:
             # 23.11.: eigener LP-Faktor je Stufe im Endlos (wie TDWaveSubsystem.cpp), damit Einsatz und Endlos getrennt einstellbar sind
             f *= self.w(f"Endlos.{self.stufe}.LPFaktor", 1.0)

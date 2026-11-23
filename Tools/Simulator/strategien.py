@@ -411,8 +411,11 @@ class Lauf:
         self.biomasse_mangel = 0
         # 23.11.2026 (Talentbaum): aktiver Spieler (Z["SpielerAktiv"]), Talentpunkte je geschaffter Bosswelle
         self.talente = collections.Counter()
+        self.himmelstuerme = 0          # 23.11.: Himmelstuerme gegen Flieger
+        self.flieger_durch = 0
         self.talent_punkte = 0
         self.spieler_anteile = []
+        self.spieler_je_welle = {}
         self.bio_brauche = 0.0      # 23.11.: Biomasse der letzten Welle (fuer den Strom-Engpass in forsche)
         self.reparaturen = 0
         self.versorgung = 1.0
@@ -439,19 +442,75 @@ class Lauf:
         return self.Z.get("Stand", "090") == "091"
 
     # ------------------------------------------------ 23.11.2026: Spieler und Talentbaum (TDPionier.cpp, vier Rollen-Zweige)
+    # ------------------------------------------------ 23.11.2026: Flieger (TDWaveSubsystem.cpp SpawneFlieger, Spezifikation E5)
+    def flieger_zahl(self, n):
+        B = self.B
+        ab = int(B.get("Katalog.Krabbe.AbWelle", 43))
+        if B.get("Flieger.Aktiv", 1.0) <= 0 or n < ab:
+            return 0
+        z = round((B.get("Flieger.Anzahl", 6) + B.get("Flieger.JeWelle", 0.5) * (n - ab)) * B.get(f"Stufen.{self.stufe}.Budget", 1.0))
+        return max(1, min(int(B.get("Flieger.Max", 24)), z))
+
+    def baue_himmelstuerme(self, n):
+        """der gute Spieler stellt vor den Fliegern genug Himmelstuerme (FliegerJeHimmelsturm), wenn erforscht und bezahlbar"""
+        f = self.flieger_zahl(n)
+        if not f or "Himmelsturm" not in self.erforscht:
+            return
+        noetig = math.ceil(f / self.Z.get("FliegerJeHimmelsturm", 8))
+        while self.himmelstuerme < noetig:
+            preis = sim.runde(self.B.get("Einsatz.Laden.Himmelsturm.Grundpreis", 10) * self.Z["PreisFaktor"]
+                              * (1 + self.B.get("Einsatz.Laden.Himmelsturm.Aufschlag", 0.4) * self.himmelstuerme))
+            if self.ep < preis:
+                return
+            self.ep -= preis
+            self.ep_ausgegeben["Tuerme"] += preis
+            self.himmelstuerme += 1
+
+    def flieger_schaden(self, n):
+        """Kernverlust in Prozent durch Flieger, die kein Himmelsturm abfaengt"""
+        f = self.flieger_zahl(n)
+        if not f:
+            return 0.0
+        rest = max(0, f - self.himmelstuerme * self.Z.get("FliegerJeHimmelsturm", 8))
+        self.flieger_durch += rest
+        B = self.B
+        je = B.get("Flieger.KernSchaden", 15) * (1 + B.get("Flieger.SchadenWachstum", 0.25) * max(0.0, self.wellen_wachstum(n) - 1))
+        return 100.0 * rest * je / max(1.0, self.kern_lp)
+
     def talent_stufe(self, zweig):
         return self.talente.get(zweig, 0)
 
     def wellen_wachstum(self, n):
-        """wie UTDWaveSubsystem::mWellenWachstum: LP-Faktor der Welle ohne den Faktor der Stufe"""
+        """wie UTDWaveSubsystem::mWellenWachstum: LP-Faktor der Welle ohne den Faktor der Stufe.
+        23.11. (Gegencheck Konzept): im Endlos mit Endlos.LPJeWelle, Endlos.<Stufe>.LPFaktor und dem Zins ab W50"""
         B = self.B
-        return 1 + B.get("Wellen.LPJeWelle", 0.08) * min(n - 1, 30) + B.get("Wellen.LPJeWelleAb31", 0.1) * max(n - 31, 0)
+        endlos = getattr(self, "bauzeit", None) is not None and type(self).__name__ == "EndlosLauf"
+        je = B.get("Endlos.LPJeWelle", B.get("Wellen.LPJeWelle", 0.08)) if endlos else B.get("Wellen.LPJeWelle", 0.08)
+        ab31 = B.get("Endlos.LPJeWelleAb31", B.get("Wellen.LPJeWelleAb31", 0.1)) if endlos else B.get("Wellen.LPJeWelleAb31", 0.1)
+        w = 1 + je * min(n - 1, 30) + ab31 * max(n - 31, 0)
+        if endlos:
+            w *= B.get(f"Endlos.{self.stufe}.LPFaktor", 1.0) * (1 + B.get("Endlos.LPWachstum", 0.0)) ** max(0, n - B.get("Endlos.LPWachstumAbWelle", 50))
+        return w
+
+    def handwaffe(self):
+        """23.11. (Gegencheck Konzept): das Gewehr gibt es erst nach der Forschung Gewehrturm im Laden (Einsatz.Laden.Gewehr),
+        vorher kaempft der Spieler mit der Armierpistole. Rueckgabe (Waffe, DPS ohne Wachstum)"""
+        if "Gewehrturm" in self.erforscht:
+            if not getattr(self, "gewehr_gekauft", False):
+                preis = self.B.get("Einsatz.Laden.Gewehr.Grundpreis", 10)
+                if self.ep >= preis:
+                    self.ep -= preis
+                    self.gewehr_gekauft = True
+            if getattr(self, "gewehr_gekauft", False):
+                return "Gewehr", self.Z.get("SpielerDPS", 30.0)
+        return "Armierpistole", self.Z.get("SpielerDPSArmier", 20.0)
 
     def spieler_dps(self, n, gegner, elite):
         """Handwaffe des aktiven Spielers (Annahme SpielerDPS, Gewehr mit Nachladen), waechst mit Pionier.WellenAnteil wie im Mod.
         Schuetze: Kopftreffer, Schnellladen, Durchschlag, Sprengmantel; Jaeger: x1,5 gegen Elite und Boss (Anteil Elite der Welle)"""
         Z, B = self.Z, self.B
-        d = Z.get("SpielerDPS", 30.0) * (1 + B.get("Pionier.WellenAnteil", 0.5) * max(0.0, self.wellen_wachstum(n) - 1))
+        waffe, grund = self.handwaffe()
+        d = grund * B.get(f"Pionier.HandFaktor.{waffe}", 1.0) * (1 + B.get("Pionier.WellenAnteil", 0.5) * max(0.0, self.wellen_wachstum(n) - 1))
         sch = self.talent_stufe("Schuetze")
         if sch >= 1:
             d *= 1 + Z.get("KopftrefferAnteil", 0.3) * (B.get("Pionier.Kopftreffer", 1.5) - 1)
@@ -478,9 +537,16 @@ class Lauf:
             dauer, pause = B.get("Pionier.Uebersteuern.Dauer", 10), B.get("Pionier.Uebersteuern.Pause", 60)
             reichweite = Z.get("UebersteuernAnteil", 0.3) * (Z.get("UebersteuernFlaecheFaktor", 2.0) if kom >= 5 else 1.0)
             f *= 1 + (B.get("Pionier.Uebersteuern.Takt", 1.5) - 1) * dauer / (dauer + pause) * reichweite
-        if self.talent_stufe("Jaeger") >= 3 and n % 10 == 0:
-            f *= 1 + (B.get("Pionier.Jaeger.Schwachstelle", 1.25) - 1) * Z.get("SchwachstelleAnteil", 0.6)
         return f
+
+    def schwachstelle(self, n, gegner):
+        """Jaeger 3 (TDPionier.cpp: nur Schaden am Boss): Faktor auf den Turmschaden, gemittelt ueber die Welle = 1 + Bonus x Anteil
+        des Boss an den Gegner-LP x Trefferzeit (SchwachstelleAnteil)"""
+        if self.talent_stufe("Jaeger") < 3 or n % 10 != 0 or not gegner:
+            return 1.0
+        lp = [l for _, l in gegner]
+        anteil = max(lp) / max(1.0, sum(lp))
+        return 1 + (self.B.get("Pionier.Jaeger.Schwachstelle", 1.25) - 1) * self.Z.get("SchwachstelleAnteil", 0.6) * anteil
 
     def talent_vergeben(self):
         """1 Punkt je geschaffter Bosswelle (Pionier.PunkteJeBoss), hoechstens Pionier.MaxPunkte; Reihenfolge Z["TalentPlan"]"""
@@ -507,6 +573,7 @@ class Lauf:
         if self.Z.get("SpielerAktiv"):
             e["SpielerAnteil"] = round(statistics.median(self.spieler_anteile), 3) if self.spieler_anteile else 0.0
             e["Talente"] = dict(self.talente)
+            e["SpielerJeWelle"] = dict(self.spieler_je_welle)
         if self.neu:
             e.update({f"Nutzung_{k}": v for k, v in self.nutzung.items()})
             e.update({f"NutzungAb_{k}": v for k, v in self.nutzung_ab.items()})
@@ -561,6 +628,8 @@ class Lauf:
             add({"Bolzenturm": "DoktrinBolzen", "Gewehrturm": "DoktrinGewehr", "Nobelisk-Werfer": "DoktrinNobelisk",
                  "Teslaspule": "DoktrinTesla", "Flammenwerfer": "DoktrinFlamme"}[s["Doktrin"]])
         add("Munitionspuffer"); add("Turmfertigung3")
+        if self.Z.get("Spielerwahl") and self.B.get("Flieger.Aktiv", 1.0) > 0:
+            add("Himmelsturm")   # 23.11.: Luftabwehr vor den Fliegern ab W43 (Ballistik, ab W35, braucht Bauxit, Schwerindustrie, Schwefel)
         for t in s["Gewichte"]:
             if t == "Gewehrturm":
                 add("Turbomunition")
@@ -1033,11 +1102,12 @@ class Lauf:
             tuerme.append((0, "Durchschlag", kg, kg))
         if self.Z.get("SpielerAktiv"):
             # 23.11.2026: Talente auf die Tuerme, dazu die Handwaffe des aktiven Spielers als eigener "Turm" (Kugel wie die Gewehrmunition)
-            tf = self.turm_talentfaktor(n)
+            tf = self.turm_talentfaktor(n) * self.schwachstelle(n, gegner)
             tuerme = [(t[0], t[1], t[2] * tf, t[3] * tf) for t in tuerme]
             sp = self.spieler_dps(n, gegner, elite)
             gesamt = sum(t[2] for t in tuerme) + sp
             self.spieler_anteile.append(sp / gesamt if gesamt else 0.0)
+            self.spieler_je_welle[n] = sp / gesamt if gesamt else 0.0
             tuerme.append((0, ART["Gewehrturm"], sp, sp))
         K = sum(t[2] for t in tuerme)
         KN = sum(t[3] for t in tuerme)
@@ -1130,11 +1200,14 @@ def spiele(s, wellen_liste, B, Z, K, gabeln, tw, wi, stufe, laenge, rng):
         zyklus = zyklus_min(Z, n, D)
         L.forsche(n, gabeln)
         L.baue(n, zyklus, D)
+        L.baue_himmelstuerme(n)
         L.verbrenne(n, zyklus, D)
         if L.haupt_ab is None and any(t == L.haupt for t, _ in L.tuerme) and (L.haupt != "Bolzenturm" or n > 1):
             L.haupt_ab = n
         gegner, elite = wellen_liste[n - 1]
         q, Kd, verl = L.kampf(gegner, elite, n, rng)
+        L.kern -= L.flieger_schaden(n)   # 23.11.: Flieger ab W43
+        L.kern_min = min(L.kern_min, L.kern)
         qs.append(q)
         if Z.get("Verlauf"):
             L.verlauf.append((n, round(q, 4), round(verl, 3), round(max(0.0, L.kern), 2), round(L.ep, 1), round(L.fp_summe, 1), round(L.q_nenn, 4)))   # 16.11.: Nenn-Q angehaengt

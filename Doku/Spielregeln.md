@@ -57,6 +57,8 @@
      - TD-Mauern, Sperren, Tore und Zäune dürfen den Weg schließen, denn die Gegner greifen sie an.
      - Abgerissen wird nie etwas.
      - Ohne erkannten Bau (Gelände) wartet der Start höchstens 20 s (`KernZugang.*`).
+     - Die eigene Kernplattform riegelt nie ab. Endet der Weg an einem ihrer Fundamente, ist das Netz noch nicht fertig (Fels-S8 braucht nach dem Bau bis 95 s). Das zählt als Netzumbau: Die Ladeprüfung versucht es erneut, der Wellenstart wartet höchstens `KernZugang.WarteNetz`. Beim Bau des Kernplatzes frischt der Mod das Netz um die Plattform alle 20 s auf, bis aus 100 m ein voller Weg zum Kern führt, höchstens 120 s lang (`Kernplatz.NetzAuffrischTakt`, `Kernplatz.NetzWarteSekunden`).
+     - **Labyrinthe (23.11., Gegencheck Konzept Frage 5):** Ringe und Gänge aus Abwehrmauern mit Lücken sind erlaubt, die Gegner laufen den ganzen Umweg. Die Wegsuche prüft dafür bis zu 8192 Knoten (`Wege.SuchKnoten`, die Engine hat 2048). Mit der Engine-Grenze gab sie bei drei Ringen auf und meldete „Durchbrechbar“ (Selbsttest `Labyrinth`).
    - **Instabiler Boden (0.13-dev K2, Marius 21.11.):** Im Einsatz und im Endlos lassen sich in 60 m um den Kern (Marius 22.11., vorher 40 m) keine Fabrikgebäude des Spiels bauen (Maschinen, Lager, Generatoren, MAM, Shop, HUB; `Einsatz.Ring.Radius`). Das Hologramm sagt „Boden instabil“. Bauten des Mods (Türme, Mauern, Stützbauten) und Logistik gehen. Was schon steht, bleibt stehen.
    - **Wegprüfung beim Bauen (0.13-dev K4):** Solange ein Kern läuft, ist ein Bau, der den letzten Weg der Gegner zum Kern schließen würde, im Hologramm rot („Würde den letzten Weg zum Kern schließen“). Grundlage sind 16 Wege aus 16 Richtungen (120 m). Das gilt auch für Türme. Abwehrmauern, Sperren, Tore und Zäune dürfen schließen.
    - **Klippenprobe (ab 0.11-dev):** Vor jeder Welle fährt eine Gegner-Kapsel (Radius und Halbhöhe 70 cm) jeden vollen Frontweg in 2-m-Schritten ab. Klippen mit Flächen steiler als 45 Grad, an denen sie hängen bleibt, werden vorab aus dem Navigationsnetz genommen (`Gegner.KlippenProbe*`, höchstens `Gegner.KlippenSperrenMax` = 24). Nach dem Netzumbau planen marschierende Gegner ihren Weg neu. Liegt die Hängestelle am Startpunkt einer Front, wird der Startpunkt entlang des Frontwegs hinter die Sperrfläche verlegt (`Gegner.FrontVerlegen`, 16.11.).
@@ -94,14 +96,18 @@
 - **Pionier** (Reiter im Kern-Menü; Umbau nach `Notizen\Analyse-Spieler-und-Pionier-2026-11-12.md`: P0/P1 seit 0.9.6, P2 seit 0.9.7, P3/P4 seit 0.9.8):
   - **XP je Welle (0.9.8 halbiert):** 20 + 3 × N, +10 bei vollem Kern, jede zehnte Welle doppelt (`Pionier.XPWelle`, `XPJeWelle`, `XPKernVoll`). Dazu Leistungs-XP: 2 je Prozent Anteil am Wellenschaden (`Pionier.XPJeProzent`; der Anteil zählt höchstens bis `Pionier.XPAnteilKappe`, Standard 100 = ohne Kappe *(0.12, Regler für C10)*) und 1 je 200 reparierte LP (`Pionier.XPJeReparatur`). Eigener Abschuss 3 XP, Elite 10, Boss 50, wenn der Spieler den Gegner in den letzten 5 s getroffen hat. Assist 1 XP.
   - **Rang (0.9.8):** Schwelle je Rang 5 + 20 × Rang (`Pionier.XPGrund`, `XPSchritt`): Rang 2 bei 25 XP (also nach Welle 1), 3 bei 70, 4 bei 135, 5 bei 220, höchstens Rang 16 (`Pionier.MaxRang`). **Talentpunkte (0.12, Marius 21.11., C10):** nur noch aus geschafften Bosswellen (`Pionier.PunkteJeBoss` 1, Einsatz und Endlos, mit der Bonuswahl) und aus der Bohrung, zusammen höchstens 15 (`Pionier.MaxPunkte` *(Nachprüfung 16.11.)*). Der Rang bringt nur noch die Boni; `Pionier.TalenteAusRang` 1 stellt die alte Regel (ein Punkt je Rang) wieder her. Im Einsatz gibt es so bis Welle 40 vier Punkte. Alle 3 Ränge gibt es +10 LP und +3 % Lauftempo (`Pionier.RangBonusAlle`, `RangBonus.LP`, `RangBonus.Tempo`). Rang und Talente hängen am Spielstand (seit 0.12-dev `ATDSpielstand`) und bleiben auch nach dem Einsatz. Talente neu verteilen kostet 20 Coupons.
-  - **Vier Rollen-Zweige mit je 5 Stufen (0.9.8, P3/P4, Marius 12.11.):** zwei Zweige ganz oder drei zur Hälfte. Jede Stufe ist eine Fähigkeit, keine reine Prozentzahl. Der Reiter zeigt je Zweig die Wirkung der letzten Welle.
+  - **Vier Rollen-Zweige mit je 5 Stufen (0.9.8, P3/P4, Marius 12.11.):** Im Einsatz gibt es 10 Punkte *(seit 23.11.: 2 je Bosswelle, auch für Welle 50; `Pionier.PunkteJeBoss`)*. Das reicht für zwei Zweige ganz oder drei zur Hälfte, Stufe 5 ist also erreichbar. Jede Stufe ist eine Fähigkeit, keine reine Prozentzahl. Der Reiter zeigt je Zweig die Wirkung der letzten Welle.
     - **Schütze** (Handwaffen): 1 Kopftreffer ×1,5 · 2 Schnellladen (Nachladen doppelt so schnell) · 3 Durchschlag (nächster Gegner dahinter bis 6 m, halber Schaden) · 4 Munition sparen (jeder vierte Treffer kostet nichts) · 5 Sprengmantel (jeder fünfte Treffer explodiert mit vollem Trefferschaden in 4 m).
     - **Kommandant** (Türme lenken): 1 Zielmarkierung · 2 markierte Gegner nehmen +15 % Turmschaden · 3 stirbt ein markierter Gegner, springt die Markierung auf den nächsten in 10 m · 4 Sammelbefehl (Türme in 30 m schießen 5 s auf dein Ziel) · 5 Übersteuern wirkt auf alle Türme in 20 m.
     - **Techniker** (Bauten halten): 1 Feldreparatur (Bauten in 8 m heilen 5 % LP je Sekunde, 300 LP je Eisenplatte) · 2 Feldreparatur doppelt so schnell · 3 Übersteuern (Knopf im Turmfenster, 10 s +50 % Takt, danach 60 s Pause) · 4 Nachschub (Türme in 20 m ohne Munition bekommen 10 Stück aus deinem Inventar) · 5 Bollwerk (einmal je Welle fällt ein Bau nicht, sondern hält mit halben LP).
     - **Jäger** (Elite und Boss): 1 Schaden an Elite und Boss ×1,5 · 2 selbst erlegte Elite oder Boss: Festplatten und Coupons fallen sicher · 3 Schwachstelle (ein getroffener Boss nimmt 5 s +25 % von allen Türmen) · 4 Boss-Balken zeigt Resistenzen und deinen Anteil · 5 Hinrichtung (Elite unter 15 % LP stirbt beim nächsten Treffer von dir).
   - Die alten Zweige Armierpistole/Gewehr/Nobelisk/Überleben/Mobilität gibt es seit 0.9.8 nicht mehr. Markierung und Jäger-Bonus wirken nur noch mit dem passenden Talent.
   - **Optik (0.10.0, Marius 14.11.):** Der Reiter Pionier zeigt je Rolle einen Kopf mit Spiel-Icon und Stufenplakette und je Stufe eine Kachel mit Icon (gelernt orange, lernbar mit orangem Rahmen, gesperrt gedämpft). Die HUD-Zeile zeigt Symbol und Namen der stärksten Rolle(n). Sichtbare Fähigkeiten an Türmen: Feldreparatur grüner Strahl, Sammelbefehl oranger Strahl zum Ziel, Übersteuern orangener Puls am Turmkopf, Bollwerk helles Aufblitzen.
-  - **Handwaffen treffen wie die Türme (0.9.6):** Armierpistole, Gewehr und Nobelisken nutzen den Munitionswert der Turm-Tabelle (Armierungsbolzen 40, Gewehrmunition 12, Nobelisk 150, bessere Munition entsprechend) statt des Spielwerts. Dazu gelten die Resistenzen der Gegner und ein Zuwachs mit der Welle: die Hälfte des LP-Zuwachses der Welle (`Pionier.WellenAnteil` 0,5). Regler je Waffe: `Pionier.HandFaktor.*`. Ziel (Marius 12.11.): Ein aktiver Spieler leistet 10–20 % des Wellenschadens, etwa wie ein guter Turm; die Balance bleibt für den passiven Spieler eingestellt.
+  - **Handwaffen treffen wie die Türme (0.9.6):** Armierpistole, Gewehr und Nobelisken nutzen den Munitionswert der Turm-Tabelle (Armierungsbolzen 40, Gewehrmunition 12, Nobelisk 150, bessere Munition entsprechend) statt des Spielwerts. Dazu gelten die Resistenzen der Gegner und ein Zuwachs mit der Welle. *Seit 23.11. (Gegencheck Konzept B2, Marius: früh dämpfen, spät stärken):*
+    - Der Zuwachs ist dreimal so groß wie der LP-Zuwachs der Welle (`Pionier.WellenAnteil` 3, vorher 0,5).
+    - Dafür bekommen Armierpistole, Gewehr und Nobelisk nur 0,3, 0,35 und 0,5 des Tabellenwerts (`Pionier.HandFaktor.*`).
+    - Im Prüfstand liegt der Anteil des Spielers damit über den ganzen Lauf bei etwa 12 % (8–24 %). Vorher waren es 29 % in den ersten Wellen und 4 % ab Welle 31.
+    - Das Gewehr gibt es erst nach der Forschung Gewehrturm im Shop. Ziel (Marius 12.11.): Ein aktiver Spieler leistet 10–20 % des Wellenschadens, etwa wie ein guter Turm; die Balance bleibt für den passiven Spieler eingestellt.
   - **Bilanz:** Spielerschaden, Anteil am Wellenschaden und Abschüsse stehen in der Meldung nach jeder Welle („Du: …“), im Log („Pionier Welle N“) und in `Metriken.csv` (`Spieler_Schaden`, `Spieler_Anteil_Proz`, seit 0.9.7 auch `Spieler_Assists`, `Spieler_Markbonus`).
   - **Zielmarkierung (0.9.7, P2; seit 0.9.8 nur mit Kommandant 1, Bonus mit Kommandant 2):** Jeder Spielertreffer markiert den Gegner 6 s (`Pionier.Markierung.Dauer`), sichtbar als blaues Licht über ihm. Alle Türme machen an markierten Gegnern +15 % Schaden (`Pionier.Markierung.Bonus` 1,15). Zielwahl „Markierte zuerst“ (neu) nimmt sie vor allen anderen, „Elite und Boss zuerst“ direkt nach dem Boss. Erledigt ein Turm einen markierten Gegner, ist das ein Assist: 1 XP (`Pionier.XPAssist`), Zähler im Wellenbericht.
   - **Jäger (0.9.7, P2; seit 0.9.8 Talent Jäger 1 und 2):** Spielerschaden an Eliten und Bossen ×1,5 (`Pionier.Jaeger.Faktor`). Erlegt der Spieler eine Elite oder einen Boss (Treffer in den letzten 5 s), fallen Festplatten und Coupons sicher (`Pionier.Jaeger.SichereBeute`).
@@ -116,7 +122,13 @@
   3. Spucker Wald
   4. Wüsten- und Wasserspucker
   5. Nuklear-Hog und Johnny
-- Fliegende Krabben kommen erst mit der Luftabwehr *(geplant)*.
+- **Fliegende Krabben (ab Welle 43, seit 23.11., Marius: „Flieger bauen“; Spezifikation-Endgame E5):**
+  - Je Welle kommen `Flieger.Anzahl` 6 plus `Flieger.JeWelle` 0,5 je Welle ab 43, × Budget der Stufe, höchstens `Flieger.Max` 24. Sie verteilen sich auf die Fronten und fliegen 6 m über Grund.
+  - Sie fliegen geradewegs zum Kern, ohne Netz und über Mauern. Den Spieler greifen sie nie an (Aggro-Radius 0).
+  - Am Kern richten sie `Flieger.KernSchaden` 15 × (1 + 0,25 × Wellenzuwachs) an und explodieren.
+  - **Bodentürme treffen sie nicht**, der **Himmelsturm** und die Handwaffen schon. Ein Treffer tötet eine Krabbe.
+  - Die Welle endet erst, wenn alle Krabben weg sind. Die erste Welle mit Fliegern kündigt der Kern an („FLIEGER!“).
+  - *Noch nicht gebaut* (Spezifikation E5): Krabbennester und Luftabwehr-Munition je Turmlinie.
 - **Fronten:** Zu Beginn gibt es eine. Weitere kommen laut Stufentabelle dazu (Normal ab Welle 11 und 21).
 - **Elite:** 2,5-fache LP, größer, eingefärbt. **Boss:** groß, mit Lebensbalken.
 - **Zielwahl der Gegner:** Sie greifen an, was ihnen den Weg versperrt (Mauern). Gedränge am Kern (20 m, 3 s) führt zum Angriff auf den Kern.
@@ -146,7 +158,7 @@
   - Leiter *(0.9.1)*: Ein Elektrozaun in Reichweite einer Teslaspule leitet jede Entladung an bis zu 3 Gegner, die ihn berühren (4 m, 30 % Schaden; `Kombo.Leiter.*`).
 - **Bremsen (0.9.1):** Tesla-Feld, Ölschlick, Störfeld und Singularität stapeln nicht mehr „letzte gewinnt“. Bis zu drei laufen nebeneinander, es wirkt die stärkste; endet sie, greift die nächste.
 - **Strahlenschutz (0.11-dev, Marius 16.11.):** Das Munitionslager der Türme ist abgeschirmt, radioaktive Munition (Ficsonium im Singularitätswerfer, Uran) strahlt nur beim Transport (`Tuerme.Abgeschirmt`). Die Forschung Singularität schaltet zusätzlich Hazmat-Anzug und Iod-Filter des Spiels frei (alle Modi; im Einsatz ist der HUB gesperrt).
-- **Anschlüsse (0.9.3, ungetestet):** Türme und Bauten tragen die Original-Anschlüsse des Spiels: Bandeingang (`SM_Input_01`), Rohreingang (`SM_Pipe_InPut_01`), Wand-Stromdose (`SM_PowerPoleWall_MK1`) und Statusmast (`SM_ProductionLight_01`) mit der Statuslampe oben. Sie werden per Spielpfad geladen und nicht mitgeliefert. Die Sockel von Gewehr-, Nobelisk- und Flammenturm sind 1,65 m höher, Bolzen- und Himmelsturm 0,65 m, damit der Bandeingang in die Wand passt.
+- **Anschlüsse (Optik-Durchgang 16.11.2026):** Türme und Bauten tragen den Bandeingang (`SM_Input_01`) und den Rohreingang (`SM_Pipe_InPut_01`) des Spiels. Strom kommt über einen **Anschlusskasten im Sockel**, die Statuslampe ist ein **Lampenkopf `SM_TD_StatusLight` auf der Lampenkonsole**. Wand-Stromdose und Original-Lampenmast entfallen. Die Lage aller Anbauten kommt aus `Modelle\Anbauten.json` (`TDAnbauten.inl`). Die Sockel von Gewehr-, Nobelisk- und Flammenturm sind 1,65 m höher, Bolzen- und Himmelsturm 0,65 m, damit der Bandeingang in die Wand passt.
 - **Himmelsturm (0.9.3, ungetestet):** In den sechs Rohren stecken sichtbare Flak-Kanister. Je Schuss verschwindet einer, nach `Tuerme.Himmelsturm.Nachladen` (1,5 s) gleitet ein neuer hinein.
 - **Flammenwerfer (0.9.3, ungetestet):** Der Strahl besteht aus wandernden Feuerwolken (Flipbook, `Effekte.Flamme.*`).
 
@@ -161,7 +173,7 @@
 - **Elektrozaun:** seit 0.9.3 ohne Mauer, nur Pfosten, Schaltkästen und leuchtende Drähte. Für Gegner weiter ein Hindernis; wer angreift, bekommt einen Stromschlag. Seit 0.12 nimmt jeder Zaun 2 Kabel: eine Zaunreihe lässt sich vom Mast aus von Zaun zu Zaun verketten (`Bauten.Elektrozaun.Kabel`, C13).
 - **Radar (Funkmast):** Türme in 30 m +10 % Reichweite. **Seit 0.9.3:** Rohstoffvorkommen in 150 m werden wie beim Ressourcenscanner angezeigt (`Tuerme.Funkmast.RessourcenRadius`). 30 s vor jeder Welle bis zu ihrem Ende markiert er jede aktive Front auf Karte und Kompass mit Welle, Gegnerarten und Anzahl; blau mit „FLIEGER!“, wenn Flieger kommen (`Tuerme.Funkmast.Vorwarnung`). Nur mit Strom.
 - **Schildgenerator:** Kuppel mit 20 m Radius, schluckt Schaden an Bauten (nicht am Kern), 3000 Schild, gebrochen 20 s Ladezeit, sonst 5 %/s nach 5 s ohne Treffer.
-- **Störfeld-Projektor** (Gabelung mit dem Schildgenerator, nur einer von beiden je Spiel): bremst alle Gegner in 15 m auf 60 % Tempo, solange er läuft (1 reanimiertes SAM je 60 s, 80 MW).
+- **Störfeld-Projektor** (seit 0.13 keine Gabelung mehr mit dem Schildgenerator): bremst alle Gegner in 15 m auf 60 % Tempo, solange er läuft (1 reanimiertes SAM je 60 s, 80 MW).
 - **Drohnenplatz (seit 0.9.3, ersetzt die Reparaturstation):** Gabelung in der Festung ab Welle 40, Reparaturdrohnen **oder** Kampfdrohnen. 2 Drohnen auf Level 1, 3 auf Level 2, 4 auf Level 3 (Level mit Coupons im Gebäudefenster wie bei den Türmen, 0.9.6). Ein Rezeptzyklus ist ein Einsatz: Die Drohne steigt auf, fliegt in 15 m Höhe zum Ziel in 40 m, arbeitet und landet wieder.
   - Reparaturdrohnen: 2 Eisenplatten = 840 LP, 1 verstärkte Platte = 3150 LP für den am stärksten beschädigten Bau.
   - Kampfdrohnen: 2 Gewehrmunition je Einsatz, 3 s lang alle 0,35 s 25 Schaden (`Tuerme.Drohnenplatz.*`).
@@ -249,7 +261,7 @@ Stand 16.11.2026 (Mod 0.11-dev; Berichte `Testberichte6-11-16_*`). Die langen 
 | Wert | Erkundung | Normal | Hart | Albtraum |
 |---|---|---|---|---|
 | Gegnerbudget × | 0,6 | 1 | 1,1 | 1,1 |
-| Gegner-LP × | 0,7 | 1,2 | 1,2 | 1,3 |
+| Gegner-LP × | 0,7 | 1,25 | 1,25 | 1,35 |
 | Kern-LP | 30000 | 15000 | 15000 | 15000 |
 | Aufbau bis Welle 1 (s, nur Kern-Verteidigung; Einsatz ohne Uhr) | 1800 | 1200 | 900 | 600 |
 | Aufbau zwischen Wellen (s, nur Kern-Verteidigung) | 900 | 600 | 480 | 360 |
@@ -260,8 +272,8 @@ Stand 16.11.2026 (Mod 0.11-dev; Berichte `Testberichte6-11-16_*`). Die langen 
 ### Wellen
 
 - Budget = Stufe × (12 + 5 × N + 0,15 × N²)
-- Gegner-LP × (1 + 0,35 × (N − 1)) bis Welle 31, danach + 0,1 je weitere Welle; Elite-LP × 2,5
-- Endlos-Wellen: Zuwachs 0,25 statt 0,35 je Welle, Gegner-LP zusätzlich × Erkundung 1 / Normal 0,8333 / Hart 0,8333 / Albtraum 0,8462
+- Gegner-LP × (1 + 0,28 × (N − 1)) bis Welle 31, danach + 1,5 je weitere Welle; Elite-LP × 2,5
+- Endlos-Wellen: Zuwachs 0,25 statt 0,28 je Welle, Gegner-LP zusätzlich × Erkundung 1 / Normal 0,8 / Hart 0,8 / Albtraum 0,8148
 - Bosswellen: Gegnerbudget × 0,6 plus Boss
 - höchstens 60 gleichzeitig, 120 je Welle (Nachschub alle 0,25 s je 5)
 - Standardlänge eines Einsatzes: 50 Wellen
@@ -283,6 +295,7 @@ Stand 16.11.2026 (Mod 0.11-dev; Berichte `Testberichte6-11-16_*`). Die langen 
 | WasserAlpha | 37 |
 | EliteStinger | 38 |
 | NuklearHog | 41 |
+| Krabbe | 43 |
 | Johnny | 46 |
 
 | Phase | Bosse | Boss-LP × |
@@ -406,6 +419,7 @@ Turmlevel kosten 8 / 15 / 25 / 40 Coupons (Level 2–5). Doktrin: Schaden +25 %,
 | Gewehrturm.L4.Magazin | 1 |
 | Gewehrturm.L4.Reichweite | 0,15 |
 | Gewehrturm.L5.Takt | 0,25 |
+| Himmelsturm.L2.Schaden | 0,2 |
 | Himmelsturm.L3.Takt | 0,25 |
 | Himmelsturm.L4.Reichweite | 0,15 |
 | Nobelisk-Werfer.L2.Schaden | 0,2 |
@@ -416,6 +430,7 @@ Turmlevel kosten 8 / 15 / 25 / 40 Coupons (Level 2–5). Doktrin: Schaden +25 %,
 | Preis3 | 15 |
 | Preis4 | 25 |
 | Preis5 | 40 |
+| Singularitaet.L2.Schaden | 0,2 |
 | Singularitaet.L3.Takt | 0,2 |
 | Singularitaet.L4.Reichweite | 0,15 |
 | Teslaspule.L2.Reichweite | 0,1 |
@@ -478,18 +493,27 @@ Turmlevel kosten 8 / 15 / 25 / 40 Coupons (Level 2–5). Doktrin: Schaden +25 %,
 | SchussJeItem.Drohne_ReparaturVerstaerkt | 1 |
 | SchussJeItem.Feld_SAM | 1 |
 | SchussJeItem.Flak_Shoot | 2 |
+| SchussJeItem.Flame_Biofuel | 1 |
 | SchussJeItem.Flame_Fuel | 1 |
+| SchussJeItem.Flame_Ionized | 1 |
+| SchussJeItem.Flame_Rocket | 1 |
+| SchussJeItem.Flame_Turbo | 1 |
 | SchussJeItem.Funk_Strom | 1 |
 | SchussJeItem.Gun_Brand | 2 |
 | SchussJeItem.Gun_Homing | 2 |
 | SchussJeItem.Gun_Panzer | 2 |
 | SchussJeItem.Gun_Standard | 3 |
 | SchussJeItem.Gun_Turbo | 1 |
+| SchussJeItem.Lure_Coal | 1 |
+| SchussJeItem.Lure_CompactedCoal | 1 |
 | SchussJeItem.Nobelisk_Cluster | 3 |
 | SchussJeItem.Nobelisk_Explosive | 4 |
 | SchussJeItem.Nobelisk_Gas | 3 |
 | SchussJeItem.Nobelisk_Nuke | 1 |
 | SchussJeItem.Nobelisk_Pulse | 3 |
+| SchussJeItem.Repair_IronPlate | 1 |
+| SchussJeItem.Repair_Reinforced | 1 |
+| SchussJeItem.Repair_SteelBeam | 1 |
 | SchussJeItem.Schild_Strom | 1 |
 | SchussJeItem.Shoot_Durchschlag | 3 |
 | SchussJeItem.Shoot_Explosive | 2 |
@@ -497,6 +521,7 @@ Turmlevel kosten 8 / 15 / 25 / 40 Coupons (Level 2–5). Doktrin: Schaden +25 %,
 | SchussJeItem.Shoot_Spreadshot | 3 |
 | SchussJeItem.Shoot_Stunshot | 3 |
 | SchussJeItem.Singularitaet_Ficsonium | 2 |
+| SchussJeItem.Slick_HeavyOil | 1 |
 | SchussJeItem.Tesla_Discharge | 1 |
 | SchussJeItem.Zaun_Strom | 1 |
 | Tesla.Schaden | 300 |

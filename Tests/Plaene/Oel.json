@@ -1,0 +1,19 @@
+{
+  "Name": "Oel",
+  "_Hinweis": "23.11.2026 (Gegencheck Konzept Frage 6, Marius: 'Oel sollte nicht zu weit weg sein'): /td oel misst je festem Kernplatz die Entfernung zum naechsten Rohoel-Knoten und zur naechsten Oelquelle. Nur Messung, Werte im Log und im Bericht.",
+  "NeuesSpiel": {
+    "Startort": "Grass Fields",
+    "Modus": 1
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 6,
+  "Schritte": [
+    { "pruefe": "Version", "soll": "{VERSION}", "text": "richtige Mod-Version geladen" },
+    { "warte": 10 },
+    { "befehl": "td oel" },
+    { "pruefe": "LogEnthaelt", "suche": "Rohoel-Stellen in der geladenen Welt", "min": 1, "text": "Oel-Stellen gezaehlt" },
+    { "pruefe": "LogEnthaelt", "suche": "Oel Gras-S1:", "min": 1, "text": "Messung Gras-S1" },
+    { "pruefe": "LogEnthaelt", "suche": "Oel Duene-S8:", "min": 1, "text": "Messung Duene-S8" }
+  ]
+}

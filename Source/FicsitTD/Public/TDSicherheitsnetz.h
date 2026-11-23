@@ -26,4 +26,21 @@ namespace TDNetz
 	FICSITTD_API void Zuruecksetzen();
 	/** "Festgefahren 3, Absturz 1" oder "keine" */
 	FICSITTD_API FString Text(int32* OutSumme = nullptr);
+
+	/** 23.11.2026 (Gegencheck Konzept R3): Hilfen, die Gegner leise ueber Hindernisse bringen. Sie sind kein Fehler wie die
+	 *  Sicherheitsnetze, aber jede Ausloesung zeigt eine Stelle, an der das Netz oder der Weg nicht passt - gezaehlt und im
+	 *  Testbericht neben den Sicherheitsnetzen ausgewiesen (Pruefung "Sicherheitsnetze", ohne Einfluss auf bestanden). */
+	enum class EHilfe : uint8
+	{
+		Bewuchs,        // Gegnerhirn: Pflanzen vor dem Gegner geraeumt
+		Klippe,         // Gegnerhirn: Klippe aus dem Netz genommen
+		StauGeduld,     // Gegnerhirn: nach Gegner.StauGeduld hinter einem Wellengegner versetzt
+		Netzinsel,      // Gegnerhirn: Teilweg von einer Netzinsel verworfen, alter Weg bleibt
+		FrontVerlegt,   // Wellensystem: Startpunkt einer Front hinter eine Klippe verlegt
+		Rundungsrest,   // Gegnerhirn: Gegner mit Rest unter Treffer.Rundungsrest LP getoetet
+		Anzahl
+	};
+	FICSITTD_API void MeldeHilfe(EHilfe Art);
+	/** "Bewuchs 4, Klippe 1" oder "keine" */
+	FICSITTD_API FString HilfenText();
 }

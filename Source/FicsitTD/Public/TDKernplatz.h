@@ -45,6 +45,9 @@ public:
 	static bool SetzeModusAbwehr(const UObject* WorldContext);
 	/** Entwicklermodus: Saved/FicsitTD/Entwickler.txt oder -TDEntwickler */
 	static bool Entwicklermodus();
+	/** 23.11.2026 (Marius: "Oel sollte nicht zu weit weg sein"): je festem Kernplatz die Entfernung zum naechsten Rohoel-Knoten
+	 *  und zur naechsten Oelquelle (Ressourcenbrunnen), eine Zeile je Platz, auch ins Log */
+	static TArray<FString> OelBericht(UWorld* World);
 	/** 16.11. (Nachpruefung B14): Selbsttest "Spielersicht" - schaltet den Entwicklermodus zur Laufzeit ab, damit ein Plan
 	 *  prueft, was ein Spieler ohne Entwicklerdatei sieht. Nur der Autotest setzt das; nicht gespeichert. */
 	static void SetzeSpielersicht(bool bAn);

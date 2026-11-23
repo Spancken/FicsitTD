@@ -36,7 +36,7 @@
 ### Coming in 0.13 (development build only, not on ficsit.app yet; includes the planned 0.12)
 - **AWESOME Shop:** after wave 1 ADA asks you to build the game's AWESOME Shop (free, one per operation). From then on quotas, gear, core repairs and Hard Drives are bought there in six sections (Turrets, Defense, Production, Power, Logistics, Pioneer and Core); the Core stops selling. Base game shop items are hidden during an operation.
 - **Getting started (order since 0.13):** first ADA asks for the HUB, after wave 1 for the shop, after wave 2 for the MAM. The second line of the status bar shows the current task (replaces the mod's To-do block).
-- **Boss waves:** a window with the phase report and three bonus cards; one talent point per boss wave.
+- **Boss waves:** a window with the phase report and three bonus cards; two Talent Points per boss wave, including wave 50 (10 in an operation).
 - The core platform cannot be dismantled during an operation.
 - Questions: Did you find the shop category? Were the prices clear? Did ADA's task lines help?
 - **Core access:** if your buildings seal off the Core, the wave (or the drilling) does not start; the blocking spot is on the map. A building that would close the last path is red in the hologram. Defense walls may close it.
@@ -49,6 +49,7 @@
 - Questions on research: On your first MAM visit after wave 2, did you have to pick a line? Did you ever have to research something you did not want? Were Hard Drives left over, and what would you have spent them on?
 - Questions: Was it clear why a wave did not start? Did the red hologram ever block something you did not expect?
 - **Harder difficulty:** on Normal, Hard and Nightmare enemies have more health and gain it faster per wave; the Core on Normal has 15,000 HP. Endless waves stay as before. Question: Is Normal still fair, and do Hard and Nightmare feel like a real challenge?
+- **Flying crabs** from wave 43 and a harder second half (enemy health grows faster from wave 31). Hand weapons start weaker and grow stronger. Questions: Did the second half still feel dangerous? Did you notice the flyers in time?
 - **New Power tree:** coal, oil and (after wave 50) nuclear power in their own MAM tree, nothing locks anything out. Better fuels give every generator more output: Compacted Coal 100 MW, Petroleum Coke 125 MW, Turbofuel 325 MW, Rocket Fuel 400 MW. Questions: Did you build up one power line or mix coal and oil? Did the Tesla Coil feel too strong with cheaper power?
 - **Fixes from the review:** a core sealed off by an old save is reported shortly after loading; the core menu's research tab is in English; handing in a Hard Drive also works without Coupons.
 
@@ -106,7 +107,7 @@ Full list in the handbook: https://spancken.github.io/FicsitTD/#issues (section 
 ### Kommt mit 0.13 (nur Entwicklungsstand, noch nicht auf ficsit.app; enthält das geplante 0.12)
 - **AWESOME-Shop:** Nach Welle 1 bittet ADA dich, den AWESOME-Shop des Spiels zu bauen (kostenlos, einer je Einsatz). Ab dann kaufst du Kontingente, Ausrüstung, Kernreparatur und Festplatten dort in sechs Bereichen (Türme, Verteidigung, Produktion, Strom, Logistik, Pionier und Kern); der Kern verkauft nicht mehr. Artikel des Grundspiels sind im Einsatz ausgeblendet.
 - **Einstieg (Reihenfolge seit 0.13):** Zuerst bittet ADA um die HUB, nach Welle 1 um den Shop, nach Welle 2 um das MAM. Die zweite Zeile der Statusleiste zeigt die aktuelle Aufgabe (statt des Blocks in der To-do-Liste).
-- **Bosswellen:** ein Fenster mit Phasenbericht und drei Bonus-Karten; ein Talentpunkt je Bosswelle.
+- **Bosswellen:** ein Fenster mit Phasenbericht und drei Bonus-Karten; zwei Talentpunkte je Bosswelle, auch für Welle 50 (10 im Einsatz).
 - Die Kernplattform lässt sich im Einsatz nicht abreißen.
 - Fragen: Hast du die Shop-Kategorie gefunden? Waren die Preise klar? Haben ADAs Aufgaben geholfen?
 - **Kern-Zugang:** Riegeln deine Bauten den Kern ab, startet die Welle (oder die Bohrung) nicht; die Sperrstelle steht auf der Karte. Ein Bau, der den letzten Weg schließen würde, ist im Hologramm rot. Abwehrmauern dürfen schließen.
@@ -119,6 +120,7 @@ Full list in the handbook: https://spancken.github.io/FicsitTD/#issues (section 
 - Fragen zur Forschung: Musstest du dich beim ersten MAM-Besuch nach Welle 2 für eine Linie entscheiden? Musstest du je etwas erforschen, das du nicht wolltest? Lagen Festplatten herum, und wofür hättest du sie gern ausgegeben?
 - Fragen: War klar, warum eine Welle nicht startete? Hat das rote Hologramm etwas gesperrt, das du nicht erwartet hast?
 - **Mehr Herausforderung:** In Normal, Hart und Albtraum haben Gegner mehr Leben und legen je Welle schneller zu; der Kern hat in Normal 15 000 LP. Die Endlos-Wellen bleiben wie bisher. Frage: Ist Normal noch fair, und fühlen sich Hart und Albtraum wie eine echte Herausforderung an?
+- **Fliegende Krabben** ab Welle 43 und eine schwerere zweite Hälfte (Gegnerleben wachsen ab Welle 31 schneller). Handwaffen sind anfangs schwächer und werden stärker. Fragen: War die zweite Hälfte noch gefährlich? Hast du die Flieger rechtzeitig bemerkt?
 - **Neuer Baum Energie:** Kohle, Öl und (nach Welle 50) Kernkraft in einem eigenen MAM-Baum, nichts wird ausgeschlossen. Bessere Brennstoffe geben jedem Kraftwerk mehr Leistung: Kompaktkohle 100 MW, Petrolkoks 125 MW, Turbotreibstoff 325 MW, Raketentreibstoff 400 MW. Fragen: Hast du eine Stromlinie ausgebaut oder Kohle und Öl gemischt? War die Teslaspule mit billigerem Strom zu stark?
 - **Fehlerbehebungen aus dem Gegencheck:** Ein abgeriegelter Kern aus einem alten Spielstand meldet sich kurz nach dem Laden. Der Forschungsreiter im Kern-Menü ist auf Englisch. Festplatten lassen sich auch ohne Coupons abgeben.
 

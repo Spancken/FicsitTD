@@ -33,7 +33,7 @@ python strategien.py --stand 091 --laeufe 3        # Strategie-Prüfstand Einsat
 
 - Erste Welle nach `Endlos.<Stufe>.ErsteWelle`, Abstand ab Wellenbeginn `A(n) = max(90, Abstand − 1,5 · n)`.
 - Wellendauer im Modell = `EndlosAnlaufSekunden` + max(Gegnerstrom, Q_wirksam × 60 s / `EndlosFeuerAnteil`). Gegnerstrom wie im Code: 2/s, höchstens `Endlos.StromAnteil` × A.
-- Früher fertig: Pause = max(30 s, A − Dauer). Nicht fertig bis A: Überlauf, der Rest-Anteil der Gegner-LP kommt zur nächsten Welle, Pause 5 s. Nach Bosswellen mindestens 300 s und Bonus (Kern +30 % unter 60 % Kern, sonst +80 Coupons).
+- Früher fertig: Pause = max(30 s, A − Dauer). Nicht fertig bis A: Überlauf, der Rest-Anteil der Gegner-LP kommt zur nächsten Welle, Pause 5 s. Nach Bosswellen mindestens 300 s und Bonus: unter 60 % Kern das Kern-Maximum dauerhaft +10 % (`Einsatz.Bonus.KernMax`, wie `TDDefenseCore.cpp`, ohne Heilung; bis 23.11. heilte das Modell fälschlich 30 %), sonst +80 Coupons.
 - Coupons und Festplatten je Welle wie im Einsatz (`WelleBeendet` läuft auch im Endlos-Modus), eine Front.
 - **Bauzeit:** keine Bausperre, aber jedes Kontingent (Turm, Fabrikgebäude, Kraftwerk, Stützbau) kostet `BauSekundenJeGebaeude` = 111 s. Verfügbar: Pause + 50 % der Wellenzeit, Rest bis 300 s mitgenommen. Level im Turmfenster kosten keine Bauzeit. Fabrikzyklus = tatsächlicher Wellenabstand (kürzer als im Einsatz, also mehr Munition je Minute nötig).
 - Vorziehen-Variante: bei lockerer Welle (Q < 0,25, Kern ≥ 90 %) wird ungenutzte Bauzeit gegen 1 Coupon je 10 s eingetauscht.
@@ -65,6 +65,12 @@ python strategien.py --stand 091 --laeufe 3        # Strategie-Prüfstand Einsat
     - Jäger: ×1,5 gegen Elite und Boss, Schwachstelle im Boss
   - Die Annahmen stehen in `strategie_annahmen.json`.
   - `sim_alle_modi.py` zeigt eine Zusatztabelle „Einsatz mit aktivem Spieler“ (Siegquote und Spieleranteil, ohne Band).
+- **Flieger (23.11. nachmittags):**
+  - Ab W43 kommen Krabben nach `Flieger.*`.
+  - Der gute Spieler forscht den Himmelsturm nach Turmfertigung III und stellt je 8 Krabben einen auf (`FliegerJeHimmelsturm`, Preis wie im Laden).
+  - Nicht abgefangene Krabben treffen den Kern mit `Flieger.KernSchaden` × (1 + 0,25 × Wellenzuwachs).
+  - Annahme: Ein Himmelsturm fängt 8 Krabben je Welle. Im Spiel ist das noch ungemessen (Plan `Flieger`).
+- **Später Druck (Gegencheck Konzept B1):** `Wellen.LPJeWelleAb31` 1,5, Endlos eigener Wert (`Endlos.LPJeWelleAb31` 0,1).
 - **Werkzeuge:**
   - `eiche_stufen.py`, `eiche_endlos.py` (Eichen je Stufe)
   - `diagnose_endlos.py` (woran Endlos scheitert)
@@ -114,7 +120,11 @@ Siehe `Ausgabe\Pipeline\sim_ergebnis.md`. Kurz:
 
 ### Grenzen des Modells
 
-- **Kein Spieler/Pionier**: Der Spieler als Turm (10–20 %, Fabrikmunition, Rollen) fehlt. Gerade der Anfang von Hart/Albtraum hängt daran.
+- **Spieler (seit 23.11.)**: nur mit `SpielerAktiv` 1 (die Bänder gelten für den passiven Spieler).
+  - Der Spieler hat die Armierpistole (`SpielerDPSArmier`), das Gewehr erst nach der Forschung Gewehrturm und dem Kauf für 10 Coupons.
+  - Er verbraucht keine Munition.
+  - Zehn der zwanzig Talente fehlen im Modell (Reparatur, Beute, Anzeige, Bollwerk, Hinrichtung, Nachschub, Munition sparen, Sammelbefehl).
+  - Jäger 3 wirkt nur am Bossanteil der Welle, Kommandant 5 nur über `UebersteuernFlaecheFaktor`.
 - **Keine echte Fabrik**: Munition kommt aus einer Bilanz bis zum Erz (Kontingente, Strom), ohne Bänder, Wege, Platz und Fehler. In der Bohrung ist die Versorgung immer voll.
 - Kein Ort: keine Reichweite, keine Fronten-Aufteilung, keine Laufwege, keine Mauern. Flächenwirkung nur über Faktoren (`Mehrziel_*`, Flamme 2,7 × 2 Ziele: daher der sehr starke Flammenwerfer in der Bohrung).
 - Kernverlust aus Q ist eine Kurve aus Einsatz-Messungen bis W30 (R² 0,46). Alles danach und alles in Endlos/Bohrung ist hochgerechnet.

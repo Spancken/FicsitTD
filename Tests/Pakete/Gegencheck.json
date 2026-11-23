@@ -1,0 +1,5 @@
+{
+  "Name": "Gegencheck",
+  "_Hinweis": "23.11.2026 nachmittags: Umsetzung Gegencheck 0.13 Konzept - Flieger, Labyrinth, Energie, Oel-Messung, Modus Aus, Oelbrand-Kombo (BautenP1, BautenE3a), Talente (Pionier-P3), Grundtest.",
+  "Plaene": ["Oel", "Flieger", "Labyrinth", "Energie", "ModusAus", "BautenP1", "BautenE3a", "Pionier-P3", "Grundtest"]
+}

@@ -3,7 +3,7 @@
 //   - Festplatten bis vor Welle n: je Welle Einsatz.FP.JeWelle, +KernAb75 wenn der Kern ueber 75 % bleibt, +Boss je zehnte Welle,
 //     wahlweise der Bonus "Festplatten" nach jeder Bosswelle und im Shop gekaufte Festplatten
 //   - ein Knoten braucht seine Eltern und Voraussetzungen, seine Freigabe-Welle und genug Festplatten; Gabelungen schliessen sich aus
-//   - Talentpunkte: einer je geschaffter Bosswelle (Pionier.PunkteJeBoss), hoechstens Pionier.MaxPunkte; Stufen je Rolle der Reihe nach
+//   - Talentpunkte: Pionier.PunkteJeBoss je geschaffter Bosswelle (seit 23.11. zwei), hoechstens Pionier.MaxPunkte; Stufen je Rolle der Reihe nach
 // Der Plan steht in der Adresse (#plan=...), damit man Builds teilen kann.
 (function () {
   'use strict';
