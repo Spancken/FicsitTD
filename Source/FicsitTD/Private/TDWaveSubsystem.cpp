@@ -3335,7 +3335,7 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 		// danach, was nach der Wegvorschau gebaut war, lag neben dem Weg): mit Gegner.FrontPruefungAufbau s nach Beginn der Bauphase
 		// Fronten abgleichen und Klippen proben, damit Vorschau und Marker den Weg der Welle zeigen. Beim Start prueft es noch einmal.
 		mAufbauUhr += DeltaTime;
-		const float FruehNach = TDBalance::Wert(TEXT("Gegner.FrontPruefungAufbau"), 0.f);
+		const float FruehNach = TDBalance::Wert(TEXT("Gegner.FrontPruefungAufbau"), 5.f);   // 23.11. abends Marius: an
 		const bool bFrueh = FruehNach > 0.f && mAufbauUhr >= FruehNach && !mBohrung;
 		const bool bVorStart = mCountdown <= TDBalance::Wert(TEXT("Gegner.FrontPruefungVorStart"), 20.f);
 		// 16.11. (W06: Klippenprobe und Wellenstart im selben Frame - ein Hog fuhr sich fest, bevor das Netz die Sperre kannte):

@@ -461,7 +461,7 @@ private:
 	/** Welle, fuer die die Frontpruefung vor dem Start schon lief */
 	int32 mFrontCheckWelle = -1;
 	/** 23.11. (Wegvorschau vor dem Start): Sekunden seit Beginn der Bauphase und Welle, deren Fronten schon frueh geprueft sind.
-	 *  Gegner.FrontPruefungAufbau > 0 zieht Frontpruefung und Klippenprobe in die Bauphase vor (Schalter, Standard aus). */
+	 *  Gegner.FrontPruefungAufbau > 0 zieht Frontpruefung und Klippenprobe in die Bauphase vor (Standard 5 s, Marius 23.11. abends). */
 	float mAufbauUhr = 0.f;
 	int32 mFrontCheckFruehWelle = -1;
 	/** so lange wartet der Wellenstart schon auf den Netzumbau; wie oft gewartet wurde (Log) */
