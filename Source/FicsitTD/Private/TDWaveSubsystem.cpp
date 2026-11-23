@@ -1,5 +1,6 @@
 #include "TDWaveSubsystem.h"
 #include "TDStrom.h"
+#include "Engine/OverlapResult.h"
 #include "Creature/Enemy/FGFlyingBabyCrab.h"
 #include "TDAda.h"
 #include "GameFramework/Character.h"
@@ -1379,6 +1380,7 @@ bool UTDWaveSubsystem::StarteKernVerteidigung(ATDDefenseCore* Kern, int32 Wellen
 {
 	mPlanWelle = -1;   // T3: Wellenplan haengt an Kern und Stufe
 	mFrontCheckWelle = -1;
+	mFrontCheckFruehWelle = -1;
 	mKlippenWarte = 0.f;
 	mKernZugang = FTDKernZugang();   // 0.13 K1
 	mZugangWarte = 0.f;
@@ -1595,6 +1597,7 @@ void UTDWaveSubsystem::SetzeLaufFort(ATDDefenseCore* Kern)
 {
 	mPlanWelle = -1;   // T3: Wellenplan haengt an Kern und Stufe
 	mFrontCheckWelle = -1;
+	mFrontCheckFruehWelle = -1;
 	mKlippenWarte = 0.f;
 	mKernZugang = FTDKernZugang();   // 0.13 K1
 	mZugangWarte = 0.f;
@@ -3284,6 +3287,7 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 		if (mVorgeladenFuer != mWelle + 1)
 		{
 			mVorgeladenFuer = mWelle + 1;
+			mAufbauUhr = 0.f;
 			// 0.13 N1: Maschinen und Tuerme als Sperrflaeche ins Gegnernetz (auch nach dem Laden, die Kaesten werden nicht gespeichert)
 			VerbindeBauSperren();
 			SperreBautenUm(mKern->GetActorLocation());
@@ -3327,11 +3331,18 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 		}
 		const float Vorher = mCountdown;
 		mCountdown -= mManuell ? 0.f : DeltaTime;   // Einsatz: Countdown steht, /td kern weiter setzt ihn auf 0
+		// 23.11. (BautenP1, Gegencheck: im Einsatz lief die Klippenprobe erst beim Druck auf "Welle starten" - die Wege verschoben sich
+		// danach, was nach der Wegvorschau gebaut war, lag neben dem Weg): mit Gegner.FrontPruefungAufbau s nach Beginn der Bauphase
+		// Fronten abgleichen und Klippen proben, damit Vorschau und Marker den Weg der Welle zeigen. Beim Start prueft es noch einmal.
+		mAufbauUhr += DeltaTime;
+		const float FruehNach = TDBalance::Wert(TEXT("Gegner.FrontPruefungAufbau"), 0.f);
+		const bool bFrueh = FruehNach > 0.f && mAufbauUhr >= FruehNach && !mBohrung;
+		const bool bVorStart = mCountdown <= TDBalance::Wert(TEXT("Gegner.FrontPruefungVorStart"), 20.f);
 		// 16.11. (W06: Klippenprobe und Wellenstart im selben Frame - ein Hog fuhr sich fest, bevor das Netz die Sperre kannte):
 		// Frontpruefung schon 20 s vor dem Start, damit der Netzumbau vor der Welle fertig ist
 		// 18.11. (P12-E5): vor der ersten Welle die Fronten abgleichen - alle 2 s neu suchen, bis zwei Suchen dieselben Fronten liefern
 		// (hoechstens Gegner.FrontenWarteMax s). Erst dann Klippenprobe und Start; sonst haengt die Wahl am Stand des Netzes.
-		if (!mFrontenStabil && !mBohrung && mWelle == 0 && mCountdown <= TDBalance::Wert(TEXT("Gegner.FrontPruefungVorStart"), 20.f))
+		if (!mFrontenStabil && !mBohrung && mWelle == 0 && (bVorStart || bFrueh))
 		{
 			if (mFrontenWarte < TDBalance::Wert(TEXT("Gegner.FrontenWarteMax"), 30.f))
 			{
@@ -3371,7 +3382,14 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 				return;
 			}
 		}
-		if ((mFrontenStabil || mBohrung) && mFrontCheckWelle != mWelle + 1 && mCountdown <= TDBalance::Wert(TEXT("Gegner.FrontPruefungVorStart"), 20.f))
+		if (bFrueh && mFrontenStabil && mFrontCheckFruehWelle != mWelle + 1 && !bVorStart)
+		{
+			mFrontCheckFruehWelle = mWelle + 1;
+			UE_LOG(LogFicsitTD, Log, TEXT("Frontpruefung fuer Welle %d in der Bauphase (nach %.0f s)"), mWelle + 1, mAufbauUhr);
+			PruefeFrontenVorWelle(mWelle + 1);
+			MarkiereFronten();
+		}
+		if ((mFrontenStabil || mBohrung) && mFrontCheckWelle != mWelle + 1 && bVorStart)
 		{
 			mFrontCheckWelle = mWelle + 1;
 			PruefeFrontenVorWelle(mWelle + 1);
@@ -4047,20 +4065,58 @@ bool UTDWaveSubsystem::SperreKlippe(AActor* Klippe, const FVector* Stelle)
 				// 22.11. (Handspiel H7: sechs Verlegungen hintereinander zogen Front 1 von 270 m auf 85 m an den Kern - die Hogs erschienen
 				// "einfach so" kurz vor der Basis): nie naeher als Gegner.FrontMinAbstand (150 m); sonst bleibt der Startpunkt, die Klippe frei
 				const float FrontMin = FMath::Max(6000.f, TDBalance::Wert(TEXT("Gegner.FrontMinAbstand"), 150.f) * 100.f);
-				for (int32 k = Naechster; k < Weg.Num() - 1 && !bVerlegt; ++k)
+				// 23.11. (Gras-S8 Front 1, zweimal in W43: der Startpunkt wanderte in drei Schritten mitten in ein Klippenfeld; Elite-Stinger,
+				// Alpha-Hog und Spucker-Alpha (Kapsel 110-180 cm, die Klippenprobe prueft mit 70 cm) blieben gleich nach dem Spawn an den
+				// Pfeilern haengen): der neue Startpunkt braucht Freiraum ohne Klippe im Umkreis Gegner.FrontFreiRadius. Erst ohne einen
+				// solchen Punkt gilt wie bisher der erste Wegpunkt hinter der Sperre.
+				const float FreiRadius = TDBalance::Wert(TEXT("Gegner.FrontFreiRadius"), 12.f) * 100.f;
+				auto KlippeNah = [this, FreiRadius](const FVector& P)
 				{
-					if (!Schutz.IsInsideXY(Weg[k]) && FVector::Dist2D(Weg[k], Kern->GetActorLocation()) > FrontMin)
+					if (FreiRadius <= 0.f)
 					{
-						TDNetz::MeldeHilfe(TDNetz::EHilfe::FrontVerlegt);
-						UE_LOG(LogFicsitTD, Log, TEXT("Klippensperre: Startpunkt von Front %d hinter %s verlegt (%s -> %s)"), i + 1, *Modell,
-							*mFronten[i].Ort.ToCompactString(), *Weg[k].ToCompactString());
-						mFronten[i].Ort = Weg[k];
-						if (Kern->mLaufFrontOrte.IsValidIndex(i))
-						{
-							Kern->mLaufFrontOrte[i] = Weg[k];
-						}
-						bVerlegt = true;
+						return false;
 					}
+					// 8 waagerechte Strahlen in 1,5 m Hoehe: trifft einer im Umkreis eine Klippe, steht dort eine Wand oder ein Pfeiler.
+					// Begehbarer Felsboden (CliffFlat) unter dem Punkt zaehlt nicht (Nachtest: Front 3 auf Gras-S8 galt sonst als "ohne Freiraum").
+					FCollisionQueryParams Abfrage(TEXT("TDFrontFrei"), true);
+					const FVector Mitte = P + FVector(0.f, 0.f, 150.f);
+					for (int32 r = 0; r < 8; ++r)
+					{
+						FHitResult Hit;
+						const FVector Ende = Mitte + FRotator(0.f, 45.f * r, 0.f).Vector() * FreiRadius;
+						if (GetWorld()->LineTraceSingleByChannel(Hit, Mitte, Ende, ECC_WorldStatic, Abfrage) && Hit.GetActor()
+							&& Hit.GetActor()->GetClass()->GetName().Contains(TEXT("CliffActor")))
+						{
+							return true;
+						}
+					}
+					return false;
+				};
+				int32 Ziel = INDEX_NONE, ErsterHinter = INDEX_NONE;
+				for (int32 k = Naechster; k < Weg.Num() - 1 && Ziel == INDEX_NONE; ++k)
+				{
+					if (Schutz.IsInsideXY(Weg[k]) || FVector::Dist2D(Weg[k], Kern->GetActorLocation()) <= FrontMin)
+					{
+						continue;
+					}
+					ErsterHinter = ErsterHinter == INDEX_NONE ? k : ErsterHinter;
+					Ziel = KlippeNah(Weg[k]) ? INDEX_NONE : k;
+				}
+				const bool bFrei = Ziel != INDEX_NONE;
+				Ziel = bFrei ? Ziel : ErsterHinter;
+				if (Ziel != INDEX_NONE)
+				{
+					TDNetz::MeldeHilfe(TDNetz::EHilfe::FrontVerlegt);
+					const FString Frei = bFrei ? FString::Printf(TEXT("frei im Umkreis %.0f m"), FreiRadius / 100.f)
+						: FString(TEXT("OHNE Freiraum - kein freier Wegpunkt hinter der Sperre"));
+					UE_LOG(LogFicsitTD, Log, TEXT("Klippensperre: Startpunkt von Front %d hinter %s verlegt (%s -> %s, %s)"), i + 1, *Modell,
+						*mFronten[i].Ort.ToCompactString(), *Weg[Ziel].ToCompactString(), *Frei);
+					mFronten[i].Ort = Weg[Ziel];
+					if (Kern->mLaufFrontOrte.IsValidIndex(i))
+					{
+						Kern->mLaufFrontOrte[i] = Weg[Ziel];
+					}
+					bVerlegt = true;
 				}
 			}
 			if (!bVerlegt)

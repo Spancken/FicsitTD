@@ -44,6 +44,7 @@
 - Talents of older saves are reset once to the new boss points, with a chat note.
 - Free Play with Defense: missing industry nodes (Belt Mk.4/Mk.5, Miner Mk.2/Mk.3) are added, and the other side of a branch no longer shows as locked.
 - Right after the Core platform is built, its own foundations no longer count as sealing off the Core while the navigation mesh catches up.
+- The Oil Slick Field slows enemies again – in the 0.13 test builds they walked around it.
 - Enemies find their way through mazes of defense walls. Before, a long winding path made the path search give up: enemies got stuck at the outer wall and the Core counted as sealed off.
 
 ### Saves
@@ -75,4 +76,5 @@
   - Talente alter Stände
   - fehlende Industrie-Knoten im Freien Spiel
   - Die eigene Kernplattform gilt kurz nach dem Bau nicht mehr als Abriegelung, solange das Netz nachzieht
+  - Das Ölschlick-Feld bremst wieder (in den 0.13-Testständen liefen Gegner darum herum)
   - Gegner finden durch Labyrinthe aus Mauern (vorher gab die Wegsuche bei langen Umwegen auf, Gegner hingen an der äußeren Mauer)

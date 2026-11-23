@@ -1,0 +1,5 @@
+{
+  "Name": "Slick",
+  "_Hinweis": "23.11.2026 abends: Oelschlick-Feld ohne Sperrflaeche im Gegnernetz (Gegner.SlickBegehbar) - BautenP1, BautenP1-Frueh (Schalter fruehe Frontpruefung) und BautenE3a als Gegenprobe.",
+  "Plaene": ["BautenP1", "BautenP1-Frueh", "BautenE3a"]
+}

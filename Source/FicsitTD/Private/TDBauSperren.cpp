@@ -13,6 +13,7 @@
 #include "TDBarrier.h"
 #include "TDTestWall.h"
 #include "TDGate.h"
+#include "TDSlickPlate.h"
 #include "TDBautenErweitert.h"
 #include "FicsitTDModule.h"
 #include "Misc/ScopeExit.h"
@@ -54,8 +55,11 @@ namespace
 
 bool UTDWaveSubsystem::BrauchtBauSperre(const AFGBuildable* Bau) const
 {
+	// 23.11. (BautenP1 Gebremst 0, Log "Kasten fuer Build_TD_SlickPlate_C 9.0 x 8.1 x 5.8 m"): das Oelschlick-Feld ist zum Drueberlaufen
+	// da - mit Sperrflaeche liefen die Gegner seit N1 (22.11.) um die Platte herum. Abschaltbar ueber Gegner.SlickBegehbar 0.
 	if (!IsValid(Bau) || Bau->GetIsLightweightTemporary() || Bau->IsA<ATDDefenseCore>() || Bau->IsA<AFGBuildableFactoryBuilding>()
-		|| TDBSIstTDHindernis(Bau) || UTDEinsatzSubsystem::IstLogistik(Bau->GetClass()))
+		|| TDBSIstTDHindernis(Bau) || UTDEinsatzSubsystem::IstLogistik(Bau->GetClass())
+		|| (Bau->IsA<ATDSlickPlate>() && TDBalance::Wert(TEXT("Gegner.SlickBegehbar"), 1.f) > 0.f))
 	{
 		return false;
 	}

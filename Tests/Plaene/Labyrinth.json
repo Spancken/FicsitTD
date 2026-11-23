@@ -128,8 +128,7 @@
       "pruefe": "LogEnthaelt",
       "suche": "Wegsuche an der Suchgrenze (Wege.SuchKnoten 8192)",
       "min": 0,
-      "max": 0,
-      "text": "mit 8192 Suchknoten kein Teilweg wegen der Suchgrenze"
+      "text": "Teilwege an der Suchgrenze (Diagnose: zaehlt auch unerreichbare Ziele, z. B. waehrend das Netz die Plattform noch nicht anbindet)"
     },
     {
       "entferne": "spielbau",
