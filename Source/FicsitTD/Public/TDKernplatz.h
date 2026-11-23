@@ -48,6 +48,9 @@ public:
 	/** 23.11.2026 (Marius: "Oel sollte nicht zu weit weg sein"): je festem Kernplatz die Entfernung zum naechsten Rohoel-Knoten
 	 *  und zur naechsten Oelquelle (Ressourcenbrunnen), eine Zeile je Platz, auch ins Log */
 	static TArray<FString> OelBericht(UWorld* World);
+	/** 23.11. (Marius: Oel bleibt fern, Option D "so lassen, aber sagen"): Hinweis beim Einsatzstart, wie weit und in welcher Richtung
+	 *  das naechste Rohoel liegt (Knoten und Quelle). Leer, wenn keine Oelstelle geladen ist. */
+	static FString OelHinweis(UWorld* World, const FVector& Kern);
 	/** 16.11. (Nachpruefung B14): Selbsttest "Spielersicht" - schaltet den Entwicklermodus zur Laufzeit ab, damit ein Plan
 	 *  prueft, was ein Spieler ohne Entwicklerdatei sieht. Nur der Autotest setzt das; nicht gespeichert. */
 	static void SetzeSpielersicht(bool bAn);

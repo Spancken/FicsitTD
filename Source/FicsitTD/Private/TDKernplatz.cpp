@@ -1161,6 +1161,80 @@ TArray<FString> UTDKernplatz::OelBericht(UWorld* World)
 	}
 	return Zeilen;
 }
+FString UTDKernplatz::OelHinweis(UWorld* World, const FVector& Kern)
+{
+	if (!World)
+	{
+		return FString();
+	}
+	FVector Knoten = FVector::ZeroVector, Quelle = FVector::ZeroVector;
+	float DK = -1.f, DQ = -1.f;
+	for (TActorIterator<AFGResourceNode> It(World); It; ++It)
+	{
+		const UClass* Art = It->GetResourceClass();
+		if (!Art || !Art->GetName().Contains(TEXT("LiquidOil")))
+		{
+			continue;
+		}
+		const bool bQuelle = It->GetClass()->GetName().Contains(TEXT("Fracking"));
+		const float D = FVector::Dist2D(It->GetActorLocation(), Kern);
+		float& Best = bQuelle ? DQ : DK;
+		if (Best < 0.f || D < Best)
+		{
+			Best = D;
+			(bQuelle ? Quelle : Knoten) = It->GetActorLocation();
+		}
+	}
+	if (DK < 0.f && DQ < 0.f)
+	{
+		return FString();
+	}
+	auto Richtung = [&Kern](const FVector& Ort, bool bEn)
+	{
+		const float Winkel = FMath::RadiansToDegrees(FMath::Atan2(Ort.Y - Kern.Y, Ort.X - Kern.X));
+		const int32 i = FMath::RoundToInt(FRotator::NormalizeAxis(Winkel + 90.f) / 45.f + 8.f) % 8;
+		static const TCHAR* De[] = { TEXT("Norden"), TEXT("Nordosten"), TEXT("Osten"), TEXT("Südosten"), TEXT("Süden"), TEXT("Südwesten"), TEXT("Westen"), TEXT("Nordwesten") };
+		static const TCHAR* En[] = { TEXT("north"), TEXT("northeast"), TEXT("east"), TEXT("southeast"), TEXT("south"), TEXT("southwest"), TEXT("west"), TEXT("northwest") };
+		return FString(bEn ? En[i] : De[i]);
+	};
+	auto Weite = [](float Cm, bool bEn)
+	{
+		const float M = Cm / 100.f;
+		if (M < 1000.f)
+		{
+			return FString::Printf(TEXT("%.0f m"), FMath::RoundToFloat(M / 10.f) * 10.f);
+		}
+		FString K = FString::Printf(TEXT("%.1f km"), M / 1000.f);
+		if (!bEn)
+		{
+			K.ReplaceInline(TEXT("."), TEXT(","));
+		}
+		return K;
+	};
+	// das naehere von Knoten und Quelle zuerst; die Quelle braucht den Druckregler (Ressourcenbrunnen)
+	const bool bEn = TDSprache::Englisch();
+	FString Teile;
+	if (DK >= 0.f)
+	{
+		Teile = bEn ? FString::Printf(TEXT("the nearest crude oil node is %s %s"), *Weite(DK, true), *Richtung(Knoten, true))
+			: FString::Printf(TEXT("Das nächste Rohöl-Vorkommen liegt %s %s"), *Weite(DK, false), *Richtung(Knoten, false));
+	}
+	if (DQ >= 0.f && (DK < 0.f || DQ < DK))
+	{
+		const FString Q = bEn ? FString::Printf(TEXT("an oil well (needs a Resource Well Pressurizer) is %s %s"), *Weite(DQ, true), *Richtung(Quelle, true))
+			: FString::Printf(TEXT("eine Ölquelle (braucht den Druckregler) %s %s"), *Weite(DQ, false), *Richtung(Quelle, false));
+		Teile = Teile.IsEmpty() ? Q : Teile + TEXT(", ") + Q;
+	}
+	const float Nah = FMath::Min(DK < 0.f ? MAX_flt : DK, DQ < 0.f ? MAX_flt : DQ) / 100.f;
+	if (bEn)
+	{
+		return FString::Printf(TEXT("Oil: %s. Flamethrowers, the Oil Slick Field and Fuel Generators need oil%s"),
+			*(Teile.Left(1).ToUpper() + Teile.Mid(1)), Nah > 1000.f ? TEXT(" – plan a long pipeline or build on coal first.") : TEXT("."));
+	}
+	return FString::Printf(TEXT("Öl: %s. Flammenwerfer, Ölschlick-Feld und Treibstoffkraftwerk brauchen Öl%s"), *Teile,
+		Nah > 1000.f ? TEXT(" – plane eine lange Rohrleitung oder setze zuerst auf Kohle.") : TEXT("."));
+}
+
 static const TCHAR* TDFundamentRezept = TEXT("/Game/FactoryGame/Recipes/Buildings/Foundations/Recipe_Foundation_8x4_01.Recipe_Foundation_8x4_01_C");
 static const TCHAR* TDKernKlasse = TEXT("/FicsitTD/Buildings/DefenseCore/Build_TD_DefenseCore.Build_TD_DefenseCore_C");
 static const TCHAR* TDKernRezept = TEXT("/FicsitTD/Buildings/DefenseCore/Recipe_TD_DefenseCore.Recipe_TD_DefenseCore_C");

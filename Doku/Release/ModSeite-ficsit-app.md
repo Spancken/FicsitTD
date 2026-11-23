@@ -28,6 +28,7 @@ FICSIT Tower Defense turns Satisfactory into a tower defense that lives off your
 - **Core access:** a sealed-off Core does not start a wave, and the hologram turns red if a building would close the last path. **Unstable ground:** no factory buildings within 60 m of the Core. Enemies now walk around machines and turrets.
 - **Untangled research:** Industry has six entry points without a forced chain; Bolt and Tesla from wave 3, Rifle Turret from wave 5.
 - **New Power tree:** coal, oil and (after wave 50) nuclear power, nothing locked out. Better fuels give every generator more output – Compacted Coal 100 MW, Petroleum Coke 125 MW, Turbofuel 325 MW, Rocket Fuel 400 MW.
+- **Where is the oil?** When an operation starts, the chat tells you the distance and direction to the nearest crude oil. It is far at most core sites – the Forest is the oil-friendly start.
 - **Harder:** Normal, Hard and Nightmare have more enemy health that grows faster per wave. Endless waves stay as before.
 
 ## What was new in 0.11
@@ -61,7 +62,7 @@ Take two roles fully or three halfway. Your strongest role shows as a badge in t
 ## What you get
 - **Three game modes:** Operation (50 waves), Endless waves (timed, never ends, best result per difficulty) and Free play with defense (regular Satisfactory plus turrets and an optional drilling challenge).
 - **An operation of 50 waves** in five phases with a boss every tenth wave, elites and new enemy types: Hogs, Stingers, forest, desert and water Spitters, Nuclear Hogs and Johnny.
-- **5 turret lines with real ammo chains:** Bolt Turret (rebar → piercing → shrapnel/stun → explosive), Rifle Turret (rifle ammo → homing/armor-piercing → incendiary → turbo), Nobelisk Launcher (nobelisk → gas/pulse → cluster), Tesla Coil (power, chain lightning or overload) and Flamethrower (fuel → turbofuel → rocket fuel → ionized fuel). Late game: Sky Tower (flyers still in development) and Singularity Launcher (Endless mode, after wave 50).
+- **5 turret lines with real ammo chains:** Bolt Turret (rebar → piercing → shrapnel/stun → explosive), Rifle Turret (rifle ammo → homing/armor-piercing → incendiary → turbo), Nobelisk Launcher (nobelisk → gas/pulse → cluster), Tesla Coil (power, chain lightning or overload) and Flamethrower (fuel → turbofuel → rocket fuel → ionized fuel). Late game: Sky Tower (against flying crabs from wave 43) and Singularity Launcher (Endless mode, after wave 50).
 - **Turret levels 1–5** bought with Coupons in the turret window, visible on the model. Level 5 unlocks a master ability per turret. Pick a **doctrine** for your main line.
 - **Seven combos** between turrets and buildings: Lightning Rod, Heat Crack, Deflagration, Oil Fire, Chokepoint, Rally Point, Conductor.
 - **Defensive buildings:** walls and gate, lure fire, oil slick field, electric fence, radio mast (radar and front warnings), shield generator, jammer projector, drone pad with repair or combat drones.

@@ -15,6 +15,7 @@
 - Enemies walk around machines and turrets instead of getting stuck on them.
 - **Return Hard Drives:** in the AWESOME Shop (Pioneer and Core) you trade a spare Hard Drive for 12 Coupons, also without Coupons in your inventory.
 - **Power tree:** coal, oil and (after wave 50) nuclear power have their own MAM tree. Nothing locks anything out, and coal and oil can run side by side. Building up a line pays off: better fuels give every generator more output (Compacted Coal 100 MW, Petroleum Coke 125 MW, Turbofuel 325 MW, Rocket Fuel 400 MW, Ionized Fuel 500 MW, Plutonium 3250 MW). The Shop sells Nuclear Power Plants and Particle Accelerators from wave 51.
+- **Where is the oil?** When an operation starts, the chat tells you how far away the nearest crude oil is and in which direction (Forest under ~1 km, Grass Fields over 2 km).
 - **Flying crabs** from wave 43: they fly straight to the Core over walls; ground turrets can't hit them, the Sky Tower and your hand weapons can.
 - **Player guide:** the full research tree sits behind a spoiler button, plus a planner for Hard Drives and Talent Points by wave.
 
@@ -63,6 +64,7 @@
 - MAM-Baum entflochten: sechs Einstiege, Bolzen und Tesla ab Welle 3, Gewehrturm ab Welle 5.
 - Im Freien Spiel mit Abwehr ist die Gegenseite einer Gabel zum doppelten Coupon-Preis erforschbar.
 - Mehr Herausforderung: mehr Gegnerleben in Normal, Hart und Albtraum, ab Welle 31 wachsen sie deutlich schneller. Der Kern hat in Normal 15 000 LP. Die Endlos-Wellen bleiben wie bisher.
+- Wo ist Öl? Beim Einsatzstart sagt der Chat Entfernung und Richtung zum nächsten Rohöl (Wald unter etwa 1 km, Grasfelder über 2 km).
 - Fliegende Krabben ab Welle 43: Sie fliegen über Mauern zum Kern, nur Himmelsturm und Handwaffen treffen sie.
 - Handwaffen anfangs schwächer, später stärker: Dein Anteil bleibt bei etwa 10–20 %.
 - Talentpunkte: zwei je Bosswelle, auch für Welle 50.

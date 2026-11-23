@@ -2378,6 +2378,16 @@ void UTDEinsatzSubsystem::Starte(ATDDefenseCore* Kern, int32 Stufe, int32 Wellen
 	// 23.11. (Gegencheck Konzept R5, Marius: "keine Fundamente im Einsatz" bleibt): einmal je Einsatz erklaeren, warum
 	Melde(TDT(TEXT("Hinweis: Im Einsatz gibt es keine Fundamente, Wände und Rampen des Spiels. Sie würden den Gegnern jeden Weg versperren. Abwehrmauern und Tore gibt es im Shop."),
 		TEXT("Note: during an operation there are no foundations, walls or ramps from the base game. They would block every enemy path. Defense walls and gates are in the Shop.")));
+	// 23.11. (Marius: Oel bleibt fern, Option D "so lassen, aber sagen"): einmal je Einsatz sagen, wo das naechste Rohoel liegt
+	if (Kern)
+	{
+		const FString Oel = UTDKernplatz::OelHinweis(GetWorld(), Kern->GetActorLocation());
+		if (!Oel.IsEmpty())
+		{
+			UE_LOG(LogFicsitTD, Log, TEXT("Einsatz: Oel-Hinweis: %s"), *Oel);
+			Melde(Oel);
+		}
+	}
 	// 0.12 E4: Shop-Preise aus den Kaufzaehlern (ohne Einsatz Grundpreise)
 	TDShop::SetzePreise(this);
 }
