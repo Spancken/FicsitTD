@@ -31,9 +31,11 @@ experiment:
 **Gelöst am 24.11. (Gras-S8 Front 1):**
 - Neuer Testschalter `Test.FrontR1..4`/`Test.FrontD1..4`: ersetzt eine feste Front ohne neuen Build.
 - Paket `Gras-S8-Kandidaten` (`2026-11-24_0832`): r14, r11 und r10 waren je W43 ohne Festgefahrene und ohne Sicherheitsnetz. Nur auf r14 hing die Klippenprobe für Front 1 gar nicht.
-- Die Tabelle `TDFesteFronten` hat für Gras-S8 jetzt Front 1 = r14 nah (Nordosten, 267 m), vorher r13 fern (Schlucht).
+- Die Tabelle `TDFesteFronten` hat für Gras-S8 jetzt Front 1 = **r14 fern** (Nordosten): auf Normal 267 m, auf Erkundung fällt sie auf nah 267 m zurück. Vorher war es r13 fern (Schlucht, 389 m auf Normal, 427 m auf Erkundung).
+- Korrektur am Mittag: Zuerst stand r14 nah drin. Das gab auf Normal nur 223 m und nach der Verlegung 156 m (K1 brach ab W5 ein).
+- Offen für Marius: Front 1 ist damit gut 120–160 m kürzer als vorher. Ein längerer Kandidat wäre r12 (Norden, 308 m), noch nicht auf Klippen geprüft.
 
-- Nachweis Tabelle (`Gras-S8-Neu`, `2026-11-24_0837`): Front 1 „Nordosten (Weg 267 m) (r=14 d=0)“, W43 ohne Festgefahrene, ohne Sicherheitsnetz. Oel auf Gras-S8 grün.
+- Nachweis Tabelle (`Gras-S8-Neu`, `2026-11-24_0837`): Front 1 „Nordosten (Weg 267 m) (r=14 d=0)“ auf Erkundung; nach der Korrektur auf fern zeigt `Kalib-0124` (`2026-11-24_1155`) auf Normal „Nordosten (Weg 266 m) (r=14 d=2)“, W43 ohne Festgefahrene, ohne Sicherheitsnetz. Oel auf Gras-S8 grün.
 - **Beobachten:** Front 3 (r1) wird bei CliffFlat_03 zweimal je Lauf „OHNE Freiraum“ verlegt. In 5 W43-Läufen blieb dort kein Gegner hängen. Die Prüfung im Plan ist deshalb nur Diagnose.
 
 **Vorher offen (Gras-S8 Front 1):**
