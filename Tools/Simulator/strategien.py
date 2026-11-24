@@ -392,6 +392,9 @@ class Lauf:
         self.s, self.B, self.Z, self.K, self.tw, self.wi = s, B, Z, K, tw, wi
         self.stufe = stufe
         self.ep = Z["StartEP"]
+        # 24.11.2026: Startkapital des Einsatzes (Einsatz.Start.Coupons, TDEinsatz.cpp). Der AWESOME-Shop oeffnet erst nach Welle 1
+        # (Einstieg HUB -> Shop -> MAM), deshalb ist es erst nach W1 ausgebbar - kommt in belohnung(1) dazu.
+        self.start_coupons = int(B.get("Einsatz.Start.Coupons", 0))
         self.fp = 0
         self.erforscht = set()
         self.gesperrt = set()
@@ -1171,6 +1174,8 @@ class Lauf:
     def belohnung(self, n, gegner_zahl, elite, boss):
         B = self.B
         p = int(B["Einsatz.EP.Grund"]) + sim.runde(B["Einsatz.EP.JeWelle"] * n)
+        if n == 1 and getattr(self, "start_coupons", 0):
+            self.ep += self.start_coupons   # 24.11.: Startkapital, ab Welle 2 ausgebbar (Shop nach W1)
         p += int(B["Einsatz.EP.KernVoll"]) if self.kern >= 99.5 else int(B["Einsatz.EP.KernAb75"]) if self.kern >= 75 else 0
         if boss:
             p = sim.runde(p * B["Einsatz.EP.BossFaktor"]) + int(B["Einsatz.EP.BossBonus"])

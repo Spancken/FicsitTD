@@ -29,6 +29,7 @@
 
 ### Balance
 - **Harder difficulty:** on Normal, Hard and Nightmare, enemies have more health, and from wave 31 they grow much faster, so the second half of an operation stays dangerous. The Defense Core on Normal has 15,000 HP. Endless waves stay as before.
+- **Starting funds:** every operation starts with **40 FICSIT Coupons** for your first turrets (AWESOME Shop after wave 1), so the first waves are less of a wall.
 - **Hand weapons:** weaker at the start, stronger later – your own share of the wave damage now stays around 10–20 % instead of dominating the first waves and fading later.
 
 ### Fixed
@@ -67,6 +68,7 @@
 - MAM-Baum entflochten: sechs Einstiege, Bolzen und Tesla ab Welle 3, Gewehrturm ab Welle 5.
 - Im Freien Spiel mit Abwehr ist die Gegenseite einer Gabel zum doppelten Coupon-Preis erforschbar.
 - Mehr Herausforderung: mehr Gegnerleben in Normal, Hart und Albtraum, ab Welle 31 wachsen sie deutlich schneller. Der Kern hat in Normal 15 000 LP. Die Endlos-Wellen bleiben wie bisher.
+- Startkapital: Jeder Einsatz beginnt mit 40 FICSIT-Coupons für die ersten Türme (AWESOME-Shop nach Welle 1).
 - Wo ist Öl? Beim Einsatzstart sagt der Chat Entfernung und Richtung zum nächsten Rohöl (Wald unter etwa 1 km, Grasfelder über 2 km).
 - Fliegende Krabben ab Welle 43: Sie fliegen über Mauern zum Kern, nur Himmelsturm und Handwaffen treffen sie.
 - Handwaffen anfangs schwächer, später stärker: Dein Anteil bleibt bei etwa 10–20 %.

@@ -1,6 +1,6 @@
 {
   "Name": "Strat-MonoBolzen",
-  "_Hinweis": "Beste Modellstrategie der Linie Mono Bolzen (Nr. 28, Doktrin Bolzenturm, Stil Tuerme, Kern ja, Gabel Streubolzen/Zielsuchmunition/PulsNobelisk/Ueberlast/KernGeschuetz): Plan bei der Auswahl 65 % bis W30, Vorhersage 71 %, 16 Türme. Erzeugt von Werkzeuge\\FicsitTD-Simulator\\strategie_plaene.py.",
+  "_Hinweis": "Beste Modellstrategie der Linie Mono Bolzen (Nr. 4, Doktrin keine, Stil Tuerme, Kern ja, Gabel Streubolzen/Zielsuchmunition/PulsNobelisk/Kettenblitz/KernSchild): Plan bei der Auswahl 100 % bis W30, Vorhersage 100 %, 16 Türme. Erzeugt von Werkzeuge\\FicsitTD-Simulator\\strategie_plaene.py.",
   "NeuesSpiel": {
     "Startort": "Rocky Desert"
   },
@@ -65,6 +65,12 @@
       "rezept": "Recipe_TD_Shoot_SpikedRebar"
     },
     {
+      "baue": "Bolzenturm",
+      "anzahl": 3,
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
       "wellenlauf": 2,
       "zeitraffer": 4,
       "max": 500
@@ -73,18 +79,18 @@
       "erforsche": "Durchschlagbolzen"
     },
     {
+      "baue": "Bolzenturm",
+      "anzahl": 1,
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
       "wellenlauf": 3,
       "zeitraffer": 4,
       "max": 500
     },
     {
       "erforsche": "Kohlekraft"
-    },
-    {
-      "baue": "Bolzenturm",
-      "anzahl": 2,
-      "level": 2,
-      "rezept": "Recipe_TD_Shoot_SpikedRebar"
     },
     {
       "wellenlauf": 4,
@@ -109,10 +115,10 @@
       "erforsche": "BandMk2"
     },
     {
-      "erforsche": "Giesserei"
+      "erforsche": "KernNotrep"
     },
     {
-      "erforsche": "KernNotrep"
+      "erforsche": "KernSchild"
     },
     {
       "erforsche": "Munitionspuffer"
@@ -129,7 +135,7 @@
       "max": 500
     },
     {
-      "erforsche": "KernGeschuetz"
+      "erforsche": "Giesserei"
     },
     {
       "erforsche": "Quarz"
@@ -160,16 +166,7 @@
       "max": 500
     },
     {
-      "erforsche": "DoktrinBolzen"
-    },
-    {
       "erforsche": "Raffinerie"
-    },
-    {
-      "baue": "Bolzenturm",
-      "anzahl": 2,
-      "level": 3,
-      "rezept": "Recipe_TD_Shoot_SpikedRebar"
     },
     {
       "ueberblick": true

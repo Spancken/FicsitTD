@@ -375,7 +375,7 @@ namespace TDBalanceIntern
 		// Startkontingent je Einsatz
 		{ TEXT("Einsatz.Start.Abwehrkern"), 1.f }, { TEXT("Einsatz.Start.MAM"), 1.f }, { TEXT("Einsatz.Start.AWESOME-Shop"), 1.f }, { TEXT("Einsatz.Start.Miner"), 1.f }, { TEXT("Einsatz.Start.Schmelzofen"), 1.f },
 		{ TEXT("Einsatz.Start.Konstruktor"), 1.f }, { TEXT("Einsatz.Start.Biomassegenerator"), 1.f }, { TEXT("Einsatz.Start.Lager"), 0.f },
-		{ TEXT("Einsatz.Start.Bolzenturm"), 1.f }, { TEXT("Einsatz.Start.Mauer"), 5.f }, { TEXT("Einsatz.Start.Splitter"), 0.f }, { TEXT("Einsatz.Start.Verbinder"), 0.f },
+		{ TEXT("Einsatz.Start.Bolzenturm"), 1.f }, { TEXT("Einsatz.Start.Mauer"), 5.f }, /* 24.11. Startkapital (Marius: frueh entschaerfen, Stufen-LP unveraendert) */ { TEXT("Einsatz.Start.Coupons"), 40.f }, { TEXT("Einsatz.Start.Splitter"), 0.f }, { TEXT("Einsatz.Start.Verbinder"), 0.f },
 
 		// ---- Leistung (T2, Gegnertakt-Recherche 5): Animation nur sichtbar (1) oder immer (0), Update Rate Optimization,
 		//      tote Gegner nach Sekunden entfernen (0 = liegen lassen), Gegner kollidieren untereinander (1) oder laufen durcheinander (0) ----

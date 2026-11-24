@@ -2322,6 +2322,7 @@ void UTDEinsatzSubsystem::Starte(ATDDefenseCore* Kern, int32 Stufe, int32 Wellen
 	Kern->mEinsatzAktiv = true;
 	Kern->mEinsatzFrei = false;
 	// Startkit nur einmal je Einsatz (sonst liesse es sich durch Neustart beliebig oft holen)
+	const bool bErsterStart = !Kern->mEinsatzStartkit;   // 24.11.: auch fuer das Startkapital
 	if (!Kern->mEinsatzStartkit)
 	{
 		// Startkit = Baumaterial fuer das ganze Startkontingent (aus den Rezepten) + Brennstoff
@@ -2378,6 +2379,17 @@ void UTDEinsatzSubsystem::Starte(ATDDefenseCore* Kern, int32 Stufe, int32 Wellen
 	// 23.11. (Gegencheck Konzept R5, Marius: "keine Fundamente im Einsatz" bleibt): einmal je Einsatz erklaeren, warum
 	Melde(TDT(TEXT("Hinweis: Im Einsatz gibt es keine Fundamente, Wände und Rampen des Spiels. Sie würden den Gegnern jeden Weg versperren. Abwehrmauern und Tore gibt es im Shop."),
 		TEXT("Note: during an operation there are no foundations, walls or ramps from the base game. They would block every enemy path. Defense walls and gates are in the Shop.")));
+	// 24.11. (Marius: frueh entschaerfen; kalibrierter Simulator: ohne Startkapital scheiterte jeder zweite Lauf bis W8, mit 20-30
+	// Coupons keiner): Startkapital fuer die ersten Tuerme, einmal je Einsatz (wie das Startkit), Endlos-Wellen bleiben beim Alten
+	const int32 StartCoupons = TDBalance::Ganz(TEXT("Einsatz.Start.Coupons"), 40);
+	if (Kern && StartCoupons > 0 && bErsterStart && !UTDKernplatz::IstEndlos(this))
+	{
+		Kern->mEinsatzPunkte += StartCoupons;
+		const int32 Gegeben = GibOffeneCoupons();
+		UE_LOG(LogFicsitTD, Log, TEXT("Einsatz: Startkapital %d Coupons (%d ins Inventar)"), StartCoupons, Gegeben);
+		Melde(TDF(TEXT("Startkapital: %d FICSIT-Coupons für deine ersten Türme (AWESOME-Shop, Kontingente)."),
+			TEXT("Starting funds: %d FICSIT Coupons for your first turrets (AWESOME Shop, quotas)."), StartCoupons));
+	}
 	// 23.11. (Marius: Oel bleibt fern, Option D "so lassen, aber sagen"): einmal je Einsatz sagen, wo das naechste Rohoel liegt
 	if (Kern)
 	{
