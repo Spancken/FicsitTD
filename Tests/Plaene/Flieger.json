@@ -82,6 +82,7 @@
       "pruefe": "TurmWert",
       "turm": "Himmelsturm",
       "wert": "Treffer",
+      "summe": true,
       "min": 1,
       "text": "Himmelsturm trifft Flieger"
     },

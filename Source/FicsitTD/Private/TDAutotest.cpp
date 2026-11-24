@@ -2341,17 +2341,38 @@ bool UTDAutotest::Pruefe(UWorld* World, const TSharedPtr<FJsonObject>& S, FStrin
 			OutIst = FString::Printf(TEXT("kein %s gebaut"), *Typ);
 			return false;
 		}
-		const float Ist = Turm->TestWert(Wert);
+		float Ist = Turm->TestWert(Wert);
+		FString Bereich = TEXT("");
+		if (S->HasField(TEXT("summe")) && S->GetBoolField(TEXT("summe")))
+		{
+			// 0.13: Zaehler ueber alle Tuerme des Typs (Flieger kommen je Lauf aus anderer Richtung,
+			// der erste Turm allein ist kein verlaesslicher Messpunkt)
+			Ist = 0.f;
+			int32 Anzahl = 0;
+			for (TActorIterator<ATDTurretBase> It(World); It; ++It)
+			{
+				if (Typ == TEXT("*") || It->GetTurmName() == Typ)
+				{
+					const float W = It->TestWert(Wert);
+					if (W >= 0.f)
+					{
+						Ist += W;
+						++Anzahl;
+					}
+				}
+			}
+			Bereich = FString::Printf(TEXT(" (Summe ueber %d Tuerme)"), Anzahl);
+		}
 		const double Soll = S->GetNumberField(TEXT("soll"));
 		const double Tol = S->HasField(TEXT("toleranz")) ? S->GetNumberField(TEXT("toleranz")) : 0.01;
 		if (S->HasField(TEXT("min")))
 		{
 			// 0.83: Wirkung der Bauten nachweisen (mindestens so viel)
 			const double Min = S->GetNumberField(TEXT("min"));
-			OutIst = FString::Printf(TEXT("%s %s = %.3f (mindestens %.3f)"), *Typ, *Wert, Ist, Min);
+			OutIst = FString::Printf(TEXT("%s %s = %.3f%s (mindestens %.3f)"), *Typ, *Wert, Ist, *Bereich, Min);
 			return Ist >= Min;
 		}
-		OutIst = FString::Printf(TEXT("%s %s = %.3f (Soll %.3f)"), *Typ, *Wert, Ist, Soll);
+		OutIst = FString::Printf(TEXT("%s %s = %.3f%s (Soll %.3f)"), *Typ, *Wert, Ist, *Bereich, Soll);
 		return FMath::Abs(Ist - Soll) <= Tol;
 	}
 	if (Name == TEXT("Kombo"))
