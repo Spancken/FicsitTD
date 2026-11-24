@@ -3135,6 +3135,7 @@ void UTDWaveSubsystem::MesseWellenStart()
 	const float Referenz = TDBalance::Wert(TEXT("Metrik.Referenzzeit"), 60.f);
 	mMessQ = mMessK > 0.f ? mMessEHP / (mMessK * Referenz) : 0.f;
 	mMessKernStart = Kern->GetTDHealth();
+	Kern->mMessTreffer.Reset();   // 24.11.: Kernschaden je Gegnerart
 	const UTDEinsatzSubsystem* EinsatzMess = GetWorld()->GetSubsystem<UTDEinsatzSubsystem>();
 	mMessEP = EinsatzMess ? EinsatzMess->Konto() : Kern->mEinsatzPunkte;   // 0.10.0: Coupons als Items
 	mMessNaechste = BIG_NUMBER;
@@ -3184,6 +3185,15 @@ void UTDWaveSubsystem::MeldeMetrik(float Anteil)
 	UE_LOG(LogFicsitTD, Log, TEXT("Metrik Welle %d: Q %.2f, Dauer %.0f s, Kernverlust %.1f %% (Kern %.0f %%), knappste Annaeherung %.1f m, Auslastung %.0f %%, ")
 		TEXT("Schaden %.0f (Overkill %.0f %%, Nebenziele %.0f %%), Uptime %.0f %% (Mittel %d Tuerme), Munitionsmangel mit Ziel %.0f s, ohne Strom %.0f s (Turm-Sekunden), EP ungenutzt zu Beginn %d"),
 		mWelle, mMessQ, mWellenZeit, Verlust, Anteil, Naechste, 100.f * Auslastung, Schaden, OverkillAnteil, NebenAnteil, UptimeMittel, Tuerme, Hungrig, OhneStrom, mMessEP);
+	// 24.11.2026 (Simulator: Verlust je Gegnerart eichen): wer den Kern wie stark getroffen hat
+	{
+		TArray<FString> Teile;
+		for (const TPair<FString, ATDDefenseCore::FTDKernTreffer>& P : Kern->mMessTreffer)
+		{
+			Teile.Add(FString::Printf(TEXT("%s %.0f LP von %d Gegnern (%d Treffer)"), *P.Key, P.Value.Schaden, P.Value.Angreifer.Num(), P.Value.Treffer));
+		}
+		UE_LOG(LogFicsitTD, Log, TEXT("Kernschaden Welle %d: %s"), mWelle, Teile.Num() ? *FString::Join(Teile, TEXT(", ")) : TEXT("keiner"));
+	}
 
 	// 0.9.6 P0: Spielerschaden der Welle und sein Anteil am gesamten Wellenschaden
 	float SpielerSchaden = 0.f;

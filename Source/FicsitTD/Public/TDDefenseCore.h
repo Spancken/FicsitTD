@@ -5,6 +5,7 @@
 #include "FGClearanceData.h"
 #include "TDDamageable.h"
 #include "TDWellenStatistik.h"
+#include "UObject/ObjectKey.h"
 #include "TDDefenseCore.generated.h"
 
 class ATDDecoy;
@@ -204,6 +205,12 @@ private:
 	FTimerHandle mAnimTimer;
 	float mZeit = 0.f;
 	float mTrefferBlitz = 0.f;
+public:
+	/** 24.11.2026 (Simulator: Verlust je Gegnerart eichen): Kernschaden der laufenden Welle je Gegnerfamilie, Treffer und Angreifer.
+	 *  Setzt UTDWaveSubsystem zu Wellenbeginn zurueck und schreibt es zu Wellenende in den Log ("Kernschaden Welle N"). */
+	struct FTDKernTreffer { float Schaden = 0.f; int32 Treffer = 0; TSet<FObjectKey> Angreifer; };
+	mutable TMap<FString, FTDKernTreffer> mMessTreffer;   // mutable: reine Messung, die Welle setzt sie auch ueber einen const-Zeiger zurueck
+private:
 	/** Hoehe des Bohrers ueber der Bohrstellung (cm): in der Bauphase oben, in der Welle unten */
 	float mBohrHoehe = 150.f;
 	UPROPERTY(Transient)

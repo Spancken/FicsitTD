@@ -99,7 +99,9 @@ Schritt "Simulation aller Spielmodi" {
     $ausgabe | Set-Content (Join-Path $Aus "simulation.txt") -Encoding utf8
     $code = $LASTEXITCODE
     if ($code -eq 1) { $Offen.Add("Simulation: Zielband verletzt (siehe $Aus\Simulation\sim_ergebnis.md)") }
-    if ($code -ge 2) { $Offen.Add("Simulation: Modell passt nicht zum Code (simulation.txt)") }
+    if ($code -eq 2) { $Offen.Add("Simulation: Modell passt nicht zum Code (simulation.txt)") }
+    # 24.11.2026: Baender nur verwendbar, wenn das Modell die Testlaeufe im Spiel richtig vorhersagt (Tools\Simulator\abgleich.py)
+    if ($code -eq 3) { $Offen.Add("Simulation: Modell nicht gegen Spiel bestaetigt - Baender nicht verwendbar (Tools\Simulator\abgleich.py)") }
     [pscustomobject]@{ Ok = ($code -eq 0); Ist = ($ausgabe | Select-Object -Last 1) }
 }
 

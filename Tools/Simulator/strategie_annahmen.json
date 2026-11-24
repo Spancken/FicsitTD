@@ -53,16 +53,16 @@
     "Quelle": "Kalibrierung 2026-11-07 (verlust_fit.py): 1075 Wellen aus Streuung, Kreislauf, Vormittag, Gesamt082; Kurve geht durch 0"
   },
   "VerlustQ": {
-    "Wert": 16.1,
-    "Quelle": "verlust_fit_013.py 24.11.2026: 83 Wellen (Strat-* und P12-K* auf Balance 0.13, ohne K1 mit 156-m-Front), Exponent 1,37 und Streckung 1,5 fest; Fehler 330 -> 212; vorher 48,62 (P12-Fit 17.11.)"
+    "Wert": 15.0,
+    "Quelle": "eiche_verlust.py 150 Wellen fester Plaene ab 2026-11-24 06:00 (messungen.py), Q um den gemessenen Overkill bereinigt"
   },
   "QKritisch": {
-    "Wert": 1.1,
-    "Quelle": "Ab hier bricht die Abwehr ein (Annahme; Prüfstand überlebte Q bis 0,9)"
+    "Wert": 99.0,
+    "Quelle": "eiche_verlust.py 150 Wellen fester Plaene ab 2026-11-24 06:00 (messungen.py), Q um den gemessenen Overkill bereinigt; Knick der Verlustkurve"
   },
   "VerlustUeber": {
-    "Wert": 1.5,
-    "Quelle": "Zusatzverlust (Q-QKritisch)^2 * 100 * Faktor"
+    "Wert": 0.0,
+    "Quelle": "eiche_verlust.py 150 Wellen fester Plaene ab 2026-11-24 06:00 (messungen.py), Q um den gemessenen Overkill bereinigt; Zusatzverlust (qv-QKritisch)^2*100*Faktor"
   },
   "AusreisserChance": {
     "Wert": 0.08,
@@ -233,8 +233,8 @@
     "Quelle": "Annahme Spielerverhalten: Kernreparatur kaufen, solange der Kern unter 50 % steht"
   },
   "VerlustP": {
-    "Wert": 1.37,
-    "Quelle": "Kalibrierung 2026-11-07 (verlust_fit.py): 1075 Wellen aus Streuung, Kreislauf, Vormittag, Gesamt082: Exponent der Verlustkurve, Verlust wächst schneller als Q"
+    "Wert": 0.8,
+    "Quelle": "eiche_verlust.py 150 Wellen fester Plaene ab 2026-11-24 06:00 (messungen.py), Q um den gemessenen Overkill bereinigt"
   },
   "Mehrziel_Bolzenturm": {
     "Wert": 1.08,
@@ -442,11 +442,15 @@
     "Quelle": "23.11.2026 (Gewehr+Nobelisk erforschte in 0 von 24 Laeufen das Kohlekraftwerk, Biomasse leer): reicht die Biomasse nicht mehr fuer so viele Wellen wie die letzte, zieht der gute Spieler das Kohlekraftwerk in der Forschung vor (nur mit Spielerwahl)."
   },
   "VerlustWenigeTuerme": {
-    "Wert": 6.0,
-    "Quelle": "verlust_fit_013.py 24.11.2026: 83 Wellen (Strat-* und P12-K* auf Balance 0.13, ohne K1 mit 156-m-Front), Exponent 1,37 und Streckung 1,5 fest; Fehler 330 -> 212; Turmfaktor 1 + a/n: wenige Tuerme decken die Ankunft schlechter ab (1 Turm: Spiel 22 %, alt 12 %, neu 27 %). Optimum a=20 lag am Rand und war kaum besser."
+    "Wert": 2,
+    "Quelle": "eiche_verlust.py 150 Wellen fester Plaene ab 2026-11-24 06:00 (messungen.py), Q um den gemessenen Overkill bereinigt"
   },
   "VerlustTurmExponent": {
-    "Wert": 1.0,
-    "Quelle": "verlust_fit_013.py 24.11.2026: 83 Wellen (Strat-* und P12-K* auf Balance 0.13, ohne K1 mit 156-m-Front), Exponent 1,37 und Streckung 1,5 fest; Fehler 330 -> 212"
+    "Wert": 0.5,
+    "Quelle": "eiche_verlust.py 150 Wellen fester Plaene ab 2026-11-24 06:00 (messungen.py), Q um den gemessenen Overkill bereinigt"
+  },
+  "VerlustOverkill": {
+    "Wert": 1,
+    "Quelle": "24.11.2026: Schuesse ganzzahlig (strategien.Lauf.kampf), Ursache des Einbruchs in W5 (Hog 53 LP gegen Armierungsbolzen 48)"
   }
 }

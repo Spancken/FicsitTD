@@ -2,6 +2,48 @@
 
 Rechnet ohne Spiel, wie viel Gegnerdruck auf wie viel Abwehr trifft, für alle Spielmodi. Die Kennzahl ist die Druckquote **Q** (wie im Log: Gegner-EHP / (Σ Nenn-DPS × 60 s)). Nur Python-Standardbibliothek. Liest den Mod-Code direkt aus `Source\FicsitTD\Private` (Pfade relativ zum Repo), Änderungen an der Balance wirken also ohne Anpassung.
 
+## Ablauf seit 24.11.2026: messen, abgleichen, eichen, rechnen
+
+> **Stand 24.11.2026 abends: Modell nicht bestätigt** (`abgleich.py`: Gewehr-Tesla ok, Mono-Bolzen und K1 nicht).
+> Bis der Abgleich besteht, stellt der Simulator keine Balance ein (Marius 24.11.: „Simulation sauber aufsetzen“).
+>
+> - **Gefundene Ursache:** Schüsse sind ganzzahlig. Ab W5 braucht ein Hog zwei Armierungsbolzen (53 LP gegen 48 Schaden), die
+>   wirksame Feuerkraft halbiert sich (Overkill im Spiel 30–60 %). Seitdem rechnet das Modell den Overkill (`VerlustOverkill`,
+>   `Turmwerte.treffer`), die Verlustkurve ist darauf neu geeicht (`eiche_verlust.py`).
+> - **Damit:** K1 Modell W5–7 vorher 96/93/86 %, jetzt 73/63/49 %, Spiel 58/14/5 %. Fallwelle K1 Modell 10, Spiel 7–8.
+> - **Was noch fehlt:** Der Verlust hängt im Spiel auch an der Zusammensetzung der Welle, nicht nur an Druck und Turmzahl. Wellen mit
+>   hohem Druck und vielen Türmen verlieren weniger als die Kurve sagt. Die Kernschaden-Messung je Gegnerart liefert dafür die Daten.
+
+Anlass: Am 24.11. schlug der Simulator 40 Start-Coupons zusammen mit 63 % mehr Gegnerleben vor. Im Spiel fielen damit alle
+Läufe in Welle 6. Jede Stufe davor hatte dem Modell vertraut. Deshalb gilt jetzt diese Reihenfolge:
+
+1. **Messen:** Testläufe fester Pläne im Spiel (`Strat-*`, `P12-K*`, z. B. Paket `Startkapital-0124`). `messungen.py` ist die
+   einzige Quelle für Spielmessungen: Metriken.csv, gültige Wellen (Fabrik-Takt ≥ 0,95, kein Munitionsmangel), abgeschnittene
+   Wellen (Kern fiel), Läufe, Kernschaden je Gegnerart aus dem Log (`Kernschaden Welle N`, seit 24.11.).
+2. **Abgleichen:** `python abgleich.py` spielt jeden dieser Läufe im Modell nach (gleicher Ausbau aus der Plandatei) und vergleicht
+   Fallwelle und Kernverlauf. Grenzen: Fallwelle ±2, Kern im Mittel ±15 Punkte. Nur Läufe nach der letzten Änderung von
+   `TDBalance.cpp` und ihrer Plandatei zählen. Ergebnis `Ausgabe/Abgleich/abgleich.md`, Stand `abgleich_stand.json` (einchecken).
+3. **Eichen:** nur wenn der Abgleich durchfällt, an den Messungen aus `messungen.py`. Danach wieder Schritt 2.
+4. **Rechnen:** `sim_alle_modi.py`. Exit **3**, solange der Abgleich fehlt, durchgefallen ist oder die Modellannahmen
+   (`strategie_annahmen.json`, `annahmen.json`, `strategien.py`, `simulator.py`) seitdem geändert wurden. Dann sind die Bänder
+   nicht verwendbar; die Pipeline meldet das als offenen Punkt.
+
+**Werkzeuge im Ordner** (alles andere liegt in `Archiv/`, nicht mehr gepflegt):
+
+| Datei | Zweck |
+|---|---|
+| `simulator.py` | Wellen und Gegner wie im Spiel, Balance aus dem Code |
+| `strategien.py` | Strategie-Prüfstand Einsatz (Modell-Spieler, Wirtschaft, Kampf, Verlustkurve) |
+| `sim_modi.py` | Endlos-Wellen und Bohrung |
+| `sim_alle_modi.py` | alle Modi und Stufen, Schnittstelle für die Pipeline |
+| `sim_variante.py` | Gegenversuch mit geänderten Freigabewellen (nur im Speicher) |
+| `strategie_plaene.py` | Testpläne `Strat-*` aus den besten Modellstrategien |
+| `balance_kreislauf.py` | fester Ausbau im Modell (`FesterLauf`), alter Kreislauf |
+| `verlust_fit.py` | alte Eichung der Verlustkurve (07.11.), wird durch die Eichung an `messungen.py` ersetzt |
+| `messungen.py` | Spielmessungen, eine Quelle für alle |
+| `eiche_verlust.py` | Verlustkurve an `messungen.py` eichen (Overkill-bereinigt, kleinste Quadrate), danach `abgleich.py` |
+| `abgleich.py` | Pflichtprüfung Modell gegen Spiel |
+
 ## Stand 23.11.2026 (Code 0.13.0: Strom, aktiver Spieler, Talente; davor 16.11. Turmlevel, Coupons, Festplatten)
 
 ### Aufruf
@@ -71,10 +113,7 @@ python strategien.py --stand 091 --laeufe 3        # Strategie-Prüfstand Einsat
   - Nicht abgefangene Krabben treffen den Kern mit `Flieger.KernSchaden` × (1 + 0,25 × Wellenzuwachs).
   - Annahme: Ein Himmelsturm fängt 8 Krabben je Welle. Im Spiel ist das noch ungemessen (Plan `Flieger`).
 - **Später Druck (Gegencheck Konzept B1):** `Wellen.LPJeWelleAb31` 1,5, Endlos eigener Wert (`Endlos.LPJeWelleAb31` 0,1).
-- **Werkzeuge:**
-  - `eiche_stufen.py`, `eiche_endlos.py` (Eichen je Stufe)
-  - `diagnose_endlos.py` (woran Endlos scheitert)
-  - `varianten_gewehr_nobelisk.py`
+- **Werkzeuge** (seit 24.11. in `Archiv/`): `eiche_stufen.py`, `eiche_endlos.py`, `diagnose_endlos.py`, `varianten_gewehr_nobelisk.py`
 
 ### Modell-Spieler „guter Spieler“ (22.11.2026, Schalter `Spielerwahl`)
 
@@ -128,6 +167,7 @@ Siehe `Ausgabe\Pipeline\sim_ergebnis.md`. Kurz:
 - **Keine echte Fabrik**: Munition kommt aus einer Bilanz bis zum Erz (Kontingente, Strom), ohne Bänder, Wege, Platz und Fehler. In der Bohrung ist die Versorgung immer voll.
 - Kein Ort: keine Reichweite, keine Fronten-Aufteilung, keine Laufwege, keine Mauern. Flächenwirkung nur über Faktoren (`Mehrziel_*`, Flamme 2,7 × 2 Ziele: daher der sehr starke Flammenwerfer in der Bohrung).
 - Kernverlust aus Q ist eine Kurve aus Einsatz-Messungen bis W30 (R² 0,46). Alles danach und alles in Endlos/Bohrung ist hochgerechnet.
+- **24.11.2026:** Der Kernverlust hängt im Spiel nicht allein an Q und Turmzahl. Bei Q 0,25–0,3 verliert der Kern 29 %, bei Q 0,4–0,6 nur 14 % (spätere Wellen). Über Q ≈ 0,16 springt er von 1–6 % auf 20–40 % je Welle. Ab Welle 5 (Alpha-Hog) ist der Verlust je Q mehr als doppelt so hoch. Ein Knick und ein schadensgewichteter Druck verbessern die Kurve kaum. Gemessen wird deshalb jetzt der Kernschaden je Gegnerart.
 - Endlos: Wellendauer, Überlauf-Rest und Bauzeit sind grob. Die Bauzeit ist die wichtigste und unsicherste Annahme (siehe oben). Nach W50 begrenzt `Wellen.MaxGesamt` die Gegnerzahl, das Leben wächst nur linear: deshalb laufen einzelne Linien bis zur Rechengrenze.
 - Bohrung: nur reine Aufbauten eines Turmtyps, Mindestzahl über 4 Wellensätze (Zufall der Wellen, nicht des Spiels: andere Zufallsfolge als `FRandomStream`).
 - Meisterfähigkeiten (Level 5) sind wie in `NennDPS()` nicht eingerechnet.

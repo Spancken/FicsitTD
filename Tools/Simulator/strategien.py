@@ -324,6 +324,16 @@ class Turmwerte:
     def bonus(self, typ, level, wert):
         return sum(self.B.get(f"Tuerme.Level.{typ}.L{k}.{wert}", 0.0) for k in range(2, level + 1))
 
+    def treffer(self, typ, level, mun, doktrin):
+        """24.11.2026 (Overkill): Schaden je Schuss gegen ein Ziel ohne Resistenz. None = ohne Schuss-Raster (Flamme und Tesla als
+        Dauer- bzw. Kettenschaden, Nobelisk als Flaeche). Im Spiel braucht ein Hog ab W5 zwei Armierungsbolzen (53 LP gegen 48)."""
+        if typ in ("Flammenwerfer", "Teslaspule", "Nobelisk-Werfer"):
+            return None
+        B = self.B
+        k = "Munition." + mun[1]
+        sb = (1 + self.bonus(typ, level, "Schaden")) * (1 + B.get("Doktrin.Schaden", 0.25) if doktrin else 1.0)
+        return (B[k + ".Schaden"] + B.get(k + ".BrandSchaden", 0.0)) * sb
+
     def dps(self, typ, level, mun, doktrin, gabel, einzel=False):
         """Nenn-DPS gegen ein Ziel, mit grober Mehrfachziel-Wirkung (Annahme), wie kalibriere.nenn_dps + Flächen.
         einzel=True: nur ein Ziel wie NennDPS() im Mod (K_DPS/Q der Messung), ohne Sprünge, Kegel, Fläche, Durchschlag"""
@@ -1096,6 +1106,16 @@ class Lauf:
                 art = m[3] or ART[typ]
                 # Mehrziel_<Typ>: an Spielmessungen angepasster Faktor auf die Formel (verlust_fit.py, 07.11.)
                 d = self.dps_l(typ, lv, m, dokt, self.s["Gabel"]) * (self.versorgung if typ != "Teslaspule" else 1.0) * self.Z.get(f"Mehrziel_{typ}", 1.0)
+                # 24.11.2026 (Kernschaden-Messung): Schuesse sind ganzzahlig. Wirksam ist nur, was ein Ziel noch an LP hat - der Rest
+                # des letzten Schusses verpufft (Overkill). Anteil = Summe LP / Summe (noetige Schuesse x Schaden je Schuss).
+                hit = self.tw.treffer(typ, lv, m, dokt) if self.Z.get("VerlustOverkill") else None
+                if hit:
+                    gesamt = 0.0
+                    for name, l in gegner:
+                        r = sim.resistenz(self.B, art, name)
+                        if r > 0:
+                            gesamt += math.ceil(l / (hit * r) - 1e-9) * hit * r
+                    d *= min(1.0, lp_ges / gesamt) if gesamt > 0 else 1.0
                 wirk = d * sum(l * sim.resistenz(self.B, art, name) for name, l in gegner) / lp_ges
                 if best is None or wirk > best[0]:
                     best = (wirk, art, d, self.dps_l(typ, lv, m, dokt, self.s["Gabel"], einzel=True) * (self.versorgung if typ != "Teslaspule" else 1.0))

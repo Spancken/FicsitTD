@@ -7,7 +7,9 @@ Schreibt:
   <ordner>/sim_ergebnis.md     Kurzfassung als Tabellen
   Tools/Simulator/sim_stand.json   dieselben Hashes und das Datum (wird eingecheckt; daran erkennt die Pipeline, ob die
                                    Simulation nach einer Code-Aenderung nachgezogen wurde)
-Exit 0 = alles im Band, 1 = mindestens ein Band verletzt, 2 = Fehler (Modell passt nicht zum Code).
+Exit 0 = alles im Band, 1 = mindestens ein Band verletzt, 2 = Fehler (Modell passt nicht zum Code),
+     3 = Modell nicht gegen Spiel bestaetigt (abgleich.py fehlt, nicht bestanden oder Annahmen seitdem geaendert; 24.11.2026).
+     Bei 3 sind die Baender nicht verwendbar: erst das Modell eichen, dann `python abgleich.py`.
 
 Modi: 1 Einsatz (strategien.py), 2 Endlos-Wellen und 3 Bohrung (sim_modi.py), 0 Aus (nichts zu rechnen).
 Zielbaender: Tests/zielbaender.json (Einsatz Normal, Q je Phase) und sim_baender.json (alles andere, Begruendung im README).
@@ -199,6 +201,8 @@ def markdown(res, stand_datum):
     z = [f"# FicsitTD Simulation aller Modi ({stand_datum})", "",
          f"Ergebnis: **{'alles im Band' if res['ok'] else 'Bänder verletzt'}**, Laufzeit {res['laufzeit_s']:.0f} s. "
          "Modell und Grenzen: `Tools/Simulator/README.md`.", ""]
+    if not res.get("modell_bestaetigt", True):
+        z += [f"> **Modell nicht gegen Spiel bestätigt:** {res.get('abgleich')}. Die Bänder unten sind für die Balance **nicht verwendbar**.", ""]
     z += ["## Einsatz (Modus 1, 50 Wellen)", "", "| Stufe | Läufe | Erfolg W50 | Erfolg W30 | Scheitern (Median) | Kern-Tief | Q W10 | Q W20 | Q W30 | ok |",
           "|---|---|---|---|---|---|---|---|---|---|"]
     for s, e in res["modi"]["Einsatz"].items():
@@ -230,6 +234,19 @@ def markdown(res, stand_datum):
             for name, (ok, d) in e["pruefungen"].items() if not ok]
     z += [f"- {m} {s}: {name} – {d}" for m, s, name, d in verl] or ["keine"]
     return "\n".join(z) + "\n"
+
+
+def abgleich_status():
+    """24.11.2026 (Marius: nicht mehr nach einem unbestaetigten Modell einstellen): Stand des Abgleichs Modell gegen Spiel"""
+    import abgleich
+    if not os.path.exists(abgleich.STAND):
+        return False, "kein Abgleich (python abgleich.py nach einem Testlauf der festen Plaene)"
+    s = json.load(open(abgleich.STAND, encoding="utf-8"))
+    if s.get("annahmen_hash") != abgleich.annahmen_hash():
+        return False, f"Modell seit dem Abgleich vom {s.get('datum')} geaendert, Abgleich neu noetig"
+    if not s.get("bestanden"):
+        return False, f"Abgleich vom {s.get('datum')} nicht bestanden ({s.get('laeufe')} Laeufe, Ausgabe/Abgleich/abgleich.md)"
+    return True, f"Abgleich vom {s.get('datum')} bestanden ({s.get('laeufe')} Laeufe)"
 
 
 def main():
@@ -274,6 +291,7 @@ def main():
                                          "Anteil_Median": ant[len(ant) // 2], "Anteil_P10": ant[len(ant) // 10], "Anteil_P90": ant[len(ant) * 9 // 10]}
         modi["Aus"] = {"ok": True, "hinweis": "Spielmodus 0: normales Satisfactory, nichts zu simulieren"}
         res["ok"] = all(e["ok"] for m in ("Einsatz", "Endlos", "Bohrung") for e in modi[m].values())
+        res["modell_bestaetigt"], res["abgleich"] = abgleich_status()
         res["laufzeit_s"] = round(time.time() - t0, 1)
     except Exception as e:
         os.makedirs(a.aus, exist_ok=True)
@@ -294,6 +312,9 @@ def main():
     json.dump({"datum": res["stand"], "hinweis": "SHA-256 der Quelldateien, gegen die sim_alle_modi.py zuletzt gerechnet hat",
                "code_stand": res["code_stand"]}, open(os.path.join(HIER, "sim_stand.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=2)
     print(open(os.path.join(a.aus, "sim_ergebnis.md"), encoding="utf-8").read())
+    if not res.get("modell_bestaetigt"):
+        print("MODELL NICHT BESTAETIGT:", res.get("abgleich"))
+        return 3
     return 0 if res["ok"] else 1
 
 

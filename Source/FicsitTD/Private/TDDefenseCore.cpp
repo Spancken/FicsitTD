@@ -298,6 +298,19 @@ void ATDDefenseCore::ApplyTDDamage(float Amount, const AActor* Causer)
 	{
 		return;
 	}
+	// 24.11.2026: Messung je Gegnerart (Schaden vor dem Schild, Angreifer = Kreatur hinter Geschoss oder Gift)
+	{
+		const AActor* Wer = Causer;
+		if (Wer && !Wer->IsA<AFGCreature>())
+		{
+			Wer = Wer->GetInstigator() && Wer->GetInstigator()->IsA<AFGCreature>() ? static_cast<const AActor*>(Wer->GetInstigator())
+				: (Wer->GetOwner() && Wer->GetOwner()->IsA<AFGCreature>() ? Wer->GetOwner() : Wer);
+		}
+		FTDKernTreffer& T = mMessTreffer.FindOrAdd(Wer ? UTDWaveSubsystem::OptikFamilie(Wer->GetClass()) : FString(TEXT("?")));
+		T.Schaden += Amount;
+		++T.Treffer;
+		T.Angreifer.Add(FObjectKey(Wer));
+	}
 	if (mSchild > 0.f)
 	{
 		const float Ab = FMath::Min(mSchild, Amount);

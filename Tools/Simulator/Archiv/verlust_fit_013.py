@@ -55,7 +55,8 @@ def lade(ab, Z, B):
             takt = float(r.get("FabrikTakt_Anteil") or 1)
         except (ValueError, KeyError):
             continue
-        if q <= 0.01 or n <= 0 or hung > 1 or takt < 0.95 or stufe not in KERN_LP:
+        # 24.11. nachmittags: Wellen, in denen der Kern fiel, sind abgeschnitten (Verlust = Rest, nicht der volle Verlust)
+        if q <= 0.01 or n <= 0 or hung > 1 or takt < 0.95 or stufe not in KERN_LP or float(r.get("Kern_Proz") or 0) <= 0.5:
             continue
         if r["Plan"] not in panzer:
             panzer[r["Plan"]] = panzer_ab(r["Plan"])

@@ -10,7 +10,7 @@ Prüfstufen G0–G6 und Upload: `Satisfactory\Notizen\Release-Prozess.md` (OneDr
 |---|---|---|
 | `Source`, `Content`, `Config`, `Scripts` | Mod | – |
 | `Tests` | Autotest-Pläne, Pakete, Prüfskripte | Pläne gehören zum Code-Stand, den sie prüfen |
-| `Tools\Simulator` | Balancing-Simulator für alle Spielmodi | Modell muss zum Code passen (`sim_stand.json`) |
+| `Tools\Simulator` | Balancing-Simulator für alle Spielmodi | Modell muss zum Code passen (`sim_stand.json`) und zum Spiel (`abgleich_stand.json`, seit 24.11.2026) |
 | `Tools\Pipeline.ps1` | Deploy-Straße | – |
 | `Doku\Spielregeln.md` | Spielregeln mit allen Werten | Regeln = Code |
 | `Doku\Release\` | Tester-Anleitung, Rückmeldebogen, Mod-Seite (ficsit.app), Release-Log, Ankündigungen | Spielertexte je Version |
@@ -36,7 +36,7 @@ Kleine Balance-Ideen brauchen keinen Zweig: **Schalter** `Experiment.<Name>` in 
 Eine Änderung ist fertig, wenn:
 1. **Änderungszettel** in `Aenderungen\` liegt (Vorlage `Aenderungen\_Vorlage.md`): was, warum, welche Modi, Status von Doku, Simulation und Tests.
 2. **Doku** nachgezogen ist: Handbuch DE/EN, Spielregeln, Tester-Anleitung/Rückmeldebogen/Mod-Seite, soweit sichtbar (Regel „Anleitung mitpflegen“).
-3. **Simulation** nachgezogen ist, wenn Balance, Wellen, Türme, Wirtschaft oder ein Modus betroffen sind: `python Tools\Simulator\sim_alle_modi.py` läuft, `Tools\Simulator\sim_stand.json` passt zum Code.
+3. **Simulation** nachgezogen ist, wenn Balance, Wellen, Türme, Wirtschaft oder ein Modus betroffen sind: `python Tools\Simulator\sim_alle_modi.py` läuft, `Tools\Simulator\sim_stand.json` passt zum Code. Balance-Werte aus dem Simulator nur, wenn `python Tools\Simulator\abgleich.py` nach einem Testlauf der festen Pläne bestanden hat (sonst Exit 3 von `sim_alle_modi.py`).
 4. **Tests**: ein Plan in `Tests\Plaene\`, der die Änderung belegt, grün; neue Funktionen kommen ins passende Paket (`Schnell`/`Release`).
 5. Pipeline **Voll** grün (Abschnitt 4).
 
