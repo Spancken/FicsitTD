@@ -1,0 +1,1 @@
+﻿{ "Name": "G3-Strat-Neu", "_Hinweis": "24.11.2026: Strat-MonoBolzen und Strat-Gewehr-Tesla neu aus dem Modell (strategie_plaene.py, Stand 0.13) - Abgleich Modell gegen Spiel.", "Plaene": ["Strat-MonoBolzen", "Strat-Gewehr-Tesla"] }
