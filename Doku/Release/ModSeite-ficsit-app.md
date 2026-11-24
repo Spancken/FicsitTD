@@ -29,7 +29,7 @@ FICSIT Tower Defense turns Satisfactory into a tower defense that lives off your
 - **Untangled research:** Industry has six entry points without a forced chain; Bolt and Tesla from wave 3, Rifle Turret from wave 5.
 - **New Power tree:** coal, oil and (after wave 50) nuclear power, nothing locked out. Better fuels give every generator more output – Compacted Coal 100 MW, Petroleum Coke 125 MW, Turbofuel 325 MW, Rocket Fuel 400 MW.
 - **Where is the oil?** When an operation starts, the chat tells you the distance and direction to the nearest crude oil. It is far at most core sites – the Forest is the oil-friendly start.
-- **Harder:** Normal, Hard and Nightmare have more enemy health that grows faster per wave. Every operation starts with 40 FICSIT Coupons for your first turrets. Endless waves stay as before.
+- **Harder:** Normal, Hard and Nightmare have more enemy health that grows faster per wave. Every operation starts with 40 FICSIT Coupons for your first turrets, and ADA warns you once when Hogs start to take two bolts each. Endless waves stay as before.
 
 ## What was new in 0.11
 - **Three ways to play:** right after landing, a start window asks how you want to play – **Operation** (50 waves), **Endless waves** (timed waves from one direction that never stop – how far can you get?), **Free play with defense** (regular Satisfactory with turrets; drill at resource nodes when *you* want a fight) or **Off** – and on which difficulty.

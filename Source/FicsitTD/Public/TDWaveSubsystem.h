@@ -393,6 +393,8 @@ private:
 	void EntferneWellenLeiste();
 	/** T3: Zusammensetzung einer Welle festlegen (reproduzierbar je Kern, Stufe und Welle) - in der Bauphase fuer die Vorschau */
 	void PlaneWelle(int32 Nummer);
+	/** 24.11.2026: LP-Faktor der Kern-Welle Nummer (Stufe, Wachstum, Endlos) - Gegner-LP = Grund-LP der Art x Faktor */
+	float LPFaktorFuer(int32 Nummer) const;
 	/** Plan einer beliebigen Welle berechnen, ohne den gespeicherten Plan zu aendern */
 	TArray<FTDPlanGruppe> PlanFuer(int32 Nummer, int32& OutArt) const;
 	int32 mPlanWelle = -1;

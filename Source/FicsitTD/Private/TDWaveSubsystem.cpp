@@ -2735,6 +2735,32 @@ void UTDWaveSubsystem::PruefeFrontenVorWelle(int32 Nummer)
 	}
 }
 
+float UTDWaveSubsystem::LPFaktorFuer(int32 Nummer) const
+{
+	// Lebenspunkte je Gegner = Grund-LP der Art x dieser Faktor (UTDGegnerHirn::Spawne)
+	const FTDStufe S = GetStufe(mStufe);
+	// 0.9.1 (Simulation 09.11.): ab W31 waechst das Leben schneller, Phase 4-5 hatte im Modell zu viel Luft. Im Spiel nachmessen.
+	// 23.11. (Marius: Einsatz schwerer): Endlos behaelt seinen eigenen Zuwachs (Endlos.LPJeWelle), der Einsatz nutzt Wellen.LPJeWelle
+	const float JeWelle = mEndlos ? TDBalance::Wert(TEXT("Endlos.LPJeWelle"), TDBalance::Wert(TEXT("Wellen.LPJeWelle"), 0.08f))
+		: TDBalance::Wert(TEXT("Wellen.LPJeWelle"), 0.08f);
+	// 23.11. (Gegencheck Konzept B1, Marius: auch nach W31 soll noch jemand scheitern): Einsatz mit Wellen.LPJeWelleAb31 1,5,
+	// Endlos behaelt seinen eigenen Zuwachs (Endlos.LPJeWelleAb31 0,1)
+	const float Ab31 = mEndlos ? TDBalance::Wert(TEXT("Endlos.LPJeWelleAb31"), TDBalance::Wert(TEXT("Wellen.LPJeWelleAb31"), 0.1f))
+		: TDBalance::Wert(TEXT("Wellen.LPJeWelleAb31"), 0.1f);
+	float LPFaktor = S.LP * (1.f + JeWelle * FMath::Min(Nummer - 1, 30) + Ab31 * FMath::Max(Nummer - 31, 0));
+	// 16.11. (Fahrplan P2, Simulation): Endlos - nach W50 waechst die Gegnerzahl nicht mehr (Wellen.MaxGesamt), die Coupons aber weiter;
+	// ohne Wachstum gab es keinen Bestwert. Ab Endlos.LPWachstumAbWelle je Welle Endlos.LPWachstum mehr Leben (zinsartig).
+	if (mEndlos)
+	{
+		// 23.11. (Marius: Einsatz schwerer, Gegencheck 0.13): Endlos eigener Faktor je Stufe, damit die Stufen-LP des Einsatzes Endlos
+		// nicht mitziehen (Endlos Normal lag schon unter dem Band)
+		LPFaktor *= TDBalance::Wert(FString::Printf(TEXT("Endlos.%s.LPFaktor"), S.Name), 1.f);
+		LPFaktor *= FMath::Pow(1.f + TDBalance::Wert(TEXT("Endlos.LPWachstum"), 0.03f),
+			static_cast<float>(FMath::Max(0, Nummer - TDBalance::Ganz(TEXT("Endlos.LPWachstumAbWelle"), 50))));
+	}
+	return LPFaktor;
+}
+
 void UTDWaveSubsystem::SpawneKernWelle(int32 Nummer)
 {
 	const ATDDefenseCore* Kern = mKern.Get();
@@ -2758,25 +2784,7 @@ void UTDWaveSubsystem::SpawneKernWelle(int32 Nummer)
 	// Lebenspunkte wachsen mit der Welle; die Zusammensetzung steht im Wellenplan (T3, in der Bauphase festgelegt)
 	const FTDStufe& S = GetStufe(mStufe);
 	mElites = 0;
-	// 0.9.1 (Simulation 09.11.): ab W31 waechst das Leben schneller, Phase 4-5 hatte im Modell zu viel Luft. Im Spiel nachmessen.
-	// 23.11. (Marius: Einsatz schwerer): Endlos behaelt seinen eigenen Zuwachs (Endlos.LPJeWelle), der Einsatz nutzt Wellen.LPJeWelle
-	const float JeWelle = mEndlos ? TDBalance::Wert(TEXT("Endlos.LPJeWelle"), TDBalance::Wert(TEXT("Wellen.LPJeWelle"), 0.08f))
-		: TDBalance::Wert(TEXT("Wellen.LPJeWelle"), 0.08f);
-	// 23.11. (Gegencheck Konzept B1, Marius: auch nach W31 soll noch jemand scheitern): Einsatz mit Wellen.LPJeWelleAb31 1,5,
-	// Endlos behaelt seinen eigenen Zuwachs (Endlos.LPJeWelleAb31 0,1)
-	const float Ab31 = mEndlos ? TDBalance::Wert(TEXT("Endlos.LPJeWelleAb31"), TDBalance::Wert(TEXT("Wellen.LPJeWelleAb31"), 0.1f))
-		: TDBalance::Wert(TEXT("Wellen.LPJeWelleAb31"), 0.1f);
-	float LPFaktor = S.LP * (1.f + JeWelle * FMath::Min(Nummer - 1, 30) + Ab31 * FMath::Max(Nummer - 31, 0));
-	// 16.11. (Fahrplan P2, Simulation): Endlos - nach W50 waechst die Gegnerzahl nicht mehr (Wellen.MaxGesamt), die Coupons aber weiter;
-	// ohne Wachstum gab es keinen Bestwert. Ab Endlos.LPWachstumAbWelle je Welle Endlos.LPWachstum mehr Leben (zinsartig).
-	if (mEndlos)
-	{
-		// 23.11. (Marius: Einsatz schwerer, Gegencheck 0.13): Endlos eigener Faktor je Stufe, damit die Stufen-LP des Einsatzes Endlos
-		// nicht mitziehen (Endlos Normal lag schon unter dem Band)
-		LPFaktor *= TDBalance::Wert(FString::Printf(TEXT("Endlos.%s.LPFaktor"), S.Name), 1.f);
-		LPFaktor *= FMath::Pow(1.f + TDBalance::Wert(TEXT("Endlos.LPWachstum"), 0.03f),
-			static_cast<float>(FMath::Max(0, Nummer - TDBalance::Ganz(TEXT("Endlos.LPWachstumAbWelle"), 50))));
-	}
+	const float LPFaktor = LPFaktorFuer(Nummer);   // 24.11.: eigene Funktion, auch fuer den ADA-Hinweis vor der Welle
 	mWellenWachstum = LPFaktor / FMath::Max(S.LP, 0.01f);
 	if (mPlanWelle != Nummer)
 	{
@@ -3318,6 +3326,18 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 			PlaneWelle(mWelle + 1);
 			// 0.12-dev (Marius 16.11.): ADA meldet neue Gegnerarten und Bosse der naechsten Welle zu Beginn der Bauphase
 			TDAda::VorWelle(this, mKern.Get(), mWelle + 1, mPlan);
+			// 24.11.2026 (Marius: Option D): Hinweis, sobald ein Hog der naechsten Welle zwei Bolzen braucht (nur Einsatz, Overkill-Schwelle)
+			if (!mEndlos && !mBohrung)
+			{
+				static const TCHAR* HogPfad = TEXT("/Game/FactoryGame/Character/Creature/Enemy/Hog/Char_Hog.Char_Hog_C");
+				const UClass* Hog = LoadClass<AFGCreature>(nullptr, HogPfad);
+				const AFGCreature* Vorlage = Hog ? Cast<AFGCreature>(Hog->GetDefaultObject()) : nullptr;
+				const UFGHealthComponent* Leben = Vorlage ? Vorlage->GetHealthComponent() : nullptr;
+				if (Leben)
+				{
+					TDAda::PruefeBolzenSchwelle(this, mKern.Get(), Leben->GetMaxHealth() * LPFaktorFuer(mWelle + 1));
+				}
+			}
 			const double Start = FPlatformTime::Seconds();
 			int32 Neu = 0;
 			for (const FTDKatalogEintrag& E : KernKatalog)

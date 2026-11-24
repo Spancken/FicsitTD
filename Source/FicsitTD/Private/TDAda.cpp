@@ -3,6 +3,8 @@
 #include "TDAda.h"
 #include "TDDefenseCore.h"
 #include "TDWaveSubsystem.h"
+#include "TDBoltTurret.h"
+#include "EngineUtils.h"
 #include "TDBalance.h"
 #include "TDSprache.h"
 #include "FicsitTDModule.h"
@@ -74,6 +76,11 @@ namespace
 		{ TEXT("Johnny"), TEXT("Char_Johnny"),
 			TEXT("Bitte bewahren Sie Ruhe. Das ist Johnny. Johnny hat keine Personalakte. Johnny braucht keine."),
 			TEXT("Please remain calm. That is Johnny. Johnny does not have a personnel file. Johnny does not need one.") },
+		// 24.11.2026 (Marius: Option D "sichtbar machen"): vor der ersten Welle, in der ein Hog mehr LP hat als der staerkste Bolzenturm
+		// je Treffer Schaden macht - ab dann braucht jeder Hog zwei Bolzen und die halbe Feuerkraft verpufft (Overkill). Ohne Klasse.
+		{ TEXT("ZweiBolzen"), TEXT(""),
+			TEXT("Hinweis der Ballistikabteilung: Die Hogs sind gewachsen. Ein Bolzen je Tier reicht nicht mehr, es braucht zwei. Mehr Bolzentürme oder ein Gewehrturm verschwenden weniger."),
+			TEXT("A note from Ballistics: the Hogs have grown. One bolt per animal no longer does it, it takes two. More Bolt Turrets or a Gun Turret waste less.") },
 		{ TEXT("Boss10"), TEXT(""),
 			TEXT("Ein ungewöhnlich großes Objekt hält auf den Kern zu. Die Abteilung für Optimismus ist heute nicht besetzt."),
 			TEXT("An unusually large object is heading for the Core. The Department of Optimism is unstaffed today.") },
@@ -239,6 +246,26 @@ namespace TDAda
 			}
 		}
 		return N;
+	}
+
+	bool PruefeBolzenSchwelle(const UObject* WorldContext, ATDDefenseCore* Kern, float HogLP)
+	{
+		UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
+		if (!World || !Kern || HogLP <= 0.f || Kern->mAdaGesagt.Contains(TEXT("ZweiBolzen")))
+		{
+			return false;
+		}
+		float Staerkster = 0.f;
+		for (TActorIterator<ATDBoltTurret> It(World); It; ++It)
+		{
+			Staerkster = FMath::Max(Staerkster, It->SchadenJeTreffer());
+		}
+		if (Staerkster <= 0.f || HogLP <= Staerkster)
+		{
+			return false;
+		}
+		UE_LOG(LogFicsitTD, Log, TEXT("ADA: Bolzen-Schwelle - Hog %.0f LP gegen hoechstens %.0f Schaden je Bolzen"), HogLP, Staerkster);
+		return Sage(WorldContext, Kern, TEXT("ZweiBolzen"));
 	}
 
 	TArray<FString> Schluessel()

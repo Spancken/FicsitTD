@@ -300,6 +300,11 @@ float ATDBoltTurret::NennDPS() const
 	return Takt > 0.f ? WerteFuer(AktuelleMunition()).Schaden * SchadenBonus() / Takt : 0.f;
 }
 
+float ATDBoltTurret::SchadenJeTreffer() const
+{
+	return WerteFuer(AktuelleMunition()).Schaden * SchadenBonus();
+}
+
 void ATDBoltTurret::Kampfwerte(TArray<FTDKennwert>& Out) const
 {
 	const FTDBolzenWerte W = WerteFuer(AktuelleMunition());

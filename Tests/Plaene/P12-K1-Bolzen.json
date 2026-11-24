@@ -67,6 +67,20 @@
       "pause": 195
     },
     {
+      "pruefe": "LogEnthaelt",
+      "suche": "ADA-Ansage ZweiBolzen (Stimme",
+      "min": 1,
+      "max": 1,
+      "text": "24.11. (Marius: Option D): ADA sagt vor der ersten Zwei-Bolzen-Welle (Hog 53 LP gegen 48 Schaden, W5) einmal den Hinweis"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "ADA: Bolzen-Schwelle - Hog 53 LP gegen hoechstens 48 Schaden",
+      "min": 1,
+      "max": 1,
+      "text": "Schwelle kommt in W5 (Normal, Bolzen L2)"
+    },
+    {
       "fabrikbericht": true
     },
     {
