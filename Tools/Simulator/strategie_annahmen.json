@@ -53,8 +53,8 @@
     "Quelle": "Kalibrierung 2026-11-07 (verlust_fit.py): 1075 Wellen aus Streuung, Kreislauf, Vormittag, Gesamt082; Kurve geht durch 0"
   },
   "VerlustQ": {
-    "Wert": 48.62,
-    "Quelle": "P12-Fit 2026-11-17 (p12_fit.py, P12-K + Nachlauf): K1 W1-8 + K3 W1-30, 61 Wellen, Exponent und Streckung fest, K5-Pruefung erreicht"
+    "Wert": 16.1,
+    "Quelle": "verlust_fit_013.py 24.11.2026: 83 Wellen (Strat-* und P12-K* auf Balance 0.13, ohne K1 mit 156-m-Front), Exponent 1,37 und Streckung 1,5 fest; Fehler 330 -> 212; vorher 48,62 (P12-Fit 17.11.)"
   },
   "QKritisch": {
     "Wert": 1.1,
@@ -374,19 +374,65 @@
     "Quelle": "23.11.2026 (Gegencheck Konzept D): bis zum Kauf des Gewehrs (nach der Forschung Gewehrturm, 10 Coupons) kaempft der Spieler mit der Armierpistole: Armierungsbolzen 40 Schaden (Turmtabelle, Spielregeln Handwaffen), ein Schuss, dann nachladen, etwa 2 s je Schuss."
   },
   "TalentPlan": {
-    "Wert": ["Kommandant", "Kommandant", "Jaeger", "Kommandant", "Jaeger", "Jaeger", "Techniker", "Techniker", "Techniker", "Schuetze", "Schuetze", "Schuetze", "Kommandant", "Kommandant", "Jaeger"],
+    "Wert": [
+      "Kommandant",
+      "Kommandant",
+      "Jaeger",
+      "Kommandant",
+      "Jaeger",
+      "Jaeger",
+      "Techniker",
+      "Techniker",
+      "Techniker",
+      "Schuetze",
+      "Schuetze",
+      "Schuetze",
+      "Kommandant",
+      "Kommandant",
+      "Jaeger"
+    ],
     "Quelle": "23.11.2026, Annahme guter Spieler: zuerst die Turmhilfe (Kommandant 2: Markierte +15 %), dann Jaeger fuer die Bosse (Schwachstelle), dann Uebersteuern. Ein Punkt je geschaffter Bosswelle (Pionier.PunkteJeBoss), hoechstens 15."
   },
-  "MarkiertAnteil": {"Wert": 0.25, "Quelle": "23.11.2026, Annahme: Anteil des Turmschadens auf vom Spieler markierte Gegner (Kommandant 2), mit Sprung (Kommandant 3) x MarkiertSprungFaktor"},
-  "MarkiertSprungFaktor": {"Wert": 1.6, "Quelle": "23.11.2026, Annahme: Markierung springt beim Tod auf den naechsten Gegner, mehr markierte Ziele"},
-  "UebersteuernAnteil": {"Wert": 0.3, "Quelle": "23.11.2026, Annahme: Anteil der Tuerme in 20 m um den Spieler (Techniker 3 Uebersteuern), mit Kommandant 5 x UebersteuernFlaecheFaktor"},
-  "UebersteuernFlaecheFaktor": {"Wert": 2.0, "Quelle": "23.11.2026, Annahme"},
-  "SchwachstelleAnteil": {"Wert": 0.6, "Quelle": "23.11.2026, Annahme: Anteil der Bosswelle, in dem der Boss vom Spieler getroffen ist (Jaeger 3 Schwachstelle +25 % fuer 5 s)"},
-  "KopftrefferAnteil": {"Wert": 0.3, "Quelle": "23.11.2026, Annahme: Anteil Kopftreffer (Schuetze 1 x1,5)"},
-  "SchnellladenFaktor": {"Wert": 1.33, "Quelle": "23.11.2026, Annahme: halbe Nachladezeit hebt die Dauerleistung um ein Drittel (Schuetze 2)"},
-  "DurchschlagTrefferAnteil": {"Wert": 0.5, "Quelle": "23.11.2026, Annahme: Anteil Treffer mit einem Gegner dahinter (Schuetze 3, halber Schaden)"},
-  "SprengmantelZiele": {"Wert": 1.0, "Quelle": "23.11.2026, Annahme: weitere Gegner im 4-m-Radius je Explosion (Schuetze 5, jeder fuenfte Treffer)"},
-  "JaegerZielAnteil": {"Wert": 3.0, "Quelle": "23.11.2026, Annahme: der Spieler zielt bevorzugt auf Elite und Boss - Anteil seiner Treffer = 3 x Anteil Elite in der Welle (hoechstens 1)"},
+  "MarkiertAnteil": {
+    "Wert": 0.25,
+    "Quelle": "23.11.2026, Annahme: Anteil des Turmschadens auf vom Spieler markierte Gegner (Kommandant 2), mit Sprung (Kommandant 3) x MarkiertSprungFaktor"
+  },
+  "MarkiertSprungFaktor": {
+    "Wert": 1.6,
+    "Quelle": "23.11.2026, Annahme: Markierung springt beim Tod auf den naechsten Gegner, mehr markierte Ziele"
+  },
+  "UebersteuernAnteil": {
+    "Wert": 0.3,
+    "Quelle": "23.11.2026, Annahme: Anteil der Tuerme in 20 m um den Spieler (Techniker 3 Uebersteuern), mit Kommandant 5 x UebersteuernFlaecheFaktor"
+  },
+  "UebersteuernFlaecheFaktor": {
+    "Wert": 2.0,
+    "Quelle": "23.11.2026, Annahme"
+  },
+  "SchwachstelleAnteil": {
+    "Wert": 0.6,
+    "Quelle": "23.11.2026, Annahme: Anteil der Bosswelle, in dem der Boss vom Spieler getroffen ist (Jaeger 3 Schwachstelle +25 % fuer 5 s)"
+  },
+  "KopftrefferAnteil": {
+    "Wert": 0.3,
+    "Quelle": "23.11.2026, Annahme: Anteil Kopftreffer (Schuetze 1 x1,5)"
+  },
+  "SchnellladenFaktor": {
+    "Wert": 1.33,
+    "Quelle": "23.11.2026, Annahme: halbe Nachladezeit hebt die Dauerleistung um ein Drittel (Schuetze 2)"
+  },
+  "DurchschlagTrefferAnteil": {
+    "Wert": 0.5,
+    "Quelle": "23.11.2026, Annahme: Anteil Treffer mit einem Gegner dahinter (Schuetze 3, halber Schaden)"
+  },
+  "SprengmantelZiele": {
+    "Wert": 1.0,
+    "Quelle": "23.11.2026, Annahme: weitere Gegner im 4-m-Radius je Explosion (Schuetze 5, jeder fuenfte Treffer)"
+  },
+  "JaegerZielAnteil": {
+    "Wert": 3.0,
+    "Quelle": "23.11.2026, Annahme: der Spieler zielt bevorzugt auf Elite und Boss - Anteil seiner Treffer = 3 x Anteil Elite in der Welle (hoechstens 1)"
+  },
   "StromAusbauAbKraftwerken": {
     "Wert": 4,
     "Quelle": "23.11.2026 (Marius, Stromzweig): Annahme guter Spieler - ab 4 Kohlekraftwerken lohnt Kompaktkohle (4 Kraftwerke mit 100 statt 75 MW sparen eins), ab 8 Petrolkoks und das Treibstoffkraftwerk (zaehlt 3), ab 12 die Turbo-Feuerung. Nur mit Spielerwahl."
@@ -394,5 +440,13 @@
   "StromVorlaufWellen": {
     "Wert": 3,
     "Quelle": "23.11.2026 (Gewehr+Nobelisk erforschte in 0 von 24 Laeufen das Kohlekraftwerk, Biomasse leer): reicht die Biomasse nicht mehr fuer so viele Wellen wie die letzte, zieht der gute Spieler das Kohlekraftwerk in der Forschung vor (nur mit Spielerwahl)."
+  },
+  "VerlustWenigeTuerme": {
+    "Wert": 6.0,
+    "Quelle": "verlust_fit_013.py 24.11.2026: 83 Wellen (Strat-* und P12-K* auf Balance 0.13, ohne K1 mit 156-m-Front), Exponent 1,37 und Streckung 1,5 fest; Fehler 330 -> 212; Turmfaktor 1 + a/n: wenige Tuerme decken die Ankunft schlechter ab (1 Turm: Spiel 22 %, alt 12 %, neu 27 %). Optimum a=20 lag am Rand und war kaum besser."
+  },
+  "VerlustTurmExponent": {
+    "Wert": 1.0,
+    "Quelle": "verlust_fit_013.py 24.11.2026: 83 Wellen (Strat-* und P12-K* auf Balance 0.13, ohne K1 mit 156-m-Front), Exponent 1,37 und Streckung 1,5 fest; Fehler 330 -> 212"
   }
 }

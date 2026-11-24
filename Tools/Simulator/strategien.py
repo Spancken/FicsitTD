@@ -1128,6 +1128,9 @@ class Lauf:
         qv = q / max(1.0, len(gegner) / self.B.get("Wellen.MaxGleichzeitig", 60)) ** Z.get("VerlustStreckung", 0.0)
         # Kurve statt Gerade (07.11.: Verlust wächst schneller als Q, verlust_fit.py)
         verlust = Z["VerlustGrund"] + Z["VerlustQ"] * qv ** Z.get("VerlustP", 1.0) + Z["VerlustUeber"] * max(0.0, qv - Z["QKritisch"]) ** 2 * 100
+        # 24.11.2026 (G3-Nachgang, verlust_fit_013.py): wenige Tuerme decken die Ankunft der Gegner schlechter ab als ihr DPS sagt -
+        # im Spiel verlor 1 Bolzenturm bei Q 0,31 29 % Kern, die Kurve sagte 9 %. Faktor 1 + a / Zahl der Tuerme.
+        verlust *= 1.0 + Z.get("VerlustWenigeTuerme", 0.0) / max(1, len(self.tuerme)) ** Z.get("VerlustTurmExponent", 1.0)
         if Z.get("VerlustStreuung"):
             # gemessene Verteilung Verlust / Grundkurve (Dezile, Streuung-Messung)
             # unter hohem Druck streut der Verlust weniger (07.11.: Std. von Messung/Kurve 0,8 bis qv 0,3, 0,56 bei 0,5, 0,38 darüber)

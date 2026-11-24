@@ -1,6 +1,6 @@
 {
   "Name": "P12-K1-Bolzen",
-  "_Hinweis": "K1 (P12): voller Knoten, 4 Bolzentuerme L2, echter Strom, echte Kosten, bis W10, Pause 195 s zwischen den Wellen. Erzeugt von Tests\\erzeuge_p12k.py.",
+  "_Hinweis": "K1 (P12): voller Knoten, 4 Bolzentuerme L2, echter Strom, echte Kosten, bis W10, Pause 195 s zwischen den Wellen. Erzeugt von Tests\\erzeuge_p12k.py. 24.11.: Ring fuer den Fabrik-Pruefstand aus (sonst Konstruktor gesperrt, Kern fiel in W1).",
   "NeuesSpiel": {
     "Startort": "Grass Fields",
     "Modus": 1,
@@ -29,6 +29,12 @@
     },
     {
       "kosten": "echt"
+    },
+    {
+      "balance": {
+        "Einsatz.Ring.Aktiv": 0
+      },
+      "text": "24.11.: Ring instabiler Boden (0.13 K2) aus - er sperrte den Konstruktor des Pruefstands; der Ring wirkt nur aufs Bauen, nicht auf den Kampf"
     },
     {
       "fabrik": "Bolzen",
@@ -72,6 +78,11 @@
     {
       "pruefe": "KeineWarnungen",
       "text": "keine Warnungen oder Fehler des Mods im Log"
+    },
+    {
+      "balance": {
+        "Einsatz.Ring.Aktiv": 1
+      }
     }
   ]
 }

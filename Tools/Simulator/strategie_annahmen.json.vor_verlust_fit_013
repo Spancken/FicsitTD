@@ -1,0 +1,398 @@
+{
+  "_Hinweis": "Annahmen des Strategie-Prüfstands (strategien.py), die nicht im Mod-Code stehen. Werte ändern, neu rechnen.",
+  "StartEP": {
+    "Wert": 0,
+    "Quelle": "Einsatz startet mit 0 EP (Log Kernplatz)"
+  },
+  "Feueranteil": {
+    "Wert": 0.5,
+    "Quelle": "ersetzt durch FeueranteilJeWelle (nur noch Ersatzwert)"
+  },
+  "PauseGenutzt": {
+    "Wert": 1.0,
+    "Quelle": "Anteil der Pause, die der Spieler wartet (Frühstart verkürzt)"
+  },
+  "WellenGrund": {
+    "Wert": 50.0,
+    "Quelle": "P12-Fit 2026-11-17 (p12_fit.py, P12-K + Nachlauf): Wellendauer K3 W1-30, linear"
+  },
+  "WellenJe": {
+    "Wert": 1.34,
+    "Quelle": "P12-Fit 2026-11-17 (p12_fit.py, P12-K + Nachlauf): Wellendauer K3 W1-30, linear"
+  },
+  "MinerRate": {
+    "Wert": 60,
+    "Quelle": "Miner Mk1 auf normalem Vorkommen"
+  },
+  "TurmStrom": {
+    "Wert": 4,
+    "Quelle": "Ersatzwert; je Typ gilt TURM_STROM in strategien.py (8/12/6/20 MW beim Feuern, setup_turret_blueprint.py)"
+  },
+  "TeslaGrund": {
+    "Wert": 15,
+    "Quelle": "Spielregeln"
+  },
+  "TeslaLaden": {
+    "Wert": 75,
+    "Quelle": "Spielregeln"
+  },
+  "BiomasseJeGenerator": {
+    "Wert": 10,
+    "Quelle": "Biomasse 180 MJ, 30 MW"
+  },
+  "TreibstoffkraftNutzen": {
+    "Wert": 0,
+    "Quelle": "Modell-Spieler baut keine Treibstoffkraftwerke (0/1)"
+  },
+  "Reserve": {
+    "Wert": 0,
+    "Quelle": "EP, die der Spieler zurückhält"
+  },
+  "VerlustGrund": {
+    "Wert": 0.0,
+    "Quelle": "Kalibrierung 2026-11-07 (verlust_fit.py): 1075 Wellen aus Streuung, Kreislauf, Vormittag, Gesamt082; Kurve geht durch 0"
+  },
+  "VerlustQ": {
+    "Wert": 48.62,
+    "Quelle": "P12-Fit 2026-11-17 (p12_fit.py, P12-K + Nachlauf): K1 W1-8 + K3 W1-30, 61 Wellen, Exponent und Streckung fest, K5-Pruefung erreicht"
+  },
+  "QKritisch": {
+    "Wert": 1.1,
+    "Quelle": "Ab hier bricht die Abwehr ein (Annahme; Prüfstand überlebte Q bis 0,9)"
+  },
+  "VerlustUeber": {
+    "Wert": 1.5,
+    "Quelle": "Zusatzverlust (Q-QKritisch)^2 * 100 * Faktor"
+  },
+  "AusreisserChance": {
+    "Wert": 0.08,
+    "Quelle": "Messung: P90 des Verlusts etwa 5x Median"
+  },
+  "AusreisserFaktor": {
+    "Wert": 4.0,
+    "Quelle": "Messung"
+  },
+  "SchildProzent": {
+    "Wert": 3.0,
+    "Quelle": "Kern-Schild fängt 2000 Schaden je Welle ab (Kern-LP-Anteil geschätzt)"
+  },
+  "BeuteAnteil": {
+    "Wert": 0.8,
+    "Quelle": "Anteil der Beute, die eingesammelt wird"
+  },
+  "EPFaktor": {
+    "Wert": 1.0,
+    "Quelle": "Sweep-Regler"
+  },
+  "FPFaktor": {
+    "Wert": 1.0,
+    "Quelle": "Sweep-Regler"
+  },
+  "PreisFaktor": {
+    "Wert": 1.0,
+    "Quelle": "Sweep-Regler (Laden und Level)"
+  },
+  "FPPreisFaktor": {
+    "Wert": 1.0,
+    "Quelle": "Sweep-Regler (Forschung)"
+  },
+  "ZielLinieQuote": {
+    "Wert": 0.6,
+    "Quelle": "Zielbild: eine Turmlinie gilt als tragfähig ab 60 % Erfolg"
+  },
+  "ZielWegeMin": {
+    "Wert": 3,
+    "Quelle": "Zielbild: mindestens 3 tragfähige Linien"
+  },
+  "ZielQuoteMax": {
+    "Wert": 0.65,
+    "Quelle": "Zielbild: höchstens 65 % aller Läufe erfolgreich"
+  },
+  "ZuLeichtKern": {
+    "Wert": 80,
+    "Quelle": "Zielbild: Sieg mit Kern nie unter 80 % gilt als zu leicht"
+  },
+  "ZielZuLeichtMax": {
+    "Wert": 0.15,
+    "Quelle": "Zielbild: höchstens 15 % der Läufe zu leicht"
+  },
+  "ZielLinieMax": {
+    "Wert": 0.9,
+    "Quelle": "Zielbild: keine Turmlinie über 90 % Erfolg (sonst dominiert sie)"
+  },
+  "ZielLinieMin": {
+    "Wert": 0.2,
+    "Quelle": "Zielbild: keine Turmlinie unter 20 % Erfolg (sonst ist sie tot)"
+  },
+  "ZielUeberschussMax": {
+    "Wert": 0.15,
+    "Quelle": "W2: EP-Überschuss am Ende höchstens 15 % der Einnahmen (Median der Erfolgreichen)"
+  },
+  "ZielFabrikMin": {
+    "Wert": 0.3,
+    "Quelle": "W3: Fabrik-Anteil der EP-Ausgaben mindestens"
+  },
+  "ZielFabrikMax": {
+    "Wert": 0.6,
+    "Quelle": "W3: höchstens"
+  },
+  "ZielVerzugMax": {
+    "Wert": 2,
+    "Quelle": "W4: erste Einheit der Hauptlinie höchstens 2 Wellen nach Freigabe (Median)"
+  },
+  "ZielForschungMin": {
+    "Wert": 0.6,
+    "Quelle": "W5: erforschte Knoten bis W50 mindestens"
+  },
+  "ZielForschungMax": {
+    "Wert": 0.85,
+    "Quelle": "W5: höchstens"
+  },
+  "ZielNotMax": {
+    "Wert": 0.1,
+    "Quelle": "W6: Läufe mit Munitionsnot durch EP-Mangel höchstens"
+  },
+  "KnotenGesamt": {
+    "Wert": 57,
+    "Quelle": "Knoten im MAM (create_research.py), 0.83: +Elektrozaun, Funkmast, Schildgenerator, Stoerfeld, Dimensionslager, Himmelsturm, Singularitaet"
+  },
+  "Vorhalt": {
+    "Wert": 1.0,
+    "Quelle": "06.11.: Spieler legt EP für den Fabrikausbau der nächsten Welle zurück (vorher kaufte der Bot bis zur Reserve leer, 79 % der Läufe mit EP-Mangel)"
+  },
+  "NotVersorgung": {
+    "Wert": 0.8,
+    "Quelle": "W6: Munitionsnot heißt unter 80 % Versorgung in einer Welle (kleine Lücken zählen nicht)"
+  },
+  "VerlustStreuung": {
+    "Wert": [
+      0.0,
+      0.03,
+      0.33,
+      0.57,
+      0.75,
+      0.94,
+      1.12,
+      1.36,
+      1.75,
+      3.16
+    ],
+    "Quelle": "Kalibrierung 2026-11-07 (verlust_fit.py): 1075 Wellen aus Streuung, Kreislauf, Vormittag, Gesamt082: Dezile Messung / Kurve, auf Mittel 1 normiert"
+  },
+  "VerlustStreckung": {
+    "Wert": 1.5,
+    "Quelle": "Messung 06.11.2026 (Kreislauf + Streuung, 400 Wellen): Q / (Gegner/MaxGleichzeitig)^1,5 erklärt den Verlust besser (R² 0,22 -> 0,45); Exponent 0/0,5/1/1,5 getestet"
+  },
+  "BewertungWellen": {
+    "Wert": 30,
+    "Quelle": "06.11.2026: Modell nur bis W30 an Spielmessungen geprüft (Selbsttests enden bei W30, Spucker-LP ab W24 geschätzt). Über 50 Wellen entschied eine ungeprüfte Wand in W47-50 alle Kriterien."
+  },
+  "BauphaseSekunden": {
+    "Wert": 195,
+    "Quelle": "Live-Spiele Marius 03./04.11.2026 (Wirtschaft.csv, Bauphase_s, 21 Bauphasen): Median 195 s, Quartile 115/286 s. Im Einsatz ist die Bauphase unbegrenzt (Welle startet von Hand, TDEinsatz.cpp:1489)"
+  },
+  "BauphaseErsteSekunden": {
+    "Wert": 600,
+    "Quelle": "Annahme: erster Aufbau (Startkit verbauen, Fabrik anlegen) dauert länger; Live-Wert fehlt (erste Zeile -1)"
+  },
+  "FeueranteilJeWelle": {
+    "Wert": [
+      [
+        4,
+        0.61
+      ],
+      [
+        9,
+        0.76
+      ],
+      [
+        99,
+        0.49
+      ]
+    ],
+    "Quelle": "P12-Fit 2026-11-17 (p12_fit.py, P12-K + Nachlauf): Median Uptime K1+K3 je Wellenbereich"
+  },
+  "FlammePuffer": {
+    "Wert": 1.0,
+    "Quelle": "Annahme ungeprüft: m³ Treibstoff im Rohr-Eingang des Flammenwerfers"
+  },
+  "BiomasseStart": {
+    "Wert": 372,
+    "Quelle": "Startkit (TDEinsatz.cpp:71-75): 300 Biomasse + 200 Blätter x 15 MJ + 100 Holz x 100 MJ, umgerechnet auf Biomasse à 180 MJ"
+  },
+  "BiomasseMJ": {
+    "Wert": 180,
+    "Quelle": "Energiewert Biomasse (de.json)"
+  },
+  "StromMittelAnteil": {
+    "Wert": 0.75,
+    "Quelle": "Live 03./04.11.2026: Strom_Verbrauch / Strom_Spitze am Wellenende, Mittel aus 21 Bauphasen"
+  },
+  "ReparaturUnter": {
+    "Wert": 50,
+    "Quelle": "Annahme Spielerverhalten: Kernreparatur kaufen, solange der Kern unter 50 % steht"
+  },
+  "VerlustP": {
+    "Wert": 1.37,
+    "Quelle": "Kalibrierung 2026-11-07 (verlust_fit.py): 1075 Wellen aus Streuung, Kreislauf, Vormittag, Gesamt082: Exponent der Verlustkurve, Verlust wächst schneller als Q"
+  },
+  "Mehrziel_Bolzenturm": {
+    "Wert": 1.08,
+    "Quelle": "P12-Fit 2026-11-17 (p12_fit.py, P12-K + Nachlauf): K4 W15-19, Wirkung je Nenn-DPS / Formel, Gewehr = 1"
+  },
+  "Mehrziel_Nobelisk-Werfer": {
+    "Wert": 0.86,
+    "Quelle": "P12-Fit 2026-11-17 (p12_fit.py, P12-K + Nachlauf): K4 W15-19, Wirkung je Nenn-DPS / Formel, Gewehr = 1"
+  },
+  "Mehrziel_Teslaspule": {
+    "Wert": 1.04,
+    "Quelle": "P12-Fit 2026-11-17 (p12_fit.py, P12-K + Nachlauf): K4 W15-19, Wirkung je Nenn-DPS / Formel, Gewehr = 1"
+  },
+  "Mehrziel_Flammenwerfer": {
+    "Wert": 1.02,
+    "Quelle": "P12-Fit 2026-11-17 (p12_fit.py, P12-K + Nachlauf): K4 W15-19, Wirkung je Nenn-DPS / Formel, Gewehr = 1"
+  },
+  "StreuungAbQ": {
+    "Wert": 0.3,
+    "Quelle": "Messung 06./07.11. (806 Wellen): Streuung Messung/Kurve gleich bis qv 0,3, darüber kleiner"
+  },
+  "StreuungExponent": {
+    "Wert": 0.7,
+    "Quelle": "Messung 06./07.11.: Std. 0,76 (qv 0,2-0,3), 0,56 (0,45-0,6), 0,38 (>0,6); Faktor 1 + (f-1)*(0,3/qv)^0,7"
+  },
+  "KomboAnteilEngstelle": {
+    "Wert": 0.5,
+    "Quelle": "Annahme, im Spiel nicht gemessen. 0.9.1 E3 Engstelle: Anteil der Bolzenschüsse auf Gegner am Tor (12 m), hinter denen ein weiterer Gegner in der Schusslinie steht"
+  },
+  "KomboAnteilGelockt": {
+    "Wert": 0.4,
+    "Quelle": "Annahme, im Spiel nicht gemessen. 0.9.1 E3 Sammelpunkt: Anteil der Explosionstreffer auf vom Lockfeuer gelockte Gegner (Lockruf 15 s, Pause 30 s)"
+  },
+  "KomboGegnerAmZaun": {
+    "Wert": 2.0,
+    "Quelle": "Annahme, im Spiel nicht gemessen. 0.9.1 E3 Leiter: Gegner im Mittel je Entladung am Elektrozaun (4 m) in Reichweite der Teslaspule"
+  },
+  "KomboAnteilPlatte": {
+    "Wert": 0.4,
+    "Quelle": "Annahme, im Spiel nicht gemessen. 0.9.1 E3 Ölbrand: Anteil der Gegner im Flammenkegel, die auf der nassen Platte stehen"
+  },
+  "KomboPlatteVerweilSekunden": {
+    "Wert": 5.0,
+    "Quelle": "Annahme, im Spiel nicht gemessen. 0.9.1 E3 Ölbrand: Sekunden je Gegner auf der Platte (8 m bei 35 % Bremse); verteilt das Nachbrennen 10/s x 3 s auf die Verweilzeit"
+  },
+  "KomboTuermeJeBau": {
+    "Wert": 3,
+    "Quelle": "Annahme, im Spiel nicht gemessen. 0.9.1 E3: ein Stützbau (Tor, Lockfeuer, Zaun, Platte) liegt im Mittel bei 3 Türmen seiner Linie; der Spieler kauft je 3 Türme einen"
+  },
+  "LockfeuerKohleJeRuf": {
+    "Wert": 2,
+    "Quelle": "0.9.1 Konzept/Code: 2 Kohle je Lockruf (Recipe_TD_Lure_Coal)"
+  },
+  "LockfeuerRufSekunden": {
+    "Wert": 15,
+    "Quelle": "create_research.py: Lockruf 15 s, danach Pause Tuerme.Lockfeuer.Pause"
+  },
+  "OelschlickSchweroelJeMin": {
+    "Wert": 10,
+    "Quelle": "create_turret_recipes.py Slick_HeavyOil: 1 m³ je 6 s; Annahme: läuft dauernd, nicht nur in der Welle"
+  },
+  "StickstoffJeFoerderanlage": {
+    "Wert": 60,
+    "Quelle": "Annahme, im Spiel nicht gemessen. Stickstoff je Brunnen-Förderturm in m³/min (normaler Satellit bei 100 % Druckerzeuger, Satisfactory 1.0)"
+  },
+  "DruckerzeugerStrom": {
+    "Wert": 150,
+    "Quelle": "Annahme, im Spiel nicht gemessen. Ressourcenbrunnen-Druckerzeuger 150 MW (Spielwert); zählt im Mod nicht als Kontingent, Strom muss trotzdem erzeugt werden"
+  },
+  "SplitterFuerTreibstoff": {
+    "Wert": 1.0,
+    "Quelle": "Annahme, im Spiel nicht gemessen. Anteil der erbeuteten Energiesplitter, die in ionisierten Treibstoff gehen (Rest Übertakten); 1,0 = alles, eher zu günstig für die Plasmaflamme"
+  },
+  "KnotenGesamt091": {
+    "Wert": 62,
+    "Quelle": "Knoten im MAM 0.9.1 (create_research.py): +Schwerindustrie, Mischtechnik, Raketentreibstoff, Plasmaflamme, Hochspannung"
+  },
+  "MunitionSparen": {
+    "Wert": 0,
+    "Quelle": "Annahme Spielerverhalten (0.9.1): 1 = der Spieler legt Coupons für die Kette Raketentreibstoff/Plasmaflamme zurück, statt weiter Türme zu kaufen; 0 = er stellt nur um, wenn die Kette sofort bezahlbar ist (wie bei allen anderen Munitionen)"
+  },
+  "SparWellen": {
+    "Wert": 10,
+    "Quelle": "Annahme Spielerverhalten (0.9.1): gespart wird nur, wenn die Kette höchstens so viele Wellen-Einkommen kostet. Mit 3 sparte der Spieler nie (Kette ~400-500 Coupons), deshalb 10"
+  },
+  "VerlustBezugKernLP": {
+    "Wert": 20000,
+    "Quelle": "16.11.2026: Die Verlustkurve (verlust_fit.py, 07.11.) ist an Einsaetzen der Stufe Normal gemessen, Kern-LP damals und heute 20000 (TDBalance.cpp Stufen.Normal.KernLP, seit 0.76 unveraendert). Verlust in % wird mit 20000 / Kern-LP der Stufe bzw. Bohrung umgerechnet; vorher galt fuer alle Stufen derselbe Prozentwert."
+  },
+  "BauSekundenJeGebaeude": {
+    "Wert": 117,
+    "Quelle": "16.11.2026, Annahme fuer Endlos-Wellen (sim_modi.kalibriere_bauzeit): Im Einsatz wartete Marius im Median 195 s je Bauphase (BauphaseSekunden), der Modell-Spieler kauft im Einsatz Normal W2-30 im Mittel 1,75 Kontingente je Bauphase -> 195 / 1,75 = 111 s je Gebaeude (Turm, Fabrikgebaeude, Kraftwerk, Stuetzbau). Obergrenze: die Bauphase enthielt auch Warten, Verlegen, Versorgen. Level im Turmfenster kosten keine Bauzeit. 23.11.2026 (Gegencheck 0.13): mit dem guten Spieler (Spielerwahl) neu geeicht: im Mittel 1,66 Kontingente je Bauphase -> 195 / 1,66 = 117 s (Median waere 1,0 -> 195 s)."
+  },
+  "BauAnteilInWelle": {
+    "Wert": 0.5,
+    "Quelle": "16.11.2026, Annahme: Endlos hat keine Bausperre, aber waehrend der Welle versorgt und beobachtet der Spieler; die Haelfte der Wellenzeit zaehlt als Bauzeit. Nicht gemessen."
+  },
+  "EndlosAnlaufSekunden": {
+    "Wert": 20,
+    "Quelle": "16.11.2026, Annahme: Laufzeit der ersten Gegner von der Front bis in Turmreichweite. Nicht gemessen."
+  },
+  "EndlosFeuerAnteil": {
+    "Wert": 0.54,
+    "Quelle": "16.11.2026: Wellendauer = Anlauf + max(Gegnerstrom, Q x 60 s / Feueranteil). Feueranteil wie FeueranteilJeWelle ab W10 (Uptime-Messung 06.11., Einsatz). Im Endlos-Strom vermutlich hoeher, nicht gemessen."
+  },
+  "EndlosBonusKernUnter": {
+    "Wert": 60,
+    "Quelle": "16.11.2026, Annahme Spielerverhalten: nach der Bosswelle Kern +30 % waehlen, wenn der Kern unter 60 % steht, sonst +80 Coupons. Festplatten waehlt das Modell nie."
+  },
+  "BauzeitSpeicherSekunden": {
+    "Wert": 300,
+    "Quelle": "16.11.2026, Annahme Endlos: Bauzeit, die in einem Zyklus nicht fuer ein ganzes Paket (z. B. Turm + Miner) reicht, geht nicht verloren (angefangene Bauten); hoechstens 300 s werden mitgenommen."
+  },
+  "EndlosVorziehenUnterQ": {
+    "Wert": 0.25,
+    "Quelle": "16.11.2026, Annahme Spielerverhalten (Variante 'Vorziehen'): die naechste Welle wird nur vorgezogen, wenn die letzte Welle locker war (wirksames Q unter 0,25, Kern ab 90 %) und Bauzeit uebrig ist; vorgezogen wird hoechstens die ungenutzte Bauzeit."
+  },
+  "Spielerwahl": {
+    "Wert": 1,
+    "Quelle": "22.11.2026, Analyse-A6-Simulation (Marius: erst Modell nachziehen)",
+    "Hinweis": "1 = guter Spieler: Kupfer/Kohlekraftwerk nur nach Bedarf, Kohlestrom nur wenn billiger oder Biomasse knapp, neue Munition nur wenn sie je Coupon so viel bringt wie ein weiterer Turm. 0 = Verhalten bis 22.11. (alles Erforschte sofort nutzen)"
+  },
+  "FliegerJeHimmelsturm": {
+    "Wert": 8,
+    "Quelle": "23.11.2026, Annahme: ein Himmelsturm (Flak, 200 Schaden in 6 m, 1,5 s Nachladen, 60 m) holt je Welle etwa 8 fliegende Krabben vom Himmel, bevor sie den Kern erreichen. Im Spiel messen (Plan Flieger, TurmWert Treffer)."
+  },
+  "SpielerAktiv": {
+    "Wert": 0,
+    "Quelle": "23.11.2026 (Marius: Talentbaum in den Simulator). 0 = passiver Spieler: Die Balance und alle Zielbaender gelten fuer ihn (Marius 12.11., Analyse-Spieler-und-Pionier). 1 = aktiver Spieler mit Handwaffe und Talenten, Ziel 10-20 % Anteil am Wellenschaden. sim_alle_modi rechnet beides."
+  },
+  "SpielerDPS": {
+    "Wert": 30,
+    "Quelle": "23.11.2026, Annahme aus Analyse-Spieler-und-Pionier-2026-11-12 Abschnitt 1.3: Gewehr mit Standardmunition 60 DPS im Dauerfeuer, mit Nachladen und Zielwechsel etwa die Haelfte. Waechst mit Pionier.WellenAnteil (wie TDPionier.cpp HandFaktor)."
+  },
+  "SpielerDPSArmier": {
+    "Wert": 20,
+    "Quelle": "23.11.2026 (Gegencheck Konzept D): bis zum Kauf des Gewehrs (nach der Forschung Gewehrturm, 10 Coupons) kaempft der Spieler mit der Armierpistole: Armierungsbolzen 40 Schaden (Turmtabelle, Spielregeln Handwaffen), ein Schuss, dann nachladen, etwa 2 s je Schuss."
+  },
+  "TalentPlan": {
+    "Wert": ["Kommandant", "Kommandant", "Jaeger", "Kommandant", "Jaeger", "Jaeger", "Techniker", "Techniker", "Techniker", "Schuetze", "Schuetze", "Schuetze", "Kommandant", "Kommandant", "Jaeger"],
+    "Quelle": "23.11.2026, Annahme guter Spieler: zuerst die Turmhilfe (Kommandant 2: Markierte +15 %), dann Jaeger fuer die Bosse (Schwachstelle), dann Uebersteuern. Ein Punkt je geschaffter Bosswelle (Pionier.PunkteJeBoss), hoechstens 15."
+  },
+  "MarkiertAnteil": {"Wert": 0.25, "Quelle": "23.11.2026, Annahme: Anteil des Turmschadens auf vom Spieler markierte Gegner (Kommandant 2), mit Sprung (Kommandant 3) x MarkiertSprungFaktor"},
+  "MarkiertSprungFaktor": {"Wert": 1.6, "Quelle": "23.11.2026, Annahme: Markierung springt beim Tod auf den naechsten Gegner, mehr markierte Ziele"},
+  "UebersteuernAnteil": {"Wert": 0.3, "Quelle": "23.11.2026, Annahme: Anteil der Tuerme in 20 m um den Spieler (Techniker 3 Uebersteuern), mit Kommandant 5 x UebersteuernFlaecheFaktor"},
+  "UebersteuernFlaecheFaktor": {"Wert": 2.0, "Quelle": "23.11.2026, Annahme"},
+  "SchwachstelleAnteil": {"Wert": 0.6, "Quelle": "23.11.2026, Annahme: Anteil der Bosswelle, in dem der Boss vom Spieler getroffen ist (Jaeger 3 Schwachstelle +25 % fuer 5 s)"},
+  "KopftrefferAnteil": {"Wert": 0.3, "Quelle": "23.11.2026, Annahme: Anteil Kopftreffer (Schuetze 1 x1,5)"},
+  "SchnellladenFaktor": {"Wert": 1.33, "Quelle": "23.11.2026, Annahme: halbe Nachladezeit hebt die Dauerleistung um ein Drittel (Schuetze 2)"},
+  "DurchschlagTrefferAnteil": {"Wert": 0.5, "Quelle": "23.11.2026, Annahme: Anteil Treffer mit einem Gegner dahinter (Schuetze 3, halber Schaden)"},
+  "SprengmantelZiele": {"Wert": 1.0, "Quelle": "23.11.2026, Annahme: weitere Gegner im 4-m-Radius je Explosion (Schuetze 5, jeder fuenfte Treffer)"},
+  "JaegerZielAnteil": {"Wert": 3.0, "Quelle": "23.11.2026, Annahme: der Spieler zielt bevorzugt auf Elite und Boss - Anteil seiner Treffer = 3 x Anteil Elite in der Welle (hoechstens 1)"},
+  "StromAusbauAbKraftwerken": {
+    "Wert": 4,
+    "Quelle": "23.11.2026 (Marius, Stromzweig): Annahme guter Spieler - ab 4 Kohlekraftwerken lohnt Kompaktkohle (4 Kraftwerke mit 100 statt 75 MW sparen eins), ab 8 Petrolkoks und das Treibstoffkraftwerk (zaehlt 3), ab 12 die Turbo-Feuerung. Nur mit Spielerwahl."
+  },
+  "StromVorlaufWellen": {
+    "Wert": 3,
+    "Quelle": "23.11.2026 (Gewehr+Nobelisk erforschte in 0 von 24 Laeufen das Kohlekraftwerk, Biomasse leer): reicht die Biomasse nicht mehr fuer so viele Wellen wie die letzte, zieht der gute Spieler das Kohlekraftwerk in der Forschung vor (nur mit Spielerwahl)."
+  }
+}
