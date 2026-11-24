@@ -1,11 +1,11 @@
 ---
-titel: Verlegte Frontstartpunkte bevorzugt mit Freiraum (Gras-S8 Front 1 noch offen)
+titel: Gras-S8 Front 1 neu (r14) und verlegte Frontstartpunkte bevorzugt mit Freiraum
 typ: behoben
 modi: einsatz, endlos, abwehr
-sichtbar: nein
+sichtbar: ja
 doku: ja
 simulation: nicht-noetig
-tests: Front-Gras-S8, Wege-Marius-W06, BautenE3a, Flieger
+tests: Front-Gras-S8, Front-Gras-S8-r14, Front-Gras-S8-r11, Front-Gras-S8-r10, Wege-Marius-W06, BautenE3a, Flieger, Oel
 experiment:
 ---
 
@@ -17,9 +17,9 @@ experiment:
 - Die Klippenprobe prüft mit 70 cm, große Gegner passen durch die Gasse nicht durch.
 - Zweimal reproduziert in W43 (Flieger-Plan im Grasland, Gegencheck-Nachtest 23.11.). Marius am 23.11. abends: „Gras-S8 Front 1“.
 
-**Changelog EN:** -
+**Changelog EN:** Grass Fields: the first front of one core site no longer leads through a canyon where big enemies got stuck.
 
-**Changelog DE:** - (erst mit gelöster Gras-S8-Front)
+**Changelog DE:** Grasfelder: Die erste Front eines Kernplatzes führt nicht mehr durch eine Schlucht, in der große Gegner hängen blieben.
 
 **Nachweis:**
 - Build 23.11. abends.
@@ -28,7 +28,15 @@ experiment:
 - `Abend-2311` (`_2005`): **Gras-S8 Front 1 nicht gelöst.** Der Frontweg läuft vom ersten Klippentreffer bis 150 m vor dem Kern durch eine Schlucht, kein Wegpunkt hat 12 m Freiraum. Der Rückfall verlegt wie bisher an X −57570, Y 216277, und ein Elite-Stinger blieb hängen.
 - Die Regel wirkt nur, wo es freie Punkte gibt (Fels-S8 Front 2: „frei im Umkreis 12 m“).
 
-**Noch offen (Gras-S8 Front 1):**
+**Gelöst am 24.11. (Gras-S8 Front 1):**
+- Neuer Testschalter `Test.FrontR1..4`/`Test.FrontD1..4`: ersetzt eine feste Front ohne neuen Build.
+- Paket `Gras-S8-Kandidaten` (`2026-11-24_0832`): r14, r11 und r10 waren je W43 ohne Festgefahrene und ohne Sicherheitsnetz. Nur auf r14 hing die Klippenprobe für Front 1 gar nicht.
+- Die Tabelle `TDFesteFronten` hat für Gras-S8 jetzt Front 1 = r14 nah (Nordosten, 267 m), vorher r13 fern (Schlucht).
+
+- Nachweis Tabelle (`Gras-S8-Neu`, `2026-11-24_0837`): Front 1 „Nordosten (Weg 267 m) (r=14 d=0)“, W43 ohne Festgefahrene, ohne Sicherheitsnetz. Oel auf Gras-S8 grün.
+- **Beobachten:** Front 3 (r1) wird bei CliffFlat_03 zweimal je Lauf „OHNE Freiraum“ verlegt. In 5 W43-Läufen blieb dort kein Gegner hängen. Die Prüfung im Plan ist deshalb nur Diagnose.
+
+**Vorher offen (Gras-S8 Front 1):**
 - Die feste Front 1 liegt auf r13 (Nordosten). Ihr Weg ist mit 389/427 m deutlich länger als die Nachbarn, das ist der Umweg durch die Schlucht.
 - Kandidaten mit kurzem, geradem Weg: r14 Nordosten 267 m (nah), r11 Norden 269/294 m, r10 Nordwesten 277/313 m.
 - Eine neue feste Front 1 für Gras-S8 braucht einen Messlauf je Kandidat (Paket Fronten-Messung, danach `Front-Gras-S8`).

@@ -45,6 +45,7 @@
 - Free Play with Defense: missing industry nodes (Belt Mk.4/Mk.5, Miner Mk.2/Mk.3) are added, and the other side of a branch no longer shows as locked.
 - Right after the Core platform is built, its own foundations no longer count as sealing off the Core while the navigation mesh catches up.
 - The enemy path preview shows the final route before you start the wave: cliffs are checked during the build phase.
+- Grass Fields: the first front of one core site no longer leads through a canyon where big enemies got stuck.
 - The Oil Slick Field slows enemies again – in the 0.13 test builds they walked around it.
 - Enemies find their way through mazes of defense walls. Before, a long winding path made the path search give up: enemies got stuck at the outer wall and the Core counted as sealed off.
 
@@ -78,5 +79,6 @@
   - fehlende Industrie-Knoten im Freien Spiel
   - Die eigene Kernplattform gilt kurz nach dem Bau nicht mehr als Abriegelung, solange das Netz nachzieht
   - Die Wegvorschau zeigt vor dem Wellenstart den endgültigen Weg (Klippenprüfung in der Bauphase)
+  - Grasfelder: Die erste Front eines Kernplatzes führt nicht mehr durch eine Schlucht, in der große Gegner hängen blieben
   - Das Ölschlick-Feld bremst wieder (in den 0.13-Testständen liefen Gegner darum herum)
   - Gegner finden durch Labyrinthe aus Mauern (vorher gab die Wegsuche bei langen Umwegen auf, Gegner hingen an der äußeren Mauer)

@@ -12,7 +12,12 @@
       "text": "richtige Mod-Version geladen"
     },
     {
-      "warte": 20
+      "warteBis": "EinsatzAktiv",
+      "max": 180,
+      "text": "24.11.: auf den Einsatzstart warten - der Kernplatz wartet bis 120 s auf das Netz um die Plattform, die Begruessung kommt erst mit dem Einsatz"
+    },
+    {
+      "warte": 10
     },
     {
       "pruefe": "KernLebt",

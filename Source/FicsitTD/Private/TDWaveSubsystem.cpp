@@ -970,7 +970,7 @@ struct FTDFesteFront { const TCHAR* Platz; int32 R[4]; int32 D[4]; };
 static const FTDFesteFront TDFesteFronten[] = {
 	// Messung 18.11. (Paket Fronten-Messung, Stufe Normal, Suche beim Einsatzstart und 90 s spaeter jeweils gleich)
 	{ TEXT("Gras-S1"),  { 10,  2,  6, 14 }, { 2, 2, 2, 0 } },
-	{ TEXT("Gras-S8"),  { 13,  5,  1,  9 }, { 2, 0, 2, 2 } },
+	{ TEXT("Gras-S8"),  { 14,  5,  1,  9 }, { 0, 0, 2, 2 } },   // 24.11.: Front 1 r13 (Schlucht, 389/427 m, grosse Gegner hingen) -> r14 nah 267 m (Paket Gras-S8-Kandidaten)
 	{ TEXT("Gras-S2"),  {  7, 15,  3, 11 }, { 2, 0, 2, 1 } },
 	{ TEXT("Fels-S3"),  { 10,  2,  6, 14 }, { 2, 2, 2, 2 } },
 	{ TEXT("Fels-S8"),  { 10,  2, 14,  5 }, { 2, 0, 2, 2 } },   // Nordwesten 343 m zuerst, Grundlage aller P12-Messungen
@@ -1177,7 +1177,14 @@ void UTDWaveSubsystem::SucheFronten(const FVector& Mitte)
 		int32 Geprueft = 0;
 		for (int32 i = 0; i < 4; ++i)
 		{
-			const int32 r = Fest->R[i], k = FMath::Clamp(Fest->D[i], 0, 2);
+			// 24.11. (Gras-S8 Front 1: Kandidaten messen ohne neuen Build): Test.FrontR<n>/Test.FrontD<n> >= 0 ersetzen die Tabelle
+			const int32 TestR = TDBalance::Ganz(FString::Printf(TEXT("Test.FrontR%d"), i + 1), -1);
+			const int32 TestD = TDBalance::Ganz(FString::Printf(TEXT("Test.FrontD%d"), i + 1), -1);
+			const int32 r = TestR >= 0 ? TestR : Fest->R[i], k = FMath::Clamp(TestD >= 0 ? TestD : Fest->D[i], 0, 2);
+			if (TestR >= 0 || TestD >= 0)
+			{
+				UE_LOG(LogFicsitTD, Log, TEXT("Fronten fest: Front %d aus dem Selbsttest r=%d d=%d (Tabelle r=%d d=%d)"), i + 1, r, k, Fest->R[i], Fest->D[i]);
+			}
 			if (r < 0 || r > 15)
 			{
 				continue;

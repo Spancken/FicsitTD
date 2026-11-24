@@ -24,3 +24,4 @@ experiment:
 - Build 23.11. abends, Paket `Slick` (`2026-11-23_2134`).
 - **BautenP1 grün, Gebremst 82** (zuletzt grün am 09.11.). **BautenP1-Frueh grün.**
 - BautenE3a rot (Gebremst 0): Dort steht das Feld schon vor Welle 1, beim Wellenstart verlegt die Klippenprobe die Wege. Das ist das Thema Wegvorschau (Schalter `Gegner.FrontPruefungAufbau`), kein Fehler des Felds. Mit dem Schalter (BautenP1-Frueh) liegt das Feld auf dem Weg.
+- Nachtrag 24.11., BautenE3a (auch mit Schalter rot, `_2155`): Das Lockfeuer stand bei 32 m **vor** dem Feld (22 m). Es hielt die Gegner fest (Sammelpunkt 76-mal), die Nobelisk-Werfer töteten sie dort (mittlerer Abstand 29–39 m), das Feld bekam keinen Gegner. Das ist ein Testaufbau-Fehler. Neu: Tor 50 m, Ölschlick 40 m, Lockfeuer 30 m. Die Gegner laufen über das Feld zum Lockfeuer, das 10 m dahinter steht und es zündet (12 m).

@@ -1,0 +1,128 @@
+{
+  "Name": "Front-Gras-S8-r10",
+  "_Hinweis": "24.11.2026: Kandidat fuer die feste Front 1 von Gras-S8 - Richtung r10 (Abstand d0) statt r13 (Schlucht). Aufbau wie Front-Gras-S8 (W43, grosse Gegner). Erwartet: voller Weg, keine Festgefahrenen, kein Sicherheitsnetz.",
+  "NeuesSpiel": {
+    "Startort": "Grass Fields",
+    "Kernplatz": "2",
+    "Modus": 1
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 20,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warteBis": "EinsatzAktiv",
+      "max": 120
+    },
+    {
+      "balance": {
+        "Test.FrontR1": 10,
+        "Test.FrontD1": 0
+      }
+    },
+    {
+      "befehl": "td kern fronten neu"
+    },
+    {
+      "warte": 10
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Front 1 aus dem Selbsttest r=10",
+      "min": 1,
+      "text": "Front 1 auf r10"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Fronten fest fuer Kernplatz Gras-S8: 4 von 4 mit vollem Weg",
+      "min": 1,
+      "text": "alle 4 Fronten mit vollem Weg"
+    },
+    {
+      "befehl": "td einsatz frei an"
+    },
+    {
+      "stromfrei": true
+    },
+    {
+      "versorgung": {
+        "Bolzenturm": 200,
+        "Himmelsturm": 200
+      }
+    },
+    {
+      "baue": "Himmelsturm",
+      "anzahl": 3,
+      "level": 2,
+      "rezept": "Recipe_TD_Flak_Shoot",
+      "ring": "innen"
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 8,
+      "level": 3,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "balance": {
+        "Stufen.Erkundung.GegnerLP": 0.05
+      },
+      "text": "Bodengegner schwach: geprueft wird der Start der Fronten, nicht die Abwehr"
+    },
+    {
+      "befehl": "td kern springe 43"
+    },
+    {
+      "warte": 3
+    },
+    {
+      "wellenlauf": 43,
+      "zeitraffer": 2,
+      "max": 400
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Startpunkt von Front",
+      "min": 0,
+      "text": "Verlegte Startpunkte (Diagnose)"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "OHNE Freiraum",
+      "min": 0,
+      "max": 0,
+      "text": "jeder verlegte Startpunkt hat Freiraum ohne Klippe"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "festgefahren bei",
+      "min": 0,
+      "max": 0,
+      "text": "kein Gegner bleibt am Startpunkt haengen"
+    },
+    {
+      "pruefe": "Sicherheitsnetze",
+      "text": "kein Sicherheitsnetz ausgeloest"
+    },
+    {
+      "balance": {
+        "Stufen.Erkundung.GegnerLP": 0.7
+      }
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    },
+    {
+      "balance": {
+        "Test.FrontR1": -1,
+        "Test.FrontD1": -1
+      }
+    }
+  ]
+}
