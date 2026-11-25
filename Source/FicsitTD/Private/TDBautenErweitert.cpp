@@ -12,7 +12,7 @@
 #include "TDDefenseCore.h"
 #include "TDWaveSubsystem.h"
 #include "Creature/FGCreature.h"
-#include "Creature/Enemy/FGFlyingBabyCrab.h"
+#include "TDFlieger.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
@@ -278,6 +278,9 @@ void ATDRadioMast::RadarTakt()
 		Text += V.bZusammensetzung ? FString::Printf(TEXT(" %dx %s"), G.Anzahl, *S.Name) : FString::Printf(TEXT(" %s"), *S.Name);
 		bFlieger |= G.Pfad.Contains(TEXT("Flying"));
 	}
+	// 25.11.: Voegel und Mantas stehen nicht im Wellenplan, sie kommen ab ihrer Welle zusaetzlich
+	bFlieger |= TDBalance::Wert(TEXT("Flieger.Aktiv"), 1.f) > 0.f
+		&& V.Welle >= FMath::Min(TDBalance::Ganz(TEXT("Flieger.AbWelle"), 43), TDBalance::Ganz(TEXT("Flieger.Manta.AbWelle"), 45));
 	if (bFlieger)
 	{
 		Text += TDT(TEXT(" - FLIEGER!"), TEXT(" - FLYERS!"));
@@ -617,9 +620,9 @@ AActor* ATDFlakTurret::SucheFlieger() const
 	const float R = GetReichweite();
 	AActor* Best = nullptr;
 	float BestD = R * R;
-	for (TActorIterator<AFGFlyingBabyCrab> It(GetWorld()); It; ++It)
+	for (TActorIterator<ATDFlieger> It(GetWorld()); It; ++It)
 	{
-		if (!IsValid(*It) || It->IsActorBeingDestroyed())
+		if (!IsValid(*It) || It->IsActorBeingDestroyed() || It->IstTot())
 		{
 			continue;
 		}
@@ -711,9 +714,9 @@ void ATDFlakTurret::Feuern(AFGCreature* Ziel)
 			return;
 		}
 		TArray<AActor*> Opfer;
-		for (TActorIterator<AFGFlyingBabyCrab> It(T->GetWorld()); It; ++It)
+		for (TActorIterator<ATDFlieger> It(T->GetWorld()); It; ++It)
 		{
-			if (IsValid(*It) && FVector::DistSquared(It->GetActorLocation(), Ort) < Radius * Radius)
+			if (IsValid(*It) && !It->IstTot() && FVector::DistSquared(It->GetActorLocation(), Ort) < Radius * Radius)
 			{
 				Opfer.Add(*It);
 			}
@@ -721,7 +724,6 @@ void ATDFlakTurret::Feuern(AFGCreature* Ziel)
 		for (AActor* O : Opfer)
 		{
 			UGameplayStatics::ApplyDamage(O, Schaden, nullptr, T, UDamageType::StaticClass());
-			UTDGegnerHirn::RestToeten(O);
 			++T->mTreffer;
 			T->mBilanz.Schaden += Schaden;
 			++T->mBilanz.Treffer;

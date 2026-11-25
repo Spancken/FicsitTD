@@ -458,7 +458,7 @@ class Lauf:
     # ------------------------------------------------ 23.11.2026: Flieger (TDWaveSubsystem.cpp SpawneFlieger, Spezifikation E5)
     def flieger_zahl(self, n):
         B = self.B
-        ab = int(B.get("Katalog.Krabbe.AbWelle", 43))
+        ab = int(B.get("Flieger.AbWelle", 43))   # 25.11.: Voegel statt Krabben
         if B.get("Flieger.Aktiv", 1.0) <= 0 or n < ab:
             return 0
         z = round((B.get("Flieger.Anzahl", 6) + B.get("Flieger.JeWelle", 0.5) * (n - ab)) * B.get(f"Stufen.{self.stufe}.Budget", 1.0))
@@ -470,6 +470,8 @@ class Lauf:
         if not f or "Himmelsturm" not in self.erforscht:
             return
         noetig = math.ceil(f / self.Z.get("FliegerJeHimmelsturm", 8))
+        # 25.11.: gegen Mantas mindestens Z["HimmelstuermeJeManta"] je Manta (zaeh, kreisen in Kernnaehe)
+        noetig = max(noetig, math.ceil(self.manta_zahl(n) * self.Z.get("HimmelstuermeJeManta", 1)))
         while self.himmelstuerme < noetig:
             preis = sim.runde(self.B.get("Einsatz.Laden.Himmelsturm.Grundpreis", 10) * self.Z["PreisFaktor"]
                               * (1 + self.B.get("Einsatz.Laden.Himmelsturm.Aufschlag", 0.4) * self.himmelstuerme))
@@ -479,16 +481,47 @@ class Lauf:
             self.ep_ausgegeben["Tuerme"] += preis
             self.himmelstuerme += 1
 
-    def flieger_schaden(self, n):
-        """Kernverlust in Prozent durch Flieger, die kein Himmelsturm abfaengt"""
-        f = self.flieger_zahl(n)
-        if not f:
-            return 0.0
-        rest = max(0, f - self.himmelstuerme * self.Z.get("FliegerJeHimmelsturm", 8))
-        self.flieger_durch += rest
+    def manta_zahl(self, n):
+        """25.11.2026: Mantas ab Flieger.Manta.AbWelle (TDWaveSubsystem.cpp SpawneFlieger)"""
         B = self.B
-        je = B.get("Flieger.KernSchaden", 15) * (1 + B.get("Flieger.SchadenWachstum", 0.25) * max(0.0, self.wellen_wachstum(n) - 1))
-        return 100.0 * rest * je / max(1.0, self.kern_lp)
+        ab = int(B.get("Flieger.Manta.AbWelle", 45))
+        if B.get("Flieger.Aktiv", 1.0) <= 0 or n < ab:
+            return 0
+        z = round((B.get("Flieger.Manta.Anzahl", 1) + B.get("Flieger.Manta.JeWelle", 0.25) * (n - ab)) * B.get(f"Stufen.{self.stufe}.Budget", 1.0))
+        return max(1, min(int(B.get("Flieger.Manta.Max", 6)), z))
+
+    def manta_schaden(self, n):
+        """Kernschaden der Mantas: Saeure alle Flieger.Manta.Takt s, bis die Himmelstuerme sie nacheinander abschiessen.
+        Ohne Himmelsturm leben sie die ganze Welle (Z["WellenDauerFlieger"]). Annahme, im Spiel nicht nachgemessen."""
+        m = self.manta_zahl(n)
+        if not m:
+            return 0.0
+        B = self.B
+        ab = int(B.get("Flieger.Manta.AbWelle", 45))
+        lp = (B.get("Flieger.Manta.LP", 1500) * B.get(f"Stufen.{self.stufe}.GegnerLP", 1.25)
+              * self.wellen_wachstum(n) / max(0.01, self.wellen_wachstum(ab)))
+        dps = self.himmelstuerme * self.Z.get("HimmelsturmDPS", 160)
+        dauer = self.Z.get("WellenDauerFlieger", 120)
+        if dps > 0:
+            sekunden = min(m * dauer, lp / dps * m * (m + 1) / 2)
+        else:
+            sekunden = m * dauer
+        schuesse = sekunden / max(0.1, B.get("Flieger.Manta.Takt", 3))
+        je = B.get("Flieger.Manta.Schaden", 10) * (1 + B.get("Flieger.SchadenWachstum", 0.25) * max(0.0, self.wellen_wachstum(n) - 1))
+        return schuesse * je
+
+    def flieger_schaden(self, n):
+        """Kernverlust in Prozent durch Voegel, die kein Himmelsturm abfaengt, und durch Manta-Saeure"""
+        f = self.flieger_zahl(n)
+        B = self.B
+        schaden = 0.0
+        if f:
+            rest = max(0, f - self.himmelstuerme * self.Z.get("FliegerJeHimmelsturm", 8))
+            self.flieger_durch += rest
+            je = B.get("Flieger.KernSchaden", 15) * (1 + B.get("Flieger.SchadenWachstum", 0.25) * max(0.0, self.wellen_wachstum(n) - 1))
+            schaden += rest * je
+        schaden += self.manta_schaden(n)
+        return 100.0 * schaden / max(1.0, self.kern_lp)
 
     def talent_stufe(self, zweig):
         return self.talente.get(zweig, 0)

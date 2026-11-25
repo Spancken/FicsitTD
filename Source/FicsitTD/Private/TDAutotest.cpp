@@ -89,6 +89,7 @@
 #include "Buildables/FGBuildableWall.h"
 #include "Buildables/FGBuildableResourceSinkShop.h"
 #include "TDShop.h"
+#include "TDFlieger.h"
 
 /** erster Turm eines Typs (Anzeigename, z. B. Gewehrturm) */
 static ATDTurretBase* TDTestTurm(UWorld* World, const FString& Typ)
@@ -1403,6 +1404,20 @@ bool UTDAutotest::Schritt(UWorld* World, const TSharedPtr<FJsonObject>& S, float
 				{
 					Out = Kern->GetActorLocation();
 					return true;
+				}
+				if (Name == TEXT("manta") || Name == TEXT("vogel"))
+				{
+					// 25.11.: Luftgegner fotografieren (erster lebender seiner Art)
+					UClass* Art = Name == TEXT("manta") ? ATDFliegerManta::StaticClass() : ATDFliegerVogel::StaticClass();
+					for (TActorIterator<ATDFlieger> It(World); It; ++It)
+					{
+						if (It->IsA(Art) && !It->IstTot())
+						{
+							Out = It->GetActorLocation();
+							return true;
+						}
+					}
+					return false;
 				}
 				if (Name == TEXT("spieler") && PC->GetPawn())
 				{

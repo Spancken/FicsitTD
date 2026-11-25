@@ -122,13 +122,22 @@
   3. Spucker Wald
   4. Wüsten- und Wasserspucker
   5. Nuklear-Hog und Johnny
-- **Fliegende Krabben (ab Welle 43, seit 23.11., Marius: „Flieger bauen“; Spezifikation-Endgame E5):**
-  - Je Welle kommen `Flieger.Anzahl` 6 plus `Flieger.JeWelle` 0,5 je Welle ab 43, × Budget der Stufe, höchstens `Flieger.Max` 24. Sie verteilen sich auf die Fronten und fliegen 6 m über Grund.
-  - Sie fliegen geradewegs zum Kern, ohne Netz und über Mauern. Den Spieler greifen sie nie an (Aggro-Radius 0).
-  - Am Kern richten sie `Flieger.KernSchaden` 15 × (1 + 0,25 × Wellenzuwachs) an und explodieren.
-  - **Bodentürme treffen sie nicht**, der **Himmelsturm** und die Handwaffen schon. Ein Treffer tötet eine Krabbe.
-  - Die Welle endet erst, wenn alle Krabben weg sind. Die erste Welle mit Fliegern kündigt der Kern an („FLIEGER!“).
-  - *Noch nicht gebaut* (Spezifikation E5): Krabbennester und Luftabwehr-Munition je Turmlinie.
+- **Flieger (seit 23.11., Marius: „Flieger bauen“; Spezifikation-Endgame E5; seit 25.11. Vögel und Mantas statt fliegender Krabben, Marius: „das soll was Realistisches sein“):**
+  - Modelle und Animationen sind Spiel-Assets: der rote Vogel und der Manta. Sie fliegen ohne Netz über Mauern und greifen nie den Spieler oder die Fabrik an.
+  - **Bodentürme treffen sie nicht**, der **Himmelsturm** und die Handwaffen schon.
+  - Die Welle endet erst, wenn alle Flieger weg sind.
+  - **Vogelschwarm** ab Welle `Flieger.AbWelle` 43:
+    - Je Welle `Flieger.Anzahl` 6 plus `Flieger.JeWelle` 0,5 je Welle ab 43, × Budget der Stufe, höchstens `Flieger.Max` 24.
+    - Sie verteilen sich auf die Fronten, starten 6–10 m hoch und fliegen schlingernd mit 14 m/s zum Kern, mindestens 5 m über Grund.
+    - Am Kern richten sie `Flieger.KernSchaden` 15 × (1 + 0,25 × Wellenzuwachs) an und verschwinden. Ein Treffer tötet einen Vogel.
+    - Erste Welle mit Vögeln: Ansage „FLIEGER!“.
+  - **Mantas** ab Welle `Flieger.Manta.AbWelle` 45:
+    - Je Welle `Flieger.Manta.Anzahl` 1 plus 0,25 je Welle ab 45, × Budget, höchstens 6.
+    - Leben: `Flieger.Manta.LP` 1500 × LP der Stufe, wächst ab W45 wie bei den Bodengegnern.
+    - Sie fliegen in 18 m Höhe an und kreisen in 30 m Abstand um den Kern. Alle 3 s spucken sie Säure, Schaden 10 × (1 + 0,25 × Wellenzuwachs).
+    - Abgeschossen trudeln sie zu Boden.
+    - Erster Manta: Ansage „MANTAS!“.
+  - *Noch nicht gebaut* (Spezifikation E5): Nester und Luftabwehr-Munition je Turmlinie.
 - **Fronten:** Zu Beginn gibt es eine. Weitere kommen laut Stufentabelle dazu (Normal ab Welle 11 und 21).
 - **Elite:** 2,5-fache LP, größer, eingefärbt. **Boss:** groß, mit Lebensbalken.
 - **Zielwahl der Gegner:** Sie greifen an, was ihnen den Weg versperrt (Mauern). Gedränge am Kern (20 m, 3 s) führt zum Angriff auf den Kern.
@@ -296,7 +305,6 @@ Stand 16.11.2026 (Mod 0.11-dev; Berichte `Testberichte6-11-16_*`). Die langen 
 | WasserAlpha | 37 |
 | EliteStinger | 38 |
 | NuklearHog | 41 |
-| Krabbe | 43 |
 | Johnny | 46 |
 
 | Phase | Bosse | Boss-LP × |

@@ -4,7 +4,7 @@ typ: intern
 modi: alle
 sichtbar: nein
 doku: nicht-noetig
-simulation: nein
+simulation: nicht-noetig
 tests: Flieger
 experiment:
 ---

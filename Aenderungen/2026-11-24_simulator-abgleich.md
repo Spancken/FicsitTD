@@ -5,7 +5,7 @@ modi: alle
 sichtbar: nein
 doku: nicht-noetig
 simulation: ja
-tests: Startkapital-0124, Zielwahl-0124 (verworfen), Grundtest
+tests: Strat-MonoBolzen, Strat-Gewehr-Tesla, P12-K1-Bolzen, Grundtest
 experiment:
 ---
 

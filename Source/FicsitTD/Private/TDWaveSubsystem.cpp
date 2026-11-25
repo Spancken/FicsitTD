@@ -1,7 +1,7 @@
 #include "TDWaveSubsystem.h"
 #include "TDStrom.h"
 #include "Engine/OverlapResult.h"
-#include "Creature/Enemy/FGFlyingBabyCrab.h"
+#include "TDFlieger.h"
 #include "TDAda.h"
 #include "GameFramework/Character.h"
 #include "Components/CapsuleComponent.h"
@@ -1804,6 +1804,8 @@ FString UTDWaveSubsystem::GetBereitText(bool bKurz) const
 FString UTDWaveSubsystem::OptikFamilie(const UClass* Klasse)
 {
 	const FString N = Klasse ? Klasse->GetName() : FString();
+	if (N.Contains(TEXT("TDFliegerManta"))) return TEXT("Manta");   // 25.11.: Luftgegner (Kernschaden-Messung)
+	if (N.Contains(TEXT("TDFliegerVogel"))) return TEXT("Vogel");
 	if (N.Contains(TEXT("Johnny")))        return TEXT("Johnny");
 	if (N.Contains(TEXT("NuclearHog")))    return TEXT("NuclearHog");
 	if (N.Contains(TEXT("CliffHog")))      return TEXT("CliffHog");
@@ -3563,7 +3565,7 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 			PruefeNachzuegler(G, Abstand, DeltaTime);
 		}
 	}
-	// 23.11. (Flieger): fliegende Krabben zaehlen zur Welle; am Kern richten sie Schaden an und explodieren
+	// 23.11. (Flieger): Flieger zaehlen zur Welle (25.11.: Voegel und Mantas statt Krabben)
 	const int32 FliegerLebend = PflegeFlieger();
 	// T5: Nachschub - alle NachschubTakt s bis zu NachschubPaket Gegner, solange weniger als MaxGleichzeitig leben
 	if (mNachschubIndex < mNachschub.Num())
@@ -5138,69 +5140,82 @@ bool UTDWaveSubsystem::DoesSupportWorldType(const EWorldType::Type WorldType) co
 }
 
 // ---------------------------------------------------------------------------------------------------------------
-// 23.11.2026 (Marius: "Flieger bauen"; Notizen/Spezifikation-Endgame-E4-E7-2026-11-09.md E5): fliegende Krabben ab Welle 43.
-// Die Krabbe des Spiels (AFGFlyingBabyCrab) ist kein AFGCreature, sondern ein Projektil-Flieger mit eigener Steuerung durch das
-// Kreatur-System. Sie greift sonst Spieler an: der Aggro-Radius wird auf 0 gesetzt (Wellengegner greifen den Spieler nie an,
-// Marius 12.11.), ihr "Zuhause" ist ein Punkt ueber dem Kern - dorthin fliegt sie ohne Netz und ueber Mauern. Am Kern richtet
-// sie Flieger.KernSchaden x Wellenwachstum x Flieger.SchadenWachstum an und explodiert. Ein Treffer toetet sie (Spielverhalten).
+// 23.11.2026 (Marius: "Flieger bauen"; Notizen/Spezifikation-Endgame-E4-E7-2026-11-09.md E5): Flieger ab Welle 43.
+// 25.11.2026 (Marius: "die Krabben sind keine Fluggeschoepfe, das soll was Realistisches sein"): statt der fliegenden Krabben
+// ein Vogelschwarm (Flieger.AbWelle) und ab Flieger.Manta.AbWelle Mantas, die in Abstand kreisen und Saeure auf den Kern spucken
+// (ATDFlieger, TDFlieger.cpp). Sie fliegen ohne Netz ueber Mauern, greifen nie den Spieler oder die Fabrik an. Voegel richten
+// am Kern Flieger.KernSchaden x Wellenwachstum an und verschwinden; ein Treffer toetet sie (Flieger.Vogel.LP).
 
 void UTDWaveSubsystem::SpawneFlieger(int32 Nummer)
 {
 	UWorld* World = GetWorld();
-	const ATDDefenseCore* Kern = mKern.Get();
-	if (!World || !Kern || mBohrung || TDBalance::Wert(TEXT("Flieger.Aktiv"), 1.f) <= 0.f)
+	ATDDefenseCore* Kern = mKern.Get();
+	if (!World || !Kern || mBohrung || TDBalance::Wert(TEXT("Flieger.Aktiv"), 1.f) <= 0.f || mFronten.Num() == 0)
 	{
 		return;
 	}
-	const int32 Ab = TDBalance::Ganz(TEXT("Katalog.Krabbe.AbWelle"), 43);
-	if (Nummer < Ab || mFronten.Num() == 0)
+	const int32 Ab = TDBalance::Ganz(TEXT("Flieger.AbWelle"), 43);
+	const int32 MantaAb = TDBalance::Ganz(TEXT("Flieger.Manta.AbWelle"), 45);
+	if (Nummer < Ab && Nummer < MantaAb)
 	{
-		return;
-	}
-	UClass* Klasse = LoadClass<AActor>(nullptr, TEXT("/Game/FactoryGame/Character/Creature/Enemy/Crab/BabyCrab/BP_FlyingBabyCrab.BP_FlyingBabyCrab_C"));
-	if (!Klasse)
-	{
-		UE_LOG(LogFicsitTD, Warning, TEXT("Flieger: Klasse BP_FlyingBabyCrab nicht gefunden"));
 		return;
 	}
 	const FTDStufe& S = GetStufe(mStufe);
-	const int32 Anzahl = FMath::Clamp(FMath::RoundToInt((TDBalance::Wert(TEXT("Flieger.Anzahl"), 6.f) + TDBalance::Wert(TEXT("Flieger.JeWelle"), 0.5f) * (Nummer - Ab))
-		* TDBalance::Wert(FString::Printf(TEXT("Stufen.%s.Budget"), S.Name), 1.f)), 1, TDBalance::Ganz(TEXT("Flieger.Max"), 24));
-	const FVector Zuhause = Kern->GetActorLocation() + FVector(0.f, 0.f, TDBalance::Wert(TEXT("Flieger.ZielHoehe"), 4.f) * 100.f);
-	FFloatProperty* Aggro = FindFProperty<FFloatProperty>(Klasse, TEXT("mAggroRadius"));
+	const float Budget = TDBalance::Wert(FString::Printf(TEXT("Stufen.%s.Budget"), S.Name), 1.f);
+	const float Wachstum = 1.f + TDBalance::Wert(TEXT("Flieger.SchadenWachstum"), 0.25f) * FMath::Max(0.f, mWellenWachstum - 1.f);
 	FActorSpawnParameters Params;
 	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	int32 Gespawnt = 0;
-	for (int32 i = 0; i < Anzahl; ++i)
+	auto Spawne = [&](UClass* Klasse, int32 i, float Hoehe, float LP, float Schaden) -> bool
 	{
 		const FVector Front = mFronten[i % mFronten.Num()].Ort;
-		const FVector Ort = Front + FVector(FMath::FRandRange(-800.f, 800.f), FMath::FRandRange(-800.f, 800.f), TDBalance::Wert(TEXT("Flieger.Hoehe"), 6.f) * 100.f);
-		AActor* Krabbe = World->SpawnActor<AActor>(Klasse, Ort, (Zuhause - Ort).Rotation(), Params);
-		AFGFlyingBabyCrab* Flieger = Cast<AFGFlyingBabyCrab>(Krabbe);
-		if (!Flieger)
+		const FVector Ort = Front + FVector(FMath::FRandRange(-800.f, 800.f), FMath::FRandRange(-800.f, 800.f), Hoehe * 100.f);
+		ATDFlieger* F = World->SpawnActor<ATDFlieger>(Klasse, Ort, (Kern->GetActorLocation() - Ort).Rotation(), Params);
+		if (!F)
 		{
-			if (Krabbe)
-			{
-				Krabbe->Destroy();
-			}
-			continue;
+			return false;
 		}
-		if (Aggro)
+		F->Starte(Kern, LP, Schaden);
+		mFlieger.Add(F);
+		return true;
+	};
+	int32 Voegel = 0;
+	if (Nummer >= Ab)
+	{
+		const int32 Anzahl = FMath::Clamp(FMath::RoundToInt((TDBalance::Wert(TEXT("Flieger.Anzahl"), 6.f) + TDBalance::Wert(TEXT("Flieger.JeWelle"), 0.5f) * (Nummer - Ab)) * Budget),
+			1, TDBalance::Ganz(TEXT("Flieger.Max"), 24));
+		const float Schaden = TDBalance::Wert(TEXT("Flieger.KernSchaden"), 15.f) * Wachstum;
+		for (int32 i = 0; i < Anzahl; ++i)
 		{
-			Aggro->SetPropertyValue_InContainer(Flieger, 0.f);
+			Voegel += Spawne(ATDFliegerVogel::StaticClass(), i, TDBalance::Wert(TEXT("Flieger.Hoehe"), 6.f) + FMath::FRandRange(0.f, 4.f),
+				TDBalance::Wert(TEXT("Flieger.Vogel.LP"), 1.f), Schaden) ? 1 : 0;
 		}
-		Flieger->SetHomeLocation(Zuhause);
-		Flieger->Tags.AddUnique(TEXT("FicsitTD"));
-		mFlieger.Add(Flieger);
-		++Gespawnt;
 	}
-	UE_LOG(LogFicsitTD, Log, TEXT("Flieger: %d von %d fliegenden Krabben (Welle %d, %d Fronten, Aggro %s)"), Gespawnt, Anzahl, Nummer, mFronten.Num(),
-		Aggro ? TEXT("aus") : TEXT("nicht gefunden"));
-	if (Gespawnt > 0 && !mFliegerAngesagt)
+	int32 Mantas = 0;
+	float MantaLP = 0.f;
+	if (Nummer >= MantaAb)
+	{
+		const int32 Anzahl = FMath::Clamp(FMath::RoundToInt((TDBalance::Wert(TEXT("Flieger.Manta.Anzahl"), 1.f) + TDBalance::Wert(TEXT("Flieger.Manta.JeWelle"), 0.25f) * (Nummer - MantaAb)) * Budget),
+			1, TDBalance::Ganz(TEXT("Flieger.Manta.Max"), 6));
+		// Leben waechst wie bei den Bodengegnern (LPFaktorFuer), Grundwert gilt in der Einfuehrungswelle
+		MantaLP = TDBalance::Wert(TEXT("Flieger.Manta.LP"), 1500.f) * S.LP * LPFaktorFuer(Nummer) / FMath::Max(0.01f, LPFaktorFuer(MantaAb));
+		const float Schaden = TDBalance::Wert(TEXT("Flieger.Manta.Schaden"), 10.f) * Wachstum;
+		for (int32 i = 0; i < Anzahl; ++i)
+		{
+			Mantas += Spawne(ATDFliegerManta::StaticClass(), i + 1, TDBalance::Wert(TEXT("Flieger.Manta.Hoehe"), 18.f), MantaLP, Schaden) ? 1 : 0;
+		}
+	}
+	UE_LOG(LogFicsitTD, Log, TEXT("Flieger: %d Voegel, %d Mantas (%.0f LP) in Welle %d, %d Fronten"), Voegel, Mantas, MantaLP, Nummer, mFronten.Num());
+	if (Voegel > 0 && !mFliegerAngesagt)
 	{
 		mFliegerAngesagt = true;
-		Ansage(TDT(TEXT("FLIEGER! Fliegende Krabben greifen den Kern aus der Luft an. Bodentürme treffen sie nicht – der Himmelsturm und deine Handwaffen schon."),
-			TEXT("FLYERS! Flying crabs attack the Core from the air. Ground turrets can't hit them – the Sky Tower and your hand weapons can.")));
+		Ansage(TDT(TEXT("FLIEGER! Ein Vogelschwarm greift den Kern aus der Luft an. Bodentürme treffen ihn nicht – der Himmelsturm und deine Handwaffen schon."),
+			TEXT("FLYERS! A flock of birds attacks the Core from the air. Ground turrets can't hit it – the Sky Tower and your hand weapons can.")));
+	}
+	if (Mantas > 0 && !mMantaAngesagt)
+	{
+		mMantaAngesagt = true;
+		Ansage(TDT(TEXT("MANTAS! Sie kreisen über dem Kern und spucken Säure. Sie halten viel aus – stell mehrere Himmelstürme in Kernnähe."),
+			TEXT("MANTAS! They circle above the Core and spit acid. They can take a lot – place several Sky Towers near the Core.")));
 	}
 }
 
@@ -5210,19 +5225,24 @@ int32 UTDWaveSubsystem::PflegeFlieger()
 	int32 Lebend = 0;
 	for (int32 i = mFlieger.Num() - 1; i >= 0; --i)
 	{
-		AFGFlyingBabyCrab* F = Cast<AFGFlyingBabyCrab>(mFlieger[i].Get());
+		ATDFlieger* F = Cast<ATDFlieger>(mFlieger[i].Get());
 		if (!F || !IsValid(F) || F->IsActorBeingDestroyed())
 		{
 			mFlieger.RemoveAtSwap(i);
 			continue;
 		}
-		if (Kern && FVector::Dist(F->GetActorLocation(), Kern->GetActorLocation()) < TDBalance::Wert(TEXT("Flieger.Trefferabstand"), 12.f) * 100.f)
+		if (F->IstTot())
 		{
-			const float Schaden = TDBalance::Wert(TEXT("Flieger.KernSchaden"), 15.f)
-				* (1.f + TDBalance::Wert(TEXT("Flieger.SchadenWachstum"), 0.25f) * FMath::Max(0.f, mWellenWachstum - 1.f));
-			Kern->ApplyTDDamage(Schaden, F);
-			UE_LOG(LogFicsitTD, Log, TEXT("Flieger: Krabbe am Kern, %.0f Schaden"), Schaden);
-			F->Explode();
+			continue;   // Manta faellt noch
+		}
+		if (F->AmKern())
+		{
+			if (Kern)
+			{
+				Kern->ApplyTDDamage(F->GetKernSchaden(), F);
+			}
+			UE_LOG(LogFicsitTD, Log, TEXT("Flieger: %s am Kern, %.0f Schaden"), *F->Art(), F->GetKernSchaden());
+			F->Destroy();
 			mFlieger.RemoveAtSwap(i);
 			continue;
 		}

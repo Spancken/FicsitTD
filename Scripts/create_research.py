@@ -186,7 +186,7 @@ BAEUME = [
          (1, 5), ["NobeliskWerfer"], [], ZEIT,
          [f"{TD}/NobeliskLauncher/Recipe_TD_Nobelisk_Cluster", f"{TDR}/Recipe_TD_NobeliskStreu", f"{R}/Equipment/Recipe_GunpowderMK2"], f"{G}/Equipment/NobeliskDetonator/Ammo/Desc_NobeliskCluster"),
         # 0.83 Bauten P3
-        ("Himmelsturm", "Himmelsturm", "Neuer Turm: Flugabwehr gegen fliegende Gegner (60 m, 200 Schaden in 6 m). Munition: Flak-Kanister = Aluminiumgehäuse + 2 Schwarzpulver im Assembler. Greift keine Bodengegner an. Ab Welle 43 kommen fliegende Krabben, die Bodentürme nicht treffen. Braucht Schwerindustrie und 25 MW.",
+        ("Himmelsturm", "Himmelsturm", "Neuer Turm: Flugabwehr gegen fliegende Gegner (60 m, 200 Schaden in 6 m). Munition: Flak-Kanister = Aluminiumgehäuse + 2 Schwarzpulver im Assembler. Greift keine Bodengegner an. Ab Welle 43 kommt ein Vogelschwarm, ab Welle 45 kommen Mantas, die Säure auf den Kern spucken. Bodentürme treffen sie nicht. Braucht Schwerindustrie und 25 MW.",
          (3, 4), [], [], ZEIT, [f"{TD}/FlakTurret/Recipe_TD_FlakTurret", f"{TD}/FlakTurret/Recipe_TD_Flak_Shoot", f"{TDR}/Recipe_TD_FlakKanister"], f"{P}/AluminumCasing/Desc_AluminumCasing"),
         ("Singularitaet", "Singularitätswerfer", "Neuer Turm (Endspiel): Ficsonium-Ladung hält alle Gegner in 12 m fest und sprengt sie nach 1,5 s mit 1500 Explosionsschaden. Ficsonium aus dem Teilchenbeschleuniger. Erst in den Überstunden (ab Welle 51). Braucht 150 MW.",
          (3, 5), ["Himmelsturm"], [], ZEIT, [f"{TD}/SingularityLauncher/Recipe_TD_SingularityLauncher", f"{TD}/SingularityLauncher/Recipe_TD_Singularitaet_Ficsonium"], f"{P}/Ficsonium/Desc_Ficsonium"),
@@ -323,7 +323,7 @@ KURZ = {
     "DoktrinFlamme": "Hauptlinie Flammenwerfer: +25 % Schaden",
     "Tor": "Tor: Engstelle für Bolzen", "Lockfeuer": "Lockt an, Sammelpunkt für Explosionen", "Oelschlick": "Bremst um 35 %, Kombo Ölbrand",
     "Elektrozaun": "Mauer mit Stromschlag, leitet Tesla", "Funkmast": "Türme in 30 m +10 % Reichweite", "Schildgenerator": "Kuppel schluckt 3000 Schaden",
-    "Stoerfeld": "Bremst alles in 15 m um 40 % (SAM)", "Dimensionslager": "Munition ohne Band in 30 m", "Himmelsturm": "Neuer Turm: Flugabwehr gegen Krabben (ab W43)",
+    "Stoerfeld": "Bremst alles in 15 m um 40 % (SAM)", "Dimensionslager": "Munition ohne Band in 30 m", "Himmelsturm": "Neuer Turm: Flugabwehr gegen Vögel und Mantas (ab W43)",
     "Singularitaet": "Neuer Turm: Ficsonium-Singularität",
 }
 

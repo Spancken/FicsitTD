@@ -691,6 +691,7 @@ private:
 	 *  AFGCreature und treffen sie deshalb nicht, der Himmelsturm (ATDFlakTurret) sucht genau diese Klasse. */
 	TArray<TWeakObjectPtr<AActor>> mFlieger;
 	bool mFliegerAngesagt = false;
+	bool mMantaAngesagt = false;
 	void SpawneFlieger(int32 Nummer);
 	/** Flieger am Kern: Schaden, Explosion; Rueckgabe: Zahl der lebenden */
 	int32 PflegeFlieger();

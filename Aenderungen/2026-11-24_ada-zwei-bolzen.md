@@ -5,7 +5,7 @@ modi: einsatz
 sichtbar: ja
 doku: ja
 simulation: nicht-noetig
-tests: P12-K1-Bolzen (DE und EN)
+tests: P12-K1-Bolzen
 experiment:
 ---
 

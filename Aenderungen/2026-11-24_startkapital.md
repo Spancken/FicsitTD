@@ -5,7 +5,7 @@ modi: einsatz
 sichtbar: ja
 doku: ja
 simulation: ja
-tests: Strat-MonoBolzen, Strat-Gewehr-Tesla, P12-K1-Bolzen, Release
+tests: Strat-MonoBolzen, Strat-Gewehr-Tesla, P12-K1-Bolzen, Grundtest
 experiment:
 ---
 
