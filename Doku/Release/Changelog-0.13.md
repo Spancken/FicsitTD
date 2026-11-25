@@ -1,6 +1,6 @@
-# Changelog 0.13 (Entwurf)
+# Changelog 0.13.0
 
-> Entwurf vom 23.11.2026, noch kein Release. Zusammengefasst aus den Änderungszetteln in `Aenderungen\` (sichtbar: ja) auf dem **Endstand**. Überholte Zwischenstände fehlen: 40-m-Ring, Shop nach Welle 2, MAM nach Welle 1. 0.12 erscheint nicht einzeln, ihr Inhalt ist hier enthalten. Rohliste: `python Tests\pruefe_konsistenz.py --changelog`. Der englische Teil geht als `changelog.md` zu ficsit.app.
+> Veröffentlicht am 25.11.2026 (Entwurf vom 23.11.2026). Zusammengefasst aus den Änderungszetteln in `Aenderungen\` (sichtbar: ja) auf dem **Endstand**. Überholte Zwischenstände fehlen: 40-m-Ring, Shop nach Welle 2, MAM nach Welle 1. 0.12 erscheint nicht einzeln, ihr Inhalt ist hier enthalten. Rohliste: `python Tests\pruefe_konsistenz.py --changelog`. Der englische Teil geht als `changelog.md` zu ficsit.app.
 
 ## English (ficsit.app)
 
