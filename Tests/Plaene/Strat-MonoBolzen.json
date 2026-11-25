@@ -1,6 +1,6 @@
 {
   "Name": "Strat-MonoBolzen",
-  "_Hinweis": "Beste Modellstrategie der Linie Mono Bolzen (Nr. 21, Doktrin keine, Stil Wert, Kern ja, Gabel Schockbolzen/Panzerbrechend/GasNobelisk/Kettenblitz/KernGeschuetz): Plan bei der Auswahl 10 % bis W30, Vorhersage 17 %, 16 Türme. Erzeugt von Werkzeuge\\FicsitTD-Simulator\\strategie_plaene.py.",
+  "_Hinweis": "Beste Modellstrategie der Linie Mono Bolzen (Nr. 4, Doktrin keine, Stil Tuerme, Kern ja, Gabel Streubolzen/Zielsuchmunition/PulsNobelisk/Kettenblitz/KernSchild): Plan bei der Auswahl 100 % bis W30, Vorhersage 100 %, 16 Türme. Erzeugt von Werkzeuge\\FicsitTD-Simulator\\strategie_plaene.py.",
   "NeuesSpiel": {
     "Startort": "Rocky Desert"
   },
@@ -60,41 +60,18 @@
       "erforsche": "Assembler"
     },
     {
+      "aufwerten": "Bolzenturm",
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
       "baue": "Bolzenturm",
-      "anzahl": 1,
+      "anzahl": 3,
       "level": 2,
       "rezept": "Recipe_TD_Shoot_SpikedRebar"
     },
     {
       "wellenlauf": 2,
-      "zeitraffer": 4,
-      "max": 500
-    },
-    {
-      "erforsche": "Kupfer"
-    },
-    {
-      "baue": "Bolzenturm",
-      "anzahl": 1,
-      "level": 2,
-      "rezept": "Recipe_TD_Shoot_SpikedRebar"
-    },
-    {
-      "wellenlauf": 3,
-      "zeitraffer": 4,
-      "max": 500
-    },
-    {
-      "erforsche": "KernPanzer"
-    },
-    {
-      "baue": "Bolzenturm",
-      "anzahl": 1,
-      "level": 2,
-      "rezept": "Recipe_TD_Shoot_SpikedRebar"
-    },
-    {
-      "wellenlauf": 4,
       "zeitraffer": 4,
       "max": 500
     },
@@ -108,25 +85,47 @@
       "rezept": "Recipe_TD_Shoot_SpikedRebar"
     },
     {
+      "wellenlauf": 3,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "Kohlekraft"
+    },
+    {
+      "wellenlauf": 4,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "erforsche": "KernPanzer"
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 1,
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
       "wellenlauf": 8,
       "zeitraffer": 4,
       "max": 500
     },
     {
-      "erforsche": "Giesserei"
+      "erforsche": "BandMk2"
     },
     {
       "erforsche": "KernNotrep"
     },
     {
-      "erforsche": "Kohlekraft"
+      "erforsche": "KernSchild"
     },
     {
       "erforsche": "Munitionspuffer"
     },
     {
       "baue": "Bolzenturm",
-      "anzahl": 2,
+      "anzahl": 4,
       "level": 2,
       "rezept": "Recipe_TD_Shoot_SpikedRebar"
     },
@@ -136,20 +135,28 @@
       "max": 500
     },
     {
-      "erforsche": "Caterium"
+      "erforsche": "Giesserei"
     },
     {
-      "erforsche": "KernGeschuetz"
+      "erforsche": "Quarz"
     },
     {
-      "erforsche": "Schockbolzen"
+      "erforsche": "Schwefel"
+    },
+    {
+      "erforsche": "Streubolzen"
     },
     {
       "erforsche": "Turmfertigung2"
     },
     {
+      "aufwerten": "Bolzenturm",
+      "level": 3,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
       "baue": "Bolzenturm",
-      "anzahl": 5,
+      "anzahl": 6,
       "level": 3,
       "rezept": "Recipe_TD_Shoot_SpikedRebar"
     },
@@ -176,24 +183,18 @@
       "erforsche": "Turmfertigung3"
     },
     {
-      "baue": "Bolzenturm",
-      "anzahl": 3,
-      "level": 4,
-      "rezept": "Recipe_TD_Shoot_SpikedRebar"
-    },
-    {
       "wellenlauf": 25,
       "zeitraffer": 4,
       "max": 500
     },
     {
+      "erforsche": "Bauxit"
+    },
+    {
       "erforsche": "Explosivbolzen"
     },
     {
-      "baue": "Bolzenturm",
-      "anzahl": 1,
-      "level": 4,
-      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+      "erforsche": "Kompaktkohle"
     },
     {
       "wellenlauf": 30,

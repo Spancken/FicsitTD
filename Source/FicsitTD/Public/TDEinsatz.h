@@ -78,6 +78,49 @@ public:
 	UTDCDAbrissSperre();
 };
 
+/** 21.11. (Marius, A5 Nr. 6): Abriss abgelehnt - Fundament oder Rampe der Kernplattform im Einsatz (ohne Rampen erreicht kein Gegner den Kern) */
+UCLASS()
+class FICSITTD_API UTDCDPlattform : public UFGConstructDisqualifier
+{
+	GENERATED_BODY()
+public:
+	UTDCDPlattform();
+};
+
+/** Fundament oder Rampe der Kernplattform bei aktivem Einsatz (Einsatz.Plattform.AbrissSperren) */
+FICSITTD_API bool TDPlattformAbrissGesperrt(const AActor* Bau);
+/** Zahl der eingerichteten Hooks der Abrisssperre (FicsitTDModule, 0 = keine, z. B. im Editor) */
+extern FICSITTD_API int32 GTDAbrissHooks;
+/** Dieselbe Pruefung fuer Klasse und Ort (Selbsttest ohne Actor) */
+FICSITTD_API bool TDPlattformAbrissGesperrtAn(UWorld* World, const UClass* Klasse, const FVector& Ort);
+
+/** 0.13 K2 (Marius 21.11.): Bau abgelehnt - Fabrikgebaeude im Ring "instabiler Boden" um den Kern (Einsatz und Endlos) */
+UCLASS()
+class FICSITTD_API UTDCDBodenInstabil : public UFGConstructDisqualifier
+{
+	GENERATED_BODY()
+public:
+	UTDCDBodenInstabil();
+};
+
+/** 23.11. (Gegencheck 0.13): MAM vor Einsatz.Mam.AbWelle (statt "Kontingent erschoepft") */
+UCLASS()
+class FICSITTD_API UTDCDMamFrueh : public UFGConstructDisqualifier
+{
+	GENERATED_BODY()
+public:
+	UTDCDMamFrueh();
+};
+
+/** 0.13 K4 (Marius 21.11.): Bau abgelehnt - er wuerde den letzten Weg der Gegner zum Kern schliessen */
+UCLASS()
+class FICSITTD_API UTDCDKernAbriegelung : public UFGConstructDisqualifier
+{
+	GENERATED_BODY()
+public:
+	UTDCDKernAbriegelung();
+};
+
 /** Bau abgelehnt: im Verteidigungsfeld waehrend einer Welle (Einsatz-Konzept Abschnitt 2) */
 UCLASS()
 class FICSITTD_API UTDCDWellenSperre : public UFGConstructDisqualifier
@@ -101,6 +144,9 @@ public:
 	static FString Schluessel(const UClass* BauKlasse);
 	/** Baender, Lifte, Masten, Stromleitungen, Rohre, Splitter/Verbinder */
 	static bool IstLogistik(const UClass* BauKlasse);
+	/** 0.13 K2: Fabrikgebaeude des Spiels (Maschinen, Lager, Generatoren, MAM, Shop, HUB) - keine Logistik, keine Fundamente/Waende,
+	 *  keine Bauten des Mods (Tuerme, Mauern, Stuetzbauten stehen in der Lore auf Tiefankern) */
+	static bool IstFabrikgebaeude(const UClass* BauKlasse);
 	/** Im Einsatz ohne Materialkosten (und ohne Rueckerstattung beim Abriss): Logistik sowie HUB und MAM (Marius 02.11.) */
 	bool Kostenlos(const UClass* BauKlasse) const;
 	/** Rezepte der kostenlosen Gebaeude (Logistik, HUB, MAM) ohne Zutaten: Bauen kostet nichts, Abriss gibt nichts zurueck
@@ -171,6 +217,20 @@ public:
 	bool LadenInWelleZu() const;
 	/** /td kaufe <Name> [Anzahl]: Antwortzeile */
 	FString Kaufe(const FString& Name, int32 Anzahl);
+	/** 0.12 E4: alle Schluessel der Ladenliste, die einen Shop-Posten haben (ohne Panzersperre) */
+	static TArray<FString> LadenSchluessel();
+	/** 0.12 E4: Grundpreis eines Postens (Balance), ohne Kaeufe */
+	static int32 GrundpreisFuer(const FString& Key);
+	/** 0.12 E4: Posten im AWESOME-Shop zeigen? Einsatz aktiv, Rezept da, Hoechstzahl nicht erreicht, Sonderregeln (nicht die Welle) */
+	bool ShopSichtbar(const FString& Key) const;
+	/** 0.12 E4: Einsatz aktiv und ein AWESOME-Shop steht -> der Kern verkauft nicht mehr (Einsatz.Shop.KernBisShop) */
+	bool KernVerkauftNicht() const;
+	/** 0.12 E4.1: darf der Posten jetzt gekauft werden (Einsatz, Welle, Forschung, Hoechstzahl, Sonderregeln)? Sonst Grund */
+	bool KaufErlaubt(const FString& Key, FString& OutGrund) const;
+	/** 0.12 E4.1: Summe der naechsten Anzahl Kaeufe nach der Preisstaffel */
+	int32 PreisFuer(const FString& Key, int32 Anzahl) const;
+	/** 0.12 E4.1: Wirkung eines bezahlten Kaufs (Zaehler, Laufprotokoll, Kontingent mit Material oder Ausruestung); Antwortzeile */
+	FString WirkeKauf(const FString& Key, int32 Gekauft, int32 Kosten);
 	/** Warenkorb aus dem Kern-Menue: alles oder nichts (Summe muss ins Konto passen) */
 	FString KaufeKorb(const TMap<FString, int32>& Korb);
 	/** Gebaeudesymbol zum Kontingent-Schluessel (aus dem Bau-Rezept) */
@@ -188,6 +248,10 @@ public:
 	/** To-do-Liste des Spiels: offene Kontingente als Bau-Rezepte in die Einkaufsliste, Einsatz-Block in die private Notiz
 	 *  (eigener Text des Spielers bleibt). Alle 3 s, solange ein Einsatz laeuft; beim Ende wird alles entfernt. */
 	void AktualisiereToDo();
+	/** 21.11. (C15): zweite Zeile der HUD-Statusleiste ("Noch baubar: ..." oder Aufgabe AWESOME-Shop), alle 3 s neu */
+	const FString& GetHudZeile() const { return mHudZeile; }
+	/** 0.12 E4/E5: Rezept des AWESOME-Shops geben, sobald Welle Einsatz.Shop.AbWelle geschafft ist (auch alte Spielstaende) */
+	void FreigabeShop();
 	/** Zu Beginn jeder Welle: alle Verteidigungsanlagen auf 100 % (Marius: kein Reparieren waehrend der Welle) */
 	void HeileVerteidigung();
 
@@ -257,6 +321,14 @@ private:
 	FTimerHandle mToDoTimer;
 
 	TWeakObjectPtr<ATDDefenseCore> mKern;
+	/** 21.11. (C15): zweite HUD-Zeile, gesetzt in AktualisiereToDo */
+	FString mHudZeile;
+	/** 0.12 E5: Aufgabe MAM einmal je Sitzung im Chat */
+	bool mMamGemeldet = false;
+	/** 0.13: Aufgabe HUB schon gemeldet (je Spielsitzung; die Stimme sagt TDAda nur einmal je Kern) */
+	bool mHubGemeldet = false;
+	/** 22.11. (H2): MAM-Rezept nach Einsatz.Mam.AbWelle */
+	void FreigabeMam();
 	bool mAktiv = false;
 	bool mFrei = false;
 	TMap<FString, int32> mBelegt;

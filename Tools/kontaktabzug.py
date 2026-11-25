@@ -5,6 +5,7 @@ Level 1 von zwei Seiten und Level 5, oben die Spielgebaeude (Konstruktor, Schmel
 (Pruefliste satisfactory-design Punkt 8). Dazu die Zeilen der Pruefung "Optik" aus dem Testbericht.
 
 Aufruf: python Tools\\kontaktabzug.py [<Ordner des Laufs>]   (ohne Angabe: der neueste *_Optik-Lauf)
+        python Tools\\kontaktabzug.py --stufen               (21.11.: neuester *_Optik-Stufen-Lauf, je Turm Level 1 bis 5)
 Ergebnis: <Zeit>_Optik_Kontaktabzug.html neben dem Testbericht (Bilder relativ verlinkt, nichts wird kopiert).
 """
 import glob, html, os, re, sys
@@ -13,17 +14,23 @@ BERICHTE = r"D:\OneDrive\Claude\Claude Modding\Satisfactory\Testberichte"
 BAUTEN = ["Bolzenturm", "Gewehrturm", "Teslaspule", "Flammenwerfer", "Nobelisk-Werfer", "Himmelsturm", "Singularitaet", "Stoerfeld",
           "Funkmast", "Schildgenerator", "Drohnenplatz", "Elektrozaun", "Lockfeuer", "Oelschlick", "Tor"]
 SPALTEN = [("Level 1, 30°", "{b}_30"), ("Level 1, 210°", "{b}_210"), ("Level 5, 30°", "{b}_L5_30")]
+# 21.11. (Bericht A3, O-A): Stufenstreifen aus dem Plan Optik-Stufen, alle Fotos aus derselben Stelle
+SPALTEN_STUFEN = [(f"Level {n}, 30°", "{b}_L%d_30" % n) for n in range(1, 6)]
 
 
 def main():
-    if len(sys.argv) > 1:
-        ordner = sys.argv[1]
+    stufen = "--stufen" in sys.argv
+    args = [a for a in sys.argv[1:] if a != "--stufen"]
+    if args:
+        ordner = args[0]
     else:
-        laeufe = sorted(p for p in glob.glob(os.path.join(BERICHTE, "*_Optik")) if os.path.isdir(p))
+        muster = "*_Optik-Stufen" if stufen else "*_Optik"
+        laeufe = sorted(p for p in glob.glob(os.path.join(BERICHTE, muster)) if os.path.isdir(p))
         if not laeufe:
             raise SystemExit("kein *_Optik-Lauf gefunden")
         ordner = laeufe[-1]
     name = os.path.basename(ordner)
+    spalten = SPALTEN_STUFEN if name.endswith("_Optik-Stufen") else SPALTEN
     bilder = {os.path.splitext(os.path.basename(p))[0][len("Optik_"):]: f"{name}/{os.path.basename(p)}"
               for p in glob.glob(os.path.join(ordner, "Optik_*.jpg"))}
     bericht = os.path.join(BERICHTE, name + ".md")
@@ -64,7 +71,11 @@ def main():
         if not any(k.startswith(b + "_") for k in bilder):
             continue
         z.append(f"<h2>{html.escape(b)}</h2><div class='zeile'>")
-        z += [zelle(m.format(b=b), t) for t, m in SPALTEN]
+        # Optik-Stufen: ein Bau darf eine andere Seite haben (Gewehrturm 210 Grad, Felsen bei 30 Grad)
+        reihe = spalten
+        if spalten is SPALTEN_STUFEN and not any(k.startswith(b + "_L1_30") for k in bilder):
+            reihe = [(t.replace("30°", "210°"), m.replace("_30", "_210")) for t, m in spalten]
+        z += [zelle(m.format(b=b), t) for t, m in reihe]
         z.append("</div>")
     if "Ueberblick" in bilder:
         z.append("<h2>Überblick</h2><div class='zeile'>" + zelle("Ueberblick", "über dem Kern") + "</div>")

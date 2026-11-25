@@ -1,0 +1,8 @@
+{
+  "Name": "Abend-2311",
+  "_Hinweis": "23.11.2026 abends: Freiraum der Frontstarts (Gras-S8) und Schalter fruehe Frontpruefung (BautenP1-Frueh).",
+  "Plaene": [
+    "Front-Gras-S8",
+    "BautenP1-Frueh"
+  ]
+}

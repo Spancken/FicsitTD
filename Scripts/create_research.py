@@ -58,40 +58,47 @@ STAHL = [f"{R}/Buildings/Recipe_SmelterMk1", f"{R}/Smelter/Recipe_IngotSteel", f
 # Turmlevel-Knoten je Turm entfallen: Level 2 gibt es mit dem Turm (ATDTurretBase::UpgradeFreigeschaltet).
 GABEL = "GABELUNG: FICSIT finanziert je Einsatz nur eine Entwicklungslinie. "
 DOKTRIN = "DOKTRIN (Hauptlinie, nur eine je Einsatz): "
+# 23.11. (Stromzweig): MW je Kraftwerk und Brennstoff, aus TDBalance.cpp gelesen (Strom.<Brennstoff>.Faktor x Grundleistung)
+def _strom_mw():
+    import re as _re
+    q = open("E:/Modding/SatisfactoryModLoader/Mods/FicsitTD/Source/FicsitTD/Private/TDBalance.cpp", encoding="utf-8").read()
+    f = {m[0]: float(m[1]) for m in _re.findall(r'TEXT\("Strom\.(\w+)\.Faktor"\), ([\d.]+)f', q)}
+    grund = {"Kohle": 75, "Kompaktkohle": 75, "Petrolkoks": 75, "Treibstoff": 250, "Turbotreibstoff": 250, "Raketentreibstoff": 250,
+             "Ionisiert": 250, "Uran": 2500, "Plutonium": 2500}
+    return {k: int(round(g * f.get(k, 1.0))) for k, g in grund.items()}
+STROM_MW = _strom_mw()
+
 BAEUME = [
-    # Spalten: Strom 0 | Fertigung 1-2 | Logistik 3-4
-    ("Industrie", "FICSIT-Abwehr: Industrie", "Was deine Fabrik herstellen kann: Teile, Stahl, Öl, Strom und schnellere Bänder. Hier wird nichts ausgeschlossen.", f"{P}/IronPlateReinforced/Desc_IronPlateReinforced", [
-        ("Kohlekraft", "Kohlekraftwerk", "Kohlekraftwerk (75 MW statt 30 MW), Wasserextraktor und Rohre. Voraussetzung für Teslaspule und Flammenwerfer.",
-         (0, 0), [], [], ZEIT,
-         [f"{R}/Buildings/Recipe_GeneratorCoal", f"{R}/Buildings/Recipe_WaterPump", f"{R}/Buildings/Recipe_Pipeline", f"{R}/Buildings/Recipe_PipeSupport", f"{R}/Buildings/Recipe_PipelineJunction_Cross", f"{R}/Buildings/Recipe_PowerStorageMk1"], KOHLE),
+    # A6 (Marius 22.11., Bericht-A6-Forschungsbaum.md): Spalten Rohstoffe 0 | Fertigung 1 | Kupfer 2 | Logistik 3-4 | Strom und Öl 5.
+    # Sechs Wurzeln, keine Pflichtkette: Band Mk2, Schwefel und Quarz haengen an nichts, die Raffinerie am Kohlekraftwerk.
+    # 23.11. (Marius, Stromzweig): Kohlekraftwerk und Treibstoffkraftwerk stehen im eigenen Baum "Energie"; die Raffinerie ist Wurzel
+    # und braucht dort das Kohlekraftwerk (A6 E3 bleibt)
+    ("Industrie", "FICSIT-Abwehr: Industrie", "Was deine Fabrik herstellen kann: Teile, Stahl, Öl und schnellere Bänder. Hier wird nichts ausgeschlossen. Sechs Einstiege: Fertigung, Kupfer, Bänder, Öl und zwei Rohstoffe. Strom steht im Baum Energie.", f"{P}/IronPlateReinforced/Desc_IronPlateReinforced", [
         ("Assembler", "Assembler und Eisenteile", "Assembler, Eisenplatten, Schrauben, verstärkte Eisenplatten und Rotoren. Grundlage für fast jede bessere Munition.",
          (1, 0), [], [], ZEIT, EISEN2, f"{P}/IronPlateReinforced/Desc_IronPlateReinforced"),
         ("Kupfer", "Kupferverarbeitung", "Kupferbarren, Draht, Kabel und Kupferblech: der zweite Rohstoff. Für Gewehrmunition, Schockbolzen und Stromtechnik.",
-         (3, 0), [], [], ZEIT, KUPFER, KUPFERBARREN),
+         (2, 0), [], [], ZEIT, KUPFER, KUPFERBARREN),
         ("BandMk2", "Förderband Mk2", "Bänder und Lifte mit 120 statt 60 Teilen pro Minute. Alle vorhandenen Bänder und Lifte werden automatisch aufgerüstet.",
-         (3, 1), ["Kupfer"], [], ZEIT, [f"{R}/Buildings/Recipe_ConveyorBeltMk2", f"{R}/Buildings/Recipe_ConveyorLiftMk2"], f"{P}/IronPlateReinforced/Desc_IronPlateReinforced"),
+         (3, 0), [], [], ZEIT, [f"{R}/Buildings/Recipe_ConveyorBeltMk2", f"{R}/Buildings/Recipe_ConveyorLiftMk2"], f"{P}/IronPlateReinforced/Desc_IronPlateReinforced"),
         ("Munitionspuffer", "Munitionspuffer", "Der Munitionseingang jedes Turms fasst doppelt so viel. Türme halten länger durch, wenn das Band stockt.",
-         (4, 2), ["BandMk2"], [], ZEIT, [], BOLZEN),
-        ("Giesserei", "Gießerei und Stahl", "Gießerei (im Laden kaufbar), Stahlbarren aus Eisenerz und Kohle, Stahlrohre und Stahlträger. Für Nobelisken, Turbomunition und Band Mk3.",
+         (4, 1), ["BandMk2"], [], ZEIT, [], BOLZEN),
+        ("Giesserei", "Gießerei und Stahl", "Gießerei (im Laden kaufbar), Stahlbarren aus Eisenerz und Kohle, Stahlrohre und Stahlträger. Für Nobelisken, panzerbrechende Munition, Aluminium und Band Mk3.",
          (1, 1), ["Assembler"], [], ZEIT, STAHL, f"{P}/SteelIngot/Desc_SteelIngot"),
         ("BandMk3", "Förderband Mk3", "Bänder und Lifte mit 270 Teilen pro Minute (Baumaterial: Stahlträger). Alle Bänder und Lifte werden automatisch aufgerüstet.",
-         (3, 2), ["BandMk2"], [], ZEIT, [f"{R}/Buildings/Recipe_ConveyorBeltMk3", f"{R}/Buildings/Recipe_ConveyorLiftMk3"], f"{P}/SteelPlate/Desc_SteelPlate"),
+         (3, 1), ["BandMk2"], [], ZEIT, [f"{R}/Buildings/Recipe_ConveyorBeltMk3", f"{R}/Buildings/Recipe_ConveyorLiftMk3"], f"{P}/SteelPlate/Desc_SteelPlate"),
         ("Raffinerie", "Raffinerie und Öl", "Ölpumpe, Raffinerie und Flüssigkeitspuffer (im Laden kaufbar), Kunststoff und Gummi. Voraussetzung für Flammenwerfer und Treibstoffkraftwerk.",
-         (1, 2), ["Giesserei"], [], ZEIT,
+         (5, 0), [], [], ZEIT,
          [f"{R}/Buildings/Recipe_OilPump", f"{R}/Buildings/Recipe_OilRefinery", f"{R}/OilRefinery/Recipe_Plastic", f"{R}/OilRefinery/Recipe_Rubber",
           f"{R}/Buildings/Recipe_PipeStorageTank", f"{R}/Buildings/Recipe_IndustrialTank"], f"{P}/Plastic/Desc_Plastic"),
-        ("Treibstoffkraft", "Treibstoffkraftwerk", "Treibstoffkraftwerk (150 MW, im Laden kaufbar): verbrennt Treibstoff aus der Raffinerie.",
-         (2, 3), ["Raffinerie"], [], ZEIT,
-         [f"{R}/Buildings/Recipe_GeneratorFuel", f"{R}/OilRefinery/Recipe_LiquidFuel"], f"{P}/Fuel/Desc_LiquidFuel"),
         # 0.82 Rohstoff-Knoten (Konzept-Rohstoffe-Tuerme-Bauten-2026-11-07): jede Gabelung der Munition braucht einen davon
-        ("Schwefel", "Schwefel", "Schwefel-Vorkommen abbauen (Miner). Schwefel steckt in Schwarzpulver (Nobelisk), Brandmunition, Gas-Nobelisk und Kompaktkohle; die Rezepte kommen mit den jeweiligen Knoten. Dieser Knoten ist der Zugang zu ihnen.",
-         (0, 2), ["Giesserei"], [], ZEIT, [], f"{G}/Resource/RawResources/Sulfur/Desc_Sulfur"),
+        ("Schwefel", "Schwefel", "Schwefel abbauen und Schwarzpulver herstellen (Kohle + Schwefel im Assembler). Schwefel steckt außerdem in Brandmunition, Gas-Nobelisk und Kompaktkohle; diese Rezepte kommen mit den jeweiligen Knoten.",
+         (0, 1), [], [], ZEIT, [f"{TDR}/Recipe_TD_Schwarzpulver"], f"{G}/Resource/RawResources/Sulfur/Desc_Sulfur"),
         ("Quarz", "Quarzverarbeitung", "Rohquarz abbauen (Miner) und im Konstruktor zu Quarzkristall verarbeiten. Für Streubolzen und Puls-Nobelisk.",
-         (2, 1), ["Assembler"], [], ZEIT, [f"{R}/Constructor/Recipe_QuartzCrystal"], f"{P}/QuartzCrystal/Desc_QuartzCrystal"),
-        ("Caterium", "Caterium", "Caterium-Erz abbauen, Caterium-Barren im Schmelzofen, Turbodraht im Konstruktor. Für Schockbolzen und Zielsuchmunition.",
-         (5, 1), ["Kupfer"], [], ZEIT, [f"{R}/Smelter/Recipe_IngotCaterium", f"{R}/Constructor/Recipe_Quickwire"], f"{P}/HighSpeedWire/Desc_HighSpeedWire"),
+         (0, 2), [], [], ZEIT, [f"{R}/Constructor/Recipe_QuartzCrystal"], f"{P}/QuartzCrystal/Desc_QuartzCrystal"),
+        ("Caterium", "Caterium", "Caterium-Erz abbauen, Caterium-Barren im Schmelzofen, Turbodraht im Konstruktor. Für Schockbolzen und Zielsuchmunition. Gibt im Laden den Nobelisken-Zünder mit 10 Nobelisken frei: damit sprengst du Felsen auf Vorkommen.",
+         (2, 1), ["Kupfer"], [], ZEIT, [f"{R}/Smelter/Recipe_IngotCaterium", f"{R}/Constructor/Recipe_Quickwire"], f"{P}/HighSpeedWire/Desc_HighSpeedWire"),
         ("Bauxit", "Bauxit und Aluminium", "Bauxit abbauen, Aluminiumbarren in der Gießerei aus Bauxit und Kohle (FICSIT-Feldrezept, ohne Wasser), Aluminiumgehäuse im Konstruktor. Für Turbomunition.",
-         (1, 3), ["Raffinerie"], [], ZEIT, [f"{TDR}/Recipe_TD_Aluminiumbarren", f"{R}/Constructor/Recipe_AluminumCasing"], f"{P}/AluminumCasing/Desc_AluminumCasing"),
+         (1, 3), ["Giesserei"], [], ZEIT, [f"{TDR}/Recipe_TD_Aluminiumbarren", f"{R}/Constructor/Recipe_AluminumCasing"], f"{P}/AluminumCasing/Desc_AluminumCasing"),
         # 0.9.1 Endgame-Konzept (Marius 09.11.2026): spaete Maschinen ins Kontingent - Fertiger in Phase 3, Mischer in Phase 4
         ("Schwerindustrie", "Schwerindustrie", "Fertiger (im Laden kaufbar), Computer, Leiterplatten, Schwere Modulare Rahmen, Stahlbeton-Träger, Aluminiumbleche und Kühlkörper. Damit werden Schildgenerator und Himmelsturm baubar.",
          (1, 4), ["Bauxit"], [], ZEIT,
@@ -110,6 +117,33 @@ BAEUME = [
          (4, 4), ["BandMk4"], [], ZEIT, [f"{R}/Buildings/Recipe_MinerMk2"], f"{G}/Resource/RawResources/OreIron/Desc_OreIron"),
         ("MinerMk3", "Miner Mk3", "Miner mit vierfachem Abbau: 240 Erz pro Minute auf einem normalen Knoten (Band Mk3 oder schneller nötig). Gekauft wird das Kontingent Miner.",
          (4, 5), ["MinerMk2"], [], ZEIT, [f"{R}/Buildings/Recipe_MinerMk3"], f"{G}/Resource/RawResources/OreIron/Desc_OreIron"),
+    ]),
+    # 23.11. (Marius, Stromzweig, Konzept-Stromzweig-2026-11-23.md): drei Strom-Linien ohne Sperre. Ausbau ueber bessere Brennstoffe,
+    # die jedem Kraftwerk mehr MW geben (TDStrom.cpp, Strom.<Brennstoff>.Faktor). Texte nennen die MW aus TDBalance.cpp (STROM_MW).
+    ("Energie", "FICSIT-Abwehr: Energie", "Strom für Fabrik und Türme: Kohle, Öl und nach Welle 50 Kernkraft. Nichts wird ausgeschlossen, Kohle und Öl gehen gleichzeitig. Bessere Brennstoffe geben jedem Kraftwerk mehr Leistung: Wer eine Linie ausbaut, braucht weniger Kraftwerke.", KOHLE, [
+        ("Kohlekraft", "Kohlekraftwerk", f"Kohlekraftwerk ({STROM_MW['Kohle']} MW statt 30 MW), Wasserextraktor und Rohre. Voraussetzung für Teslaspule und Raffinerie.",
+         (1, 0), [], [], ZEIT,
+         [f"{R}/Buildings/Recipe_GeneratorCoal", f"{R}/Buildings/Recipe_WaterPump", f"{R}/Buildings/Recipe_Pipeline", f"{R}/Buildings/Recipe_PipeSupport", f"{R}/Buildings/Recipe_PipelineJunction_Cross", f"{R}/Buildings/Recipe_PowerStorageMk1"], KOHLE),
+        ("Kompaktkohle", "Kompaktkohle-Feuerung", f"Kompaktkohle (5 Kohle + 5 Schwefel im Assembler) im Kohlekraftwerk: {STROM_MW['Kompaktkohle']} statt {STROM_MW['Kohle']} MW je Kraftwerk. Kompaktkohle ist auch die Zutat für Turbotreibstoff.",
+         (1, 1), ["Kohlekraft"], [], ZEIT, [f"{TDR}/Recipe_TD_Kompaktkohle"], f"{P}/CompactedCoal/Desc_CompactedCoal"),
+        ("Petrolkoks", "Petrolkoks-Feuerung", f"Petrolkoks aus Schwerölrückstand (Raffinerie) im Kohlekraftwerk: {STROM_MW['Petrolkoks']} MW je Kraftwerk. Verbindet Kohle und Öl: Der Rückstand aus der Kunststoff- und Treibstoffherstellung wird Strom.",
+         (1, 2), ["Kompaktkohle"], [], ZEIT, [f"{R}/OilRefinery/Recipe_PetroleumCoke"], f"{P}/PetroleumCoke/Desc_PetroleumCoke"),
+        ("Treibstoffkraft", "Treibstoffkraftwerk", f"Treibstoffkraftwerk ({STROM_MW['Treibstoff']} MW, im Laden kaufbar): verbrennt Treibstoff aus der Raffinerie. Hochspannung für die Teslaspule braucht es.",
+         (3, 0), [], [], ZEIT,
+         [f"{R}/Buildings/Recipe_GeneratorFuel", f"{R}/OilRefinery/Recipe_LiquidFuel"], f"{P}/Fuel/Desc_LiquidFuel"),
+        ("TurboFeuerung", "Turbo-Feuerung", f"Turbotreibstoff (Treibstoff + Kompaktkohle in der Raffinerie) im Treibstoffkraftwerk: {STROM_MW['Turbotreibstoff']} statt {STROM_MW['Treibstoff']} MW je Kraftwerk. Derselbe Turbotreibstoff stärkt auch den Flammenwerfer.",
+         (3, 1), ["Treibstoffkraft"], [], ZEIT, [f"{R}/AlternateRecipes/Parts/Recipe_Alternate_Turbofuel", f"{TDR}/Recipe_TD_Kompaktkohle"], f"{P}/Turbofuel/Desc_LiquidTurboFuel"),
+        ("RaketenFeuerung", "Raketen-Feuerung", f"Raketentreibstoff (Turbotreibstoff + Salpetersäure im Mischer) im Treibstoffkraftwerk: {STROM_MW['Raketentreibstoff']} MW je Kraftwerk, ionisierter Treibstoff aus der Plasmaflamme sogar {STROM_MW['Ionisiert']} MW.",
+         (3, 2), ["TurboFeuerung"], [], ZEIT, [f"{R}/Blender/Recipe_RocketFuel", f"{R}/Blender/Recipe_NitricAcid"], f"{P}/RocketFuel/Desc_RocketFuel"),
+        ("Kernkraft", "Kernkraft", f"Atomkraftwerk ({STROM_MW['Uran']} MW, im Laden kaufbar) mit Uran-Brennstäben: Uran, Schwefelsäure, Beton, Stator und KI-Begrenzer. Erst in den Überstunden nach Welle 50. Atommüll lässt sich nicht verwerten, Vorsicht vor der Strahlung.",
+         (5, 0), [], [], ZEIT,
+         [f"{R}/Buildings/Recipe_GeneratorNuclear", f"{R}/OilRefinery/Recipe_SulfuricAcid", f"{R}/Constructor/Recipe_Concrete", f"{R}/Assembler/Recipe_UraniumCell",
+          f"{R}/Assembler/Recipe_Stator", f"{R}/Assembler/Recipe_AILimiter", f"{R}/Assembler/Recipe_ElectromagneticControlRod", f"{R}/Constructor/Recipe_NuclearFuelRod"],
+         f"{P}/NuclearFuelRod/Desc_NuclearFuelRod"),
+        ("Plutonium", "Plutonium-Brennstab", f"Plutonium-Brennstäbe aus Atommüll (Teilchenbeschleuniger, im Laden kaufbar): {STROM_MW['Plutonium']} statt {STROM_MW['Uran']} MW je Atomkraftwerk. Verwertet den Müll der Uran-Stäbe.",
+         (5, 1), ["Kernkraft"], [], ZEIT,
+         [f"{R}/Buildings/Recipe_HadronCollider", f"{R}/Blender/Recipe_NonFissileUranium", f"{R}/Blender/Recipe_NitricAcid", f"{R}/HadronCollider/Recipe_Plutonium",
+          f"{R}/Assembler/Recipe_PlutoniumCell", f"{R}/Manufacturer/Recipe_PlutoniumFuelRod"], f"{P}/PlutoniumFuelRods/Desc_PlutoniumFuelRod"),
     ]),
     # 0.73 Spezialisierung, 0.78.3 schmaler (Marius: MAM scrollt nicht nach rechts): Bolzenturm 0-2 | Gewehrturm 3-5 | Nobelisk-Werfer 0-2 ab Zeile 3
     ("Ballistik", "FICSIT-Abwehr: Ballistik", "Türme und Munition, die Projektile verschießen: Bolzenturm, Gewehrturm, Nobelisk-Werfer. Jede Linie hat eine Gabelung.", BOLZEN, [
@@ -152,13 +186,13 @@ BAEUME = [
          (1, 5), ["NobeliskWerfer"], [], ZEIT,
          [f"{TD}/NobeliskLauncher/Recipe_TD_Nobelisk_Cluster", f"{TDR}/Recipe_TD_NobeliskStreu", f"{R}/Equipment/Recipe_GunpowderMK2"], f"{G}/Equipment/NobeliskDetonator/Ammo/Desc_NobeliskCluster"),
         # 0.83 Bauten P3
-        ("Himmelsturm", "Himmelsturm", "Neuer Turm: Flugabwehr gegen fliegende Gegner (60 m, 200 Schaden in 6 m). Munition: Flak-Kanister = Aluminiumgehäuse + 2 Schwarzpulver im Assembler. Greift keine Bodengegner an. Fliegende Krabben kommen ab Welle 43 aus Krabbennestern (noch nicht gebaut). Braucht Schwerindustrie und 25 MW.",
-         (3, 4), ["NobeliskWerfer"], [], ZEIT, [f"{TD}/FlakTurret/Recipe_TD_FlakTurret", f"{TD}/FlakTurret/Recipe_TD_Flak_Shoot", f"{TDR}/Recipe_TD_FlakKanister"], f"{P}/AluminumCasing/Desc_AluminumCasing"),
+        ("Himmelsturm", "Himmelsturm", "Neuer Turm: Flugabwehr gegen fliegende Gegner (60 m, 200 Schaden in 6 m). Munition: Flak-Kanister = Aluminiumgehäuse + 2 Schwarzpulver im Assembler. Greift keine Bodengegner an. Ab Welle 43 kommt ein Vogelschwarm, ab Welle 45 kommen Mantas, die Säure auf den Kern spucken. Bodentürme treffen sie nicht. Braucht Schwerindustrie und 25 MW.",
+         (3, 4), [], [], ZEIT, [f"{TD}/FlakTurret/Recipe_TD_FlakTurret", f"{TD}/FlakTurret/Recipe_TD_Flak_Shoot", f"{TDR}/Recipe_TD_FlakKanister"], f"{P}/AluminumCasing/Desc_AluminumCasing"),
         ("Singularitaet", "Singularitätswerfer", "Neuer Turm (Endspiel): Ficsonium-Ladung hält alle Gegner in 12 m fest und sprengt sie nach 1,5 s mit 1500 Explosionsschaden. Ficsonium aus dem Teilchenbeschleuniger. Erst in den Überstunden (ab Welle 51). Braucht 150 MW.",
          (3, 5), ["Himmelsturm"], [], ZEIT, [f"{TD}/SingularityLauncher/Recipe_TD_SingularityLauncher", f"{TD}/SingularityLauncher/Recipe_TD_Singularitaet_Ficsonium"], f"{P}/Ficsonium/Desc_Ficsonium"),
     ]),
     # Spalten: Teslaspule 0-2 | Flammenwerfer 4
-    ("Elementar", "FICSIT-Abwehr: Elementar", "Türme ohne Projektile: Strom (Teslaspule) und Feuer (Flammenwerfer). Beide brauchen das Kohlekraftwerk aus dem Baum Industrie.", DRAHT, [
+    ("Elementar", "FICSIT-Abwehr: Elementar", "Türme ohne Projektile: Strom (Teslaspule) und Feuer (Flammenwerfer). Tesla braucht das Kohlekraftwerk, der Flammenwerfer die Raffinerie.", DRAHT, [
         ("Teslaspule", "Teslaspule", "Neuer Turm: Kettenblitz aus Strom, ohne Munition, springt auf 3 weitere Gegner. Braucht beim Aufladen 125 MW. Level 2 im Turmfenster ist damit freigeschaltet.",
          (1, 0), [], [], ZEIT,
          [f"{TD}/TeslaCoil/Recipe_TD_TeslaCoil", f"{TD}/TeslaCoil/Recipe_TD_Tesla_Discharge"], DRAHT),
@@ -234,12 +268,12 @@ BAEUME = [
          (3, 1), ["MauerMk2"], [], ZEIT, [f"{TD}/Gate/Recipe_TD_Gate"], f"{P}/Cement/Desc_Cement"),
         ("Lockfeuer", "Lockfeuer", "Neues Gebäude: verbrennt Kohle und lockt dabei 15 s lang alle Gegner in 40 m an, danach 30 s Pause. Lenkt Wellen auf eine Turmgruppe. Kombination Sammelpunkt: gelockte Gegner nehmen 25 % mehr Explosionsschaden. Sein Feuer entzündet nasse Ölschlick-Felder in 12 m. Braucht 5 MW.",
          (3, 2), ["Tor"], [], ZEIT, [f"{TD}/LureBeacon/Recipe_TD_LureBeacon", f"{TD}/LureBeacon/Recipe_TD_Lure_Coal", f"{TD}/LureBeacon/Recipe_TD_Lure_CompactedCoal"], KOHLE),
-        # 0.83 Bauten P2/P3 (Gabel H: Schildgenerator oder Stoerfeld-Projektor)
+        # 0.83 Bauten P2/P3 (A6 22.11.: Gabel H Schildgenerator/Stoerfeld aufgeloest, beide erforschbar)
         ("Funkmast", "Funkmast", "Neues Gebäude: Radarmast mit Leitsender. Türme in 30 m bekommen +10 % Reichweite. Braucht dauernd 15 MW.",
          (5, 1), ["MauerMk2"], [], ZEIT, [f"{TD}/RadioMast/Recipe_TD_RadioMast", f"{TD}/RadioMast/Recipe_TD_Funk_Strom"], f"{P}/CrystalOscillator/Desc_CrystalOscillator"),
-        ("Schildgenerator", "Schildgenerator", GABEL + "Neues Gebäude: Kuppel 20 m schluckt Schaden an Mauern, Türmen und Bauten (nicht am Kern), 3000 Schildpunkte, gebrochen 20 s Ladezeit. Braucht Schwerindustrie und dauernd 60 MW.",
+        ("Schildgenerator", "Schildgenerator", "Neues Gebäude: Kuppel 20 m schluckt Schaden an Mauern, Türmen und Bauten (nicht am Kern), 3000 Schildpunkte, gebrochen 20 s Ladezeit. Braucht Schwerindustrie und dauernd 60 MW.",
          (1, 2), ["KernNotrep"], [], ZEIT, [f"{TD}/ShieldGenerator/Recipe_TD_ShieldGenerator", f"{TD}/ShieldGenerator/Recipe_TD_Schild_Strom"], f"{P}/Battery/Desc_Battery"),
-        ("Stoerfeld", "Störfeld-Projektor", GABEL + "Neues Gebäude: verbraucht reanimiertes SAM (1 Barren je 60 s), solange Gegner in 15 m sind, und bremst sie alle um 40 %. Braucht Mischtechnik und 80 MW.",
+        ("Stoerfeld", "Störfeld-Projektor", "Neues Gebäude: verbraucht reanimiertes SAM (1 Barren je 60 s), solange Gegner in 15 m sind, und bremst sie alle um 40 %. Braucht Mischtechnik und 80 MW.",
          (4, 7), ["Turmfertigung4"], [], ZEIT, [f"{TD}/FieldProjector/Recipe_TD_FieldProjector", f"{TD}/FieldProjector/Recipe_TD_Feld_SAM", f"{R}/Smelter/Recipe_IngotSAM"], f"{P}/SAMIngot/Desc_SAMIngot"),
         # 0.9.3 (Marius 09.11.2026): Dimensionslager gestrichen (Konzept drahtlose Munition verworfen)
     ]),
@@ -250,7 +284,8 @@ ORDNER = {}
 for _o, _ks in {
     "Produktion": ["Assembler", "Kupfer", "Giesserei", "BandMk2", "Raffinerie", "Schwefel", "Quarz", "Caterium", "Bauxit", "Schwerindustrie", "Mischtechnik"],
     "Ballistik": ["Durchschlagbolzen", "Gewehrturm", "Explosivbolzen", "Streubolzen", "Zielsuchmunition", "Schockbolzen", "Turbomunition", "Panzerbrechend", "Brandmunition"],
-    "Energie": ["Kohlekraft", "Teslaspule", "Treibstoffkraft", "Kettenblitz", "Ueberlast", "Akkubank", "Hochspannung"],
+    "Energie": ["Kohlekraft", "Teslaspule", "Treibstoffkraft", "Kettenblitz", "Ueberlast", "Akkubank", "Hochspannung",
+                "Kompaktkohle", "Petrolkoks", "TurboFeuerung", "RaketenFeuerung", "Kernkraft", "Plutonium"],
     "Doktrin": ["DoktrinBolzen", "DoktrinGewehr", "DoktrinNobelisk", "DoktrinTesla", "DoktrinFlamme"],
     "Befestigung": ["Reparaturdrohnen", "Kampfdrohnen", "Tor", "Lockfeuer", "Elektrozaun", "Funkmast", "Schildgenerator", "Stoerfeld"],
     "Feuer": ["Flammenwerfer", "Turbotreibstoff", "Oelschlick", "Raketentreibstoff", "Plasmaflamme"],
@@ -264,13 +299,16 @@ for _o, _ks in {
 
 # Kurzwirkung fuer den Kartentitel (Marius 04.11.: "null Information", wenn man auf einen Knoten geht) - ohne Sonderzeichen ausser Umlauten
 KURZ = {
-    "Kohlekraft": "Kohlekraftwerk 75 MW", "Assembler": "Assembler, Eisenplatten, Rotoren", "Kupfer": "Kupfer, Draht, Kabel",
+    "Kohlekraft": f"Kohlekraftwerk {STROM_MW['Kohle']} MW", "Assembler": "Assembler, Eisenplatten, Rotoren", "Kupfer": "Kupfer, Draht, Kabel",
     "BandMk2": "Bänder Mk2 (120/min), Umbau automatisch", "Munitionspuffer": "Turmeingang fasst doppelt", "Giesserei": "Gießerei und Stahl",
     "BandMk3": "Bänder Mk3 (270/min), Umbau automatisch", "BandMk4": "Bänder Mk4 (480/min), Umbau automatisch", "BandMk5": "Bänder Mk5 (780/min), Umbau automatisch",
-    "MinerMk2": "Miner Mk2: doppelter Abbau", "MinerMk3": "Miner Mk3: vierfacher Abbau", "Raffinerie": "Ölpumpe, Raffinerie, Kunststoff", "Treibstoffkraft": "Treibstoffkraftwerk 150 MW",
+    "MinerMk2": "Miner Mk2: doppelter Abbau", "MinerMk3": "Miner Mk3: vierfacher Abbau", "Raffinerie": "Ölpumpe, Raffinerie, Kunststoff", "Treibstoffkraft": f"Treibstoffkraftwerk {STROM_MW['Treibstoff']} MW",
+    "Kompaktkohle": f"Kohlekraftwerk {STROM_MW['Kompaktkohle']} MW mit Kompaktkohle", "Petrolkoks": f"Kohlekraftwerk {STROM_MW['Petrolkoks']} MW mit Petrolkoks",
+    "TurboFeuerung": f"Treibstoffkraftwerk {STROM_MW['Turbotreibstoff']} MW mit Turbotreibstoff", "RaketenFeuerung": f"Treibstoffkraftwerk {STROM_MW['Raketentreibstoff']} MW mit Raketentreibstoff",
+    "Kernkraft": f"Atomkraftwerk {STROM_MW['Uran']} MW (Uran)", "Plutonium": f"Atomkraftwerk {STROM_MW['Plutonium']} MW (Plutonium)",
     "Durchschlagbolzen": "Bolzen St. 2: trifft 3 in Reihe", "Gewehrturm": "Neuer Turm: Dauerfeuer", "Explosivbolzen": "Bolzen St. 3: großer Flächenschaden",
     "Streubolzen": "Bolzen St. 2: 3 Splitter (Quarz)", "Zielsuchmunition": "Gewehr St. 2: trifft immer (Caterium)", "Schockbolzen": "Bolzen St. 2: Strom, betäubt 3 s (Caterium)",
-    "Schwefel": "Schwefel: Schwarzpulver, Kompaktkohle", "Quarz": "Quarzkristall", "Caterium": "Caterium, Turbodraht", "Bauxit": "Aluminiumgehäuse", "Schwerindustrie": "Fertiger, Computer, Schwere Rahmen", "Mischtechnik": "Mischer, Abfüller, Stickstoff",
+    "Schwefel": "Schwefel und Schwarzpulver", "Quarz": "Quarzkristall", "Caterium": "Caterium, Turbodraht", "Bauxit": "Aluminiumgehäuse", "Schwerindustrie": "Fertiger, Computer, Schwere Rahmen", "Mischtechnik": "Mischer, Abfüller, Stickstoff",
     "NobeliskWerfer": "Neuer Turm: Nobelisk im Bogen", "Turbomunition": "Gewehrmunition spät: doppelte Feuerrate", "GasNobelisk": "Giftwolke, Schaden über Zeit",
     "PulsNobelisk": "Druckwelle betäubt 2 s", "StreuNobelisk": "Nobelisk St. 3: Streusprengsätze", "Teslaspule": "Neuer Turm: Kettenblitz, 125 MW",
     "Flammenwerfer": "Neuer Turm: Flammenkegel", "Turbotreibstoff": "Flamme St. 2: Turbotreibstoff",
@@ -285,7 +323,7 @@ KURZ = {
     "DoktrinFlamme": "Hauptlinie Flammenwerfer: +25 % Schaden",
     "Tor": "Tor: Engstelle für Bolzen", "Lockfeuer": "Lockt an, Sammelpunkt für Explosionen", "Oelschlick": "Bremst um 35 %, Kombo Ölbrand",
     "Elektrozaun": "Mauer mit Stromschlag, leitet Tesla", "Funkmast": "Türme in 30 m +10 % Reichweite", "Schildgenerator": "Kuppel schluckt 3000 Schaden",
-    "Stoerfeld": "Bremst alles in 15 m um 40 % (SAM)", "Dimensionslager": "Munition ohne Band in 30 m", "Himmelsturm": "Neuer Turm: Flugabwehr (noch ohne Ziele)",
+    "Stoerfeld": "Bremst alles in 15 m um 40 % (SAM)", "Dimensionslager": "Munition ohne Band in 30 m", "Himmelsturm": "Neuer Turm: Flugabwehr gegen Vögel und Mantas (ab W43)",
     "Singularitaet": "Neuer Turm: Ficsonium-Singularität",
 }
 
@@ -294,6 +332,7 @@ KURZ = {
 LADEN = {
     "Assembler": "Assembler", "Giesserei": "Gießerei", "Raffinerie": "Ölpumpe, Raffinerie, Flüssigkeitspuffer", "Schwerindustrie": "Fertiger", "Mischtechnik": "Mischer, Abfüller, Ressourcenbrunnen", "Gewehrturm": "Gewehrturm",
     "Kohlekraft": "Kohlekraftwerk, Wasserpumpe, Akku", "Teslaspule": "Teslaspule", "Treibstoffkraft": "Treibstoffkraftwerk",
+    "Kernkraft": "Atomkraftwerk", "Plutonium": "Teilchenbeschleuniger",
     "Reparaturdrohnen": "Drohnenplatz", "Kampfdrohnen": "Drohnenplatz", "Flammenwerfer": "Flammenwerfer", "NobeliskWerfer": "Nobelisk-Werfer",
     "Tor": "Tor", "Lockfeuer": "Lockfeuer", "Oelschlick": "Ölschlick-Feld",
     "Elektrozaun": "Elektrozaun", "Funkmast": "Funkmast", "Schildgenerator": "Schildgenerator", "Stoerfeld": "Störfeld-Projektor",
@@ -323,7 +362,7 @@ VORAUSSETZUNGEN = {
     ("Industrie", "BandMk3"): [("Industrie", "Giesserei")],
     ("Industrie", "BandMk4"): [("Industrie", "Schwerindustrie")], ("Industrie", "MinerMk2"): [],
     ("Industrie", "MinerMk3"): [("Industrie", "Mischtechnik")],
-    ("Industrie", "Treibstoffkraft"): [("Industrie", "Kohlekraft")],
+    ("Industrie", "Schwerindustrie"): [("Industrie", "Raffinerie")],   # A6: Computer und Leiterplatten brauchen Kunststoff
     ("Ballistik", "Durchschlagbolzen"): [("Industrie", "Assembler")],
     ("Ballistik", "Gewehrturm"): [("Industrie", "Assembler"), ("Industrie", "Kupfer")],
     ("Ballistik", "NobeliskWerfer"): [("Industrie", "Giesserei"), ("Industrie", "Schwefel")],
@@ -331,9 +370,9 @@ VORAUSSETZUNGEN = {
     ("Ballistik", "Schockbolzen"): [("Industrie", "Caterium")],
     ("Ballistik", "Zielsuchmunition"): [("Industrie", "Caterium")],
     ("Ballistik", "Brandmunition"): [("Industrie", "Schwefel")],
-    ("Ballistik", "Explosivbolzen"): [("Industrie", "Raffinerie")],
+    ("Ballistik", "Explosivbolzen"): [("Industrie", "Raffinerie"), ("Industrie", "Schwefel")],
     ("Ballistik", "StreuNobelisk"): [("Industrie", "Raffinerie")],
-    ("Elementar", "Turbotreibstoff"): [("Industrie", "Schwefel")],
+    ("Elementar", "Turbotreibstoff"): [("Industrie", "Schwefel"), ("Industrie", "Assembler")],
     ("Ballistik", "Turbomunition"): [("Industrie", "Bauxit")],
     ("Ballistik", "PulsNobelisk"): [("Industrie", "Quarz")],
     ("Ballistik", "Panzerbrechend"): [("Industrie", "Giesserei")],
@@ -341,25 +380,32 @@ VORAUSSETZUNGEN = {
     ("Festung", "DoktrinNobelisk"): [("Ballistik", "NobeliskWerfer")],
     ("Festung", "DoktrinTesla"): [("Elementar", "Teslaspule")],
     ("Festung", "DoktrinFlamme"): [("Elementar", "Flammenwerfer")],
-    ("Elementar", "Teslaspule"): [("Industrie", "Kohlekraft")],
-    ("Elementar", "Flammenwerfer"): [("Industrie", "Kohlekraft"), ("Industrie", "Raffinerie")],
+    ("Elementar", "Teslaspule"): [("Energie", "Kohlekraft")],
+    ("Elementar", "Flammenwerfer"): [("Industrie", "Raffinerie")],
     ("Festung", "Reparaturdrohnen"): [("Industrie", "Schwerindustrie")], ("Festung", "Kampfdrohnen"): [("Industrie", "Schwerindustrie")],
     ("Elementar", "Oelschlick"): [("Industrie", "Raffinerie")],
     # 0.83 Bauten P2/P3
     ("Festung", "Funkmast"): [("Industrie", "Quarz")],
-    ("Festung", "Schildgenerator"): [("Elementar", "Akkubank"), ("Industrie", "Schwerindustrie")],
+    ("Festung", "Schildgenerator"): [("Industrie", "Schwerindustrie")],
     ("Festung", "Stoerfeld"): [("Industrie", "Mischtechnik")],
-    ("Elementar", "Hochspannung"): [("Industrie", "Treibstoffkraft")],
+    ("Elementar", "Hochspannung"): [("Energie", "Treibstoffkraft")],
+    # 23.11. (Stromzweig): Querverbindungen des Baums Energie
+    ("Industrie", "Raffinerie"): [("Energie", "Kohlekraft")],
+    ("Energie", "Kompaktkohle"): [("Industrie", "Schwefel"), ("Industrie", "Assembler")],
+    ("Energie", "Petrolkoks"): [("Industrie", "Raffinerie")],
+    ("Energie", "Treibstoffkraft"): [("Industrie", "Raffinerie")],
+    ("Energie", "RaketenFeuerung"): [("Industrie", "Mischtechnik")],
+    ("Energie", "Kernkraft"): [("Industrie", "Schwerindustrie"), ("Industrie", "Mischtechnik"), ("Industrie", "Caterium")],
     ("Elementar", "Raketentreibstoff"): [("Industrie", "Mischtechnik")],
-    ("Ballistik", "Himmelsturm"): [("Industrie", "Bauxit"), ("Industrie", "Schwerindustrie")],
+    ("Ballistik", "Himmelsturm"): [("Industrie", "Bauxit"), ("Industrie", "Schwerindustrie"), ("Industrie", "Schwefel")],
     ("Ballistik", "Singularitaet"): [("Festung", "Turmfertigung4")],   # 0.81: als Voraussetzung statt Elternlinie (die Linie liefe durch Notreparatur)
 }
 
-# Freigabe-Welle (unveraendert gegenueber 0.71, ueberschreibbar mit Forschung.<Knoten>.AbWelle in Balance.json)
+# Freigabe-Welle (A6 22.11.: Einstieg ab Welle 3, ueberschreibbar mit Forschung.<Knoten>.AbWelle in Balance.json)
 AB_WELLE = {
     ("Industrie", "Schwefel"): 5,
     ("Industrie", "Quarz"): 10,
-    ("Industrie", "Caterium"): 12,
+    ("Industrie", "Caterium"): 10,   # A6: vorher 12
     ("Industrie", "Bauxit"): 25,
     ("Ballistik", "Explosivbolzen"): 25,
     ("Festung", "Tor"): 6,
@@ -368,20 +414,25 @@ AB_WELLE = {
     ("Elementar", "Elektrozaun"): 12, ("Festung", "Funkmast"): 12, ("Festung", "Schildgenerator"): 25, ("Ballistik", "Himmelsturm"): 35,
     ("Festung", "Stoerfeld"): 35, ("Festung", "Reparaturdrohnen"): 40, ("Festung", "Kampfdrohnen"): 40, ("Ballistik", "Singularitaet"): 51,   # 0.9.1: Ueberstunden
     ("Industrie", "Schwerindustrie"): 25, ("Industrie", "Mischtechnik"): 35,
-    ("Industrie", "Kohlekraft"): 6,
+    ("Energie", "Kohlekraft"): 3,   # A6: vorher 6 (erste Forschung vor Welle 3); 23.11. in den Baum Energie
     ("Industrie", "Raffinerie"): 15,
-    ("Industrie", "Treibstoffkraft"): 15,
+    ("Energie", "Treibstoffkraft"): 15,
+    # 23.11. (Stromzweig): Ausbau ueber Brennstoffe, Kernkraft erst in den Ueberstunden
+    ("Energie", "Kompaktkohle"): 10, ("Energie", "Petrolkoks"): 20, ("Energie", "TurboFeuerung"): 25, ("Energie", "RaketenFeuerung"): 35,
+    ("Energie", "Kernkraft"): 51, ("Energie", "Plutonium"): 56,
     ("Industrie", "BandMk3"): 10,
-    ("Industrie", "BandMk4"): 25, ("Industrie", "BandMk5"): 30, ("Industrie", "MinerMk2"): 20, ("Industrie", "MinerMk3"): 35,
-    ("Ballistik", "Durchschlagbolzen"): 5,
-    ("Ballistik", "Gewehrturm"): 5,
+    ("Industrie", "BandMk4"): 25, ("Industrie", "BandMk5"): 30, ("Industrie", "MinerMk2"): 25, ("Industrie", "MinerMk3"): 35,
+    ("Ballistik", "Durchschlagbolzen"): 3,
+    ("Ballistik", "Gewehrturm"): 5,   # 22.11. abends (Marius, Analyse-A6-Simulation B2): Gewehr ab 5, Bolzen und Tesla ab 3
+    ("Ballistik", "Panzerbrechend"): 10,   # A6: Gabel mit Zielsuch (Caterium ab 10) gleichzeitig waehlbar
     ("Ballistik", "NobeliskWerfer"): 10,   # 0.73: Artillerie-Linie vor der Doktrin waehlbar
     ("Ballistik", "Brandmunition"): 15,
     ("Ballistik", "GasNobelisk"): 15,
     ("Ballistik", "PulsNobelisk"): 15,
     ("Ballistik", "Turbomunition"): 25,
     ("Ballistik", "StreuNobelisk"): 25,
-    ("Elementar", "Teslaspule"): 5,
+    ("Elementar", "Teslaspule"): 3,
+    ("Elementar", "Kettenblitz"): 6, ("Elementar", "Ueberlast"): 6,
     ("Elementar", "Akkubank"): 15,
     ("Elementar", "Flammenwerfer"): 15,
     ("Elementar", "Turbotreibstoff"): 25,
@@ -399,7 +450,7 @@ AB_WELLE = {
 
 # Gabelungen (nur eine Seite je Einsatz); dieselben Paare stehen in TDForschungVoraussetzungen.inl (TDForschungAbzweigungen)
 GRUPPEN = [("Ballistik", ["Streubolzen", "Schockbolzen"]), ("Ballistik", ["Zielsuchmunition", "Panzerbrechend"]), ("Ballistik", ["GasNobelisk", "PulsNobelisk"]),
-           ("Elementar", ["Kettenblitz", "Ueberlast"]), ("Festung", ["Schildgenerator", "Stoerfeld"]), ("Festung", ["Reparaturdrohnen", "Kampfdrohnen"]), ("Festung", ["KernSchild", "KernGeschuetz"]),
+           ("Elementar", ["Kettenblitz", "Ueberlast"]), ("Festung", ["Reparaturdrohnen", "Kampfdrohnen"]), ("Festung", ["KernSchild", "KernGeschuetz"]),
            ("Festung", ["DoktrinBolzen", "DoktrinGewehr", "DoktrinNobelisk", "DoktrinTesla", "DoktrinFlamme"])]
 def andere_von(b_key, k_key):
     for g_b, glieder in GRUPPEN:
@@ -464,7 +515,8 @@ def beschreibung(b_key, k_key, k_text, eltern):
     if vor:
         zeilen.append("Braucht: " + ", ".join(f"{TITEL[vb]} > {NAMEN[(vb, vk)]}" for vb, vk in vor))
     if andere_von(b_key, k_key):
-        zeilen.append("Abzweigung: schließt " + ", ".join(NAMEN[(b_key, a)] for a in andere_von(b_key, k_key)) + " für diesen Einsatz aus")
+        # 23.11. (Gegencheck 0.13 F2): im Freien Spiel mit Abwehr ist die Gegenseite zum doppelten Preis kaeuflich
+        zeilen.append("Abzweigung: schließt " + ", ".join(NAMEN[(b_key, a)] for a in andere_von(b_key, k_key)) + " im Einsatz aus (im Freien Spiel mit Abwehr: Gegenseite zum doppelten Preis)")
     return "\n".join(z for z in zeilen).strip()
 
 def icon_von(item_pfad):
@@ -849,7 +901,7 @@ for b_key, b_name, b_text, b_icon, knoten in BAEUME:
 info.append("};")
 with open(r"E:\Modding\SatisfactoryModLoader\Mods\FicsitTD\Source\FicsitTD\Private\TDForschungInfo.inl", "w", encoding="utf-8-sig") as f:
     f.write("\n".join(info) + "\n")
-log(f"Forschungsinfo: {len(info) - 6} Knoten")
+log(f"Forschungsinfo: {sum(1 for z in info if z.startswith(chr(9) + '{ TEXT('))} Knoten")   # 23.11.: vorher len(info) - 6, zaehlte einen zu viel
 log(f"Voraussetzungen: {sum(len(v) for v in VORAUSSETZUNGEN.values())}")
 log("ENDE")
 with open(r"E:\Modding\Logs\create_research.txt", "w", encoding="utf-8") as f:

@@ -1,0 +1,198 @@
+{
+  "Name": "Flieger",
+  "_Hinweis": "25.11.2026 (Marius: Krabben raus, 'das soll was Realistisches sein'): Vogelschwarm ab W43, Mantas ab W45, die kreisen und Saeure auf den Kern spucken. Sprung auf Welle 45 (Entwicklermodus), 3 Himmelstuerme und 8 Bolzentuerme, Welle starten, Vogel und Manta fotografieren (Lage und Groesse der Spielmodelle), Welle zu Ende laufen lassen. Erwartet: Voegel und Mantas gespawnt, beide Ansagen, Himmelsturm trifft, Voegel und Manta abgeschossen. Bodengegner per Balance auf 2 % LP (5 % hielt W45 nicht sicher, Lauf 25.11. 09:00) (der Plan prueft die Flieger), Manta-LP hoch (20000 x 0,02 = 400, also mehrere Treffer). Startort Felsenwueste (Gras-S8 Front 1 siehe Notizen). Vorlaeufer 23.11.: fliegende Krabben.",
+  "NeuesSpiel": {
+    "Startort": "Rocky Desert",
+    "Modus": 1
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 20,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warteBis": "EinsatzAktiv",
+      "max": 120
+    },
+    {
+      "befehl": "td einsatz frei an"
+    },
+    {
+      "stromfrei": true
+    },
+    {
+      "versorgung": {
+        "Bolzenturm": 200,
+        "Himmelsturm": 200
+      }
+    },
+    {
+      "baue": "Himmelsturm",
+      "anzahl": 3,
+      "level": 2,
+      "rezept": "Recipe_TD_Flak_Shoot",
+      "ring": "innen"
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 8,
+      "level": 3,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "balance": {
+        "Stufen.Normal.GegnerLP": 0.02,
+        "Flieger.Manta.LP": 20000,
+        "Flieger.Manta.Anzahl": 2
+      },
+      "text": "Bodengegner sehr schwach (2 %), Mantas mit 160 LP: der Plan prueft die Flieger, nicht die Bodenabwehr (25.11. 09:00 fiel der Kern bei 5 % durch Elite-Stinger und Nuklear-Hogs)"
+    },
+    {
+      "befehl": "td kern springe 45"
+    },
+    {
+      "warte": 3
+    },
+    {
+      "befehl": "td kern weiter"
+    },
+    {
+      "warte": 10
+    },
+    {
+      "kamera": "frei",
+      "ort": "vogel",
+      "richtungZu": "kern",
+      "richtung": 180,
+      "abstand": 16,
+      "hoehe": 2,
+      "blick": "vogel",
+      "blickhoehe": 0,
+      "anheben": 20,
+      "fov": 50
+    },
+    {
+      "warte": 0.1
+    },
+    {
+      "foto": "Flieger_Vogel",
+      "ohneHUD": true
+    },
+    {
+      "warte": 12
+    },
+    {
+      "kamera": "frei",
+      "ort": "manta",
+      "richtungZu": "kern",
+      "richtung": 120,
+      "abstand": 18,
+      "hoehe": 3,
+      "blick": "manta",
+      "blickhoehe": 0,
+      "anheben": 0,
+      "fov": 60
+    },
+    {
+      "warte": 0.5
+    },
+    {
+      "foto": "Flieger_Manta",
+      "ohneHUD": true
+    },
+    {
+      "kamera": "frei",
+      "ort": "kern",
+      "richtung": 200,
+      "abstand": 45,
+      "hoehe": 25,
+      "blick": "kern",
+      "blickhoehe": 10,
+      "fov": 75
+    },
+    {
+      "warte": 8
+    },
+    {
+      "foto": "Flieger_Kern",
+      "ohneHUD": true
+    },
+    {
+      "kamera": "erste"
+    },
+    {
+      "wellenlauf": 45,
+      "zeitraffer": 2,
+      "max": 400
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Mantas (",
+      "min": 1,
+      "text": "Voegel und Mantas gespawnt"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Ansage: FLIEGER",
+      "min": 1,
+      "text": "Ansage Vogelschwarm beim ersten Mal"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Ansage: MANTAS",
+      "min": 1,
+      "text": "Ansage Mantas beim ersten Mal"
+    },
+    {
+      "pruefe": "TurmWert",
+      "turm": "Himmelsturm",
+      "wert": "Treffer",
+      "summe": true,
+      "min": 3,
+      "text": "Himmelsturm trifft Flieger"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Flieger: Vogel abgeschossen",
+      "min": 1,
+      "text": "Himmelsturm schiesst Voegel ab"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Flieger: Manta abgeschossen",
+      "min": 1,
+      "text": "Himmelsturm schiesst Mantas ab (mehrere Treffer)"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Flieger: Manta-Saeure am Kern",
+      "min": 0,
+      "text": "Manta-Saeure am Kern (Diagnose)"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Flieger: Vogel am Kern",
+      "min": 0,
+      "text": "Voegel am Kern (Diagnose, Schaden)"
+    },
+    {
+      "pruefe": "Sicherheitsnetze",
+      "text": "kein Sicherheitsnetz ausgeloest"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    },
+    {
+      "balance": {
+        "Stufen.Normal.GegnerLP": 1.25,
+        "Flieger.Manta.LP": 1500,
+        "Flieger.Manta.Anzahl": 1
+      }
+    }
+  ]
+}

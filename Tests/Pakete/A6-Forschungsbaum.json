@@ -1,0 +1,12 @@
+{
+  "Name": "A6-Forschungsbaum",
+  "_Hinweis": "A6 (Marius 22.11.): entflochtener MAM-Baum, Festplatte abgeben, Gegenseite im Freien Spiel. Spezialisierung prueft die Gabeln im Einsatz weiter, Bohrung das Freie Spiel mit Abwehr, Shop die 48 Posten.",
+  "Plaene": [
+    "A6-Forschung",
+    "A6-Abwehr",
+    "Shop",
+    "Spezialisierung",
+    "Bohrung",
+    "Grundtest"
+  ]
+}

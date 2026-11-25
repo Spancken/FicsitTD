@@ -1,0 +1,163 @@
+{
+  "Name": "KZ-3-Ring",
+  "_Hinweis": "0.13 K2 (Marius 21.11.): Ring 'instabiler Boden' 60 m - Fabrikgebaeude des Spiels im Ring gesperrt (Disqualifier UTDCDBodenInstabil), Abwehrbauten und Logistik erlaubt. Prueft SperrGrund wie PruefeHologramm. 22.11.: Ringsignale (Lampen im Baumodus) und ADA-Ansage RingInstabil beim ersten Versuch.",
+  "NeuesSpiel": {
+    "Startort": "Grass Fields",
+    "Modus": 1
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 6,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warteBis": "EinsatzAktiv",
+      "max": 120
+    },
+    {
+      "pruefe": "Bausperre",
+      "klasse": "/Game/FactoryGame/Buildable/Factory/ConstructorMk1/Build_ConstructorMk1.Build_ConstructorMk1_C",
+      "abstand": 20,
+      "soll": "Boden",
+      "text": "Konstruktor 20 m: Boden instabil"
+    },
+    {
+      "pruefe": "Bausperre",
+      "klasse": "/Game/FactoryGame/Buildable/Factory/ConstructorMk1/Build_ConstructorMk1.Build_ConstructorMk1_C",
+      "abstand": 59,
+      "soll": "Boden",
+      "text": "Konstruktor 59 m: Boden instabil"
+    },
+    {
+      "pruefe": "Bausperre",
+      "klasse": "/Game/FactoryGame/Buildable/Factory/ConstructorMk1/Build_ConstructorMk1.Build_ConstructorMk1_C",
+      "abstand": 61,
+      "soll": "",
+      "text": "Konstruktor 61 m: erlaubt"
+    },
+    {
+      "pruefe": "Bausperre",
+      "klasse": "/Game/FactoryGame/Buildable/Factory/Mam/Build_Mam.Build_Mam_C",
+      "abstand": 20,
+      "soll": "Boden",
+      "text": "MAM 20 m: Boden instabil"
+    },
+    {
+      "pruefe": "Bausperre",
+      "klasse": "/Game/FactoryGame/Buildable/Factory/StorageContainerMk1/Build_StorageContainerMk1.Build_StorageContainerMk1_C",
+      "abstand": 20,
+      "soll": "Boden",
+      "text": "Lager 20 m: Boden instabil"
+    },
+    {
+      "pruefe": "Bausperre",
+      "klasse": "/FicsitTD/Buildings/BoltTurret/Build_TD_BoltTurret.Build_TD_BoltTurret_C",
+      "abstand": 20,
+      "soll": "",
+      "text": "Bolzenturm 20 m: erlaubt (Abwehrbau)"
+    },
+    {
+      "pruefe": "Bausperre",
+      "klasse": "/FicsitTD/Buildings/DefenseWall/Build_TD_DefenseWall.Build_TD_DefenseWall_C",
+      "abstand": 20,
+      "soll": "",
+      "text": "Verteidigungsmauer 20 m: erlaubt"
+    },
+    {
+      "pruefe": "Bausperre",
+      "klasse": "/Game/FactoryGame/Buildable/Factory/ConveyorBeltMk1/Build_ConveyorBeltMk1.Build_ConveyorBeltMk1_C",
+      "abstand": 20,
+      "soll": "",
+      "text": "Band 20 m: erlaubt (Logistik)"
+    },
+    {
+      "pruefe": "Bausperre",
+      "klasse": "/Game/FactoryGame/Buildable/Factory/PowerPoleMk1/Build_PowerPoleMk1.Build_PowerPoleMk1_C",
+      "abstand": 20,
+      "soll": "",
+      "text": "Strommast 20 m: erlaubt (Logistik)"
+    },
+    {
+      "pruefe": "Bausperre",
+      "klasse": "/Game/FactoryGame/Buildable/Factory/ConstructorMk1/Build_ConstructorMk1.Build_ConstructorMk1_C",
+      "ort": "fern",
+      "soll": "",
+      "text": "Konstruktor fern: erlaubt"
+    },
+    {
+      "warte": 3
+    },
+    {
+      "pruefe": "Ringsignale",
+      "min": 50,
+      "sichtbar": false,
+      "text": "Ringsignale angelegt, ohne Baumodus ausgeblendet"
+    },
+    {
+      "balance": {
+        "Einsatz.Ring.SignaleImmer": 1
+      }
+    },
+    {
+      "warte": 2
+    },
+    {
+      "pruefe": "Ringsignale",
+      "min": 50,
+      "sichtbar": true,
+      "text": "Ringsignale sichtbar (wie im Baumodus)"
+    },
+    {
+      "kamera": "frei",
+      "ort": "kern",
+      "richtung": 200,
+      "abstand": 48,
+      "hoehe": 7,
+      "blick": "kern",
+      "blickhoehe": 0
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "KZ-3_Ringsignale",
+      "ohneHUD": true
+    },
+    {
+      "kamera": "erste"
+    },
+    {
+      "hologramm": "/Game/FactoryGame/Recipes/Buildings/Recipe_ConstructorMk1.Recipe_ConstructorMk1_C",
+      "winkel": 90,
+      "abstand": 25,
+      "erwartet": "TDCDBodenInstabil",
+      "text": "Hologramm Konstruktor im Ring: Boden instabil"
+    },
+    {
+      "warte": 6
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "ADA-Ansage RingInstabil (Stimme",
+      "min": 1,
+      "max": 1,
+      "text": "ADA sagt den Ring beim ersten Versuch an (einmal)"
+    },
+    {
+      "hologramm": "/Game/FactoryGame/Recipes/Buildings/Recipe_ConstructorMk1.Recipe_ConstructorMk1_C",
+      "winkel": 180,
+      "abstand": 25,
+      "erwartet": "TDCDBodenInstabil",
+      "text": "zweiter Versuch: wieder rot, keine zweite Ansage"
+    },
+    {
+      "balance": {
+        "Einsatz.Ring.SignaleImmer": 0
+      }
+    }
+  ]
+}

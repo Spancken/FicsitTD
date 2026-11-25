@@ -120,6 +120,50 @@ FString UTDWaveSubsystem::BohrPruefung(ATDDefenseCore* Kern, AFGResourceNode** O
 	}
 	// Wege wie beim Kernplatz pruefen und im Klartext sagen, was fehlt
 	FrontenFuer(Kern);
+	// 0.13 K1 (Marius 21.11.: in der Bohrung kein Ring, nur Wegpruefung beim Start): pruefen, ob ein Bau den Bohrer abriegelt - dann
+	// den Bau und die Stelle nennen und auf der Karte markieren. Bestehende Fabrik bleibt unberuehrt. Auch mit zwischengespeicherten
+	// gueltigen Fronten, denn die stammen evtl. von vor dem Zubauen. Ergebnis KernZugang.Haltezeit s gehalten (das Kern-Menue fragt oft).
+	if (TDBalance::Wert(TEXT("KernZugang.Aktiv"), 1.f) > 0.f)
+	{
+		const bool bNeu = FPlatformTime::Seconds() - mKernZugang.Zeit >= TDBalance::Wert(TEXT("KernZugang.Haltezeit"), 5.f) || mKernZugang.Front != 0;
+		// 0.13 N1: Maschinen und Tuerme um den Bohrer als Sperrflaeche ins Netz. Baut das Netz dafuer gerade um, urteilt die Pruefung
+		// nicht (NetzNichtBereit) - die Wartelogik vor Welle 1 prueft dann erneut (Lauf 0800: Ablehnen brach die zweite Bohrung)
+		if (bNeu)
+		{
+			SperreBautenUm(Kern->GetActorLocation());
+		}
+		if (bNeu)
+		{
+			mKernZugang = PruefeKernZugangVon(Kern, {}, true);
+			UE_LOG(LogFicsitTD, Log, TEXT("Bohrung: KernZugang %s, %d Wegsuchen, %.2f ms, Sperre %s (%s)"), KernZugangName(mKernZugang.Zustand),
+				mKernZugang.Wegsuchen, mKernZugang.Ms, mKernZugang.Sperre.IsEmpty() ? TEXT("-") : *mKernZugang.Sperre, *mKernZugang.SperreKlasse);
+		}
+		const FTDKernZugang& Z = mKernZugang;
+		if (Z.IstGesperrt() && Z.bBau)
+		{
+			MarkiereSperrstelle(true);
+			if (bNeu)
+			{
+				UE_LOG(LogFicsitTD, Log, TEXT("Bohrung: Bohrer abgeriegelt durch %s (%s), %d Wegsuchen, %.2f ms"), *Z.Sperre, *Z.SperreKlasse, Z.Wegsuchen, Z.Ms);
+			}
+			return KernZugangText(Z, Kern);
+		}
+		// 22.11. (Lauf K1b, KZ-6: nach dem Oeffnen blieb "Kein begehbarer Weg" - die Fronten stammten von vor dem Oeffnen):
+		// ist der Bohrer erreichbar, aber keine Richtung gueltig, die Fronten neu suchen
+		if (mGueltigeRichtungen <= 0 && (Z.Zustand == ETDKernZugang::Frei || Z.Zustand == ETDKernZugang::Durchbrechbar))
+		{
+			VerwerfeFronten();
+			FrontenFuer(Kern);
+			UE_LOG(LogFicsitTD, Log, TEXT("Bohrung: Zugang frei, Fronten neu gesucht (%d Richtungen gueltig)"), mGueltigeRichtungen);
+		}
+	}
+	// 0.13 N1: baut das Netz gerade um (neuer Bohrer, neue Sperrflaechen), ist "kein Weg" kein Urteil - Fronten beim naechsten Mal neu
+	if (mGueltigeRichtungen <= 0 && mKernZugang.Zustand == ETDKernZugang::NetzNichtBereit && mKernZugang.SperreKlasse == TEXT("Netzumbau"))
+	{
+		VerwerfeFronten();
+		return TDT(TEXT("Das Navigationsnetz um den Bohrer wird gerade aufgebaut. Versuche es in ein paar Sekunden noch einmal."),
+			TEXT("The navigation mesh around the drill is still being built. Try again in a few seconds."));
+	}
 	if (mGueltigeRichtungen <= 0)
 	{
 		return TDT(TEXT("Kein begehbarer Weg zum Bohrer: ringsum Klippen, Wasser oder Gebäude. Stell den Kern in offeneres Gelände oder räume einen Zugang frei (Wegvorschau: \"Wegvorschau an\")."),

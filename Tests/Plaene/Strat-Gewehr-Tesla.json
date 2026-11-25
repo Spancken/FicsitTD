@@ -1,6 +1,6 @@
 {
   "Name": "Strat-Gewehr-Tesla",
-  "_Hinweis": "Beste Modellstrategie der Linie Gewehr+Tesla (Nr. 317, Doktrin Gewehrturm, Stil Tuerme, Kern ja, Gabel Schockbolzen/Panzerbrechend/GasNobelisk/Kettenblitz/KernSchild): Plan bei der Auswahl 70 % bis W30, Vorhersage 70 %, 15 Türme. Erzeugt von Werkzeuge\\FicsitTD-Simulator\\strategie_plaene.py.",
+  "_Hinweis": "Beste Modellstrategie der Linie Gewehr+Tesla (Nr. 289, Doktrin keine, Stil Tuerme, Kern nein, Gabel Streubolzen/Panzerbrechend/PulsNobelisk/Kettenblitz/KernGeschuetz): Plan bei der Auswahl 100 % bis W30, Vorhersage 98 %, 15 Türme. Erzeugt von Werkzeuge\\FicsitTD-Simulator\\strategie_plaene.py.",
   "NeuesSpiel": {
     "Startort": "Rocky Desert"
   },
@@ -66,7 +66,7 @@
     },
     {
       "baue": "Bolzenturm",
-      "anzahl": 1,
+      "anzahl": 3,
       "level": 2,
       "rezept": "Recipe_TD_Shoot_SpikedRebar"
     },
@@ -79,18 +79,18 @@
       "erforsche": "Kupfer"
     },
     {
+      "baue": "Bolzenturm",
+      "anzahl": 1,
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
       "wellenlauf": 3,
       "zeitraffer": 4,
       "max": 500
     },
     {
       "erforsche": "Giesserei"
-    },
-    {
-      "baue": "Bolzenturm",
-      "anzahl": 2,
-      "level": 2,
-      "rezept": "Recipe_TD_Shoot_SpikedRebar"
     },
     {
       "wellenlauf": 4,
@@ -106,13 +106,16 @@
       "max": 500
     },
     {
+      "erforsche": "Kettenblitz"
+    },
+    {
       "erforsche": "Kohlekraft"
     },
     {
-      "erforsche": "Panzerbrechend"
+      "erforsche": "Schwefel"
     },
     {
-      "erforsche": "Schwefel"
+      "erforsche": "Teslaspule"
     },
     {
       "baue": "Gewehrturm",
@@ -126,16 +129,13 @@
       "max": 500
     },
     {
-      "erforsche": "KernNotrep"
+      "erforsche": "BandMk2"
     },
     {
-      "erforsche": "KernPanzer"
+      "erforsche": "Munitionspuffer"
     },
     {
-      "erforsche": "Kettenblitz"
-    },
-    {
-      "erforsche": "Teslaspule"
+      "erforsche": "Panzerbrechend"
     },
     {
       "erforsche": "Turmfertigung2"
@@ -143,12 +143,12 @@
     {
       "aufwerten": "Gewehrturm",
       "level": 3,
-      "rezept": "Recipe_TD_Gun_Panzer"
+      "rezept": "Recipe_TD_Gun_Standard"
     },
     {
       "baue": "Teslaspule",
       "anzahl": 1,
-      "level": 2,
+      "level": 3,
       "rezept": "Recipe_TD_Tesla_Discharge"
     },
     {
@@ -157,13 +157,13 @@
       "max": 500
     },
     {
+      "erforsche": "Akkubank"
+    },
+    {
       "erforsche": "Brandmunition"
     },
     {
-      "erforsche": "DoktrinGewehr"
-    },
-    {
-      "erforsche": "KernSchild"
+      "erforsche": "Kompaktkohle"
     },
     {
       "aufwerten": "Gewehrturm",
@@ -172,18 +172,13 @@
     },
     {
       "baue": "Gewehrturm",
-      "anzahl": 1,
+      "anzahl": 2,
       "level": 3,
       "rezept": "Recipe_TD_Gun_Brand"
     },
     {
-      "aufwerten": "Teslaspule",
-      "level": 3,
-      "rezept": "Recipe_TD_Tesla_Discharge"
-    },
-    {
       "baue": "Teslaspule",
-      "anzahl": 1,
+      "anzahl": 2,
       "level": 3,
       "rezept": "Recipe_TD_Tesla_Discharge"
     },
@@ -199,23 +194,11 @@
       "max": 500
     },
     {
-      "erforsche": "Akkubank"
-    },
-    {
-      "erforsche": "BandMk2"
-    },
-    {
-      "erforsche": "Munitionspuffer"
-    },
-    {
-      "erforsche": "Raffinerie"
-    },
-    {
       "erforsche": "Turmfertigung3"
     },
     {
       "baue": "Gewehrturm",
-      "anzahl": 2,
+      "anzahl": 1,
       "level": 3,
       "rezept": "Recipe_TD_Gun_Brand"
     },
@@ -226,7 +209,7 @@
     },
     {
       "baue": "Teslaspule",
-      "anzahl": 2,
+      "anzahl": 1,
       "level": 4,
       "rezept": "Recipe_TD_Tesla_Discharge"
     },
@@ -243,13 +226,7 @@
     },
     {
       "aufwerten": "Gewehrturm",
-      "level": 5,
-      "rezept": "Recipe_TD_Gun_Turbo"
-    },
-    {
-      "baue": "Gewehrturm",
-      "anzahl": 1,
-      "level": 5,
+      "level": 4,
       "rezept": "Recipe_TD_Gun_Turbo"
     },
     {

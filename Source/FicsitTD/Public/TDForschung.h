@@ -46,6 +46,8 @@ namespace TDForschung
 	FICSITTD_API FString StatusTitel(const UObject* WorldContext, const FTDForschungKnoten& K, FString& OutText);
 	/** 0.72.1 (Marius: Status nicht als Kachel): schreibt den Status in den Knotentitel, z. B. "Nobelisk-Werfer (ab Welle 15)" */
 	FICSITTD_API void AktualisiereMamKarten(const UObject* WorldContext);
+	/** 23.11. (Gegencheck 0.13 F5): deutscher Forschungstext (Baum, Knoten, Text, Laden, Gut gegen) in der Spielsprache */
+	FICSITTD_API FString Anzeige(const FString& De);
 	/** Name des Knotens ohne Status-Zusatz (fuer Chat und Protokoll) */
 	FICSITTD_API FString Basisname(const UClass* Schematic);
 	/** 0.72.1: Turm-Aktionen erforschter Knoten freischalten (stehen nicht mehr im MAM), Panzersperre entfernen; in FicsitTDModule.cpp */

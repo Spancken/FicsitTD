@@ -1,4 +1,7 @@
 #include "TDWaveSubsystem.h"
+#include "TDStrom.h"
+#include "Engine/OverlapResult.h"
+#include "TDFlieger.h"
 #include "TDAda.h"
 #include "GameFramework/Character.h"
 #include "Components/CapsuleComponent.h"
@@ -356,6 +359,7 @@ int32 UTDWaveSubsystem::StopAll()
 		}
 	}
 	mGegner.Reset();
+	EntferneFlieger();
 	return Removed;
 }
 
@@ -966,7 +970,7 @@ struct FTDFesteFront { const TCHAR* Platz; int32 R[4]; int32 D[4]; };
 static const FTDFesteFront TDFesteFronten[] = {
 	// Messung 18.11. (Paket Fronten-Messung, Stufe Normal, Suche beim Einsatzstart und 90 s spaeter jeweils gleich)
 	{ TEXT("Gras-S1"),  { 10,  2,  6, 14 }, { 2, 2, 2, 0 } },
-	{ TEXT("Gras-S8"),  { 13,  5,  1,  9 }, { 2, 0, 2, 2 } },
+	{ TEXT("Gras-S8"),  { 14,  5,  1,  9 }, { 2, 0, 2, 2 } },   // 24.11.: Front 1 r13 fern (Schlucht, 389 m, grosse Gegner hingen) -> r14 fern: Normal 267 m (nah waeren 223 m, nach Verlegung 156 m), Erkundung faellt auf nah 267 m zurueck
 	{ TEXT("Gras-S2"),  {  7, 15,  3, 11 }, { 2, 0, 2, 1 } },
 	{ TEXT("Fels-S3"),  { 10,  2,  6, 14 }, { 2, 2, 2, 2 } },
 	{ TEXT("Fels-S8"),  { 10,  2, 14,  5 }, { 2, 0, 2, 2 } },   // Nordwesten 343 m zuerst, Grundlage aller P12-Messungen
@@ -1173,7 +1177,14 @@ void UTDWaveSubsystem::SucheFronten(const FVector& Mitte)
 		int32 Geprueft = 0;
 		for (int32 i = 0; i < 4; ++i)
 		{
-			const int32 r = Fest->R[i], k = FMath::Clamp(Fest->D[i], 0, 2);
+			// 24.11. (Gras-S8 Front 1: Kandidaten messen ohne neuen Build): Test.FrontR<n>/Test.FrontD<n> >= 0 ersetzen die Tabelle
+			const int32 TestR = TDBalance::Ganz(FString::Printf(TEXT("Test.FrontR%d"), i + 1), -1);
+			const int32 TestD = TDBalance::Ganz(FString::Printf(TEXT("Test.FrontD%d"), i + 1), -1);
+			const int32 r = TestR >= 0 ? TestR : Fest->R[i], k = FMath::Clamp(TestD >= 0 ? TestD : Fest->D[i], 0, 2);
+			if (TestR >= 0 || TestD >= 0)
+			{
+				UE_LOG(LogFicsitTD, Log, TEXT("Fronten fest: Front %d aus dem Selbsttest r=%d d=%d (Tabelle r=%d d=%d)"), i + 1, r, k, Fest->R[i], Fest->D[i]);
+			}
 			if (r < 0 || r > 15)
 			{
 				continue;
@@ -1376,7 +1387,11 @@ bool UTDWaveSubsystem::StarteKernVerteidigung(ATDDefenseCore* Kern, int32 Wellen
 {
 	mPlanWelle = -1;   // T3: Wellenplan haengt an Kern und Stufe
 	mFrontCheckWelle = -1;
+	mFrontCheckFruehWelle = -1;
 	mKlippenWarte = 0.f;
+	mKernZugang = FTDKernZugang();   // 0.13 K1
+	mZugangWarte = 0.f;
+	mZugangPruefUhr = 0.f;
 	// 18.11.: Abgleich vor Welle 1 - P12-E5 zeigte zwei stabile Zustaende je nach Ladestand des Netzes (Nordwesten 343 m frueh,
 	// Norden 357 m spaeter); der Abgleich schaltete auf den spaeteren um. Deshalb aus (Gegner.FrontenAbgleich 0), bis Marius entscheidet.
 	mFrontenStabil = TDBalance::Wert(TEXT("Gegner.FrontenAbgleich"), 0.f) <= 0.f;
@@ -1536,6 +1551,9 @@ void UTDWaveSubsystem::StoppeLauf(const FString& Grund)
 		return;
 	}
 	mLauf = ETDLauf::Aus;
+	// 0.13 N1: Sperrflaechen bleiben stehen (Lauf 0855: Entfernen am Laufende und Neusetzen bei der naechsten Bohrungspruefung liess
+	// das Netz genau beim Start umbauen - "Kein begehbarer Weg"). Sie werden nicht gespeichert und verschwinden mit ihrem Bau.
+	RaeumeBauSperren(false);
 	EntferneBossBalken();
 	EntferneWellenLeiste();
 	mNachschub.Reset();
@@ -1586,7 +1604,11 @@ void UTDWaveSubsystem::SetzeLaufFort(ATDDefenseCore* Kern)
 {
 	mPlanWelle = -1;   // T3: Wellenplan haengt an Kern und Stufe
 	mFrontCheckWelle = -1;
+	mFrontCheckFruehWelle = -1;
 	mKlippenWarte = 0.f;
+	mKernZugang = FTDKernZugang();   // 0.13 K1
+	mZugangWarte = 0.f;
+	mZugangPruefUhr = 0.f;
 	if (!Kern || mLauf != ETDLauf::Aus)
 	{
 		return;
@@ -1757,6 +1779,12 @@ float UTDWaveSubsystem::EndlosAbstand(int32 Welle) const
 
 FString UTDWaveSubsystem::GetBereitText(bool bKurz) const
 {
+	// 0.13 K1: der Start wartet, weil ein Bau den Kern abriegelt
+	if (mLauf == ETDLauf::Aufbau && mZugangWarte > 0.f && mZugangGemeldet)
+	{
+		return bKurz ? TDF(TEXT("Welle %d wartet: Kern abgeriegelt"), TEXT("Wave %d waiting: Core sealed off"), mWelle + 1)
+			: TDF(TEXT("Welle %d wartet: Kern abgeriegelt durch %s (Kern-Menü: E)"), TEXT("Wave %d waiting: Core sealed off by %s (Core Menu: E)"), mWelle + 1, *mKernZugang.Sperre);
+	}
 	// Gegencheck 15.11. (F1): auf Zeit zeigt die Zeile den Countdown statt "3/0 bereit"
 	if (!mManuell && mLauf == ETDLauf::Aufbau)
 	{
@@ -1776,6 +1804,8 @@ FString UTDWaveSubsystem::GetBereitText(bool bKurz) const
 FString UTDWaveSubsystem::OptikFamilie(const UClass* Klasse)
 {
 	const FString N = Klasse ? Klasse->GetName() : FString();
+	if (N.Contains(TEXT("TDFliegerManta"))) return TEXT("Manta");   // 25.11.: Luftgegner (Kernschaden-Messung)
+	if (N.Contains(TEXT("TDFliegerVogel"))) return TEXT("Vogel");
 	if (N.Contains(TEXT("Johnny")))        return TEXT("Johnny");
 	if (N.Contains(TEXT("NuclearHog")))    return TEXT("NuclearHog");
 	if (N.Contains(TEXT("CliffHog")))      return TEXT("CliffHog");
@@ -2685,6 +2715,18 @@ void UTDWaveSubsystem::PruefeFrontenVorWelle(int32 Nummer)
 					Nummer, i + 1, bNetzImBau ? 1 : 0, Auftraege);
 				continue;
 			}
+			// 0.13 K1: sperrt ein Bau des Spielers (oder eine TD-Mauer) den Weg, bleiben die Fronten - die Neuwahl faende sonst 0 gueltige
+			// Richtungen und die Welle startete nach Gegner.FrontenWarteMax mit ungeprueften Fronten. Den Start haelt HalteStartFuerKernZugang.
+			if (TDBalance::Wert(TEXT("KernZugang.Aktiv"), 1.f) > 0.f)
+			{
+				const FTDKernZugang Z = PruefeZugangEinzeln(mKern.Get(), mFronten[i].Ort, i + 1);
+				if (Z.bBau)
+				{
+					UE_LOG(LogFicsitTD, Log, TEXT("Frontpruefung Welle %d: Front %d versperrt durch %s (%s, %s) - Fronten bleiben"),
+						Nummer, i + 1, *Z.Sperre, *Z.SperreKlasse, KernZugangName(Z.Zustand));
+					continue;
+				}
+			}
 			UE_LOG(LogFicsitTD, Warning, TEXT("Frontpruefung Welle %d: Front %d (%s) hat nur noch einen Teilweg (%d Punkte, Ende %s, Netz im Umbau %d, %d Auftraege) - Fronten neu bestimmen"),
 				Nummer, i + 1, *FrontText(mFronten, i, true), Probe.Num(), Probe.Num() ? *Probe.Last().ToCompactString() : TEXT("-"), bNetzImBau ? 1 : 0, Auftraege);
 			mFronten.Reset();
@@ -2693,6 +2735,32 @@ void UTDWaveSubsystem::PruefeFrontenVorWelle(int32 Nummer)
 			break;
 		}
 	}
+}
+
+float UTDWaveSubsystem::LPFaktorFuer(int32 Nummer) const
+{
+	// Lebenspunkte je Gegner = Grund-LP der Art x dieser Faktor (UTDGegnerHirn::Spawne)
+	const FTDStufe S = GetStufe(mStufe);
+	// 0.9.1 (Simulation 09.11.): ab W31 waechst das Leben schneller, Phase 4-5 hatte im Modell zu viel Luft. Im Spiel nachmessen.
+	// 23.11. (Marius: Einsatz schwerer): Endlos behaelt seinen eigenen Zuwachs (Endlos.LPJeWelle), der Einsatz nutzt Wellen.LPJeWelle
+	const float JeWelle = mEndlos ? TDBalance::Wert(TEXT("Endlos.LPJeWelle"), TDBalance::Wert(TEXT("Wellen.LPJeWelle"), 0.08f))
+		: TDBalance::Wert(TEXT("Wellen.LPJeWelle"), 0.08f);
+	// 23.11. (Gegencheck Konzept B1, Marius: auch nach W31 soll noch jemand scheitern): Einsatz mit Wellen.LPJeWelleAb31 1,5,
+	// Endlos behaelt seinen eigenen Zuwachs (Endlos.LPJeWelleAb31 0,1)
+	const float Ab31 = mEndlos ? TDBalance::Wert(TEXT("Endlos.LPJeWelleAb31"), TDBalance::Wert(TEXT("Wellen.LPJeWelleAb31"), 0.1f))
+		: TDBalance::Wert(TEXT("Wellen.LPJeWelleAb31"), 0.1f);
+	float LPFaktor = S.LP * (1.f + JeWelle * FMath::Min(Nummer - 1, 30) + Ab31 * FMath::Max(Nummer - 31, 0));
+	// 16.11. (Fahrplan P2, Simulation): Endlos - nach W50 waechst die Gegnerzahl nicht mehr (Wellen.MaxGesamt), die Coupons aber weiter;
+	// ohne Wachstum gab es keinen Bestwert. Ab Endlos.LPWachstumAbWelle je Welle Endlos.LPWachstum mehr Leben (zinsartig).
+	if (mEndlos)
+	{
+		// 23.11. (Marius: Einsatz schwerer, Gegencheck 0.13): Endlos eigener Faktor je Stufe, damit die Stufen-LP des Einsatzes Endlos
+		// nicht mitziehen (Endlos Normal lag schon unter dem Band)
+		LPFaktor *= TDBalance::Wert(FString::Printf(TEXT("Endlos.%s.LPFaktor"), S.Name), 1.f);
+		LPFaktor *= FMath::Pow(1.f + TDBalance::Wert(TEXT("Endlos.LPWachstum"), 0.03f),
+			static_cast<float>(FMath::Max(0, Nummer - TDBalance::Ganz(TEXT("Endlos.LPWachstumAbWelle"), 50))));
+	}
+	return LPFaktor;
 }
 
 void UTDWaveSubsystem::SpawneKernWelle(int32 Nummer)
@@ -2718,16 +2786,7 @@ void UTDWaveSubsystem::SpawneKernWelle(int32 Nummer)
 	// Lebenspunkte wachsen mit der Welle; die Zusammensetzung steht im Wellenplan (T3, in der Bauphase festgelegt)
 	const FTDStufe& S = GetStufe(mStufe);
 	mElites = 0;
-	// 0.9.1 (Simulation 09.11.): ab W31 waechst das Leben schneller, Phase 4-5 hatte im Modell zu viel Luft. Im Spiel nachmessen.
-	const float JeWelle = TDBalance::Wert(TEXT("Wellen.LPJeWelle"), 0.08f);
-	float LPFaktor = S.LP * (1.f + JeWelle * FMath::Min(Nummer - 1, 30) + TDBalance::Wert(TEXT("Wellen.LPJeWelleAb31"), 0.1f) * FMath::Max(Nummer - 31, 0));
-	// 16.11. (Fahrplan P2, Simulation): Endlos - nach W50 waechst die Gegnerzahl nicht mehr (Wellen.MaxGesamt), die Coupons aber weiter;
-	// ohne Wachstum gab es keinen Bestwert. Ab Endlos.LPWachstumAbWelle je Welle Endlos.LPWachstum mehr Leben (zinsartig).
-	if (mEndlos)
-	{
-		LPFaktor *= FMath::Pow(1.f + TDBalance::Wert(TEXT("Endlos.LPWachstum"), 0.03f),
-			static_cast<float>(FMath::Max(0, Nummer - TDBalance::Ganz(TEXT("Endlos.LPWachstumAbWelle"), 50))));
-	}
+	const float LPFaktor = LPFaktorFuer(Nummer);   // 24.11.: eigene Funktion, auch fuer den ADA-Hinweis vor der Welle
 	mWellenWachstum = LPFaktor / FMath::Max(S.LP, 0.01f);
 	if (mPlanWelle != Nummer)
 	{
@@ -2894,6 +2953,7 @@ void UTDWaveSubsystem::SpawneKernWelle(int32 Nummer)
 	}
 	mWellenZeit = 0.f;
 	mZeitBisSteuerung = 0.f;
+	SpawneFlieger(Nummer);   // 23.11. (Flieger, Spezifikation E5)
 	const FString GesamtText = mWellenGesamt > 0 ? FString::Printf(TEXT("/%d"), mWellenGesamt) : FString();
 	if (S.bZusammensetzung)
 	{
@@ -3085,6 +3145,7 @@ void UTDWaveSubsystem::MesseWellenStart()
 	const float Referenz = TDBalance::Wert(TEXT("Metrik.Referenzzeit"), 60.f);
 	mMessQ = mMessK > 0.f ? mMessEHP / (mMessK * Referenz) : 0.f;
 	mMessKernStart = Kern->GetTDHealth();
+	Kern->mMessTreffer.Reset();   // 24.11.: Kernschaden je Gegnerart
 	const UTDEinsatzSubsystem* EinsatzMess = GetWorld()->GetSubsystem<UTDEinsatzSubsystem>();
 	mMessEP = EinsatzMess ? EinsatzMess->Konto() : Kern->mEinsatzPunkte;   // 0.10.0: Coupons als Items
 	mMessNaechste = BIG_NUMBER;
@@ -3134,6 +3195,15 @@ void UTDWaveSubsystem::MeldeMetrik(float Anteil)
 	UE_LOG(LogFicsitTD, Log, TEXT("Metrik Welle %d: Q %.2f, Dauer %.0f s, Kernverlust %.1f %% (Kern %.0f %%), knappste Annaeherung %.1f m, Auslastung %.0f %%, ")
 		TEXT("Schaden %.0f (Overkill %.0f %%, Nebenziele %.0f %%), Uptime %.0f %% (Mittel %d Tuerme), Munitionsmangel mit Ziel %.0f s, ohne Strom %.0f s (Turm-Sekunden), EP ungenutzt zu Beginn %d"),
 		mWelle, mMessQ, mWellenZeit, Verlust, Anteil, Naechste, 100.f * Auslastung, Schaden, OverkillAnteil, NebenAnteil, UptimeMittel, Tuerme, Hungrig, OhneStrom, mMessEP);
+	// 24.11.2026 (Simulator: Verlust je Gegnerart eichen): wer den Kern wie stark getroffen hat
+	{
+		TArray<FString> Teile;
+		for (const TPair<FString, ATDDefenseCore::FTDKernTreffer>& P : Kern->mMessTreffer)
+		{
+			Teile.Add(FString::Printf(TEXT("%s %.0f LP von %d Gegnern (%d Treffer)"), *P.Key, P.Value.Schaden, P.Value.Angreifer.Num(), P.Value.Treffer));
+		}
+		UE_LOG(LogFicsitTD, Log, TEXT("Kernschaden Welle %d: %s"), mWelle, Teile.Num() ? *FString::Join(Teile, TEXT(", ")) : TEXT("keiner"));
+	}
 
 	// 0.9.6 P0: Spielerschaden der Welle und sein Anteil am gesamten Wellenschaden
 	float SpielerSchaden = 0.f;
@@ -3194,15 +3264,82 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 		StoppeLauf(TDT(TEXT("Kern-Verteidigung beendet: der Abwehrkern wurde abgebaut."), TEXT("Core defense ended: the Defense Core was dismantled.")));
 		return;
 	}
+	// 0.13 N1: nach einem Bau-Ereignis die Sperrflaechen nachziehen (auch in der Welle: Endlos und Bohrung erlauben Bauen)
+	if (mBauSperrenUhr > 0.f)
+	{
+		mBauSperrenUhr -= DeltaTime;
+		if (mBauSperrenUhr <= 0.f)
+		{
+			SperreBautenUm(mKern->GetActorLocation());
+		}
+	}
+	// 0.13 K4: Lebensadern fuer die Wegpruefung beim Bauen (eine Richtung je Bild)
+	PflegeLebensadern(DeltaTime);
+	// 23.11. (Gegencheck 0.13 F4): einmalige Pruefung nach dem Laden
+	if (mZugangLadeUhr >= 0.f && mLauf == ETDLauf::Aufbau && TDBalance::Wert(TEXT("KernZugang.Aktiv"), 1.f) > 0.f)
+	{
+		mZugangLadeUhr -= DeltaTime;
+		if (mZugangLadeUhr < 0.f)
+		{
+			const FTDKernZugang& Z = PruefeKernZugang(true);
+			if (Z.Zustand == ETDKernZugang::NetzNichtBereit && ++mZugangLadeVersuche < 6)
+			{
+				mZugangLadeUhr = 5.f;   // Netz noch im Umbau: spaeter noch einmal
+			}
+			else
+			{
+				mZugangLadeGeprueft = true;
+				UE_LOG(LogFicsitTD, Log, TEXT("Kern-Zugang nach dem Laden: %s (Sperre %s, %s)"), KernZugangName(Z.Zustand), Z.Sperre.IsEmpty() ? TEXT("-") : *Z.Sperre, *Z.SperreKlasse);
+				if (Z.IstGesperrt() && Z.bBau)
+				{
+					TDNetz::Melde(TDNetz::EArt::Abriegelung);
+					Ansage(KernZugangText(Z));
+					MarkiereSperrstelle(true);
+				}
+			}
+		}
+	}
+	// 0.13: Ring "instabiler Boden" als Leuchtsignale im Baumodus, Lueckensignale ausblenden
+	PflegeRingSignale(DeltaTime);
+	// Sperrflaechen abgerissener Bauten alle 3 s entfernen (sonst laufen Gegner um einen Bau herum, der nicht mehr steht)
+	mBauRaeumUhr -= DeltaTime;
+	if (mBauRaeumUhr <= 0.f)
+	{
+		mBauRaeumUhr = 3.f;
+		RaeumeBauSperren(false);
+	}
 	if (mLauf == ETDLauf::Aufbau)
 	{
 		// Gegnerklassen der naechsten Welle einmal vorladen (Test 0.31: erster Spawn einer Art ruckelte durch Nachladen)
 		if (mVorgeladenFuer != mWelle + 1)
 		{
 			mVorgeladenFuer = mWelle + 1;
+			mAufbauUhr = 0.f;
+			// 0.13 N1: Maschinen und Tuerme als Sperrflaeche ins Gegnernetz (auch nach dem Laden, die Kaesten werden nicht gespeichert)
+			VerbindeBauSperren();
+			SperreBautenUm(mKern->GetActorLocation());
+			// 23.11. (Gegencheck 0.13 F4): Riegelt ein Bestand (alter Spielstand) den Kern ab, erfaehrt der Spieler es jetzt beim Laden,
+			// nicht erst beim Wellenstart. Erst nach dem Netzumbau fuer die Sperrflaechen pruefen.
+			if (!mZugangLadeGeprueft && mZugangLadeUhr < 0.f)
+			{
+				mZugangLadeUhr = TDBalance::Wert(TEXT("KernZugang.LadePruefungNach"), 15.f);
+				mZugangLadeVersuche = 0;
+			}
 			PlaneWelle(mWelle + 1);
 			// 0.12-dev (Marius 16.11.): ADA meldet neue Gegnerarten und Bosse der naechsten Welle zu Beginn der Bauphase
 			TDAda::VorWelle(this, mKern.Get(), mWelle + 1, mPlan);
+			// 24.11.2026 (Marius: Option D): Hinweis, sobald ein Hog der naechsten Welle zwei Bolzen braucht (nur Einsatz, Overkill-Schwelle)
+			if (!mEndlos && !mBohrung)
+			{
+				static const TCHAR* HogPfad = TEXT("/Game/FactoryGame/Character/Creature/Enemy/Hog/Char_Hog.Char_Hog_C");
+				const UClass* Hog = LoadClass<AFGCreature>(nullptr, HogPfad);
+				const AFGCreature* Vorlage = Hog ? Cast<AFGCreature>(Hog->GetDefaultObject()) : nullptr;
+				const UFGHealthComponent* Leben = Vorlage ? Vorlage->GetHealthComponent() : nullptr;
+				if (Leben)
+				{
+					TDAda::PruefeBolzenSchwelle(this, mKern.Get(), Leben->GetMaxHealth() * LPFaktorFuer(mWelle + 1));
+				}
+			}
 			const double Start = FPlatformTime::Seconds();
 			int32 Neu = 0;
 			for (const FTDKatalogEintrag& E : KernKatalog)
@@ -3233,11 +3370,18 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 		}
 		const float Vorher = mCountdown;
 		mCountdown -= mManuell ? 0.f : DeltaTime;   // Einsatz: Countdown steht, /td kern weiter setzt ihn auf 0
+		// 23.11. (BautenP1, Gegencheck: im Einsatz lief die Klippenprobe erst beim Druck auf "Welle starten" - die Wege verschoben sich
+		// danach, was nach der Wegvorschau gebaut war, lag neben dem Weg): mit Gegner.FrontPruefungAufbau s nach Beginn der Bauphase
+		// Fronten abgleichen und Klippen proben, damit Vorschau und Marker den Weg der Welle zeigen. Beim Start prueft es noch einmal.
+		mAufbauUhr += DeltaTime;
+		const float FruehNach = TDBalance::Wert(TEXT("Gegner.FrontPruefungAufbau"), 5.f);   // 23.11. abends Marius: an
+		const bool bFrueh = FruehNach > 0.f && mAufbauUhr >= FruehNach && !mBohrung;
+		const bool bVorStart = mCountdown <= TDBalance::Wert(TEXT("Gegner.FrontPruefungVorStart"), 20.f);
 		// 16.11. (W06: Klippenprobe und Wellenstart im selben Frame - ein Hog fuhr sich fest, bevor das Netz die Sperre kannte):
 		// Frontpruefung schon 20 s vor dem Start, damit der Netzumbau vor der Welle fertig ist
 		// 18.11. (P12-E5): vor der ersten Welle die Fronten abgleichen - alle 2 s neu suchen, bis zwei Suchen dieselben Fronten liefern
 		// (hoechstens Gegner.FrontenWarteMax s). Erst dann Klippenprobe und Start; sonst haengt die Wahl am Stand des Netzes.
-		if (!mFrontenStabil && !mBohrung && mWelle == 0 && mCountdown <= TDBalance::Wert(TEXT("Gegner.FrontPruefungVorStart"), 20.f))
+		if (!mFrontenStabil && !mBohrung && mWelle == 0 && (bVorStart || bFrueh))
 		{
 			if (mFrontenWarte < TDBalance::Wert(TEXT("Gegner.FrontenWarteMax"), 30.f))
 			{
@@ -3277,7 +3421,14 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 				return;
 			}
 		}
-		if ((mFrontenStabil || mBohrung) && mFrontCheckWelle != mWelle + 1 && mCountdown <= TDBalance::Wert(TEXT("Gegner.FrontPruefungVorStart"), 20.f))
+		if (bFrueh && mFrontenStabil && mFrontCheckFruehWelle != mWelle + 1 && !bVorStart)
+		{
+			mFrontCheckFruehWelle = mWelle + 1;
+			UE_LOG(LogFicsitTD, Log, TEXT("Frontpruefung fuer Welle %d in der Bauphase (nach %.0f s)"), mWelle + 1, mAufbauUhr);
+			PruefeFrontenVorWelle(mWelle + 1);
+			MarkiereFronten();
+		}
+		if ((mFrontenStabil || mBohrung) && mFrontCheckWelle != mWelle + 1 && bVorStart)
 		{
 			mFrontCheckWelle = mWelle + 1;
 			PruefeFrontenVorWelle(mWelle + 1);
@@ -3343,6 +3494,12 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 			UE_LOG(LogFicsitTD, Log, TEXT("Wellenstart %d nach %.1f s Warten auf den Netzumbau (offen %d)"), mWelle + 1, mKlippenWarte, mKlippenOffen);
 			mKlippenWarte = 0.f;
 		}
+		// 0.13 K1 (Fahrplan-0.13, Marius 21.11.): riegelt ein Bau den Kern ab, startet die Welle nicht - Einsatz, Endlos und zwischen
+		// Bohrwellen. Sperrstelle auf Karte und im Chat, alle KernZugang.Wiederholung s erneut. Nichts wird abgerissen.
+		if (mCountdown <= 0.f && HalteStartFuerKernZugang(DeltaTime))
+		{
+			return;
+		}
 		if (mCountdown <= 0.f)
 		{
 			// 0.9.6 (Gesamtreview 12.11.): im Einsatz (manuell) lief der Versorgungs-Check nie - er hing an der 60-s-Marke des Countdowns
@@ -3388,6 +3545,7 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 			}
 			SpawneKernWelle(mWelle);
 			MesseWellenStart();
+			MeldeLebensaderKosten();   // 22.11. (H4): Kosten der Wegpruefung in der Bauphase
 			SpeichereLauf();
 		}
 		return;
@@ -3407,6 +3565,8 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 			PruefeNachzuegler(G, Abstand, DeltaTime);
 		}
 	}
+	// 23.11. (Flieger): Flieger zaehlen zur Welle (25.11.: Voegel und Mantas statt Krabben)
+	const int32 FliegerLebend = PflegeFlieger();
 	// T5: Nachschub - alle NachschubTakt s bis zu NachschubPaket Gegner, solange weniger als MaxGleichzeitig leben
 	if (mNachschubIndex < mNachschub.Num())
 	{
@@ -3444,7 +3604,7 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 		}
 	}
 	bool bUeberlauf = false;
-	if (Lebend > 0 || mNachschubIndex < mNachschub.Num())
+	if (Lebend > 0 || FliegerLebend > 0 || mNachschubIndex < mNachschub.Num())
 	{
 		// 0.11 (Gegencheck F3, Marius 15.11.): im Endlos-Modus zaehlt der Abstand ab Wellenbeginn - laeuft er ab, kommt die naechste
 		// Welle obendrauf (die Reste bleiben im Feld). So haelt auch ein ueberlebender Nachzuegler die Uhr nicht an.
@@ -3476,6 +3636,12 @@ void UTDWaveSubsystem::LaufTick(float DeltaTime)
 	}
 	if (mWellenGesamt > 0 && mWelle >= mWellenGesamt)
 	{
+		// 23.11. (Gegencheck Konzept D, Marius "Talente spuerbar"): auch die letzte Bosswelle (W50) bringt ihre Talentpunkte -
+		// vorher kehrte der Sieg vor der Vergabe zurueck (fuer die Ueberstunden ab W51)
+		if (!mEndlos && !mBohrung && mWelle % 10 == 0)
+		{
+			UTDPionier::BossGeschafft(this, mWelle);
+		}
 		mLauf = ETDLauf::Aus;
 		SpeichereLauf();
 		if (ATDDefenseCore* SiegKern = mKern.Get())
@@ -3935,19 +4101,61 @@ bool UTDWaveSubsystem::SperreKlippe(AActor* Klippe, const FVector* Stelle)
 						Naechster = k;
 					}
 				}
-				for (int32 k = Naechster; k < Weg.Num() - 1 && !bVerlegt; ++k)
+				// 22.11. (Handspiel H7: sechs Verlegungen hintereinander zogen Front 1 von 270 m auf 85 m an den Kern - die Hogs erschienen
+				// "einfach so" kurz vor der Basis): nie naeher als Gegner.FrontMinAbstand (150 m); sonst bleibt der Startpunkt, die Klippe frei
+				const float FrontMin = FMath::Max(6000.f, TDBalance::Wert(TEXT("Gegner.FrontMinAbstand"), 150.f) * 100.f);
+				// 23.11. (Gras-S8 Front 1, zweimal in W43: der Startpunkt wanderte in drei Schritten mitten in ein Klippenfeld; Elite-Stinger,
+				// Alpha-Hog und Spucker-Alpha (Kapsel 110-180 cm, die Klippenprobe prueft mit 70 cm) blieben gleich nach dem Spawn an den
+				// Pfeilern haengen): der neue Startpunkt braucht Freiraum ohne Klippe im Umkreis Gegner.FrontFreiRadius. Erst ohne einen
+				// solchen Punkt gilt wie bisher der erste Wegpunkt hinter der Sperre.
+				const float FreiRadius = TDBalance::Wert(TEXT("Gegner.FrontFreiRadius"), 12.f) * 100.f;
+				auto KlippeNah = [this, FreiRadius](const FVector& P)
 				{
-					if (!Schutz.IsInsideXY(Weg[k]) && FVector::Dist2D(Weg[k], Kern->GetActorLocation()) > 6000.f)
+					if (FreiRadius <= 0.f)
 					{
-						UE_LOG(LogFicsitTD, Log, TEXT("Klippensperre: Startpunkt von Front %d hinter %s verlegt (%s -> %s)"), i + 1, *Modell,
-							*mFronten[i].Ort.ToCompactString(), *Weg[k].ToCompactString());
-						mFronten[i].Ort = Weg[k];
-						if (Kern->mLaufFrontOrte.IsValidIndex(i))
-						{
-							Kern->mLaufFrontOrte[i] = Weg[k];
-						}
-						bVerlegt = true;
+						return false;
 					}
+					// 8 waagerechte Strahlen in 1,5 m Hoehe: trifft einer im Umkreis eine Klippe, steht dort eine Wand oder ein Pfeiler.
+					// Begehbarer Felsboden (CliffFlat) unter dem Punkt zaehlt nicht (Nachtest: Front 3 auf Gras-S8 galt sonst als "ohne Freiraum").
+					FCollisionQueryParams Abfrage(TEXT("TDFrontFrei"), true);
+					const FVector Mitte = P + FVector(0.f, 0.f, 150.f);
+					for (int32 r = 0; r < 8; ++r)
+					{
+						FHitResult Hit;
+						const FVector Ende = Mitte + FRotator(0.f, 45.f * r, 0.f).Vector() * FreiRadius;
+						if (GetWorld()->LineTraceSingleByChannel(Hit, Mitte, Ende, ECC_WorldStatic, Abfrage) && Hit.GetActor()
+							&& Hit.GetActor()->GetClass()->GetName().Contains(TEXT("CliffActor")))
+						{
+							return true;
+						}
+					}
+					return false;
+				};
+				int32 Ziel = INDEX_NONE, ErsterHinter = INDEX_NONE;
+				for (int32 k = Naechster; k < Weg.Num() - 1 && Ziel == INDEX_NONE; ++k)
+				{
+					if (Schutz.IsInsideXY(Weg[k]) || FVector::Dist2D(Weg[k], Kern->GetActorLocation()) <= FrontMin)
+					{
+						continue;
+					}
+					ErsterHinter = ErsterHinter == INDEX_NONE ? k : ErsterHinter;
+					Ziel = KlippeNah(Weg[k]) ? INDEX_NONE : k;
+				}
+				const bool bFrei = Ziel != INDEX_NONE;
+				Ziel = bFrei ? Ziel : ErsterHinter;
+				if (Ziel != INDEX_NONE)
+				{
+					TDNetz::MeldeHilfe(TDNetz::EHilfe::FrontVerlegt);
+					const FString Frei = bFrei ? FString::Printf(TEXT("frei im Umkreis %.0f m"), FreiRadius / 100.f)
+						: FString(TEXT("OHNE Freiraum - kein freier Wegpunkt hinter der Sperre"));
+					UE_LOG(LogFicsitTD, Log, TEXT("Klippensperre: Startpunkt von Front %d hinter %s verlegt (%s -> %s, %s)"), i + 1, *Modell,
+						*mFronten[i].Ort.ToCompactString(), *Weg[Ziel].ToCompactString(), *Frei);
+					mFronten[i].Ort = Weg[Ziel];
+					if (Kern->mLaufFrontOrte.IsValidIndex(i))
+					{
+						Kern->mLaufFrontOrte[i] = Weg[Ziel];
+					}
+					bVerlegt = true;
 				}
 			}
 			if (!bVerlegt)
@@ -4176,9 +4384,24 @@ int32 UTDWaveSubsystem::GeschosseGesamt = 0;
 
 void UTDWaveSubsystem::Tick(float DeltaTime)
 {
+	// 23.11. (Marius, Stromzweig): Kraftwerke je Brennstoff (TDStrom.cpp), alle Strom.Takt s
+	mStromUhr -= DeltaTime;
+	if (mStromUhr <= 0.f)
+	{
+		mStromUhr = TDBalance::Wert(TEXT("Strom.Takt"), 2.f);
+		FTDStrom::Pflege(GetWorld());   // auch im Modus Aus: setzt dort die Grundleistung zurueck
+	}
+	// 23.11. (Gegencheck Konzept R4-E): im Modus Aus keine Dauerarbeit fuer MAM-Karten und Turmstatus. Alle 2 s pruefen,
+	// ob der Modus aktiv ist (ModAktiv sieht auch einen von Hand gestarteten Einsatz). Welle, Rezepte und Lauf laufen weiter.
+	mModusUhr -= DeltaTime;
+	if (mModusUhr <= 0.f)
+	{
+		mModusUhr = 2.f;
+		mModusAktiv = UTDKernplatz::ModAktiv(this);
+	}
 	// 0.65: Statuskarten im MAM (erforschbar / gesperrt ab Welle / Voraussetzung) einmal je Sekunde nachfuehren
 	mMamTakt -= DeltaTime;
-	if (mMamTakt <= 0.f)
+	if (mMamTakt <= 0.f && mModusAktiv)
 	{
 		mMamTakt = 1.f;
 		TDForschung::AktualisiereMamKarten(this);
@@ -4225,7 +4448,7 @@ void UTDWaveSubsystem::Tick(float DeltaTime)
 	{
 		// Ohne Welle trotzdem alle 10 s den Turmstatus loggen (Diagnose: warum schiesst er nicht?)
 		mZeitBisLog -= DeltaTime;
-		if (mZeitBisLog <= 0.f)
+		if (mZeitBisLog <= 0.f && mModusAktiv)   // 23.11. R4-E: nicht im Modus Aus
 		{
 			mZeitBisLog = 10.f;
 			for (const FString& Line : GetWallStatusLines())
@@ -4915,3 +5138,128 @@ bool UTDWaveSubsystem::DoesSupportWorldType(const EWorldType::Type WorldType) co
 {
 	return WorldType == EWorldType::Game || WorldType == EWorldType::PIE;
 }
+
+// ---------------------------------------------------------------------------------------------------------------
+// 23.11.2026 (Marius: "Flieger bauen"; Notizen/Spezifikation-Endgame-E4-E7-2026-11-09.md E5): Flieger ab Welle 43.
+// 25.11.2026 (Marius: "die Krabben sind keine Fluggeschoepfe, das soll was Realistisches sein"): statt der fliegenden Krabben
+// ein Vogelschwarm (Flieger.AbWelle) und ab Flieger.Manta.AbWelle Mantas, die in Abstand kreisen und Saeure auf den Kern spucken
+// (ATDFlieger, TDFlieger.cpp). Sie fliegen ohne Netz ueber Mauern, greifen nie den Spieler oder die Fabrik an. Voegel richten
+// am Kern Flieger.KernSchaden x Wellenwachstum an und verschwinden; ein Treffer toetet sie (Flieger.Vogel.LP).
+
+void UTDWaveSubsystem::SpawneFlieger(int32 Nummer)
+{
+	UWorld* World = GetWorld();
+	ATDDefenseCore* Kern = mKern.Get();
+	if (!World || !Kern || mBohrung || TDBalance::Wert(TEXT("Flieger.Aktiv"), 1.f) <= 0.f || mFronten.Num() == 0)
+	{
+		return;
+	}
+	const int32 Ab = TDBalance::Ganz(TEXT("Flieger.AbWelle"), 43);
+	const int32 MantaAb = TDBalance::Ganz(TEXT("Flieger.Manta.AbWelle"), 45);
+	if (Nummer < Ab && Nummer < MantaAb)
+	{
+		return;
+	}
+	const FTDStufe& S = GetStufe(mStufe);
+	const float Budget = TDBalance::Wert(FString::Printf(TEXT("Stufen.%s.Budget"), S.Name), 1.f);
+	const float Wachstum = 1.f + TDBalance::Wert(TEXT("Flieger.SchadenWachstum"), 0.25f) * FMath::Max(0.f, mWellenWachstum - 1.f);
+	FActorSpawnParameters Params;
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	auto Spawne = [&](UClass* Klasse, int32 i, float Hoehe, float LP, float Schaden) -> bool
+	{
+		const FVector Front = mFronten[i % mFronten.Num()].Ort;
+		const FVector Ort = Front + FVector(FMath::FRandRange(-800.f, 800.f), FMath::FRandRange(-800.f, 800.f), Hoehe * 100.f);
+		ATDFlieger* F = World->SpawnActor<ATDFlieger>(Klasse, Ort, (Kern->GetActorLocation() - Ort).Rotation(), Params);
+		if (!F)
+		{
+			return false;
+		}
+		F->Starte(Kern, LP, Schaden);
+		mFlieger.Add(F);
+		return true;
+	};
+	int32 Voegel = 0;
+	if (Nummer >= Ab)
+	{
+		const int32 Anzahl = FMath::Clamp(FMath::RoundToInt((TDBalance::Wert(TEXT("Flieger.Anzahl"), 6.f) + TDBalance::Wert(TEXT("Flieger.JeWelle"), 0.5f) * (Nummer - Ab)) * Budget),
+			1, TDBalance::Ganz(TEXT("Flieger.Max"), 24));
+		const float Schaden = TDBalance::Wert(TEXT("Flieger.KernSchaden"), 15.f) * Wachstum;
+		for (int32 i = 0; i < Anzahl; ++i)
+		{
+			Voegel += Spawne(ATDFliegerVogel::StaticClass(), i, TDBalance::Wert(TEXT("Flieger.Hoehe"), 6.f) + FMath::FRandRange(0.f, 4.f),
+				TDBalance::Wert(TEXT("Flieger.Vogel.LP"), 1.f), Schaden) ? 1 : 0;
+		}
+	}
+	int32 Mantas = 0;
+	float MantaLP = 0.f;
+	if (Nummer >= MantaAb)
+	{
+		const int32 Anzahl = FMath::Clamp(FMath::RoundToInt((TDBalance::Wert(TEXT("Flieger.Manta.Anzahl"), 1.f) + TDBalance::Wert(TEXT("Flieger.Manta.JeWelle"), 0.25f) * (Nummer - MantaAb)) * Budget),
+			1, TDBalance::Ganz(TEXT("Flieger.Manta.Max"), 6));
+		// Leben waechst wie bei den Bodengegnern (LPFaktorFuer), Grundwert gilt in der Einfuehrungswelle
+		MantaLP = TDBalance::Wert(TEXT("Flieger.Manta.LP"), 1500.f) * S.LP * LPFaktorFuer(Nummer) / FMath::Max(0.01f, LPFaktorFuer(MantaAb));
+		const float Schaden = TDBalance::Wert(TEXT("Flieger.Manta.Schaden"), 10.f) * Wachstum;
+		for (int32 i = 0; i < Anzahl; ++i)
+		{
+			Mantas += Spawne(ATDFliegerManta::StaticClass(), i + 1, TDBalance::Wert(TEXT("Flieger.Manta.Hoehe"), 18.f), MantaLP, Schaden) ? 1 : 0;
+		}
+	}
+	UE_LOG(LogFicsitTD, Log, TEXT("Flieger: %d Voegel, %d Mantas (%.0f LP) in Welle %d, %d Fronten"), Voegel, Mantas, MantaLP, Nummer, mFronten.Num());
+	if (Voegel > 0 && !mFliegerAngesagt)
+	{
+		mFliegerAngesagt = true;
+		Ansage(TDT(TEXT("FLIEGER! Ein Vogelschwarm greift den Kern aus der Luft an. Bodentürme treffen ihn nicht – der Himmelsturm und deine Handwaffen schon."),
+			TEXT("FLYERS! A flock of birds attacks the Core from the air. Ground turrets can't hit it – the Sky Tower and your hand weapons can.")));
+	}
+	if (Mantas > 0 && !mMantaAngesagt)
+	{
+		mMantaAngesagt = true;
+		Ansage(TDT(TEXT("MANTAS! Sie kreisen über dem Kern und spucken Säure. Sie halten viel aus – stell mehrere Himmelstürme in Kernnähe."),
+			TEXT("MANTAS! They circle above the Core and spit acid. They can take a lot – place several Sky Towers near the Core.")));
+	}
+}
+
+int32 UTDWaveSubsystem::PflegeFlieger()
+{
+	ATDDefenseCore* Kern = mKern.Get();
+	int32 Lebend = 0;
+	for (int32 i = mFlieger.Num() - 1; i >= 0; --i)
+	{
+		ATDFlieger* F = Cast<ATDFlieger>(mFlieger[i].Get());
+		if (!F || !IsValid(F) || F->IsActorBeingDestroyed())
+		{
+			mFlieger.RemoveAtSwap(i);
+			continue;
+		}
+		if (F->IstTot())
+		{
+			continue;   // Manta faellt noch
+		}
+		if (F->AmKern())
+		{
+			if (Kern)
+			{
+				Kern->ApplyTDDamage(F->GetKernSchaden(), F);
+			}
+			UE_LOG(LogFicsitTD, Log, TEXT("Flieger: %s am Kern, %.0f Schaden"), *F->Art(), F->GetKernSchaden());
+			F->Destroy();
+			mFlieger.RemoveAtSwap(i);
+			continue;
+		}
+		++Lebend;
+	}
+	return Lebend;
+}
+
+void UTDWaveSubsystem::EntferneFlieger()
+{
+	for (const TWeakObjectPtr<AActor>& F : mFlieger)
+	{
+		if (AActor* A = F.Get())
+		{
+			A->Destroy();
+		}
+	}
+	mFlieger.Reset();
+}
+

@@ -9,6 +9,7 @@
 #include "Unlocks/FGUnlockInfoOnly.h"
 #include "FicsitTDModule.h"
 #include "TDSprache.h"
+#include "TDKernplatz.h"
 
 #include "TDForschungInfo.inl"
 
@@ -102,7 +103,8 @@ namespace TDForschung
 		{
 			return ETDForschungZustand::Erforscht;
 		}
-		if (!GewaehlteAndere(WorldContext, K).IsEmpty())
+		// A6 Entscheidung 8: im Freien Spiel mit Abwehr kostet die Gegenseite doppelt, statt gesperrt zu sein
+		if (!GewaehlteAndere(WorldContext, K).IsEmpty() && !UTDKernplatz::IstAbwehr(WorldContext))
 		{
 			return ETDForschungZustand::Ausgeschlossen;
 		}
@@ -113,6 +115,11 @@ namespace TDForschung
 				return ETDForschungZustand::Gesperrt;
 			}
 		}
+		// 23.11. (Gegencheck 0.13 F2): im Freien Spiel mit Abwehr gibt es keine Freigabe "ab Welle" (wie UTDWellenAbhaengigkeit)
+		if (UTDKernplatz::IstAbwehr(WorldContext))
+		{
+			return ETDForschungZustand::Moeglich;
+		}
 		const UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
 		const UTDWaveSubsystem* Waves = World ? World->GetSubsystem<UTDWaveSubsystem>() : nullptr;
 		const int32 Naechste = Waves ? Waves->GetFreigabeWelle() : 1;
@@ -121,13 +128,14 @@ namespace TDForschung
 
 	/** 0.85 (L1): Knoten- und Baumname in der Spielsprache. Die Knotentabelle ist deutsch (Schluessel, Vergleiche);
 	 *  englisch kommen die Baumnamen von hier, die Knotennamen aus der Asset-Uebersetzung (TDSprache::Nachschlagen) */
-	static FString Anzeige(const FString& De)
+	FString Anzeige(const FString& De)
 	{
 		if (!TDSprache::Englisch())
 		{
 			return De;
 		}
 		if (De == TEXT("Industrie")) return TEXT("Industry");
+		if (De == TEXT("Energie")) return TEXT("Power");
 		if (De == TEXT("Ballistik")) return TEXT("Ballistics");
 		if (De == TEXT("Elementar")) return TEXT("Elemental");
 		if (De == TEXT("Festung")) return TEXT("Fortress");
@@ -181,6 +189,18 @@ namespace TDForschung
 			return TDF(TEXT("Gesperrt: ab Welle %d"), TEXT("Locked: from wave %d"), Ab);
 		}
 		default:
+			// 23.11. (Gegencheck 0.13 F2): im Freien Spiel mit Abwehr kostet die Forschung Coupons, die Gegenseite einer Gabel doppelt
+			if (UTDKernplatz::IstAbwehr(WorldContext))
+			{
+				const bool bGegenseite = !GewaehlteAndere(WorldContext, K).IsEmpty();
+				const int32 Coupons = FMath::RoundToInt(K.FP * FMath::Max(1, TDBalance::Ganz(TEXT("Abwehr.CouponsJeFestplatte"), 10))
+					* (bGegenseite ? FMath::Max(1.f, TDBalance::Wert(TEXT("Abwehr.GabelFaktor"), 2.f)) : 1.f));
+				OutText = bGegenseite
+					? TDF(TEXT("Gegenseite einer Gabelung (%s gewählt): im Freien Spiel erlaubt, zum doppelten Preis. Kosten: %d Coupons."),
+						TEXT("Other side of a branch (%s chosen): allowed in Free play, at double price. Cost: %d Coupons."), *NameVon(GewaehlteAndere(WorldContext, K), K.Baum), Coupons)
+					: TDF(TEXT("Alle Voraussetzungen erfüllt. Kosten: %d Coupons."), TEXT("All prerequisites met. Cost: %d Coupons."), Coupons);
+				return bGegenseite ? TDT(TEXT("Erforschbar: doppelter Preis"), TEXT("Researchable: double price")) : TDT(TEXT("Jetzt erforschbar"), TEXT("Researchable now"));
+			}
 			OutText = TDF(TEXT("Alle Voraussetzungen erfüllt. Kosten: %d Festplatten."), TEXT("All prerequisites met. Cost: %d Hard Drives."), K.FP);
 			return TDT(TEXT("Jetzt erforschbar"), TEXT("Researchable now"));
 		}

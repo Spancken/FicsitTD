@@ -242,7 +242,7 @@ GEBAEUDE += [
         src_recipe="/Game/FactoryGame/Recipes/Buildings/Recipe_ConstructorMk1",
         entferne=["FGVertexAnimatedMeshComponent"],
         anzeige="Himmelsturm",
-        text="Flugabwehr: schiesst Flak-Kanister (Band-Eingang) auf fliegende Krabben in 60 m, 200 Schaden in 6 m. Greift keine Bodengegner an. Braucht Strom.",
+        text="Flugabwehr: schiesst Flak-Kanister (Band-Eingang) auf Flieger (Vögel, Mantas) in 60 m, 200 Schaden in 6 m. Greift keine Bodengegner an. Braucht Strom.",
         zutaten=[("/Game/FactoryGame/Resource/Parts/AluminumCasing/Desc_AluminumCasing.Desc_AluminumCasing_C", 20),
                  ("/Game/FactoryGame/Resource/Parts/ModularFrameHeavy/Desc_ModularFrameHeavy.Desc_ModularFrameHeavy_C", 2),
                  ("/Game/FactoryGame/Resource/Parts/Motor/Desc_Motor.Desc_Motor_C", 4)],

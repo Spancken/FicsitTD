@@ -29,6 +29,8 @@ class FICSITTD_API UTDKernplatz : public UWorldSubsystem
 	GENERATED_BODY()
 public:
 	static UTDKernplatz* Get(const UObject* WorldContext);
+	/** 22.11. (Handspiel H1): Kern, dessen Plattform steht, waehrend der Einsatz noch auf das Navigationsnetz wartet (sonst nullptr) */
+	class ATDDefenseCore* GetWartenderKern() const { return mWartetAufNetz ? mNeuerKern.Get() : nullptr; }
 	virtual void OnWorldBeginPlay(UWorld& InWorld) override;
 	/** 0.69.1 (S4): ist die Spieleinstellung "FICSIT Tower Defense" an? */
 	static bool TowerDefenseAn(const UObject* WorldContext);
@@ -43,6 +45,12 @@ public:
 	static bool SetzeModusAbwehr(const UObject* WorldContext);
 	/** Entwicklermodus: Saved/FicsitTD/Entwickler.txt oder -TDEntwickler */
 	static bool Entwicklermodus();
+	/** 23.11.2026 (Marius: "Oel sollte nicht zu weit weg sein"): je festem Kernplatz die Entfernung zum naechsten Rohoel-Knoten
+	 *  und zur naechsten Oelquelle (Ressourcenbrunnen), eine Zeile je Platz, auch ins Log */
+	static TArray<FString> OelBericht(UWorld* World);
+	/** 23.11. (Marius: Oel bleibt fern, Option D "so lassen, aber sagen"): Hinweis beim Einsatzstart, wie weit und in welcher Richtung
+	 *  das naechste Rohoel liegt (Knoten und Quelle). Leer, wenn keine Oelstelle geladen ist. */
+	static FString OelHinweis(UWorld* World, const FVector& Kern);
 	/** 16.11. (Nachpruefung B14): Selbsttest "Spielersicht" - schaltet den Entwicklermodus zur Laufzeit ab, damit ein Plan
 	 *  prueft, was ein Spieler ohne Entwicklerdatei sieht. Nur der Autotest setzt das; nicht gespeichert. */
 	static void SetzeSpielersicht(bool bAn);
@@ -115,6 +123,8 @@ private:
 	/** 0.69.1: Einsatz erst starten, wenn das Navigationsnetz um den neuen Kern steht (Test 0.69.0: Ansage "0 von 16") */
 	void WarteNetzFuerEinsatz();
 	TWeakObjectPtr<class ATDDefenseCore> mNeuerKern;
+	/** 22.11. (H1): Plattform steht, Einsatz wartet noch auf das Netz */
+	bool mWartetAufNetz = false;
 	int32 mEinsatzWarten = 0;
 	bool mNetzAufgefrischt = false;   // 0.9.4: Netz um die neue Plattform einmal neu erzeugen lassen
 	TWeakObjectPtr<AActor> mInvoker;

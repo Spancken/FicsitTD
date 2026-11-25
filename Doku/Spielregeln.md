@@ -21,11 +21,11 @@
 
 | Modus | Inhalt |
 |---|---|
-| **Einsatz** (Hauptmodus, **Standard für neue Spiele** seit 18.11.; **Startfenster** nach der Landung: Spielmodus und Stufe wählen, einmal je Spiel, `ATDSpielstand::mModusGewaehlt`, Schalter `Spielmodus.Startfenster`, Befehl `/td startfenster`) | fester Kernplatz je Biom, Kontingente, Coupons/Festplatten, Phasen mit Bossen |
+| **Einsatz** (Hauptmodus, **Standard für neue Spiele** seit 18.11.; **Startfenster** nach der Landung: Spielmodus und Stufe wählen, einmal je Spiel, `ATDSpielstand::mModusGewaehlt`, Schalter `Spielmodus.Startfenster`, Befehl `/td startfenster`) | fester Kernplatz je Biom, Kontingente, Coupons/Festplatten, Phasen mit Bossen. **Startkapital** 40 Coupons einmal je Einsatz, mit dem Startkit, nicht in Endlos-Wellen (`Einsatz.Start.Coupons`, 24.11., Marius: frühes Scheitern entschärfen; Stufen-LP unverändert) |
 | **Endlos-Wellen** *(0.11-dev, Spielmodus 2, Marius 15.11., nach Gegencheck)* | wie Einsatz (Kernplatz, Kontingente, Coupons/Festplatten, MAM), aber Wellen **auf Zeit**, **ohne Ende**, immer aus **einer** Front. **Zeitplan je Stufe** (erste Welle / Abstand): Erkundung 10 min / 240 s, Normal 8 min / 220 s, Hart 7 min / 165 s, Albtraum 6 min / 150 s (`Endlos.<Stufe>.ErsteWelle`, `.Abstand`). Der Abstand zählt **ab Wellenbeginn** und sinkt je Welle um 1,5 s bis 90 s (`Endlos.AbstandJeWelle`, `Endlos.AbstandMin`). Budget je Welle × 0,9 (`Endlos.BudgetFaktor`), ab Welle 50 je Welle 3 % mehr Gegnerleben, zinsartig (`Endlos.LPWachstum`, `Endlos.LPWachstumAbWelle`) – sonst gibt es nach W50 keinen Druck mehr (16.11., Simulation, Fahrplan P2). **Ab Welle 60** wächst zusätzlich die Gegnerzahl je Welle um 2 bis 240 (`Endlos.MehrGegnerJeWelle`, `Endlos.MaxGesamt`) und der Elite-Anteil um 1 Prozentpunkt je Welle bis 60 % (`Endlos.EliteMax`) *(17.11., Marius)*. Ist die Welle früher erledigt, bleibt die Restzeit als Pause, mindestens 30 s (`Endlos.MinPause`). Läuft die Zeit ab, kommt die nächste Welle **obendrauf** (Reste bleiben, 5 s `Endlos.UeberlaufPause`), anhalten geht nicht. **Gegnerstrom:** 2 Gegner je Sekunde statt Pakete von 5 alle 0,25 s, große Wellen schneller, damit der Nachschub nach der Hälfte des Abstands draußen ist (`Endlos.NachschubPaket`, `.NachschubTakt`, `.StromAnteil`). **Keine Bausperre** während der Welle. **Vorziehen** („Welle vorziehen“) gibt 1 Coupon je 10 s Restzeit (`Endlos.VorziehSekundenJeCoupon`). **Nach jeder Bosswelle** mindestens 5 min Pause (`Endlos.BossPause`) und eine Bonuswahl im Kern-Menü: +80 Coupons, Kern-LP dauerhaft +10 % oder +5 Festplatten (`Endlos.Bonus.*`, `Einsatz.Bonus.KernMax`); nicht abgeholte Boni bleiben offen, gewählt wird zwischen den Wellen. Eine **Bosswelle im Überlauf** (Boss lebt noch) bringt keine Pause und keinen Bonus; noch nicht losgeschickter Nachschub verfällt nicht, er kommt vor der nächsten Welle, und die Uhr läuft auch, solange Nachschub aussteht. *(Nachprüfung 16.11., Marius)* **Laden und Turmlevel** gehen auch in der Welle (keine Bausperre). **Keine Spielstände je Welle** (sonst ließe sich jede Welle über das Lademenü wiederholen). *(Nachprüfung 16.11., Marius)* **Kernverlust beendet den Lauf** mit Bestwert je Stufe (`Saved\FicsitTD\Bestwerte.json`; ohne Wertung bei Eingriffen oder erweiterten Spieleinstellungen), kein „Welle wiederholen“. Chat: eine Sammelzeile je Welle, Countdown-Marken nur 60 und 10 s. Der Modus wird am Kern gemerkt (`mLaufEndlos`); `/td modus einsatz` ändert ein Endlos-Spiel nicht. |
 | **Aus** *(Spielmodus 0, ab 0.11-dev)* | **Schutz bestehender Welten (18.11.):** Ein geladener Spielstand mit Bauten des Spielers, aber ohne Abwehrkern (z. B. eine Fabrikwelt ohne gespeicherten Modus) wird auf „Aus“ gesetzt, bevor ein Kernplatz entsteht; Hinweis im Chat (`Spielmodus.BestehendeWeltAus`). Normales Satisfactory: keine TD-Rezepte, TD-Forschungsbäume gesperrt (`UTDModusAbhaengigkeit`), kein Kernplatz, kein Knopf „Einsatz starten“. Nur der Spielmodus zählt, ein gebauter Kern nicht (Marius 15.11.). Alte Stände, deren Einsatz ohne Spielmodus lief, stellen ihn mit `/td modus einsatz` um (bleibt beim Speichern erhalten, belegt im Plan `ModusAus`). |
 | **Kern-Verteidigung** | freies Feld, Kern beliebig, ohne Kontingente („Sandkasten“ nur noch hierfür, Tests; ab 0.11-dev nur im Entwicklermodus von Hand) |
-| **Freies Spiel mit Abwehr** *(0.12-dev, Spielmodus 3, Marius 15.11., Gegencheck Normalspiel)* | normales Satisfactory mit HUB und Meilensteinen, dazu Türme, Mauern und Abwehr-Forschung. **Leitsatz:** Die Fabrik ernährt die Verteidigung, die Verteidigung bringt Ertrag. Nichts greift an, was du nicht eingeschaltet hast. Wer verliert, verliert nur den Ertrag. **Forschung:** Ballistik, Elementar, Festung kosten Coupons statt Festplatten (10 je Festplatte, `Abwehr.CouponsJeFestplatte`); der Baum Industrie ist verborgen, seine Knoten gelten als erforscht, sobald der HUB ihre Spielrezepte freigeschaltet hat. Keine Freigabe „ab Welle“. Turmlevel mit Coupons. Kein Laden, keine Kontingente, kein Kernplatz. **Bohrung:** Abwehrkern als Tiefbohrer höchstens 30 m neben einem festen Rohstoffknoten (nur echte Knoten, keine Rohstoffbrocken *(Nachprüfung 16.11., Marius)*); vor dem Start Platzprüfung im Klartext (Knoten, begehbare Wege). Stufen Leicht (Wellen 1–4, 8000 LP, 60 Erz je Welle), Mittel (15–19, 18000 LP, 120 Erz) erst nach einem Erfolg auf Leicht, Schwer (25–30 mit Boss, 24000 LP, 200 Erz) nach Mittel. Erz × Reinheit (unrein 0,5, rein 2). Nach jeder abgewehrten Bohrwelle repariert sich der Kern um 10 % (`Bohrung.Reparatur`; 16.11., Simulation, Fahrplan P3). **Erstlohn** je Rohstoff und Stufe einmal: 2/4/6 Festplatten, auf Schwer +1 Talentpunkt; wiederholbar nur Erz und Pionier-XP (60/120/200). In der Bohrung zerstörte Bauten geben ihr Baumaterial zurück, und zu Beginn jeder Bohrwelle heilen alle Verteidigungsbauten auf 100 % wie im Einsatz *(Nachprüfung 16.11., Marius)*. Wildtiere greifen die Abwehrbauten nicht an, nur die Wellengegner der Bohrung; ein zweiter Kern ist kein Ziel. Kern-Schild und Notreparatur wirken auch in der Bohrung. Bänder rüsten hier nicht automatisch auf (das macht der HUB). Die Forschung kennt hier keine Freigabe „ab Welle“, auch nicht über die Bedingung im Knoten *(Nachprüfung 16.11., Marius)*. Abbruch jederzeit ohne Strafe, bei Kernverlust endet nur der Lauf (Kern repariert sich), nach dem Laden endet eine laufende Bohrung ohne Strafe. Speichern in der Bohrungswelle gesperrt wie im Einsatz. Alte Stände: `/td modus abwehr`. Schlüssel `Bohrung.<Stufe>.*`. |
+| **Freies Spiel mit Abwehr** *(0.12-dev, Spielmodus 3, Marius 15.11., Gegencheck Normalspiel)* | normales Satisfactory mit HUB und Meilensteinen, dazu Türme, Mauern und Abwehr-Forschung. **Leitsatz:** Die Fabrik ernährt die Verteidigung, die Verteidigung bringt Ertrag. Nichts greift an, was du nicht eingeschaltet hast. Wer verliert, verliert nur den Ertrag. **Forschung:** Ballistik, Elementar, Festung kosten Coupons statt Festplatten (10 je Festplatte, `Abwehr.CouponsJeFestplatte`); der Baum Industrie ist verborgen, seine Knoten gelten als erforscht, sobald der HUB ihre Spielrezepte freigeschaltet hat. Keine Freigabe „ab Welle“. Turmlevel mit Coupons. Kein Laden, keine Kontingente, kein Kernplatz. **Bohrung:** Abwehrkern als Tiefbohrer höchstens 30 m neben einem festen Rohstoffknoten (nur echte Knoten, keine Rohstoffbrocken *(Nachprüfung 16.11., Marius)*); vor dem Start Platzprüfung im Klartext (Knoten, begehbare Wege). *(0.13-dev, Selbsttest 22.11.)* Riegeln Wände, Fundamente oder seit N1 auch Maschinen und Türme (Sperrflächen im Gegnernetz) den Bohrer ab, startet die Bohrung nicht. Solange eine Bohrung läuft, prüft der Mod das auch vor jeder Bohrwelle und im Hologramm *(Marius 23.11.: bestätigt, wie im Endlos)*; nach der Bohrung ist die Welt wieder frei; die Meldung nennt Bau und Stelle, die Karte markiert sie. Bestehende Fabrik bleibt stehen. Stufen Leicht (Wellen 1–4, 8000 LP, 60 Erz je Welle), Mittel (15–19, 18000 LP, 120 Erz) erst nach einem Erfolg auf Leicht, Schwer (25–30 mit Boss, 24000 LP, 200 Erz) nach Mittel. Erz × Reinheit (unrein 0,5, rein 2). Nach jeder abgewehrten Bohrwelle repariert sich der Kern um 10 % (`Bohrung.Reparatur`; 16.11., Simulation, Fahrplan P3). **Erstlohn** je Rohstoff und Stufe einmal: 2/4/6 Festplatten, auf Schwer +1 Talentpunkt; wiederholbar nur Erz und Pionier-XP (60/120/200). In der Bohrung zerstörte Bauten geben ihr Baumaterial zurück, und zu Beginn jeder Bohrwelle heilen alle Verteidigungsbauten auf 100 % wie im Einsatz *(Nachprüfung 16.11., Marius)*. Wildtiere greifen die Abwehrbauten nicht an, nur die Wellengegner der Bohrung; ein zweiter Kern ist kein Ziel. Kern-Schild und Notreparatur wirken auch in der Bohrung. Bänder rüsten hier nicht automatisch auf (das macht der HUB). Die Forschung kennt hier keine Freigabe „ab Welle“, auch nicht über die Bedingung im Knoten *(Nachprüfung 16.11., Marius)*. Abbruch jederzeit ohne Strafe, bei Kernverlust endet nur der Lauf (Kern repariert sich), nach dem Laden endet eine laufende Bohrung ohne Strafe. Speichern in der Bohrungswelle gesperrt wie im Einsatz. Alte Stände: `/td modus abwehr`. Schlüssel `Bohrung.<Stufe>.*`. |
 | Belagerung, Säuberung, Munitionswellen, Fabrik-Störungen | *(abgelöst 15.11. – Bedrohung aus der Fabrik passt nicht ins gemütliche Freie Spiel; aufgehoben für einen späteren eigenen harten Modus)* |
 | Mehrspieler | nicht unterstützt |
 
@@ -41,16 +41,28 @@
    - Der Mod wählt einen von drei festen Kernplätzen im Startbiom.
    - Dort baut er eine Plattform aus Spielfundamenten (6 × 6, 1 m erhöht, Rampenring mit Ecken) und räumt den Bewuchs in 60 m Umkreis.
    - Dann setzt er den Abwehrkern, startet den Einsatz und spielt die ADA-Begrüßung (Deutsch/Englisch).
-   - *(0.12-dev, Marius 16.11.)* ADA meldet sich zu Beginn der Bauphase vor einer Welle mit neuer Gegnerart oder Boss mit einem kurzen Satz (Stimme + ADA-Zeile im Chat, je Lauf einmal, ab W60 ein kurzer Satz je Bosswelle; `TDAda.cpp`, abschaltbar `ADA.Ansagen 0`). Gilt in allen Modi mit Wellen, auch in der Bohrung.
+   - *(0.12-dev, Marius 16.11.)* ADA meldet sich zu Beginn der Bauphase vor einer Welle mit neuer Gegnerart oder Boss mit einem kurzen Satz (Stimme + ADA-Zeile im Chat, je Lauf einmal, ab W60 ein kurzer Satz je Bosswelle; `TDAda.cpp`, abschaltbar `ADA.Ansagen 0`). Gilt in allen Modi mit Wellen, auch in der Bohrung. *(24.11., Marius: Option D)* Im Einsatz zusätzlich einmal der Hinweis „Hogs brauchen zwei Bolzen“ vor der ersten Welle, in der ein Hog mehr LP hat als der stärkste Bolzenturm je Treffer Schaden macht (Normal mit Bolzen L2: W5, Hog 53 gegen 48). Ab dann verpufft ein großer Teil des Bolzenschadens als Overkill (`TDAda::PruefeBolzenSchwelle`).
 2. **Aufbauphase:** Ohne Zeitdruck. Die Welle startet mit dem Knopf „Welle starten“ im Kern-Menü (oder `/td kern weiter`); beim Start meldet der Kern im Chat Türme ohne Munition oder Strom (die Meldung hält die Welle nicht auf). Gebaut wird mit dem Startkontingent und mit gekauften Kontingenten. Meilensteine am HUB sind im Einsatz gesperrt, neue Technik gibt es nur im MAM. Blaupausen sind im Einsatz nicht erlaubt (Marius 12.11.).
 3. **Welle:**
    - Die Gegner kommen aus 1–3 Fronten und laufen auf Navigationswegen zum Kern.
    - Zu Beginn heilen alle Verteidigungsbauten auf 100 %.
-   - Im Verteidigungsfeld (120 m um den Kern) ist das Bauen aller Gebäude mit Kontingent gesperrt, also auch Splitter, Verbinder, Lager, Puffer und Generatoren. Bänder, Rohre, Stromleitungen und Fundamente darf man weiter bauen (Marius 12.11.). Der Laden ist in der Welle zu, Turmlevel und Talente gehen.
+   - Im Verteidigungsfeld (120 m um den Kern) ist das Bauen aller Gebäude mit Kontingent gesperrt, also auch Splitter, Verbinder, Lager, Puffer und Generatoren. Bänder, Rohre und Stromleitungen darf man weiter bauen (Marius 12.11.; Fundamente hat der Spieler im Einsatz nicht, siehe unten). Der Laden ist in der Welle zu, Turmlevel und Talente gehen.
    - Während der Welle kann nicht gespeichert werden, auch der Autosave ruht. Sonst ließe sich Beute durch Laden wiederholen.
    - Die Welle endet, wenn alle Gegner tot sind. Nachzügler werden versetzt oder entfernt.
-   - **Klippenprobe (ab 0.11-dev):** Vor jeder Welle fährt eine Gegner-Kapsel (Radius und Halbhöhe 70 cm) jeden vollen Frontweg in 2-m-Schritten ab. Klippen mit Flächen steiler als 45 Grad, an denen sie hängen bleibt, werden vorab aus dem Navigationsnetz genommen (`Gegner.KlippenProbe*`, höchstens `Gegner.KlippenSperrenMax` = 24). Nach dem Netzumbau planen marschierende Gegner ihren Weg neu. Liegt die Hängestelle am Startpunkt einer Front, wird der Startpunkt entlang des Frontwegs hinter die Sperrfläche verlegt (`Gegner.FrontVerlegen`, 16.11.).
-   - **Feste Fronten je Kernplatz (ab 0.11-dev, 18.11., Marius):** Jeder der 12 festen Kernplätze hat vier feste Fronten (Richtung und Abstand, gemessen auf Normal, Tabelle `TDFesteFronten`), in der Reihenfolge, in der sie aufgehen. Auf anderen Stufen gilt der Abstand der Stufe; hat er keinen vollen Weg, nimmt die Front den nächsten Abstand derselben Richtung. Fehlt einer festen Front noch der Weg (Netz nicht geladen), sucht die Prüfung vor der Welle neu, der Start wartet bis zu 30 s (`Gegner.FrontenWarteMax`), sonst zählt das Sicherheitsnetz „Fronten ungeprüft“. Kerne ohne festen Platz (Bohrung, Entwickler) wählen wie bisher: zuerst der längste geprüfte Weg, dann größter Winkelabstand. Schalter `Gegner.FesteFronten`.
+   - **Kern-Zugang (0.13-dev, Marius 21.11., Selbsttest 22.11.)**: Vor jeder Welle prüft der Mod, ob jede aktive Front den Kern erreicht.
+     - Riegeln Bauten den Kern ab, startet die Welle nicht. Das gilt im Einsatz, im Endlos und zwischen Bohrwellen.
+     - Erkannt werden Wände, Fundamente, Maschinen und Türme. Maschinen und Türme bekommen dafür im Umkreis von 250 m eine unsichtbare Sperrfläche im Netz der Gegner (`Gegner.BauSperren*`, 0.13-dev N1). Die Gegner laufen um sie herum statt hinein. Ausnahme ist das Ölschlick-Feld: Es ist zum Drüberlaufen da und bekommt keine Sperrfläche (`Gegner.SlickBegehbar`, 23.11.).
+     - Die Sperrstelle steht auf der Karte („Kern abgeriegelt: …“) und im Chat mit Bau, Abstand und Richtung, alle 30 s wiederholt.
+     - HUD und Kern-Menü zeigen „wartet: Kern abgeriegelt“. Ist wieder ein Weg frei, startet die Welle.
+     - TD-Mauern, Sperren, Tore und Zäune dürfen den Weg schließen, denn die Gegner greifen sie an.
+     - Abgerissen wird nie etwas.
+     - Ohne erkannten Bau (Gelände) wartet der Start höchstens 20 s (`KernZugang.*`).
+     - Die eigene Kernplattform riegelt nie ab. Endet der Weg an einem ihrer Fundamente, ist das Netz noch nicht fertig (Fels-S8 braucht nach dem Bau bis 95 s). Das zählt als Netzumbau: Die Ladeprüfung versucht es erneut, der Wellenstart wartet höchstens `KernZugang.WarteNetz`. Beim Bau des Kernplatzes frischt der Mod das Netz um die Plattform alle 20 s auf, bis aus 100 m ein voller Weg zum Kern führt, höchstens 120 s lang (`Kernplatz.NetzAuffrischTakt`, `Kernplatz.NetzWarteSekunden`).
+     - **Labyrinthe (23.11., Gegencheck Konzept Frage 5):** Ringe und Gänge aus Abwehrmauern mit Lücken sind erlaubt, die Gegner laufen den ganzen Umweg. Die Wegsuche prüft dafür bis zu 8192 Knoten (`Wege.SuchKnoten`, die Engine hat 2048). Mit der Engine-Grenze gab sie bei drei Ringen auf und meldete „Durchbrechbar“ (Selbsttest `Labyrinth`).
+   - **Instabiler Boden (0.13-dev K2, Marius 21.11.):** Im Einsatz und im Endlos lassen sich in 60 m um den Kern (Marius 22.11., vorher 40 m) keine Fabrikgebäude des Spiels bauen (Maschinen, Lager, Generatoren, MAM, Shop, HUB; `Einsatz.Ring.Radius`). Das Hologramm sagt „Boden instabil“. Bauten des Mods (Türme, Mauern, Stützbauten) und Logistik gehen. Was schon steht, bleibt stehen.
+   - **Wegprüfung beim Bauen (0.13-dev K4):** Solange ein Kern läuft, ist ein Bau, der den letzten Weg der Gegner zum Kern schließen würde, im Hologramm rot („Würde den letzten Weg zum Kern schließen“). Grundlage sind 16 Wege aus 16 Richtungen (120 m). Das gilt auch für Türme. Abwehrmauern, Sperren, Tore und Zäune dürfen schließen.
+   - **Klippenprobe (ab 0.11-dev):** Seit 23.11. läuft sie mit der Frontprüfung schon 5 s nach Beginn der Bauphase (`Gegner.FrontPruefungAufbau`), damit Wegvorschau und Frontmarker den echten Weg zeigen. Beim Wellenstart prüft sie noch einmal. Vor jeder Welle fährt eine Gegner-Kapsel (Radius und Halbhöhe 70 cm) jeden vollen Frontweg in 2-m-Schritten ab. Klippen mit Flächen steiler als 45 Grad, an denen sie hängen bleibt, werden vorab aus dem Navigationsnetz genommen (`Gegner.KlippenProbe*`, höchstens `Gegner.KlippenSperrenMax` = 24). Nach dem Netzumbau planen marschierende Gegner ihren Weg neu. Liegt die Hängestelle am Startpunkt einer Front, wird der Startpunkt entlang des Frontwegs hinter die Sperrfläche verlegt (`Gegner.FrontVerlegen`, 16.11.). Seit 23.11. nur auf einen Wegpunkt mit Freiraum: Im Umkreis von 12 m darf keine Klippe stehen (`Gegner.FrontFreiRadius`). Vorher landete der Start von Gras-S8 Front 1 mitten in einem Klippenfeld, und große Gegner (Kapsel bis 1,8 m, die Probe prüft mit 70 cm) blieben dort hängen.
+   - **Feste Fronten je Kernplatz (ab 0.11-dev, 18.11., Marius):** Jeder der 12 festen Kernplätze hat vier feste Fronten (Richtung und Abstand, gemessen auf Normal, Tabelle `TDFesteFronten`), in der Reihenfolge, in der sie aufgehen. Auf anderen Stufen gilt der Abstand der Stufe; hat er keinen vollen Weg, nimmt die Front den nächsten Abstand derselben Richtung. Fehlt einer festen Front noch der Weg (Netz nicht geladen), sucht die Prüfung vor der Welle neu, der Start wartet bis zu 30 s (`Gegner.FrontenWarteMax`), sonst zählt das Sicherheitsnetz „Fronten ungeprüft“. Gras-S8 Front 1 ist seit 24.11. r14 nah statt r13 fern; der Weg von r13 lief durch eine Schlucht. Messen lassen sich Kandidaten mit `Test.FrontR1..4`/`Test.FrontD1..4`, ohne neuen Build. Kerne ohne festen Platz (Bohrung, Entwickler) wählen wie bisher: zuerst der längste geprüfte Weg, dann größter Winkelabstand. Schalter `Gegner.FesteFronten`.
    - **Weltobjekte am Weg (ab 0.11-dev):** Erzvorkommen, Steinknoten, Krabbennester, Nuss- und Beerenbüsche bis 400 m um den Kern stehen als Sperrfläche im Navigationsnetz, die Wege führen um sie herum. Seit 18.11. laufen Wellengegner durch diese Objekte hindurch, wenn sie deren Kante streifen. Vorher blieben sie an der Kante hängen und mussten versetzt werden (`Gegner.HindernisseDurchlaufen`).
 4. **Nach der Welle:**
    - Es gibt Coupons, Festplatten und Biomasse.
@@ -66,7 +78,7 @@
 
 ## 4. Kontingente und Laden
 
-- **Begrenzt sind Produktions- und Verteidigungsgebäude**, je Typ. Logistik ist frei: Bänder, Lifte, Rohre, Stromleitungen, Fundamente. Splitter (auch Smart/Programmierbar), Verbinder, Lager und Flüssigkeitspuffer haben ein Kontingent und stehen nicht im Startkontingent, nur im Laden (Marius 02.11.). Das Abwägen zwischen neuer Fertigung und neuen Türmen ist gewollt (Marius, 05.11.).
+- **Begrenzt sind Produktions- und Verteidigungsgebäude**, je Typ. Logistik ist frei: Bänder, Lifte, Rohre, Stromleitungen. Fundamente, Wände und Rampen des Grundspiels sind im Einsatz und im Endlos nicht baubar: ihre Rezepte hängen an HUB-Meilensteinen, die gesperrt sind, und der Shop verkauft sie nicht (Marius 21.11., A5 Nr. 1, Probe `Rezeptprobe` 21.11.: 0 Rezepte). Splitter (auch Smart/Programmierbar), Verbinder, Lager und Flüssigkeitspuffer haben ein Kontingent und stehen nicht im Startkontingent, nur im Laden (Marius 02.11.). Das Abwägen zwischen neuer Fertigung und neuen Türmen ist gewollt (Marius, 05.11.).
 - **Laden** im Kern-Menü: Ein Kontingent kostet Coupons, und der Preis steigt mit jedem Kauf. Dazu gibt es Spielerausrüstung und Kernreparatur. Seit 0.9.4 ist der Laden nach Kategorien geordnet (Türme, Verteidigung, Produktion, Strom, Logistik, Pionier, Kern), jede zum Einklappen. Noch nicht Erforschtes ist ausgeblendet, unten steht „N weitere im MAM erforschbar“. Turmlevel kauft man nicht im Laden, sondern im Turmfenster.
 - **Spielerausrüstung und Kern im Laden** (kein Kontingent, wirkt sofort; Preise in der Laden-Tabelle unten). Ein Posten verschwindet, sobald das Maximum gekauft ist.
   - Inventarplätze: +5 je Kauf, höchstens 6 Käufe.
@@ -75,17 +87,27 @@
   - Klingenläufer hat man ab Start; der Laden bietet sie nur als Ersatz an, wenn man keine mehr hat (weder im Inventar noch angelegt) *(0.12, C9)*.
   - Nobelisken-Zünder ab der Forschung Caterium, mit 10 Nobelisken (`Einsatz.Laden.Nobelisken-Zünder.Beigabe`). Danach „Nobelisken“: 5 Stück je Kauf, jeder Kauf 20 % teurer. Damit lassen sich Felsen über Rohstoffknoten sprengen, ohne die Nobelisk-Kette *(0.12, C14)*.
   - Kernreparatur: +25 % Kern-LP je Kauf, jeder Kauf 50 % teurer. Nur sichtbar, wenn der Kern beschädigt ist.
+- **AWESOME-Shop als Laden** *(0.12 E4, Marius 14. und 21.11.)*: Nach Welle 1 (`Einsatz.Shop.AbWelle`, bis 21.11. nach Welle 2) kommt das Rezept des Shops, kostenlos, Kontingent 1. Er verkauft in sechs Bereichen *(22.11., Handspiel H5: vorher eine Kategorie „FICSIT-Abwehr“)*: Türme, Verteidigung, Produktion, Strom, Logistik, Pionier und Kern, darin Kontingente, Ausrüstung bzw. Kern und Festplatten alle Posten der Ladenliste: Kontingente mit Baumaterial, Ausrüstung, Inventar- und Handplätze, Kernreparatur und die **Festplatte** (40 Coupons, Aufschlag 0,25 = jede weitere 10 teurer, nur im Shop). Preis wie am Kern: `Grund × (1 + Aufschlag × Käufe)`; bei mehreren Stück in einem Kauf zieht der Mod die Staffel nach (das Spiel rechnet Stück × aktuellen Preis). Ein Posten ist sichtbar, solange der Einsatz läuft, er erforscht ist und seine Höchstzahl nicht erreicht. Sobald ein Shop steht, verkauft der Kern nicht mehr (`Einsatz.Shop.KernBisShop`), das Kern-Menü zeigt dann einen Hinweis und die Kontingente. Wahrheit sind die Kaufzähler am Kern (`mKontingentGekauft`); alte Stände behalten ihre Preise.
+- **AWESOME-Shop im Einsatz** *(0.12, Marius 21.11., A5 Nr. 1)*: Bei aktivem Einsatz oder Endlos blendet der Shop alle Artikel des Spiels aus (Fundamente, Wände, Fabrikwagen, Deko) und lehnt ihren Kauf ab (`Einsatz.Shop.SpielArtikelSperren`). Bauteile des Spiels sind im Einsatz damit weder baubar noch kaufbar. Im Freien Spiel mit Abwehr bleibt der Shop unverändert.
+- **Bonusfenster** *(0.12, Marius 21.11., C11)*: Nach jeder Bosswelle öffnet sich ein Fenster mit Phasenbericht und drei Bonus-Karten (Coupons, Kern-LP, Festplatten), dazu „Später wählen“; die Wahl bleibt im Kern-Menü offen (`Einsatz.Bonus.Fenster`).
+- **Einstieg** *(0.13, Marius 22.11.: „dann baut sich alles logisch auf“; vorher 0.12 E5 MAM → Shop)*: Zu Beginn Aufgabe „Baue die HUB“ (Strom aus den Biomasse-Brennern, Wiedereinstiegspunkt), nach Welle 1 „Baue den AWESOME-Shop“ (Kontingente), nach Welle 2 „Baue das MAM“ (`Einsatz.Mam.AbWelle`, Festplatten), je einmal im Chat und von ADA mit Stimme angesagt (Deutsch/Englisch, einmal je Kern), in der HUD-Zeile, solange das Gebäude fehlt.
+- **HUD-Statusleiste** *(0.12, Marius 21.11., C15)*: oben links Welle, Kern, Coupons, Festplatten, Rang; zweite Zeile „Noch baubar: …“ oder die Aufgabe „Baue den AWESOME-Shop“. Der Notizblock der To-do-Liste bekommt keinen Block mehr (das Spiel liest ihn nur beim Laden); `Einsatz.ToDo.Block` = 1 stellt ihn wieder her.
+- **Kernplattform** *(0.12, Marius 21.11., A5 Nr. 6)*: Fundamente und Rampen der Plattform (bis 36 m um den Kern, `Einsatz.Plattform.Radius`) lassen sich im Einsatz nicht abreißen (`Einsatz.Plattform.AbrissSperren`). Ohne Rampen erreicht kein Gegner den Kern (Testfenster 1).
 - **Pionier** (Reiter im Kern-Menü; Umbau nach `Notizen\Analyse-Spieler-und-Pionier-2026-11-12.md`: P0/P1 seit 0.9.6, P2 seit 0.9.7, P3/P4 seit 0.9.8):
   - **XP je Welle (0.9.8 halbiert):** 20 + 3 × N, +10 bei vollem Kern, jede zehnte Welle doppelt (`Pionier.XPWelle`, `XPJeWelle`, `XPKernVoll`). Dazu Leistungs-XP: 2 je Prozent Anteil am Wellenschaden (`Pionier.XPJeProzent`; der Anteil zählt höchstens bis `Pionier.XPAnteilKappe`, Standard 100 = ohne Kappe *(0.12, Regler für C10)*) und 1 je 200 reparierte LP (`Pionier.XPJeReparatur`). Eigener Abschuss 3 XP, Elite 10, Boss 50, wenn der Spieler den Gegner in den letzten 5 s getroffen hat. Assist 1 XP.
-  - **Rang (0.9.8):** Schwelle je Rang 5 + 20 × Rang (`Pionier.XPGrund`, `XPSchritt`): Rang 2 bei 25 XP (also nach Welle 1), 3 bei 70, 4 bei 135, 5 bei 220, höchstens Rang 16 (`Pionier.MaxRang`) = 15 Talentpunkte; Rang und Bohrung zusammen höchstens 15 (`Pionier.MaxPunkte` *(Nachprüfung 16.11., Marius)*). Alle 3 Ränge gibt es +10 LP und +3 % Lauftempo (`Pionier.RangBonusAlle`, `RangBonus.LP`, `RangBonus.Tempo`). Rang und Talente hängen am Spielstand (seit 0.12-dev `ATDSpielstand`) und bleiben auch nach dem Einsatz. Talente neu verteilen kostet 20 Coupons.
-  - **Vier Rollen-Zweige mit je 5 Stufen (0.9.8, P3/P4, Marius 12.11.):** zwei Zweige ganz oder drei zur Hälfte. Jede Stufe ist eine Fähigkeit, keine reine Prozentzahl. Der Reiter zeigt je Zweig die Wirkung der letzten Welle.
+  - **Rang (0.9.8):** Schwelle je Rang 5 + 20 × Rang (`Pionier.XPGrund`, `XPSchritt`): Rang 2 bei 25 XP (also nach Welle 1), 3 bei 70, 4 bei 135, 5 bei 220, höchstens Rang 16 (`Pionier.MaxRang`). **Talentpunkte (0.12, Marius 21.11., C10):** nur noch aus geschafften Bosswellen (`Pionier.PunkteJeBoss` 1, Einsatz und Endlos, mit der Bonuswahl) und aus der Bohrung, zusammen höchstens 15 (`Pionier.MaxPunkte` *(Nachprüfung 16.11.)*). Der Rang bringt nur noch die Boni; `Pionier.TalenteAusRang` 1 stellt die alte Regel (ein Punkt je Rang) wieder her. Im Einsatz gibt es so bis Welle 40 vier Punkte. Alle 3 Ränge gibt es +10 LP und +3 % Lauftempo (`Pionier.RangBonusAlle`, `RangBonus.LP`, `RangBonus.Tempo`). Rang und Talente hängen am Spielstand (seit 0.12-dev `ATDSpielstand`) und bleiben auch nach dem Einsatz. Talente neu verteilen kostet 20 Coupons.
+  - **Vier Rollen-Zweige mit je 5 Stufen (0.9.8, P3/P4, Marius 12.11.):** Im Einsatz gibt es 10 Punkte *(seit 23.11.: 2 je Bosswelle, auch für Welle 50; `Pionier.PunkteJeBoss`)*. Das reicht für zwei Zweige ganz oder drei zur Hälfte, Stufe 5 ist also erreichbar. Jede Stufe ist eine Fähigkeit, keine reine Prozentzahl. Der Reiter zeigt je Zweig die Wirkung der letzten Welle.
     - **Schütze** (Handwaffen): 1 Kopftreffer ×1,5 · 2 Schnellladen (Nachladen doppelt so schnell) · 3 Durchschlag (nächster Gegner dahinter bis 6 m, halber Schaden) · 4 Munition sparen (jeder vierte Treffer kostet nichts) · 5 Sprengmantel (jeder fünfte Treffer explodiert mit vollem Trefferschaden in 4 m).
     - **Kommandant** (Türme lenken): 1 Zielmarkierung · 2 markierte Gegner nehmen +15 % Turmschaden · 3 stirbt ein markierter Gegner, springt die Markierung auf den nächsten in 10 m · 4 Sammelbefehl (Türme in 30 m schießen 5 s auf dein Ziel) · 5 Übersteuern wirkt auf alle Türme in 20 m.
     - **Techniker** (Bauten halten): 1 Feldreparatur (Bauten in 8 m heilen 5 % LP je Sekunde, 300 LP je Eisenplatte) · 2 Feldreparatur doppelt so schnell · 3 Übersteuern (Knopf im Turmfenster, 10 s +50 % Takt, danach 60 s Pause) · 4 Nachschub (Türme in 20 m ohne Munition bekommen 10 Stück aus deinem Inventar) · 5 Bollwerk (einmal je Welle fällt ein Bau nicht, sondern hält mit halben LP).
     - **Jäger** (Elite und Boss): 1 Schaden an Elite und Boss ×1,5 · 2 selbst erlegte Elite oder Boss: Festplatten und Coupons fallen sicher · 3 Schwachstelle (ein getroffener Boss nimmt 5 s +25 % von allen Türmen) · 4 Boss-Balken zeigt Resistenzen und deinen Anteil · 5 Hinrichtung (Elite unter 15 % LP stirbt beim nächsten Treffer von dir).
   - Die alten Zweige Armierpistole/Gewehr/Nobelisk/Überleben/Mobilität gibt es seit 0.9.8 nicht mehr. Markierung und Jäger-Bonus wirken nur noch mit dem passenden Talent.
   - **Optik (0.10.0, Marius 14.11.):** Der Reiter Pionier zeigt je Rolle einen Kopf mit Spiel-Icon und Stufenplakette und je Stufe eine Kachel mit Icon (gelernt orange, lernbar mit orangem Rahmen, gesperrt gedämpft). Die HUD-Zeile zeigt Symbol und Namen der stärksten Rolle(n). Sichtbare Fähigkeiten an Türmen: Feldreparatur grüner Strahl, Sammelbefehl oranger Strahl zum Ziel, Übersteuern orangener Puls am Turmkopf, Bollwerk helles Aufblitzen.
-  - **Handwaffen treffen wie die Türme (0.9.6):** Armierpistole, Gewehr und Nobelisken nutzen den Munitionswert der Turm-Tabelle (Armierungsbolzen 40, Gewehrmunition 12, Nobelisk 150, bessere Munition entsprechend) statt des Spielwerts. Dazu gelten die Resistenzen der Gegner und ein Zuwachs mit der Welle: die Hälfte des LP-Zuwachses der Welle (`Pionier.WellenAnteil` 0,5). Regler je Waffe: `Pionier.HandFaktor.*`. Ziel (Marius 12.11.): Ein aktiver Spieler leistet 10–20 % des Wellenschadens, etwa wie ein guter Turm; die Balance bleibt für den passiven Spieler eingestellt.
+  - **Handwaffen treffen wie die Türme (0.9.6):** Armierpistole, Gewehr und Nobelisken nutzen den Munitionswert der Turm-Tabelle (Armierungsbolzen 40, Gewehrmunition 12, Nobelisk 150, bessere Munition entsprechend) statt des Spielwerts. Dazu gelten die Resistenzen der Gegner und ein Zuwachs mit der Welle. *Seit 23.11. (Gegencheck Konzept B2, Marius: früh dämpfen, spät stärken):*
+    - Der Zuwachs ist dreimal so groß wie der LP-Zuwachs der Welle (`Pionier.WellenAnteil` 3, vorher 0,5).
+    - Dafür bekommen Armierpistole, Gewehr und Nobelisk nur 0,3, 0,35 und 0,5 des Tabellenwerts (`Pionier.HandFaktor.*`).
+    - Im Prüfstand liegt der Anteil des Spielers damit über den ganzen Lauf bei etwa 12 % (8–24 %). Vorher waren es 29 % in den ersten Wellen und 4 % ab Welle 31.
+    - Das Gewehr gibt es erst nach der Forschung Gewehrturm im Shop. Ziel (Marius 12.11.): Ein aktiver Spieler leistet 10–20 % des Wellenschadens, etwa wie ein guter Turm; die Balance bleibt für den passiven Spieler eingestellt.
   - **Bilanz:** Spielerschaden, Anteil am Wellenschaden und Abschüsse stehen in der Meldung nach jeder Welle („Du: …“), im Log („Pionier Welle N“) und in `Metriken.csv` (`Spieler_Schaden`, `Spieler_Anteil_Proz`, seit 0.9.7 auch `Spieler_Assists`, `Spieler_Markbonus`).
   - **Zielmarkierung (0.9.7, P2; seit 0.9.8 nur mit Kommandant 1, Bonus mit Kommandant 2):** Jeder Spielertreffer markiert den Gegner 6 s (`Pionier.Markierung.Dauer`), sichtbar als blaues Licht über ihm. Alle Türme machen an markierten Gegnern +15 % Schaden (`Pionier.Markierung.Bonus` 1,15). Zielwahl „Markierte zuerst“ (neu) nimmt sie vor allen anderen, „Elite und Boss zuerst“ direkt nach dem Boss. Erledigt ein Turm einen markierten Gegner, ist das ein Assist: 1 XP (`Pionier.XPAssist`), Zähler im Wellenbericht.
   - **Jäger (0.9.7, P2; seit 0.9.8 Talent Jäger 1 und 2):** Spielerschaden an Eliten und Bossen ×1,5 (`Pionier.Jaeger.Faktor`). Erlegt der Spieler eine Elite oder einen Boss (Treffer in den letzten 5 s), fallen Festplatten und Coupons sicher (`Pionier.Jaeger.SichereBeute`).
@@ -100,7 +122,22 @@
   3. Spucker Wald
   4. Wüsten- und Wasserspucker
   5. Nuklear-Hog und Johnny
-- Fliegende Krabben kommen erst mit der Luftabwehr *(geplant)*.
+- **Flieger (seit 23.11., Marius: „Flieger bauen“; Spezifikation-Endgame E5; seit 25.11. Vögel und Mantas statt fliegender Krabben, Marius: „das soll was Realistisches sein“):**
+  - Modelle und Animationen sind Spiel-Assets: der rote Vogel und der Manta. Sie fliegen ohne Netz über Mauern und greifen nie den Spieler oder die Fabrik an.
+  - **Bodentürme treffen sie nicht**, der **Himmelsturm** und die Handwaffen schon.
+  - Die Welle endet erst, wenn alle Flieger weg sind.
+  - **Vogelschwarm** ab Welle `Flieger.AbWelle` 43:
+    - Je Welle `Flieger.Anzahl` 6 plus `Flieger.JeWelle` 0,5 je Welle ab 43, × Budget der Stufe, höchstens `Flieger.Max` 24.
+    - Sie verteilen sich auf die Fronten, starten 6–10 m hoch und fliegen schlingernd mit 14 m/s zum Kern, mindestens 5 m über Grund.
+    - Am Kern richten sie `Flieger.KernSchaden` 15 × (1 + 0,25 × Wellenzuwachs) an und verschwinden. Ein Treffer tötet einen Vogel.
+    - Erste Welle mit Vögeln: Ansage „FLIEGER!“.
+  - **Mantas** ab Welle `Flieger.Manta.AbWelle` 45:
+    - Je Welle `Flieger.Manta.Anzahl` 1 plus 0,25 je Welle ab 45, × Budget, höchstens 6.
+    - Leben: `Flieger.Manta.LP` 1500 × LP der Stufe, wächst ab W45 wie bei den Bodengegnern.
+    - Sie fliegen in 18 m Höhe an und kreisen in 30 m Abstand um den Kern. Alle 3 s spucken sie Säure, Schaden 10 × (1 + 0,25 × Wellenzuwachs).
+    - Abgeschossen trudeln sie zu Boden.
+    - Erster Manta: Ansage „MANTAS!“.
+  - *Noch nicht gebaut* (Spezifikation E5): Nester und Luftabwehr-Munition je Turmlinie.
 - **Fronten:** Zu Beginn gibt es eine. Weitere kommen laut Stufentabelle dazu (Normal ab Welle 11 und 21).
 - **Elite:** 2,5-fache LP, größer, eingefärbt. **Boss:** groß, mit Lebensbalken.
 - **Zielwahl der Gegner:** Sie greifen an, was ihnen den Weg versperrt (Mauern). Gedränge am Kern (20 m, 3 s) führt zum Angriff auf den Kern.
@@ -130,7 +167,7 @@
   - Leiter *(0.9.1)*: Ein Elektrozaun in Reichweite einer Teslaspule leitet jede Entladung an bis zu 3 Gegner, die ihn berühren (4 m, 30 % Schaden; `Kombo.Leiter.*`).
 - **Bremsen (0.9.1):** Tesla-Feld, Ölschlick, Störfeld und Singularität stapeln nicht mehr „letzte gewinnt“. Bis zu drei laufen nebeneinander, es wirkt die stärkste; endet sie, greift die nächste.
 - **Strahlenschutz (0.11-dev, Marius 16.11.):** Das Munitionslager der Türme ist abgeschirmt, radioaktive Munition (Ficsonium im Singularitätswerfer, Uran) strahlt nur beim Transport (`Tuerme.Abgeschirmt`). Die Forschung Singularität schaltet zusätzlich Hazmat-Anzug und Iod-Filter des Spiels frei (alle Modi; im Einsatz ist der HUB gesperrt).
-- **Anschlüsse (0.9.3, ungetestet):** Türme und Bauten tragen die Original-Anschlüsse des Spiels: Bandeingang (`SM_Input_01`), Rohreingang (`SM_Pipe_InPut_01`), Wand-Stromdose (`SM_PowerPoleWall_MK1`) und Statusmast (`SM_ProductionLight_01`) mit der Statuslampe oben. Sie werden per Spielpfad geladen und nicht mitgeliefert. Die Sockel von Gewehr-, Nobelisk- und Flammenturm sind 1,65 m höher, Bolzen- und Himmelsturm 0,65 m, damit der Bandeingang in die Wand passt.
+- **Anschlüsse (Optik-Durchgang 16.11.2026):** Türme und Bauten tragen den Bandeingang (`SM_Input_01`) und den Rohreingang (`SM_Pipe_InPut_01`) des Spiels. Strom kommt über einen **Anschlusskasten im Sockel**, die Statuslampe ist ein **Lampenkopf `SM_TD_StatusLight` auf der Lampenkonsole**. Wand-Stromdose und Original-Lampenmast entfallen. Die Lage aller Anbauten kommt aus `Modelle\Anbauten.json` (`TDAnbauten.inl`). Die Sockel von Gewehr-, Nobelisk- und Flammenturm sind 1,65 m höher, Bolzen- und Himmelsturm 0,65 m, damit der Bandeingang in die Wand passt.
 - **Himmelsturm (0.9.3, ungetestet):** In den sechs Rohren stecken sichtbare Flak-Kanister. Je Schuss verschwindet einer, nach `Tuerme.Himmelsturm.Nachladen` (1,5 s) gleitet ein neuer hinein.
 - **Flammenwerfer (0.9.3, ungetestet):** Der Strahl besteht aus wandernden Feuerwolken (Flipbook, `Effekte.Flamme.*`).
 
@@ -145,7 +182,7 @@
 - **Elektrozaun:** seit 0.9.3 ohne Mauer, nur Pfosten, Schaltkästen und leuchtende Drähte. Für Gegner weiter ein Hindernis; wer angreift, bekommt einen Stromschlag. Seit 0.12 nimmt jeder Zaun 2 Kabel: eine Zaunreihe lässt sich vom Mast aus von Zaun zu Zaun verketten (`Bauten.Elektrozaun.Kabel`, C13).
 - **Radar (Funkmast):** Türme in 30 m +10 % Reichweite. **Seit 0.9.3:** Rohstoffvorkommen in 150 m werden wie beim Ressourcenscanner angezeigt (`Tuerme.Funkmast.RessourcenRadius`). 30 s vor jeder Welle bis zu ihrem Ende markiert er jede aktive Front auf Karte und Kompass mit Welle, Gegnerarten und Anzahl; blau mit „FLIEGER!“, wenn Flieger kommen (`Tuerme.Funkmast.Vorwarnung`). Nur mit Strom.
 - **Schildgenerator:** Kuppel mit 20 m Radius, schluckt Schaden an Bauten (nicht am Kern), 3000 Schild, gebrochen 20 s Ladezeit, sonst 5 %/s nach 5 s ohne Treffer.
-- **Störfeld-Projektor** (Gabelung mit dem Schildgenerator, nur einer von beiden je Spiel): bremst alle Gegner in 15 m auf 60 % Tempo, solange er läuft (1 reanimiertes SAM je 60 s, 80 MW).
+- **Störfeld-Projektor** (seit 0.13 keine Gabelung mehr mit dem Schildgenerator): bremst alle Gegner in 15 m auf 60 % Tempo, solange er läuft (1 reanimiertes SAM je 60 s, 80 MW).
 - **Drohnenplatz (seit 0.9.3, ersetzt die Reparaturstation):** Gabelung in der Festung ab Welle 40, Reparaturdrohnen **oder** Kampfdrohnen. 2 Drohnen auf Level 1, 3 auf Level 2, 4 auf Level 3 (Level mit Coupons im Gebäudefenster wie bei den Türmen, 0.9.6). Ein Rezeptzyklus ist ein Einsatz: Die Drohne steigt auf, fliegt in 15 m Höhe zum Ziel in 40 m, arbeitet und landet wieder.
   - Reparaturdrohnen: 2 Eisenplatten = 840 LP, 1 verstärkte Platte = 3150 LP für den am stärksten beschädigten Bau.
   - Kampfdrohnen: 2 Gewehrmunition je Einsatz, 3 s lang alle 0,35 s 25 Schaden (`Tuerme.Drohnenplatz.*`).
@@ -153,19 +190,31 @@
 
 ## 7. Forschung (MAM)
 
-- **4 Bäume:** Industrie, Ballistik, Elementar, Festung, alle ab Start im MAM. Jeder Baum wächst aus 2–3 Wurzeln: Industrie aus Kohlekraftwerk, Assembler und Kupfer; Ballistik aus Durchschlagbolzen, Gewehrturm und Nobelisk-Werfer; Elementar aus Teslaspule und Flammenwerfer; Festung aus Kern-Panzerung, Verstärkten Mauern und Turmfertigung II. Alle anderen Knoten hängen mit einer Linie an einem Elternknoten.
+- **5 Bäume** *(seit 0.13, 23.11.: Energie neu)*: Industrie, Energie, Ballistik, Elementar, Festung, alle ab Start im MAM. Jeder Baum wächst aus mehreren Wurzeln: Industrie seit 0.13 (A6, Marius 22.11.) aus sechs Einstiegen ohne Pflichtkette, nämlich Assembler (Fertigung), Kupfer, Förderband Mk2, Raffinerie (braucht das Kohlekraftwerk aus Energie), Schwefel und Quarz; Energie aus Kohlekraftwerk, Treibstoffkraftwerk und Kernkraft; Ballistik aus Durchschlagbolzen, Gewehrturm, Nobelisk-Werfer und Himmelsturm; Elementar aus Teslaspule und Flammenwerfer; Festung aus Kern-Panzerung, Verstärkten Mauern und Turmfertigung II. Alle anderen Knoten hängen mit einer Linie an einem Elternknoten.
 - **Sichtbarkeit:** Ein Knoten zeigt sein Icon erst, wenn sein Elternknoten erforscht ist; vorher ist er ein grauer Platzhalter. Knoten mit Voraussetzung aus einem anderen Baum (z. B. Ballistik braucht den Assembler, Elementar das Kohlekraftwerk) bleiben grau, bis sie erfüllt ist.
 - **Infokarten je Knoten:** „Herstellung“ (Zutaten, Maschine, Stück pro Minute, Zutaten der Zutaten, Ziel-Turm), „Bauen“ (Baukosten) und „Vorher“ (nötige Forschung und Freigabe-Welle).
 - **Bezahlt wird nur mit Festplatten** (seit 0.10.0, vorher FICSIT-Kampfdaten). Der Preis richtet sich nach der Freigabe-Welle des Knotens (Preisstufen ab Welle 0, 5, 15, 25, 35). Insgesamt gibt es bewusst mehr Knoten, als FP hereinkommen.
 - **Freigabe-Welle:** Ein Knoten ist erst ab einer bestimmten Welle erforschbar. Er erbt die Welle von seinen Eltern und Voraussetzungen. Der Status steht im Knotentitel.
-- **Gabelungen:** Bei jedem Paar ist nur eine Seite je Einsatz erforschbar. Das ist endgültig.
+- **Gabelungen:** Bei jedem Paar ist nur eine Seite je Einsatz erforschbar. Das ist endgültig. Gabelungen: Streubolzen/Schockbolzen, Zielsuch/Panzerbrechend (beide ab Welle 10), Gas-/Puls-Nobelisk, Kettenblitz/Überlast, Reparatur-/Kampfdrohnen, Kern-Schild/Kern-Geschütz, Doktrin. Schildgenerator und Störfeld-Projektor sind seit 0.13 keine Gabelung mehr.
+  - **Freies Spiel mit Abwehr** *(0.13, A6 Entscheidung 8)*: Dort sperrt eine gewählte Seite die andere nicht. Die Gegenseite kostet das Doppelte in Coupons (`Abwehr.GabelFaktor` 2).
+- **Einstieg (0.13, A6):** Die erste Forschung ist vor Welle 3 möglich. Kohlekraftwerk, Teslaspule und Durchschlagbolzen sind ab Welle 3 frei (vorher 5 bzw. 6) und kosten damit 3 Festplatten. Der Gewehrturm kommt ab Welle 5 (Marius 22.11. abends: in der Simulation bremste er ab Welle 3 die Mischlinien). Beim ersten Besuch reicht es für genau eine der billigen Linien (Bolzen oder Tesla). Kettenblitz und Überlast ab Welle 6, Caterium und Panzerbrechend ab Welle 10.
+- **Energie und Brennstoffe** *(0.13, Marius 23.11., `Notizen/Konzept-Stromzweig-2026-11-23.md`)*: drei Strom-Linien ohne Sperre. Kohle und Öl gehen gleichzeitig.
+  - **Kohle:** Kohlekraftwerk (W3), Kompaktkohle-Feuerung (W10, braucht Schwefel), Petrolkoks-Feuerung (W20, braucht die Raffinerie).
+  - **Öl:** Treibstoffkraftwerk (W15, braucht die Raffinerie), Turbo-Feuerung (W25), Raketen-Feuerung (W35, braucht Mischtechnik).
+  - **Öl an den Kernplätzen (Marius 23.11. abends, Option D):** Das Öl bleibt, wo das Spiel es hat. Gemessen ist die Luftlinie zum nächsten Rohöl-Vorkommen: Wald 0,8–1,1 km, Felsenwüste 1,2–1,9 km, Dünenwüste 1,3–1,9 km, Grasfelder 2,2–2,4 km (`/td oel`). Beim Einsatzstart meldet der Mod Entfernung und Richtung zum nächsten Vorkommen und zur nächsten Ölquelle, wenn die näher liegt (`UTDKernplatz::OelHinweis`). Keine Ölkanister im Shop, kein Ölknoten am Kern.
+  - **Kernkraft:** Kernkraft (W51) und Plutonium-Brennstab (W56). Im Laden gibt es dafür Atomkraftwerk und Teilchenbeschleuniger.
+  - **Mod-Regel:** Bessere Brennstoffe geben jedem Kraftwerk mehr MW: Leistung = Grundleistung × `Strom.<Brennstoff>.Faktor` (Werte unter „Zahlen“). Der Brennstoff verbrennt entsprechend schneller (Brenndauer = Energie / Leistung). Je MW bleibt der bessere Brennstoff also sparsamer, und man braucht weniger Kraftwerke.
+  - Gilt im Einsatz, im Endlos und im Freien Spiel mit Abwehr, nicht im Modus Aus (`TDStrom.cpp`, alle `Strom.Takt` s). Turbotreibstoff, Raketentreibstoff und ionisierter Treibstoff aus dem Flammenwerfer-Zweig geben ihren Strombonus genauso.
+  - **Freies Spiel mit Abwehr:** Der Baum Energie ist dort wie Industrie verborgen, der HUB vergibt die Kraftwerke.
+- **Alte Spielstände:** Beim Laden bekommt jeder erforschte FicsitTD-Knoten alle Rezepte, die er im heutigen Baum freischaltet (z. B. Schwarzpulver jetzt am Schwefel). Erforschtes bleibt erforscht.
+- **Festplatte abgeben** *(0.13, A6 E7)*: Im AWESOME-Shop (Bereich Pionier und Kern) gibt man eine Festplatte gegen 12 Coupons ab (Schlüssel `Einsatz.Laden.Festplatte.Rueckgabe`). Der Shop zeigt 1 Coupon als Preis, der kommt mit zurück. Nur im Einsatz und im Endlos-Modus. Kaufen (ab 40) und Abgeben (12) hintereinander lohnt nie.
 - **Doktrin:** Eine Turmlinie wird zur Hauptlinie. Sie bekommt mehr Schaden, billigere Level und Level 5 früher. **Heute** ist sie eine Gabelung mit fünf Seiten und endgültig. **Beschlossen:** wechselbar im Kern-Menü, einmal je Einsatz für 50 Coupons *(geplant, ohne Termin)*.
 - **Kern-Forschung (Festung):**
   - Kern-Panzerung: Kern-LP × 1,3.
   - Notreparatur: Nach jeder abgewehrten Welle repariert sich der Kern um 10 % seiner LP.
   - Gabelung Kern-Schild oder Kern-Geschütz. Der Schild fängt in jeder Welle die ersten 2000 Schaden am Kern ab und lädt sich zum Start der nächsten Welle neu. Das Geschütz schießt alle 1,5 s einen Bolzen mit 60 Schaden auf den nächsten Gegner in 30 m.
 - **Belohnungen** im MAM zeigen nur echte Freischaltungen. Die Schuss-Rezepte der Türme kommen still mit dem Knoten.
-- **Bänder und Lifte** rüsten nach der Forschung Band Mk2/Mk3/Mk4/Mk5 automatisch auf (Mk4 ab W25 mit Schwerindustrie, Mk5 ab W30; Mk6 gibt es nicht, er braucht Ficsit). **Miner Mk2** (ab W25, nach Band Mk4) und **Miner Mk3** (ab W35, mit Mischtechnik) im Industrie-Baum; gekauft wird weiter das Kontingent Miner, das Baumaterial kommt passend zur höchsten Miner-Stufe mit *(17.11., Marius, P10)*.
+- **Bänder und Lifte** rüsten nach der Forschung Band Mk2/Mk3/Mk4/Mk5 automatisch auf (Mk4 ab W25 mit Schwerindustrie, Mk5 ab W30; Mk6 gibt es nicht, er braucht Ficsit). **Miner Mk2** (ab W25, nach Band Mk4; der Schlüssel `Forschung.MinerMk2.AbWelle` steht seit 0.13 auch auf 25) und **Miner Mk3** (ab W35, mit Mischtechnik) im Industrie-Baum; gekauft wird weiter das Kontingent Miner, das Baumaterial kommt passend zur höchsten Miner-Stufe mit *(17.11., Marius, P10)*.
 
 ## 8. Beute
 
@@ -222,8 +271,8 @@ Stand 16.11.2026 (Mod 0.11-dev; Berichte `Testberichte6-11-16_*`). Die langen 
 | Wert | Erkundung | Normal | Hart | Albtraum |
 |---|---|---|---|---|
 | Gegnerbudget × | 0,6 | 1 | 1,1 | 1,1 |
-| Gegner-LP × | 0,7 | 1 | 1 | 1,1 |
-| Kern-LP | 30000 | 20000 | 15000 | 15000 |
+| Gegner-LP × | 0,7 | 1,25 | 1,25 | 1,35 |
+| Kern-LP | 30000 | 15000 | 15000 | 15000 |
 | Aufbau bis Welle 1 (s, nur Kern-Verteidigung; Einsatz ohne Uhr) | 1800 | 1200 | 900 | 600 |
 | Aufbau zwischen Wellen (s, nur Kern-Verteidigung) | 900 | 600 | 480 | 360 |
 | Fronten zu Beginn | 1 | 1 | 1 | 1 |
@@ -233,7 +282,8 @@ Stand 16.11.2026 (Mod 0.11-dev; Berichte `Testberichte6-11-16_*`). Die langen 
 ### Wellen
 
 - Budget = Stufe × (12 + 5 × N + 0,15 × N²)
-- Gegner-LP × (1 + 0,25 × (N − 1)) bis Welle 31, danach + 0,1 je weitere Welle; Elite-LP × 2,5
+- Gegner-LP × (1 + 0,28 × (N − 1)) bis Welle 31, danach + 1,5 je weitere Welle; Elite-LP × 2,5
+- Endlos-Wellen: Zuwachs 0,25 statt 0,28 je Welle, Gegner-LP zusätzlich × Erkundung 1 / Normal 0,8 / Hart 0,8 / Albtraum 0,8148
 - Bosswellen: Gegnerbudget × 0,6 plus Boss
 - höchstens 60 gleichzeitig, 120 je Welle (Nachschub alle 0,25 s je 5)
 - Standardlänge eines Einsatzes: 50 Wellen
@@ -265,6 +315,22 @@ Stand 16.11.2026 (Mod 0.11-dev; Berichte `Testberichte6-11-16_*`). Die langen 
 | 4 | 1 | 15 |
 | 5 | 2 | 2 |
 
+### Strom je Brennstoff
+
+| Kraftwerk | Brennstoff | Faktor | MW |
+|---|---|---|---|
+| Kohlekraftwerk | Kohle | 1 | 75 |
+| Kohlekraftwerk | Kompaktkohle | 1,3333 | 100 |
+| Kohlekraftwerk | Petrolkoks | 1,6667 | 125 |
+| Treibstoffkraftwerk | Treibstoff | 1 | 250 |
+| Treibstoffkraftwerk | Biotreibstoff | 1 | 250 |
+| Treibstoffkraftwerk | Turbotreibstoff | 1,3 | 325 |
+| Treibstoffkraftwerk | Raketentreibstoff | 1,6 | 400 |
+| Treibstoffkraftwerk | Ionisiert | 2 | 500 |
+| Atomkraftwerk | Uran | 1 | 2500 |
+| Atomkraftwerk | Plutonium | 1,3 | 3250 |
+| Atomkraftwerk | Ficsonium | 1 | 2500 |
+
 ### Belohnung je Welle
 
 - **Coupons** = 8 + 2 × N, +5 bei vollem Kern bzw. +2 ab 75 %; Bosswelle × 2 + 20
@@ -288,11 +354,14 @@ Preis = Grundpreis × (1 + Aufschlag × bisher gekauft); Paket = Gebäude je Kau
 | Akku | 10 | 0,4 | 1 | 0 |
 | Armierpistole | 6 | 0 | 1 | 0 |
 | Assembler | 8 | 0,4 | 1 | 0 |
+| Atomkraftwerk | 40 | 0,6 | 1 | 0 |
 | Biomassegenerator | 6 | 0,4 | 1 | 1 |
 | Bolzenturm | 4 | 0,3 | 1 | 1 |
 | Drohnenplatz | 14 | 0,5 | 1 | 0 |
 | Elektrozaun | 5 | 0,3 | 1 | 0 |
 | Fertiger | 14 | 0,5 | 1 | 0 |
+| Festplatte | 40 | 0,25 | 1 | 0 |
+| Festplattenabgabe | 0 | 0 | 1 | 0 |
 | Flammenturm | 8 | 0,3 | 1 | 0 |
 | Fluessigkeitspuffer | 3 | 0,3 | 1 | 0 |
 | Foerderanlage | 6 | 0,4 | 3 | 0 |
@@ -325,6 +394,7 @@ Preis = Grundpreis × (1 + Aufschlag × bisher gekauft); Paket = Gebäude je Kau
 | Singularitaet | 20 | 0,6 | 1 | 0 |
 | Splitter | 2 | 0,2 | 2 | 0 |
 | Stoerfeld | 14 | 0,5 | 1 | 0 |
+| Teilchenbeschleuniger | 40 | 0,6 | 1 | 0 |
 | Teslaspule | 10 | 0,4 | 1 | 0 |
 | Tor | 4 | 0,3 | 1 | 0 |
 | Treibstoffkraftwerk | 8 | 0,4 | 1 | 0 |
@@ -358,6 +428,9 @@ Turmlevel kosten 8 / 15 / 25 / 40 Coupons (Level 2–5). Doktrin: Schaden +25 %,
 | Gewehrturm.L4.Magazin | 1 |
 | Gewehrturm.L4.Reichweite | 0,15 |
 | Gewehrturm.L5.Takt | 0,25 |
+| Himmelsturm.L2.Schaden | 0,2 |
+| Himmelsturm.L3.Takt | 0,25 |
+| Himmelsturm.L4.Reichweite | 0,15 |
 | Nobelisk-Werfer.L2.Schaden | 0,2 |
 | Nobelisk-Werfer.L3.Takt | 0,25 |
 | Nobelisk-Werfer.L4.Radius | 0,2 |
@@ -366,6 +439,9 @@ Turmlevel kosten 8 / 15 / 25 / 40 Coupons (Level 2–5). Doktrin: Schaden +25 %,
 | Preis3 | 15 |
 | Preis4 | 25 |
 | Preis5 | 40 |
+| Singularitaet.L2.Schaden | 0,2 |
+| Singularitaet.L3.Takt | 0,2 |
+| Singularitaet.L4.Reichweite | 0,15 |
 | Teslaspule.L2.Reichweite | 0,1 |
 | Teslaspule.L3.Schaden | 0,2 |
 | Teslaspule.L3.Spruenge | 1 |
@@ -426,18 +502,27 @@ Turmlevel kosten 8 / 15 / 25 / 40 Coupons (Level 2–5). Doktrin: Schaden +25 %,
 | SchussJeItem.Drohne_ReparaturVerstaerkt | 1 |
 | SchussJeItem.Feld_SAM | 1 |
 | SchussJeItem.Flak_Shoot | 2 |
+| SchussJeItem.Flame_Biofuel | 1 |
 | SchussJeItem.Flame_Fuel | 1 |
+| SchussJeItem.Flame_Ionized | 1 |
+| SchussJeItem.Flame_Rocket | 1 |
+| SchussJeItem.Flame_Turbo | 1 |
 | SchussJeItem.Funk_Strom | 1 |
 | SchussJeItem.Gun_Brand | 2 |
 | SchussJeItem.Gun_Homing | 2 |
 | SchussJeItem.Gun_Panzer | 2 |
 | SchussJeItem.Gun_Standard | 3 |
 | SchussJeItem.Gun_Turbo | 1 |
+| SchussJeItem.Lure_Coal | 1 |
+| SchussJeItem.Lure_CompactedCoal | 1 |
 | SchussJeItem.Nobelisk_Cluster | 3 |
 | SchussJeItem.Nobelisk_Explosive | 4 |
 | SchussJeItem.Nobelisk_Gas | 3 |
 | SchussJeItem.Nobelisk_Nuke | 1 |
 | SchussJeItem.Nobelisk_Pulse | 3 |
+| SchussJeItem.Repair_IronPlate | 1 |
+| SchussJeItem.Repair_Reinforced | 1 |
+| SchussJeItem.Repair_SteelBeam | 1 |
 | SchussJeItem.Schild_Strom | 1 |
 | SchussJeItem.Shoot_Durchschlag | 3 |
 | SchussJeItem.Shoot_Explosive | 2 |
@@ -445,6 +530,7 @@ Turmlevel kosten 8 / 15 / 25 / 40 Coupons (Level 2–5). Doktrin: Schaden +25 %,
 | SchussJeItem.Shoot_Spreadshot | 3 |
 | SchussJeItem.Shoot_Stunshot | 3 |
 | SchussJeItem.Singularitaet_Ficsonium | 2 |
+| SchussJeItem.Slick_HeavyOil | 1 |
 | SchussJeItem.Tesla_Discharge | 1 |
 | SchussJeItem.Zaun_Strom | 1 |
 | Tesla.Schaden | 300 |
@@ -495,7 +581,6 @@ Preis aus der Phase der effektiven Freigabe-Welle (Eltern und Voraussetzungen ei
 
 | Baum | Knoten | Name | ab Welle | Festplatten | Gabelung mit |
 |---|---|---|---|---|---|
-| Industrie | Kohlekraft | Kohlekraftwerk | 6 | 4 |  |
 | Industrie | Assembler | Assembler und Eisenteile | 0 | 3 |  |
 | Industrie | Kupfer | Kupferverarbeitung | 0 | 3 |  |
 | Industrie | BandMk2 | Förderband Mk2 | 0 | 3 |  |
@@ -503,10 +588,9 @@ Preis aus der Phase der effektiven Freigabe-Welle (Eltern und Voraussetzungen ei
 | Industrie | Giesserei | Gießerei und Stahl | 0 | 3 |  |
 | Industrie | BandMk3 | Förderband Mk3 | 10 | 4 |  |
 | Industrie | Raffinerie | Raffinerie und Öl | 15 | 6 |  |
-| Industrie | Treibstoffkraft | Treibstoffkraftwerk | 15 | 6 |  |
 | Industrie | Schwefel | Schwefel | 5 | 4 |  |
 | Industrie | Quarz | Quarzverarbeitung | 10 | 4 |  |
-| Industrie | Caterium | Caterium | 12 | 4 |  |
+| Industrie | Caterium | Caterium | 10 | 4 |  |
 | Industrie | Bauxit | Bauxit und Aluminium | 25 | 8 |  |
 | Industrie | Schwerindustrie | Schwerindustrie | 25 | 8 |  |
 | Industrie | Mischtechnik | Mischtechnik | 35 | 10 |  |
@@ -514,14 +598,22 @@ Preis aus der Phase der effektiven Freigabe-Welle (Eltern und Voraussetzungen ei
 | Industrie | BandMk5 | Förderband Mk5 | 30 | 8 |  |
 | Industrie | MinerMk2 | Miner Mk2 | 25 | 8 |  |
 | Industrie | MinerMk3 | Miner Mk3 | 35 | 10 |  |
-| Ballistik | Durchschlagbolzen | Durchschlagbolzen | 5 | 4 |  |
+| Energie | Kohlekraft | Kohlekraftwerk | 3 | 3 |  |
+| Energie | Kompaktkohle | Kompaktkohle-Feuerung | 10 | 4 |  |
+| Energie | Petrolkoks | Petrolkoks-Feuerung | 20 | 6 |  |
+| Energie | Treibstoffkraft | Treibstoffkraftwerk | 15 | 6 |  |
+| Energie | TurboFeuerung | Turbo-Feuerung | 25 | 8 |  |
+| Energie | RaketenFeuerung | Raketen-Feuerung | 35 | 10 |  |
+| Energie | Kernkraft | Kernkraft | 51 | 10 |  |
+| Energie | Plutonium | Plutonium-Brennstab | 56 | 10 |  |
+| Ballistik | Durchschlagbolzen | Durchschlagbolzen | 3 | 3 |  |
 | Ballistik | Gewehrturm | Gewehrturm | 5 | 4 |  |
 | Ballistik | Explosivbolzen | Explosivbolzen | 25 | 8 |  |
 | Ballistik | Streubolzen | Streubolzen | 10 | 4 | Schockbolzen |
-| Ballistik | Zielsuchmunition | Zielsuchmunition | 12 | 4 | Panzerbrechend |
-| Ballistik | Panzerbrechend | Panzerbrechende Munition | 5 | 4 | Zielsuchmunition |
+| Ballistik | Zielsuchmunition | Zielsuchmunition | 10 | 4 | Panzerbrechend |
+| Ballistik | Panzerbrechend | Panzerbrechende Munition | 10 | 4 | Zielsuchmunition |
 | Ballistik | NobeliskWerfer | Nobelisk-Werfer | 10 | 4 |  |
-| Ballistik | Schockbolzen | Schockbolzen | 12 | 4 | Streubolzen |
+| Ballistik | Schockbolzen | Schockbolzen | 10 | 4 | Streubolzen |
 | Ballistik | Brandmunition | Brandmunition | 15 | 6 |  |
 | Ballistik | GasNobelisk | Gas-Nobelisk | 15 | 6 | PulsNobelisk |
 | Ballistik | PulsNobelisk | Puls-Nobelisk | 15 | 6 | GasNobelisk |
@@ -529,7 +621,7 @@ Preis aus der Phase der effektiven Freigabe-Welle (Eltern und Voraussetzungen ei
 | Ballistik | StreuNobelisk | Streu-Nobelisk | 25 | 8 |  |
 | Ballistik | Himmelsturm | Himmelsturm | 35 | 10 |  |
 | Ballistik | Singularitaet | Singularitätswerfer | 51 | 10 |  |
-| Elementar | Teslaspule | Teslaspule | 6 | 4 |  |
+| Elementar | Teslaspule | Teslaspule | 3 | 3 |  |
 | Elementar | Kettenblitz | Kettenblitz | 6 | 4 | Ueberlast |
 | Elementar | Ueberlast | Überlast | 6 | 4 | Kettenblitz |
 | Elementar | Akkubank | Akkubank | 15 | 6 |  |
@@ -559,9 +651,9 @@ Preis aus der Phase der effektiven Freigabe-Welle (Eltern und Voraussetzungen ei
 | Festung | Tor | Tor | 6 | 4 |  |
 | Festung | Lockfeuer | Lockfeuer | 8 | 4 |  |
 | Festung | Funkmast | Funkmast | 12 | 4 |  |
-| Festung | Schildgenerator | Schildgenerator | 25 | 8 | Stoerfeld |
-| Festung | Stoerfeld | Störfeld-Projektor | 35 | 10 | Schildgenerator |
+| Festung | Schildgenerator | Schildgenerator | 25 | 8 |  |
+| Festung | Stoerfeld | Störfeld-Projektor | 35 | 10 |  |
 
-Alle Knoten zusammen: 387 FP.
+Alle Knoten zusammen: 432 FP.
 
 <!-- ZAHLEN-ENDE -->

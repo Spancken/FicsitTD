@@ -5,6 +5,7 @@
 #include "FicsitTDModule.h"
 #include "TDDefenseCore.h"
 #include "TDEinsatz.h"
+#include "TDShop.h"
 #include "TDKernplatz.h"
 #include "TDTurretBase.h"
 #include "TDWaveSubsystem.h"
@@ -751,6 +752,8 @@ void UTDKernTerminal::Aktualisiere()
 		const int32 VorziehBonus = Waves->IstEndlos() && Waves->GetCountdown() > 0.f
 			? FMath::FloorToInt(Waves->GetCountdown() / FMath::Max(1.f, TDBalance::Wert(TEXT("Endlos.VorziehSekundenJeCoupon"), 10.f))) : 0;
 		mWelleText->SetText(Waves->LaeuftWelle() ? TDTX(TEXT("Welle läuft ..."), TEXT("Wave running ..."))
+			// 0.13 K1: der Start wartet, bis der Kern wieder erreichbar ist (Sperrstelle auf der Karte)
+			: Waves->WartetAufKernZugang() ? TDTX(TEXT("Kern abgeriegelt (Karte)"), TEXT("Core sealed off (map)"))
 			: VorziehBonus > 0 ? TDFX(TEXT("Welle vorziehen (+%d Coupons)"), TEXT("Bring wave forward (+%d Coupons)"), VorziehBonus)
 			: TDTX(TEXT("Welle starten"), TEXT("Start wave")));
 	}
@@ -1301,7 +1304,7 @@ void UTDKernTerminal::BaueForschung()
 		if (Kn.Baum != Baum || !Raster)
 		{
 			Baum = Kn.Baum;
-			Abschnitt(NeuerText(Kn.BaumName, 16, TDUI::Akzent, true), 6.f);
+			Abschnitt(NeuerText(TDForschung::Anzeige(Kn.BaumName), 16, TDUI::Akzent, true), 6.f);   // 23.11. Gegencheck F5
 			Raster = WidgetTree->ConstructWidget<UWrapBox>();
 			Raster->SetInnerSlotPadding(FVector2D(10.f, 10.f));
 			Abschnitt(Raster, 16.f);
@@ -1359,16 +1362,16 @@ void UTDKernTerminal::BaueForschung()
 				S->SetPadding(FMargin(0.f, 0.f, 0.f, Unten));
 			}
 		};
-		Zeile(Kn.Name, 14, TDUI::Hell, true, 2.f);
+		Zeile(TDForschung::Anzeige(Kn.Name), 14, TDUI::Hell, true, 2.f);
 		Zeile(Lage, 12, LageFarbe, true, 4.f);
-		Zeile(Kn.Text, 12, TDUI::Hell, false, 3.f);
+		Zeile(TDForschung::Anzeige(Kn.Text), 12, TDUI::Hell, false, 3.f);
 		if (!Kn.Laden.IsEmpty())
 		{
-			Zeile(TDT(TEXT("Im Laden: "), TEXT("In shop: ")) + Kn.Laden, 12, TDUI::Gut, false, 1.f);
+			Zeile(TDT(TEXT("Im Laden: "), TEXT("In shop: ")) + TDForschung::Anzeige(Kn.Laden), 12, TDUI::Gut, false, 1.f);
 		}
 		if (!Kn.Gegen.IsEmpty())
 		{
-			Zeile(TDT(TEXT("Gut gegen: "), TEXT("Good against: ")) + Kn.Gegen, 12, TDUI::Grau, false, 1.f);
+			Zeile(TDT(TEXT("Gut gegen: "), TEXT("Good against: ")) + TDForschung::Anzeige(Kn.Gegen), 12, TDUI::Grau, false, 1.f);
 		}
 		Raster->AddChildToWrapBox(Breite);
 	}
@@ -1488,11 +1491,18 @@ void UTDKernTerminal::BauePionier()
 	Abschnitt(NeuerText(bMax ? TDF(TEXT("%d XP, Höchstrang erreicht"), TEXT("%d XP, max rank reached"), XP)
 		: TDF(TEXT("%d / %d XP bis Rang %d"), TEXT("%d / %d XP to rank %d"), XP, Bis, Rang + 1), 13, TDUI::Grau), 4.f);
 	// 0.9.8 P3: XP vor allem fuer eigene Leistung, hoechstens 15 Punkte, Rangboni ohne Punkte
-	UTextBlock* Info = NeuerText(TDF(TEXT("XP gibt es für deinen Anteil am Wellenschaden, für Abschüsse (normal 3, Elite 10, Boss 50), Assists und reparierte LP, dazu etwas für jede abgewehrte Welle. "
+	// 21.11. (Marius, C10): Talentpunkte nur aus Bosswellen und Bohrung, der Rang bringt die Boni
+	UTextBlock* Info = UTDPionier::TalenteAusRang()
+		? NeuerText(TDF(TEXT("XP gibt es für deinen Anteil am Wellenschaden, für Abschüsse (normal 3, Elite 10, Boss 50), Assists und reparierte LP, dazu etwas für jede abgewehrte Welle. "
 		"Jeder Rang bringt einen Talentpunkt, höchstens %d: Wähle zwei Rollen ganz oder drei zur Hälfte. Alle 3 Ränge: +10 LP und +3 %% Lauftempo (jetzt +%d LP). Rang und Talente gehören zum Spielstand."),
 		TEXT("You earn XP for your share of the wave damage, for kills (normal 3, Elite 10, Boss 50), assists and repaired HP, plus a little for every repelled wave. "
 		"Each rank gives one Talent Point, at most %d: pick two roles in full or three halfway. Every 3 ranks: +10 HP and +3 %% walk speed (now +%d HP). Rank and talents belong to the save."),
-		FMath::Min(UTDPionier::MaxRang() - 1, TDBalance::Ganz(TEXT("Pionier.MaxPunkte"), 15)), 10 * P->RangBoni()), 13, TDUI::Grau);
+		FMath::Min(UTDPionier::MaxRang() - 1, TDBalance::Ganz(TEXT("Pionier.MaxPunkte"), 15)), 10 * P->RangBoni()), 13, TDUI::Grau)
+		: NeuerText(TDF(TEXT("Talentpunkte gibt es für jede geschaffte Bosswelle und für Erfolge in der Bohrung, höchstens %d. Wähle mit Bedacht: Im Einsatz kommen nur wenige. "
+		"XP gibt es für deinen Anteil am Wellenschaden, für Abschüsse, Assists und reparierte LP. Alle 3 Ränge: +10 LP und +3 %% Lauftempo (jetzt +%d LP). Rang und Talente gehören zum Spielstand."),
+		TEXT("You get a Talent Point for every boss wave you clear and for drilling successes, at most %d. Choose carefully: an operation gives only a few. "
+		"You earn XP for your share of the wave damage, for kills, assists and repaired HP. Every 3 ranks: +10 HP and +3 %% walk speed (now +%d HP). Rank and talents belong to the save."),
+		TDBalance::Ganz(TEXT("Pionier.MaxPunkte"), 15), 10 * P->RangBoni()), 13, TDUI::Grau);
 	Info->SetAutoWrapText(true);
 	Abschnitt(Info, 14.f);
 
@@ -2039,13 +2049,18 @@ void UTDKernTerminal::BaueListen()
 		return B;
 	};
 
-	if (!Einsatz->IstAktiv())
+	// 0.12 E4 (Marius 14./21.11.): sobald ein AWESOME-Shop steht, verkauft der Kern nicht mehr
+	const bool bShopSteht = Einsatz->IstAktiv() && Einsatz->KernVerkauftNicht();
+	if (!Einsatz->IstAktiv() || bShopSteht)
 	{
 		mLadenZeilen.Reset();
 		mKorb.Reset();
 		UHorizontalBox* Reihe = nullptr;
 		NeueKarte(mLaden, TDUI::ZeileA, Reihe);
-		Fuellen(Reihe, NeuerText(UTDKernplatz::IstAbwehr(this)
+		Fuellen(Reihe, NeuerText(bShopSteht
+			? TDT(TEXT("Gekauft wird jetzt im AWESOME-Shop: Kontingente, Ausrüstung, Kernreparatur und Festplatten (Bereiche Türme, Verteidigung, Produktion, Strom, Logistik, Pionier und Kern). Den Stand deiner Kontingente siehst du rechts."),
+				TEXT("You now buy in the AWESOME Shop: quotas, gear, Core repairs and Hard Drives (sections Turrets, Defense, Production, Power, Logistics, Pioneer and Core). Your quotas are listed on the right."))
+			: UTDKernplatz::IstAbwehr(this)
 			? TDT(TEXT("Im Freien Spiel mit Abwehr gibt es keinen Laden: Coupons aus dem AWESOME-Sink bezahlen Abwehr-Forschung im MAM und Turmlevel."),
 				TEXT("Free play with defense has no shop: Coupons from the AWESOME Sink pay for defense research in the MAM and turret levels."))
 			: TDT(TEXT("Erst einen Einsatz starten."), TEXT("Start an operation first.")), 13, TDUI::Grau));
@@ -3216,9 +3231,12 @@ void UTDHud::Aktualisiere()
 			Grund->SetVisibility(Bild ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed);
 		}
 	}
-	mText->SetText(TDFX(TEXT("%s  |  Kern %.0f %%  |  %d Coupons  |  %d Festplatten  |  Rang %d%s"), TEXT("%s  |  Core %.0f %%  |  %d Coupons  |  %d Hard Drives  |  Rank %d%s"), *Welle,
+	// 21.11. (Marius, C15): zweite Zeile mit "Noch baubar" bzw. der Shop-Aufgabe (vorher im Notizblock der To-do-Liste)
+	const FString Zweite = Einsatz->GetHudZeile();
+	const FString Erste = TDF(TEXT("%s  |  Kern %.0f %%  |  %d Coupons  |  %d Festplatten  |  Rang %d%s"), TEXT("%s  |  Core %.0f %%  |  %d Coupons  |  %d Hard Drives  |  Rank %d%s"), *Welle,
 		K ? 100.f * K->GetTDHealth() / FMath::Max(K->GetTDMaxHealth(), 1.f) : 0.f, Einsatz->Konto(), Einsatz->FPImInventar(),
-		Pionier ? Pionier->GetRang() : 1, *Punkte));
+		Pionier ? Pionier->GetRang() : 1, *Punkte);
+	mText->SetText(FText::FromString(Zweite.IsEmpty() ? Erste : Erste + TEXT("\n") + Zweite));
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -4364,4 +4382,192 @@ void UTDVorbereitung::Zeige()
 		mTitel->SetText(FText::FromString(TDT(TEXT("Bereit! Dein Einsatz beginnt."), TEXT("Ready! Your operation begins."))));
 		mTitel->SetColorAndOpacity(FSlateColor(TDUI::Gut));
 	}
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// 21.11. (Marius, C11): Bonusfenster nach der Bosswelle
+// ---------------------------------------------------------------------------------------------------------------
+
+void UTDBonusFenster::Zeige(UObject* Kontext, int32 Welle, bool bEndlos)
+{
+	UWorld* World = Kontext ? Kontext->GetWorld() : nullptr;
+	APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
+	if (!PC || !PC->IsLocalController() || TDBalance::Wert(TEXT("Einsatz.Bonus.Fenster"), 1.f) < 1.f)
+	{
+		return;
+	}
+	UTDBonusFenster* Fenster = CreateWidget<UTDBonusFenster>(PC, UTDBonusFenster::StaticClass());
+	if (!Fenster)
+	{
+		return;
+	}
+	Fenster->mWelle = Welle;
+	Fenster->mEndlos = bEndlos;
+	Fenster->AddToViewport(60);
+	UE_LOG(LogFicsitTD, Log, TEXT("Bonusfenster: geoeffnet nach Bosswelle %d"), Welle);
+}
+
+TSharedRef<SWidget> UTDBonusFenster::RebuildWidget()
+{
+	if (WidgetTree && !WidgetTree->RootWidget)
+	{
+		UTDEinsatzSubsystem* Einsatz = GetWorld() ? GetWorld()->GetSubsystem<UTDEinsatzSubsystem>() : nullptr;
+		UCanvasPanel* Flaeche = WidgetTree->ConstructWidget<UCanvasPanel>();
+		WidgetTree->RootWidget = Flaeche;
+		UBorder* Dunkel = WidgetTree->ConstructWidget<UBorder>();
+		Dunkel->SetBrush(FSlateColorBrush(TDUI::C(0, 0, 0, 120)));
+		if (UCanvasPanelSlot* S = Flaeche->AddChildToCanvas(Dunkel))
+		{
+			S->SetAnchors(FAnchors(0.f, 0.f, 1.f, 1.f));
+			S->SetOffsets(FMargin(0.f));
+		}
+		UBorder* Fenster = WidgetTree->ConstructWidget<UBorder>();
+		Fenster->SetBrush(FSlateRoundedBoxBrush(TDUI::Fenster, 6.f));
+		Fenster->SetPadding(FMargin(0.f));
+		if (UCanvasPanelSlot* S = Flaeche->AddChildToCanvas(Fenster))
+		{
+			S->SetAnchors(FAnchors(0.5f, 0.5f));
+			S->SetAlignment(FVector2D(0.5f, 0.5f));
+			S->SetAutoSize(true);
+		}
+		USizeBox* Breite = WidgetTree->ConstructWidget<USizeBox>();
+		Breite->SetWidthOverride(980.f);
+		Fenster->AddChild(Breite);
+		UVerticalBox* Spalte = WidgetTree->ConstructWidget<UVerticalBox>();
+		Breite->AddChild(Spalte);
+
+		UBorder* Kopf = WidgetTree->ConstructWidget<UBorder>();
+		Kopf->SetBrush(FSlateRoundedBoxBrush(TDUI::Kopfleiste, 6.f));
+		Kopf->SetPadding(FMargin(20.f, 12.f));
+		Kopf->AddChild(TDUI::Text(WidgetTree, mEndlos
+			? TDF(TEXT("Bosswelle %d geschafft – wähle einen Bonus"), TEXT("Boss wave %d cleared – pick a bonus"), mWelle)
+			: TDF(TEXT("Phase %d geschafft – wähle einen Bonus"), TEXT("Phase %d complete – pick a bonus"), FMath::Max(1, mWelle / 10)), 22, TDUI::Hell, true));
+		Spalte->AddChildToVerticalBox(Kopf);
+
+		UVerticalBox* Inhalt = WidgetTree->ConstructWidget<UVerticalBox>();
+		if (UVerticalBoxSlot* S = Spalte->AddChildToVerticalBox(Inhalt))
+		{
+			S->SetPadding(FMargin(20.f, 14.f, 20.f, 20.f));
+		}
+		if (Einsatz && !mEndlos)
+		{
+			for (const FString& Zeile : Einsatz->PhasenBericht(FMath::Max(1, mWelle - 9), mWelle))
+			{
+				UTextBlock* T = TDUI::Text(WidgetTree, Zeile, 14, TDUI::C(210, 210, 210));
+				T->SetAutoWrapText(true);
+				Inhalt->AddChildToVerticalBox(T);
+			}
+		}
+		UTextBlock* Hinweis = TDUI::Text(WidgetTree, TDT(TEXT("Dazu gibt es einen Talentpunkt (Kern-Menü, Reiter Pionier)."), TEXT("You also get a Talent Point (Core Menu, Pioneer tab).")), 14, TDUI::Grau);
+		if (UVerticalBoxSlot* S = Inhalt->AddChildToVerticalBox(Hinweis))
+		{
+			S->SetPadding(FMargin(0.f, 8.f, 0.f, 0.f));
+		}
+
+		auto NeuerKlick = [this](UButton* Knopf, int32 Nr)
+		{
+			UTDBonusKlick* K = NewObject<UTDBonusKlick>(this);
+			K->mFenster = this;
+			K->mNr = Nr;
+			Knopf->OnClicked.AddDynamic(K, &UTDBonusKlick::Klick);
+			mKlicks.Add(K);
+		};
+		static const TCHAR* TexteDe[] = { TEXT("Sofort mehr Geld für Kontingente und Ausrüstung."), TEXT("Der Kern hält dauerhaft mehr aus."), TEXT("Mehr Forschung im MAM.") };
+		static const TCHAR* TexteEn[] = { TEXT("More money right away for quotas and gear."), TEXT("The Core permanently takes more damage."), TEXT("More research in the MAM.") };
+		UHorizontalBox* Karten = WidgetTree->ConstructWidget<UHorizontalBox>();
+		if (UVerticalBoxSlot* S = Inhalt->AddChildToVerticalBox(Karten))
+		{
+			S->SetPadding(FMargin(0.f, 14.f, 0.f, 0.f));
+		}
+		for (int32 Nr = 0; Nr < 3; ++Nr)
+		{
+			UButton* Knopf = WidgetTree->ConstructWidget<UButton>();
+			FButtonStyle Stil;
+			Stil.SetNormal(FSlateRoundedBoxBrush(TDUI::C(255, 255, 255, 14), 4.f));
+			Stil.SetHovered(FSlateRoundedBoxBrush(TDUI::C(250, 149, 73, 90), 4.f));
+			Stil.SetPressed(FSlateRoundedBoxBrush(TDUI::C(250, 149, 73, 150), 4.f));
+			Stil.SetNormalPadding(FMargin(0.f));
+			Stil.SetPressedPadding(FMargin(0.f));
+			Knopf->SetStyle(Stil);
+			UVerticalBox* Karte = WidgetTree->ConstructWidget<UVerticalBox>();
+			UTextBlock* Name = TDUI::Text(WidgetTree, UTDEinsatzSubsystem::EndlosBonusName(Nr), 20, TDUI::Hell, true);
+			Name->SetAutoWrapText(true);
+			Karte->AddChildToVerticalBox(Name);
+			UTextBlock* Text = TDUI::Text(WidgetTree, TDT(TexteDe[Nr], TexteEn[Nr]), 14, TDUI::C(210, 210, 210));
+			Text->SetAutoWrapText(true);
+			if (UVerticalBoxSlot* S = Karte->AddChildToVerticalBox(Text))
+			{
+				S->SetPadding(FMargin(0.f, 8.f, 0.f, 0.f));
+			}
+			UBorder* Feld = WidgetTree->ConstructWidget<UBorder>();
+			Feld->SetBrush(FSlateNoResource());
+			Feld->SetPadding(FMargin(16.f, 14.f));
+			USizeBox* Hoehe = WidgetTree->ConstructWidget<USizeBox>();
+			Hoehe->SetMinDesiredHeight(120.f);
+			Hoehe->AddChild(Karte);
+			Feld->AddChild(Hoehe);
+			Knopf->AddChild(Feld);
+			if (UHorizontalBoxSlot* S = Karten->AddChildToHorizontalBox(Knopf))
+			{
+				S->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
+				S->SetPadding(FMargin(0.f, 0.f, Nr < 2 ? 10.f : 0.f, 0.f));
+				S->SetVerticalAlignment(VAlign_Fill);
+			}
+			NeuerKlick(Knopf, Nr);
+		}
+		UButton* Spaeter = WidgetTree->ConstructWidget<UButton>();
+		FButtonStyle Grau;
+		Grau.SetNormal(FSlateRoundedBoxBrush(TDUI::C(255, 255, 255, 10), 4.f));
+		Grau.SetHovered(FSlateRoundedBoxBrush(TDUI::C(255, 255, 255, 30), 4.f));
+		Grau.SetPressed(FSlateRoundedBoxBrush(TDUI::C(255, 255, 255, 50), 4.f));
+		Spaeter->SetStyle(Grau);
+		Spaeter->AddChild(TDUI::Text(WidgetTree, TDT(TEXT("Später wählen (Kern-Menü)"), TEXT("Pick later (Core Menu)")), 14, TDUI::Grau));
+		if (UVerticalBoxSlot* S = Inhalt->AddChildToVerticalBox(Spaeter))
+		{
+			S->SetPadding(FMargin(0.f, 14.f, 0.f, 0.f));
+			S->SetHorizontalAlignment(HAlign_Right);
+		}
+		NeuerKlick(Spaeter, -1);
+	}
+	return Super::RebuildWidget();
+}
+
+void UTDBonusFenster::NativeConstruct()
+{
+	Super::NativeConstruct();
+	if (APlayerController* PC = GetOwningPlayer())
+	{
+		PC->SetShowMouseCursor(true);
+		FInputModeUIOnly Modus;
+		Modus.SetWidgetToFocus(TakeWidget());
+		Modus.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+		PC->SetInputMode(Modus);
+		PC->SetIgnoreLookInput(true);
+		PC->SetIgnoreMoveInput(true);
+	}
+}
+
+void UTDBonusFenster::NativeDestruct()
+{
+	if (APlayerController* PC = GetOwningPlayer())
+	{
+		PC->SetShowMouseCursor(false);
+		PC->SetInputMode(FInputModeGameOnly());
+		PC->ResetIgnoreLookInput();
+		PC->ResetIgnoreMoveInput();
+	}
+	Super::NativeDestruct();
+}
+
+void UTDBonusFenster::Waehle(int32 Nr)
+{
+	if (Nr >= 0)
+	{
+		if (UTDEinsatzSubsystem* Einsatz = GetWorld() ? GetWorld()->GetSubsystem<UTDEinsatzSubsystem>() : nullptr)
+		{
+			Einsatz->WaehleEndlosBonus(Nr);
+		}
+	}
+	UE_LOG(LogFicsitTD, Log, TEXT("Bonusfenster: %s"), Nr >= 0 ? *FString::Printf(TEXT("Bonus %d gewaehlt"), Nr) : TEXT("spaeter"));
+	RemoveFromParent();
 }

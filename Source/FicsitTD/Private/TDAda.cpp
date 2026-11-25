@@ -3,6 +3,8 @@
 #include "TDAda.h"
 #include "TDDefenseCore.h"
 #include "TDWaveSubsystem.h"
+#include "TDBoltTurret.h"
+#include "EngineUtils.h"
 #include "TDBalance.h"
 #include "TDSprache.h"
 #include "FicsitTDModule.h"
@@ -74,6 +76,11 @@ namespace
 		{ TEXT("Johnny"), TEXT("Char_Johnny"),
 			TEXT("Bitte bewahren Sie Ruhe. Das ist Johnny. Johnny hat keine Personalakte. Johnny braucht keine."),
 			TEXT("Please remain calm. That is Johnny. Johnny does not have a personnel file. Johnny does not need one.") },
+		// 24.11.2026 (Marius: Option D "sichtbar machen"): vor der ersten Welle, in der ein Hog mehr LP hat als der staerkste Bolzenturm
+		// je Treffer Schaden macht - ab dann braucht jeder Hog zwei Bolzen und die halbe Feuerkraft verpufft (Overkill). Ohne Klasse.
+		{ TEXT("ZweiBolzen"), TEXT(""),
+			TEXT("Hinweis der Ballistikabteilung: Die Hogs sind gewachsen. Ein Bolzen je Tier reicht nicht mehr, es braucht zwei. Mehr Bolzentürme oder ein Gewehrturm verschwenden weniger."),
+			TEXT("A note from Ballistics: the Hogs have grown. One bolt per animal no longer does it, it takes two. More Bolt Turrets or a Gun Turret waste less.") },
 		{ TEXT("Boss10"), TEXT(""),
 			TEXT("Ein ungewöhnlich großes Objekt hält auf den Kern zu. Die Abteilung für Optimismus ist heute nicht besetzt."),
 			TEXT("An unusually large object is heading for the Core. The Department of Optimism is unstaffed today.") },
@@ -89,6 +96,20 @@ namespace
 		{ TEXT("Boss50"), TEXT(""),
 			TEXT("Mehrere Johnnys. FICSIT hält das statistisch für unwahrscheinlich und bittet Sie trotzdem, es zu verhindern."),
 			TEXT("Multiple Johnnys. FICSIT considers this statistically unlikely and asks you to prevent it anyway.") },
+		// 0.13 (Marius 22.11.: Einstieg HUB -> Shop -> MAM): HUB zu Beginn, Shop nach Welle 1, MAM nach Welle 2
+		{ TEXT("AufgabeHub"), TEXT(""),
+			TEXT("Errichten Sie zuerst die HUB, sie kostet nichts. Ihre Biomasse-Brenner liefern den ersten Strom, und sie ist Ihr Wiedereinstiegspunkt. FICSIT möchte Sie schließlich wiederfinden."),
+			TEXT("Build the HUB first, it is free of charge. Its biomass burners provide your first power, and it is your respawn point. FICSIT would like to be able to find you again, after all.") },
+		{ TEXT("AufgabeShop"), TEXT(""),
+			TEXT("Erste Welle abgewehrt. Der AWESOME-Shop ist freigegeben, das erste Exemplar ist kostenlos. Dort tauschen Sie Coupons gegen Baukontingente, Ausrüstung und Festplatten. FICSIT nennt das Belohnung. Die Buchhaltung nennt es Kreislauf."),
+			TEXT("First wave repelled. The AWESOME Shop has been cleared for use, the first one is free. Trade Coupons there for build quotas, equipment and Hard Drives. FICSIT calls this a reward. Accounting calls it circulation.") },
+		{ TEXT("AufgabeMam"), TEXT(""),
+			TEXT("Zweite Welle abgewehrt. Bauen Sie jetzt das MAM, es kostet nichts. Dort werden Festplatten zu neuer Technik. Großzügigkeit dieser Art ist bei FICSIT selten. Nutzen Sie sie."),
+			TEXT("Second wave repelled. Build the MAM now, it is free of charge. It turns Hard Drives into new technology. Generosity of this kind is rare at FICSIT. Use it.") },
+		// 0.13 K2 (Marius 22.11.): beim ersten Versuch, im Ring "instabiler Boden" ein Fabrikgebaeude zu bauen
+		{ TEXT("RingInstabil"), TEXT(""),
+			TEXT("Dort nicht. Das Bohrbeben des Kerns lockert den Boden im Umkreis von sechzig Metern, eine Fabrik würde darin versinken. Türme und Mauern stehen auf Tiefankern. Die leuchtenden Signale zeigen die Grenze."),
+			TEXT("Not there. The Core's drilling tremors loosen the ground within sixty meters, a factory would sink into it. Turrets and walls stand on deep anchors. The glowing signals mark the boundary.") },
 		// Endlos ab Welle 60: die Bosse kommen reihum wieder - ein kurzer Satz statt Wiederholung
 		{ TEXT("BossWieder"), TEXT(""),
 			TEXT("Bosswelle. FICSIT hat aufgehört, die Bosse zu zählen. Sie bitte nicht."),
@@ -225,6 +246,26 @@ namespace TDAda
 			}
 		}
 		return N;
+	}
+
+	bool PruefeBolzenSchwelle(const UObject* WorldContext, ATDDefenseCore* Kern, float HogLP)
+	{
+		UWorld* World = WorldContext ? WorldContext->GetWorld() : nullptr;
+		if (!World || !Kern || HogLP <= 0.f || Kern->mAdaGesagt.Contains(TEXT("ZweiBolzen")))
+		{
+			return false;
+		}
+		float Staerkster = 0.f;
+		for (TActorIterator<ATDBoltTurret> It(World); It; ++It)
+		{
+			Staerkster = FMath::Max(Staerkster, It->SchadenJeTreffer());
+		}
+		if (Staerkster <= 0.f || HogLP <= Staerkster)
+		{
+			return false;
+		}
+		UE_LOG(LogFicsitTD, Log, TEXT("ADA: Bolzen-Schwelle - Hog %.0f LP gegen hoechstens %.0f Schaden je Bolzen"), HogLP, Staerkster);
+		return Sage(WorldContext, Kern, TEXT("ZweiBolzen"));
 	}
 
 	TArray<FString> Schluessel()

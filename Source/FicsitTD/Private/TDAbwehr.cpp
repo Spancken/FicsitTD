@@ -33,6 +33,18 @@ static const TCHAR* TDIndustrieKnoten[] = {
 	TEXT("/FicsitTD/Research/Produktion/Research_TD_Bauxit.Research_TD_Bauxit_C"),
 	TEXT("/FicsitTD/Research/Produktion/Research_TD_Schwerindustrie.Research_TD_Schwerindustrie_C"),
 	TEXT("/FicsitTD/Research/Produktion/Research_TD_Mischtechnik.Research_TD_Mischtechnik_C"),
+	// 23.11. (Gegencheck 0.13 F6): seit P10 (17.11.) im Industrie-Baum, fehlten hier - im Freien Spiel folgen sie jetzt auch dem HUB
+	TEXT("/FicsitTD/Research/Logistik/Research_TD_BandMk4.Research_TD_BandMk4_C"),
+	TEXT("/FicsitTD/Research/Logistik/Research_TD_BandMk5.Research_TD_BandMk5_C"),
+	TEXT("/FicsitTD/Research/Logistik/Research_TD_MinerMk2.Research_TD_MinerMk2_C"),
+	TEXT("/FicsitTD/Research/Logistik/Research_TD_MinerMk3.Research_TD_MinerMk3_C"),
+	// 23.11. (Marius, Stromzweig): Baum Energie ist im Freien Spiel wie Industrie verborgen und folgt dem HUB
+	TEXT("/FicsitTD/Research/Energie/Research_TD_Kompaktkohle.Research_TD_Kompaktkohle_C"),
+	TEXT("/FicsitTD/Research/Energie/Research_TD_Petrolkoks.Research_TD_Petrolkoks_C"),
+	TEXT("/FicsitTD/Research/Energie/Research_TD_TurboFeuerung.Research_TD_TurboFeuerung_C"),
+	TEXT("/FicsitTD/Research/Energie/Research_TD_RaketenFeuerung.Research_TD_RaketenFeuerung_C"),
+	TEXT("/FicsitTD/Research/Energie/Research_TD_Kernkraft.Research_TD_Kernkraft_C"),
+	TEXT("/FicsitTD/Research/Energie/Research_TD_Plutonium.Research_TD_Plutonium_C"),
 };
 
 static bool IstIndustrieKnoten(const FString& Pfad)
@@ -85,6 +97,7 @@ void UTDAbwehrSubsystem::Pruefe()
 		return;
 	}
 	TauscheKosten();
+	SetzeGabelPreise();
 	ZieheIndustrieNach();
 	if (ATDSpielstand* Stand = ATDSpielstand::Get(this))
 	{
@@ -176,6 +189,46 @@ void UTDAbwehrSubsystem::TauscheKosten()
 		}
 	}
 	UE_LOG(LogFicsitTD, Log, TEXT("Abwehr: Forschungskosten von %d Knoten auf Coupons umgestellt (%d Coupons je Festplatte)"), Getauscht, JeFestplatte);
+}
+
+void UTDAbwehrSubsystem::SetzeGabelPreise()
+{
+	if (!mGetauscht)
+	{
+		return;
+	}
+	UClass* Festplatte = UTDEinsatzSubsystem::FPKlasse();
+	UClass* Coupon = UTDEinsatzSubsystem::CouponKlasse();
+	const int32 JeFestplatte = FMath::Max(1, TDBalance::Ganz(TEXT("Abwehr.CouponsJeFestplatte"), 10));
+	const float Faktor = FMath::Max(1.f, TDBalance::Wert(TEXT("Abwehr.GabelFaktor"), 2.f));
+	int32 Aufschlag = 0;
+	for (const FTDForschungKnoten& Knoten : TDForschung::Alle())
+	{
+		if (Knoten.Andere.IsEmpty() || IstIndustrieKnoten(Knoten.Pfad))
+		{
+			continue;
+		}
+		UClass* Schematic = LoadClass<UFGSchematic>(nullptr, *Knoten.Pfad);
+		const TArray<FItemAmount>* Original = mOriginalKosten.Find(Schematic);
+		TArray<FItemAmount>* Kosten = SchematicKosten(Schematic);
+		if (!Original || !Kosten || !Festplatte || !Coupon)
+		{
+			continue;
+		}
+		const bool bGegenseite = !TDForschung::Hat(this, *Knoten.Key) && !TDForschung::GewaehlteAndere(this, Knoten).IsEmpty();
+		TArray<FItemAmount> Neu;
+		for (const FItemAmount& K : *Original)
+		{
+			Neu.Add(K.ItemClass == Festplatte ? FItemAmount(Coupon, FMath::RoundToInt(K.Amount * JeFestplatte * (bGegenseite ? Faktor : 1.f))) : K);
+		}
+		*Kosten = Neu;
+		Aufschlag += bGegenseite ? 1 : 0;
+	}
+	if (Aufschlag != mGabelAufschlag)
+	{
+		UE_LOG(LogFicsitTD, Log, TEXT("Abwehr: Gabelpreise gesetzt, %d Gegenseiten mit Faktor %.1f"), Aufschlag, Faktor);
+		mGabelAufschlag = Aufschlag;
+	}
 }
 
 void UTDAbwehrSubsystem::StelleKostenWiederHer()

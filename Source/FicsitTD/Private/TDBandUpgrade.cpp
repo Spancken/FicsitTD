@@ -49,8 +49,10 @@ void UTDBandUpgrade::Verbinde()
 	mVerbunden = true;
 	TDForschung::GibStilleRezepte(this);
 	GetWorld()->GetTimerManager().ClearTimer(mTimer);
-	// 0.78.4: alte Spielstaende - Schnellleiste auf die hoechste freigeschaltete Bandstufe (Mk2 oder Mk3)
-	if (AFGRecipeManager* Rezepte = AFGRecipeManager::Get(GetWorld()))
+	// 0.78.4: alte Spielstaende - Schnellleiste auf die hoechste freigeschaltete Bandstufe (Mk2 oder Mk3).
+	// 23.11. (Gegencheck Konzept R4-A): nur mit FICSIT-Abwehr - im Modus Aus bleibt die Schnellleiste des Spielers unberuehrt
+	AFGRecipeManager* Rezepte = UTDKernplatz::ModAktiv(this) ? AFGRecipeManager::Get(GetWorld()) : nullptr;
+	if (Rezepte)
 	{
 		for (int32 Stufe = 5; Stufe >= 2; --Stufe)
 		{

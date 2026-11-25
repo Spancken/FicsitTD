@@ -1,0 +1,5 @@
+{
+  "Name": "Gegencheck-Nachtest",
+  "_Hinweis": "23.11.2026 nachmittags: die vier roten Plaene aus Gegencheck (Bericht 2026-11-23_1456) nach den Ursachen - Flieger (Zielwelle 43), Labyrinth (Suchknoten A/B), BautenP1 (Forschung, Schluessel), BautenE3a.",
+  "Plaene": ["Flieger", "Labyrinth", "BautenP1", "BautenE3a"]
+}

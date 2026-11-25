@@ -1,0 +1,24 @@
+{
+  "datum": "2026-11-24 17:23",
+  "bestanden": false,
+  "laeufe": 4,
+  "annahmen_hash": "98c24d0bff8a35adad154c4d6246c1c6662a455b6c4e85ecb0bad3f1e6bd65bb",
+  "hinweis": "abgleich.py; sim_alle_modi.py meldet 'Modell nicht bestaetigt', solange bestanden false ist oder der Hash nicht passt",
+  "plaene": {
+    "Strat-MonoBolzen": {
+      "ok": false,
+      "fallwelle_differenz": -9.0,
+      "kern_abweichung": 16.5
+    },
+    "Strat-Gewehr-Tesla": {
+      "ok": true,
+      "fallwelle_differenz": -1.5,
+      "kern_abweichung": 15.0
+    },
+    "P12-K1-Bolzen": {
+      "ok": false,
+      "fallwelle_differenz": -2.5,
+      "kern_abweichung": 20.2
+    }
+  }
+}

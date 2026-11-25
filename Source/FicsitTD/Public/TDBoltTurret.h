@@ -31,6 +31,8 @@ public:
 
 	/** Wirkung je Bolzenart (nach Klassenname des Munitions-Items) */
 	static FTDBolzenWerte WerteFuer(const UClass* MunitionsKlasse);
+	/** 24.11.2026: Schaden je Treffer mit eingelegter Munition und Level (wie "Schaden je Treffer" im Turmfenster) */
+	float SchadenJeTreffer() const;
 
 protected:
 	virtual void Feuern(AFGCreature* Ziel) override;

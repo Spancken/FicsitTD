@@ -1,0 +1,10 @@
+{
+  "Name": "Gras-S8-Kandidaten",
+  "_Hinweis": "24.11.2026: neue feste Front 1 fuer Gras-S8 messen (r14, r11, r10), danach BautenE3a mit neuer Reihenfolge am Weg.",
+  "Plaene": [
+    "Front-Gras-S8-r14",
+    "Front-Gras-S8-r11",
+    "Front-Gras-S8-r10",
+    "BautenE3a"
+  ]
+}

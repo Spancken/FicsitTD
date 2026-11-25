@@ -45,6 +45,14 @@ class EndlosLauf(st.Lauf):
         self.gebaut = 0
         self.zeit_fehlt = 0
 
+    def aufwand(self, fehl, coupons):
+        """22.11.2026 (Spielerwahl): im Endlos-Modus ist die Bauzeit knapp - Abwaegung je Gebaeude, nicht je Coupon"""
+        return max(1, len(fehl))
+
+    def fabrik_schluessel(self, fehl):
+        """22.11.2026 (Spielerwahl): im Endlos-Modus zaehlt zuerst die Bauzeit (Gebaeude), dann die Coupons"""
+        return (len(fehl), st.Lauf.kosten(self, fehl))
+
     def kosten(self, fehl):
         if len(fehl) * self.Z["BauSekundenJeGebaeude"] > self.bauzeit + 1e-9:
             self.zeit_fehlt += 1
@@ -79,11 +87,13 @@ def spiele_endlos(s, wellen, B, Z, K, gabeln, tw, wi, stufe, max_wellen, rng, vo
         L.bauzeit = bauzeit
         L.forsche(n, gabeln)
         L.baue(n, zyklus, D_prev)
+        L.baue_himmelstuerme(n)
         L.verbrenne(n, zyklus, D_prev)
         ungenutzt = L.bauzeit
         gegner, elite = wellen.erzeuge(n, rng)
         alle = gegner + rest
         q, Kd, verl = L.kampf(alle, elite, n, rng)
+        L.kern -= L.flieger_schaden(n)   # 23.11.: Flieger ab W43
         # Wellendauer: Strom 2/s (grosse Wellen schneller), Abwehr braucht q*60 s Feuer bei Feueranteil u
         strom = min(len(gegner) / max(1.0, B.get("Endlos.NachschubPaket", 2) / B.get("Endlos.NachschubTakt", 1)),
                     max(10.0, A * B.get("Endlos.StromAnteil", 0.5)))
@@ -111,9 +121,14 @@ def spiele_endlos(s, wellen, B, Z, K, gabeln, tw, wi, stufe, max_wellen, rng, vo
         geschafft = n
         L.belohnung(n, len(gegner), elite, boss)
         if boss:
-            # Bonuswahl (Annahme): Kern +30 %, wenn er unter EndlosBonusKernUnter steht, sonst Coupons
+            L.talent_vergeben()   # 23.11.2026: Talentpunkt je Bosswelle (nur mit SpielerAktiv)
+            # Bonuswahl (Annahme): Kern-Bonus, wenn der Kern unter EndlosBonusKernUnter steht, sonst Coupons.
+            # 23.11. (Gegencheck Konzept, Anhang): im Spiel hebt der Bonus das Kern-Maximum dauerhaft um Einsatz.Bonus.KernMax (+10 %,
+            # TDDefenseCore.cpp:149) und heilt nicht - vorher heilte das Modell 30 % (Endlos.Bonus.Kern, im Code ungenutzt)
             if L.kern < Z["EndlosBonusKernUnter"]:
-                L.kern = min(100.0, L.kern + 100 * B.get("Endlos.Bonus.Kern", 0.3))
+                plus = B.get("Einsatz.Bonus.KernMax", 0.1)
+                L.kern_lp *= 1 + plus
+                L.kern = L.kern / (1 + plus)
             else:
                 L.ep += B.get("Endlos.Bonus.Coupons", 80)
         if vorziehen and not boss and not ueberlauf and ungenutzt > 0 and q < Z["EndlosVorziehenUnterQ"] and L.kern >= 90:

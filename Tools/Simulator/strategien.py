@@ -110,6 +110,7 @@ REZEPTE = {
     "Streu-Nobelisk": ("Assembler", 8, {"Nobelisk": 2, "Rauchschwaches Pulver": 2}, 1),
     "Treibstoff": ("Raffinerie", 6, {"Rohöl": 6}, 4),
     "Kompaktkohle": ("Assembler", 12, {"Kohle": 5, "Schwefel": 5}, 5),
+    "Petrolkoks": ("Raffinerie", 6, {"Schwerölrückstand": 4}, 12),   # 23.11. Stromzweig: Recipe_PetroleumCoke
     "Turbotreibstoff": ("Raffinerie", 16, {"Treibstoff": 6, "Kompaktkohle": 4}, 5),
     # 0.9.1 E2, Mengen aus dem Spiel-Datenexport (CommunityResources/Docs/en-US.json): Recipe_RocketFuel, Recipe_NitricAcid,
     # Recipe_IonizedFuel. Nebenprodukt Kompaktkohle (1 bzw. 2 je Takt) wird nicht verwertet.
@@ -217,10 +218,44 @@ class Wirtschaft:
     def __init__(self, B, Z):
         self.B, self.Z, self.cache = B, Z, {}
 
-    def gebaeude(self, bedarf, strom_tuerme, n, erforscht):
-        key = (tuple(sorted((k, round(v, 2)) for k, v in bedarf.items())), round(strom_tuerme), "Kohlekraft" in erforscht, "Treibstoffkraft" in erforscht)
+    # 23.11.2026 (Stromzweig): Brennstoffe je Kraftwerk - (Name, Forschung(en), Brennwert MJ je Einheit, Strom-Schluessel)
+    KOHLE_BRENNSTOFFE = [("Kohle", (), 300, "Kohle"), ("Kompaktkohle", ("Kompaktkohle",), 630, "Kompaktkohle"),
+                         ("Petrolkoks", ("Petrolkoks",), 180, "Petrolkoks")]
+    OEL_BRENNSTOFFE = [("Treibstoff", (), 750, "Treibstoff"), ("Turbotreibstoff", ("TurboFeuerung", "Turbotreibstoff"), 2000, "Turbotreibstoff"),
+                       ("Raketentreibstoff", ("RaketenFeuerung", "Raketentreibstoff"), 3600, "Raketentreibstoff")]
+
+    def varianten(self, erforscht):
+        """Kraftwerks-Varianten, die mit dieser Forschung gehen (Spielerwahl); [None] = Verhalten bis 22.11."""
+        if not self.Z.get("Spielerwahl"):
+            return [None]
+        v = []
+        if "Kohlekraft" in erforscht:
+            v += [("Kohlekraftwerk", b) for b in self.KOHLE_BRENNSTOFFE if all(f in erforscht for f in b[1][:1])
+                  and (b[0] != "Petrolkoks" or "Raffinerie" in erforscht)]
+        if "Treibstoffkraft" in erforscht:
+            v += [("Treibstoffkraftwerk", b) for b in self.OEL_BRENNSTOFFE if (not b[1] or any(f in erforscht for f in b[1]))
+                  and (b[0] != "Raketentreibstoff" or "Mischtechnik" in erforscht)]
+        return v or [None]
+
+    def gebaeude(self, bedarf, strom_tuerme, n, erforscht, variante="beste"):
+        """23.11.2026 (Stromzweig): mit Spielerwahl rechnet der gute Spieler jede erforschte Kraftwerks-Variante (Kohle mit dem
+        besten Kohle-Brennstoff, Treibstoff mit dem besten Treibstoff) und nimmt die mit den wenigsten Gebaeuden"""
+        rel = tuple(sorted(k for k in erforscht if k in ("Kohlekraft", "Treibstoffkraft", "Kompaktkohle", "Petrolkoks", "TurboFeuerung",
+                                                       "Turbotreibstoff", "RaketenFeuerung", "Raketentreibstoff", "Raffinerie", "Mischtechnik")))
+        key = (tuple(sorted((k, round(v, 2)) for k, v in bedarf.items())), round(strom_tuerme), rel, None if variante == "beste" else repr(variante))
         if key in self.cache:
             return self.cache[key]
+        varianten = self.varianten(erforscht) if variante == "beste" else [variante]
+        best = None
+        for v in varianten:
+            e = self._gebaeude(bedarf, strom_tuerme, n, erforscht, v)
+            if best is None or (sum(e[0].values()), e[2]) < (sum(best[0].values()), best[2]):
+                best = e
+        self.cache[key] = best
+        return best
+
+    def _gebaeude(self, bedarf, strom_tuerme, n, erforscht, variante):
+        """variante: None = Verhalten bis 22.11. (Biomasse, sonst Kohle), sonst (Kraftwerk, Brennstoff-Eintrag)"""
         Z = self.Z
         masch, roh_basis = kette(bedarf)
         geb = collections.Counter()
@@ -231,13 +266,23 @@ class Wirtschaft:
             # Rohstoffe = Produktion + Brennstoff der Kraftwerke aus dem letzten Durchgang
             roh = collections.Counter(roh_basis)
             roh["Biomasse"] += kraft["Biomassegenerator"] * Z["BiomasseJeGenerator"]
-            roh["Kohle"] += kraft["Kohlekraftwerk"] * 15
             roh["Wasser"] += kraft["Kohlekraftwerk"] * 45
             g = collections.Counter(geb)
+            # Brennstoff je Kraftwerk und Minute = MW x 60 / Brennwert (das Spiel verbrennt bei hoeherer Leistung schneller)
+            brennstoff = {}
+            if kraft["Kohlekraftwerk"]:
+                b = variante[1] if variante and variante[0] == "Kohlekraftwerk" else self.KOHLE_BRENNSTOFFE[0]
+                brennstoff[b[0]] = kraft["Kohlekraftwerk"] * self.mw("Kohlekraftwerk", b) * 60 / b[2]
             if kraft["Treibstoffkraftwerk"]:
-                m2, r2 = kette({"Treibstoff": kraft["Treibstoffkraftwerk"] * 12})
+                b = variante[1] if variante and variante[0] == "Treibstoffkraftwerk" else self.OEL_BRENNSTOFFE[0]
+                brennstoff[b[0]] = kraft["Treibstoffkraftwerk"] * self.mw("Treibstoffkraftwerk", b) * 60 / b[2]
+            if brennstoff.get("Kohle"):
+                roh["Kohle"] += brennstoff.pop("Kohle")
+            if brennstoff:
+                m2, r2 = kette(brennstoff)
                 roh.update(r2)
-                g["Raffinerie"] += math.ceil(m2["Treibstoff"] - 1e-9)
+                for item, x in m2.items():
+                    g[REZEPTE[item][0]] += math.ceil(x - 1e-9)
             g["Miner"] = sum(math.ceil(roh[r] / Z["MinerRate"] - 1e-9) for r, art in ROH.items() if art == "Miner")   # alle Erze (07.11.: Quarz, Caterium, Schwefel, Bauxit im Szenario)
             g["Oelpumpe"] = math.ceil(roh["Rohöl"] / 120 - 1e-9)
             g["Wasserpumpe"] = math.ceil(roh["Wasser"] / 120 - 1e-9)
@@ -249,17 +294,26 @@ class Wirtschaft:
             last = sum(z * GEB_STROM.get(k, 0) for k, z in g.items()) + strom_tuerme + druck
             kraft = collections.Counter()
             rest = last
-            if Z["TreibstoffkraftNutzen"] and "Treibstoffkraft" in erforscht and rest > 150:
-                kraft["Treibstoffkraftwerk"] = math.ceil(rest / 150)
+            if variante and variante[0] == "Treibstoffkraftwerk":
+                kraft["Biomassegenerator"] = min(int(self.B.get("Einsatz.Start.Biomassegenerator", 1)), math.floor(rest / 30))
+                kraft["Treibstoffkraftwerk"] = max(0, math.ceil((rest - kraft["Biomassegenerator"] * 30) / self.mw("Treibstoffkraftwerk", variante[1]) - 1e-9))
+            elif variante and variante[0] == "Kohlekraftwerk":
+                kraft["Biomassegenerator"] = min(int(self.B.get("Einsatz.Start.Biomassegenerator", 1)), math.floor(rest / 30))
+                kraft["Kohlekraftwerk"] = max(0, math.ceil((rest - kraft["Biomassegenerator"] * 30) / self.mw("Kohlekraftwerk", variante[1]) - 1e-9))
+            elif Z["TreibstoffkraftNutzen"] and "Treibstoffkraft" in erforscht and rest > 250:
+                kraft["Treibstoffkraftwerk"] = math.ceil(rest / 250)
             elif "Kohlekraft" in erforscht:
                 kraft["Biomassegenerator"] = min(int(self.B.get("Einsatz.Start.Biomassegenerator", 1)), math.floor(rest / 30))
                 kraft["Kohlekraftwerk"] = max(0, math.ceil((rest - kraft["Biomassegenerator"] * 30) / 75 - 1e-9))
             else:
                 kraft["Biomassegenerator"] = math.ceil(rest / 30 - 1e-9)
         g.update(kraft)
-        ergebnis = ({k: v for k, v in g.items() if v > 0}, dict(roh), last)
-        self.cache[key] = ergebnis
-        return ergebnis
+        return ({k: v for k, v in g.items() if v > 0}, dict(roh), last)
+
+    def mw(self, werk, brennstoff):
+        """MW je Kraftwerk mit diesem Brennstoff (TDStrom.cpp: Grundleistung x Strom.<Brennstoff>.Faktor)"""
+        grund = {"Kohlekraftwerk": 75, "Treibstoffkraftwerk": 250}[werk]
+        return grund * self.B.get(f"Strom.{brennstoff[3]}.Faktor", 1.0)
 
 
 # ---------------------------------------------------------------- Türme
@@ -269,6 +323,16 @@ class Turmwerte:
 
     def bonus(self, typ, level, wert):
         return sum(self.B.get(f"Tuerme.Level.{typ}.L{k}.{wert}", 0.0) for k in range(2, level + 1))
+
+    def treffer(self, typ, level, mun, doktrin):
+        """24.11.2026 (Overkill): Schaden je Schuss gegen ein Ziel ohne Resistenz. None = ohne Schuss-Raster (Flamme und Tesla als
+        Dauer- bzw. Kettenschaden, Nobelisk als Flaeche). Im Spiel braucht ein Hog ab W5 zwei Armierungsbolzen (53 LP gegen 48)."""
+        if typ in ("Flammenwerfer", "Teslaspule", "Nobelisk-Werfer"):
+            return None
+        B = self.B
+        k = "Munition." + mun[1]
+        sb = (1 + self.bonus(typ, level, "Schaden")) * (1 + B.get("Doktrin.Schaden", 0.25) if doktrin else 1.0)
+        return (B[k + ".Schaden"] + B.get(k + ".BrandSchaden", 0.0)) * sb
 
     def dps(self, typ, level, mun, doktrin, gabel, einzel=False):
         """Nenn-DPS gegen ein Ziel, mit grober Mehrfachziel-Wirkung (Annahme), wie kalibriere.nenn_dps + Flächen.
@@ -338,6 +402,9 @@ class Lauf:
         self.s, self.B, self.Z, self.K, self.tw, self.wi = s, B, Z, K, tw, wi
         self.stufe = stufe
         self.ep = Z["StartEP"]
+        # 24.11.2026: Startkapital des Einsatzes (Einsatz.Start.Coupons, TDEinsatz.cpp). Der AWESOME-Shop oeffnet erst nach Welle 1
+        # (Einstieg HUB -> Shop -> MAM), deshalb ist es erst nach W1 ausgebbar - kommt in belohnung(1) dazu.
+        self.start_coupons = int(B.get("Einsatz.Start.Coupons", 0))
         self.fp = 0
         self.erforscht = set()
         self.gesperrt = set()
@@ -355,6 +422,14 @@ class Lauf:
         # Brennstoff der Biomassegeneratoren: Startkit 300 Biomasse + 200 Blätter (15 MJ) + 100 Holz (100 MJ), je Welle +100 (TDEinsatz.cpp:493)
         self.biomasse = Z["BiomasseStart"]
         self.biomasse_mangel = 0
+        # 23.11.2026 (Talentbaum): aktiver Spieler (Z["SpielerAktiv"]), Talentpunkte je geschaffter Bosswelle
+        self.talente = collections.Counter()
+        self.himmelstuerme = 0          # 23.11.: Himmelstuerme gegen Flieger
+        self.flieger_durch = 0
+        self.talent_punkte = 0
+        self.spieler_anteile = []
+        self.spieler_je_welle = {}
+        self.bio_brauche = 0.0      # 23.11.: Biomasse der letzten Welle (fuer den Strom-Engpass in forsche)
         self.reparaturen = 0
         self.versorgung = 1.0
         self.ep_fehlt = 0
@@ -379,9 +454,172 @@ class Lauf:
     def neu(self):
         return self.Z.get("Stand", "090") == "091"
 
+    # ------------------------------------------------ 23.11.2026: Spieler und Talentbaum (TDPionier.cpp, vier Rollen-Zweige)
+    # ------------------------------------------------ 23.11.2026: Flieger (TDWaveSubsystem.cpp SpawneFlieger, Spezifikation E5)
+    def flieger_zahl(self, n):
+        B = self.B
+        ab = int(B.get("Flieger.AbWelle", 43))   # 25.11.: Voegel statt Krabben
+        if B.get("Flieger.Aktiv", 1.0) <= 0 or n < ab:
+            return 0
+        z = round((B.get("Flieger.Anzahl", 6) + B.get("Flieger.JeWelle", 0.5) * (n - ab)) * B.get(f"Stufen.{self.stufe}.Budget", 1.0))
+        return max(1, min(int(B.get("Flieger.Max", 24)), z))
+
+    def baue_himmelstuerme(self, n):
+        """der gute Spieler stellt vor den Fliegern genug Himmelstuerme (FliegerJeHimmelsturm), wenn erforscht und bezahlbar"""
+        f = self.flieger_zahl(n)
+        if not f or "Himmelsturm" not in self.erforscht:
+            return
+        noetig = math.ceil(f / self.Z.get("FliegerJeHimmelsturm", 8))
+        # 25.11.: gegen Mantas mindestens Z["HimmelstuermeJeManta"] je Manta (zaeh, kreisen in Kernnaehe)
+        noetig = max(noetig, math.ceil(self.manta_zahl(n) * self.Z.get("HimmelstuermeJeManta", 1)))
+        while self.himmelstuerme < noetig:
+            preis = sim.runde(self.B.get("Einsatz.Laden.Himmelsturm.Grundpreis", 10) * self.Z["PreisFaktor"]
+                              * (1 + self.B.get("Einsatz.Laden.Himmelsturm.Aufschlag", 0.4) * self.himmelstuerme))
+            if self.ep < preis:
+                return
+            self.ep -= preis
+            self.ep_ausgegeben["Tuerme"] += preis
+            self.himmelstuerme += 1
+
+    def manta_zahl(self, n):
+        """25.11.2026: Mantas ab Flieger.Manta.AbWelle (TDWaveSubsystem.cpp SpawneFlieger)"""
+        B = self.B
+        ab = int(B.get("Flieger.Manta.AbWelle", 45))
+        if B.get("Flieger.Aktiv", 1.0) <= 0 or n < ab:
+            return 0
+        z = round((B.get("Flieger.Manta.Anzahl", 1) + B.get("Flieger.Manta.JeWelle", 0.25) * (n - ab)) * B.get(f"Stufen.{self.stufe}.Budget", 1.0))
+        return max(1, min(int(B.get("Flieger.Manta.Max", 6)), z))
+
+    def manta_schaden(self, n):
+        """Kernschaden der Mantas: Saeure alle Flieger.Manta.Takt s, bis die Himmelstuerme sie nacheinander abschiessen.
+        Ohne Himmelsturm leben sie die ganze Welle (Z["WellenDauerFlieger"]). Annahme, im Spiel nicht nachgemessen."""
+        m = self.manta_zahl(n)
+        if not m:
+            return 0.0
+        B = self.B
+        ab = int(B.get("Flieger.Manta.AbWelle", 45))
+        lp = (B.get("Flieger.Manta.LP", 1500) * B.get(f"Stufen.{self.stufe}.GegnerLP", 1.25)
+              * self.wellen_wachstum(n) / max(0.01, self.wellen_wachstum(ab)))
+        dps = self.himmelstuerme * self.Z.get("HimmelsturmDPS", 160)
+        dauer = self.Z.get("WellenDauerFlieger", 120)
+        if dps > 0:
+            sekunden = min(m * dauer, lp / dps * m * (m + 1) / 2)
+        else:
+            sekunden = m * dauer
+        schuesse = sekunden / max(0.1, B.get("Flieger.Manta.Takt", 3))
+        je = B.get("Flieger.Manta.Schaden", 10) * (1 + B.get("Flieger.SchadenWachstum", 0.25) * max(0.0, self.wellen_wachstum(n) - 1))
+        return schuesse * je
+
+    def flieger_schaden(self, n):
+        """Kernverlust in Prozent durch Voegel, die kein Himmelsturm abfaengt, und durch Manta-Saeure"""
+        f = self.flieger_zahl(n)
+        B = self.B
+        schaden = 0.0
+        if f:
+            rest = max(0, f - self.himmelstuerme * self.Z.get("FliegerJeHimmelsturm", 8))
+            self.flieger_durch += rest
+            je = B.get("Flieger.KernSchaden", 15) * (1 + B.get("Flieger.SchadenWachstum", 0.25) * max(0.0, self.wellen_wachstum(n) - 1))
+            schaden += rest * je
+        schaden += self.manta_schaden(n)
+        return 100.0 * schaden / max(1.0, self.kern_lp)
+
+    def talent_stufe(self, zweig):
+        return self.talente.get(zweig, 0)
+
+    def wellen_wachstum(self, n):
+        """wie UTDWaveSubsystem::mWellenWachstum: LP-Faktor der Welle ohne den Faktor der Stufe.
+        23.11. (Gegencheck Konzept): im Endlos mit Endlos.LPJeWelle, Endlos.<Stufe>.LPFaktor und dem Zins ab W50"""
+        B = self.B
+        endlos = getattr(self, "bauzeit", None) is not None and type(self).__name__ == "EndlosLauf"
+        je = B.get("Endlos.LPJeWelle", B.get("Wellen.LPJeWelle", 0.08)) if endlos else B.get("Wellen.LPJeWelle", 0.08)
+        ab31 = B.get("Endlos.LPJeWelleAb31", B.get("Wellen.LPJeWelleAb31", 0.1)) if endlos else B.get("Wellen.LPJeWelleAb31", 0.1)
+        w = 1 + je * min(n - 1, 30) + ab31 * max(n - 31, 0)
+        if endlos:
+            w *= B.get(f"Endlos.{self.stufe}.LPFaktor", 1.0) * (1 + B.get("Endlos.LPWachstum", 0.0)) ** max(0, n - B.get("Endlos.LPWachstumAbWelle", 50))
+        return w
+
+    def handwaffe(self):
+        """23.11. (Gegencheck Konzept): das Gewehr gibt es erst nach der Forschung Gewehrturm im Laden (Einsatz.Laden.Gewehr),
+        vorher kaempft der Spieler mit der Armierpistole. Rueckgabe (Waffe, DPS ohne Wachstum)"""
+        if "Gewehrturm" in self.erforscht:
+            if not getattr(self, "gewehr_gekauft", False):
+                preis = self.B.get("Einsatz.Laden.Gewehr.Grundpreis", 10)
+                if self.ep >= preis:
+                    self.ep -= preis
+                    self.gewehr_gekauft = True
+            if getattr(self, "gewehr_gekauft", False):
+                return "Gewehr", self.Z.get("SpielerDPS", 30.0)
+        return "Armierpistole", self.Z.get("SpielerDPSArmier", 20.0)
+
+    def spieler_dps(self, n, gegner, elite):
+        """Handwaffe des aktiven Spielers (Annahme SpielerDPS, Gewehr mit Nachladen), waechst mit Pionier.WellenAnteil wie im Mod.
+        Schuetze: Kopftreffer, Schnellladen, Durchschlag, Sprengmantel; Jaeger: x1,5 gegen Elite und Boss (Anteil Elite der Welle)"""
+        Z, B = self.Z, self.B
+        waffe, grund = self.handwaffe()
+        d = grund * B.get(f"Pionier.HandFaktor.{waffe}", 1.0) * (1 + B.get("Pionier.WellenAnteil", 0.5) * max(0.0, self.wellen_wachstum(n) - 1))
+        sch = self.talent_stufe("Schuetze")
+        if sch >= 1:
+            d *= 1 + Z.get("KopftrefferAnteil", 0.3) * (B.get("Pionier.Kopftreffer", 1.5) - 1)
+        if sch >= 2:
+            d *= Z.get("SchnellladenFaktor", 1.33)
+        if sch >= 3:
+            d *= 1 + 0.5 * Z.get("DurchschlagTrefferAnteil", 0.5)   # halber Schaden am naechsten Gegner
+        if sch >= 5:
+            d *= 1 + 0.2 * Z.get("SprengmantelZiele", 1.0)        # jeder fuenfte Treffer explodiert
+        if self.talent_stufe("Jaeger") >= 1:
+            anteil = (elite + (1 if n % 10 == 0 else 0)) / max(1, len(gegner))
+            d *= 1 + (B.get("Pionier.Jaeger.Faktor", 1.5) - 1) * min(1.0, anteil * Z.get("JaegerZielAnteil", 3.0))
+        return d
+
+    def turm_talentfaktor(self, n):
+        """Wirkung der Talente auf alle Tuerme: Kommandant (Markierung +15 %, Sprung), Techniker (Uebersteuern), Jaeger (Schwachstelle im Boss)"""
+        Z, B = self.Z, self.B
+        f = 1.0
+        kom = self.talent_stufe("Kommandant")
+        if kom >= 2:
+            anteil = Z.get("MarkiertAnteil", 0.25) * (Z.get("MarkiertSprungFaktor", 1.6) if kom >= 3 else 1.0)
+            f *= 1 + (B.get("Pionier.Markierung.Bonus", 1.15) - 1) * min(1.0, anteil)
+        if self.talent_stufe("Techniker") >= 3:
+            dauer, pause = B.get("Pionier.Uebersteuern.Dauer", 10), B.get("Pionier.Uebersteuern.Pause", 60)
+            reichweite = Z.get("UebersteuernAnteil", 0.3) * (Z.get("UebersteuernFlaecheFaktor", 2.0) if kom >= 5 else 1.0)
+            f *= 1 + (B.get("Pionier.Uebersteuern.Takt", 1.5) - 1) * dauer / (dauer + pause) * reichweite
+        return f
+
+    def schwachstelle(self, n, gegner):
+        """Jaeger 3 (TDPionier.cpp: nur Schaden am Boss): Faktor auf den Turmschaden, gemittelt ueber die Welle = 1 + Bonus x Anteil
+        des Boss an den Gegner-LP x Trefferzeit (SchwachstelleAnteil)"""
+        if self.talent_stufe("Jaeger") < 3 or n % 10 != 0 or not gegner:
+            return 1.0
+        lp = [l for _, l in gegner]
+        anteil = max(lp) / max(1.0, sum(lp))
+        return 1 + (self.B.get("Pionier.Jaeger.Schwachstelle", 1.25) - 1) * self.Z.get("SchwachstelleAnteil", 0.6) * anteil
+
+    def talent_vergeben(self):
+        """1 Punkt je geschaffter Bosswelle (Pionier.PunkteJeBoss), hoechstens Pionier.MaxPunkte; Reihenfolge Z["TalentPlan"]"""
+        if not self.Z.get("SpielerAktiv"):
+            return
+        maxp = int(self.B.get("Pionier.MaxPunkte", 15))
+        self.talent_punkte = min(maxp, self.talent_punkte + int(self.B.get("Pionier.PunkteJeBoss", 1)))
+        plan = self.Z.get("TalentPlan", ["Kommandant", "Kommandant", "Jaeger", "Kommandant", "Jaeger", "Jaeger", "Schuetze", "Schuetze"])
+        while sum(self.talente.values()) < self.talent_punkte:
+            frei = [z for z in plan if self.talente[z] < 5]
+            if not frei:
+                return
+            # naechster Plan-Eintrag, der noch nicht so oft vergeben ist, wie er im Plan bis hierher steht
+            for i, z in enumerate(plan):
+                if self.talente[z] < plan[:i + 1].count(z) and self.talente[z] < 5:
+                    self.talente[z] += 1
+                    break
+            else:
+                self.talente[frei[0]] += 1
+
     def extra(self):
         """Zusatzfelder nur für 0.9.1 oder den Verlauf (die CSV von --stand 090 bleibt wie bisher)"""
         e = {}
+        if self.Z.get("SpielerAktiv"):
+            e["SpielerAnteil"] = round(statistics.median(self.spieler_anteile), 3) if self.spieler_anteile else 0.0
+            e["Talente"] = dict(self.talente)
+            e["SpielerJeWelle"] = dict(self.spieler_je_welle)
         if self.neu:
             e.update({f"Nutzung_{k}": v for k, v in self.nutzung.items()})
             e.update({f"NutzungAb_{k}": v for k, v in self.nutzung_ab.items()})
@@ -406,7 +644,12 @@ class Lauf:
                 for v in self.K[k]["vor"]:
                     add(v)
                 plan.append(k)
-        add("Assembler"); add("Kupfer"); add("Kohlekraft")   # Strom: ohne Kohlekraft nur Biomasse-Generatoren
+        # 22.11.2026 (Spielerwahl, Analyse-A6-Simulation): der gute Spieler forscht Kupfer und Kohlekraftwerk nur, wenn seine Linie
+        # sie braucht (add() reiht Voraussetzungen selbst davor); das Kohlekraftwerk fuer die Fabrik kommt nach Turmfertigung II
+        if self.Z.get("Spielerwahl"):
+            add("Assembler")
+        else:
+            add("Assembler"); add("Kupfer"); add("Kohlekraft")   # Strom: ohne Kohlekraft nur Biomasse-Generatoren
         for t in sorted(s["Gewichte"], key=lambda t: -s["Gewichte"][t]):
             add(TURM_FORSCHUNG[t])
             if t == "Bolzenturm":
@@ -423,12 +666,16 @@ class Lauf:
                 if t in STUETZBAU:
                     add(STUETZBAU[t][1])
         add("Turmfertigung2")
+        if self.Z.get("Spielerwahl"):
+            add("Kohlekraft")
         if s["Kern"]:
             add("KernPanzer"); add("KernNotrep"); add(s["Gabel"]["Kern"])
         if s["Doktrin"]:
             add({"Bolzenturm": "DoktrinBolzen", "Gewehrturm": "DoktrinGewehr", "Nobelisk-Werfer": "DoktrinNobelisk",
                  "Teslaspule": "DoktrinTesla", "Flammenwerfer": "DoktrinFlamme"}[s["Doktrin"]])
         add("Munitionspuffer"); add("Turmfertigung3")
+        if self.Z.get("Spielerwahl") and self.B.get("Flieger.Aktiv", 1.0) > 0:
+            add("Himmelsturm")   # 23.11.: Luftabwehr vor den Fliegern ab W43 (Ballistik, ab W35, braucht Bauxit, Schwerindustrie, Schwefel)
         for t in s["Gewichte"]:
             if t == "Gewehrturm":
                 add("Turbomunition")
@@ -449,7 +696,35 @@ class Lauf:
         add("Turmfertigung4")
         return plan
 
+    def strom_knapp(self):
+        """23.11.2026 (Gegencheck-Balance, Gewehr+Nobelisk 0 von 24 mit Kohlekraftwerk): reicht die Biomasse nicht mehr fuer
+        Z["StromVorlaufWellen"] Wellen (oder fehlte sie schon), braucht der gute Spieler das Kohlekraftwerk jetzt"""
+        return self.biomasse_mangel > 0 or self.biomasse < self.Z.get("StromVorlaufWellen", 3) * self.bio_brauche
+
     def forsche(self, n, gabeln):
+        # 23.11.2026: der gute Spieler zieht das Kohlekraftwerk vor, sobald der Biomasse-Strom knapp wird - vorher stand es fest
+        # hinter Turmfertigung II, und Linien mit langer Forschungsliste (Gewehr+Nobelisk) kamen nie dorthin (Biomasse leer)
+        if self.Z.get("Spielerwahl") and "Kohlekraft" in self.plan_forschung and "Kohlekraft" not in self.erforscht and self.strom_knapp():
+            kn = self.K["Kohlekraft"]
+            if kn["ab"] <= n and all(v in self.erforscht for v in kn["vor"]):
+                preis = kn["fp"] * self.Z["FPPreisFaktor"]
+                if self.fp < preis:
+                    return              # sparen statt anderes zu forschen
+                self.fp -= preis
+                self.erforscht.add("Kohlekraft")
+        # 23.11.2026 (Stromzweig): ab Z["StromAusbauAbKraftwerken"] Kohlekraftwerken baut der gute Spieler die Stromlinie aus
+        # (Kompaktkohle, Petrolkoks), ab doppelt so vielen und mit Raffinerie zusaetzlich die Oel-Linie - wenn die Festplatten reichen
+        if self.Z.get("Spielerwahl"):
+            ab = self.Z.get("StromAusbauAbKraftwerken", 4)
+            kohle = self.besitz.get("Kohlekraftwerk", 0) + self.besitz.get("Treibstoffkraftwerk", 0) * 3
+            for k, schwelle in (("Kompaktkohle", ab), ("Petrolkoks", ab * 2), ("Treibstoffkraft", ab * 2), ("TurboFeuerung", ab * 3)):
+                kn = self.K.get(k)
+                if not kn or k in self.erforscht or kohle < schwelle or kn["ab"] > n or any(v not in self.erforscht for v in kn["vor"]):
+                    continue
+                preis = kn["fp"] * self.Z["FPPreisFaktor"]
+                if self.fp >= preis:
+                    self.fp -= preis
+                    self.erforscht.add(k)
         for k in self.plan_forschung:
             if k in self.erforscht or k in self.gesperrt:
                 continue
@@ -607,12 +882,56 @@ class Lauf:
             alt = self.mun_aktiv.get(typ)
             self.mun_aktiv[typ] = frei[-1]
             bed, strom = self.bedarf(self.tuerme, zyklus, D)
-            geb, _, _ = self.wi.gebaeude(bed, strom, n, self.erforscht)
-            if not self.gebaeude_ok(geb) or self.kosten(self.fehlende_kontingente(geb)) > self.ep - self.Z["Reserve"]:
+            geb, _, _ = self.fabrik(bed, strom, n)
+            kosten = self.kosten(self.fehlende_kontingente(geb)) if self.gebaeude_ok(geb) else None
+            lohnt = True
+            if kosten is not None and self.Z.get("Spielerwahl"):
+                # ohne ausdrueckliche Wahl schiesst der Turm die Grundmunition (beste_munition_fuer_wirtschaft: frei[0])
+                bisher = alt if alt is not None else frei[0]
+                # 22.11.2026 (Spielerwahl): Gewinn der neuen Munition an allen Tuermen des Typs je Coupon gegen einen weiteren Turm
+                # mit der alten Munition (nur Turmpreis, ohne dessen Fabrik - der Vergleich bevorzugt also eher den Umstieg nicht)
+                dokt, gabel = self.doktrin_aktiv() and self.s["Doktrin"] == typ, self.s["Gabel"]
+                gewinn = sum(self.dps_l(t, lv, frei[-1], dokt, gabel) - self.dps_l(t, lv, bisher, dokt, gabel) for t, lv in self.tuerme if t == typ)
+                lv_neu = 2 if TURM_FORSCHUNG[typ] in self.erforscht or typ == "Bolzenturm" else 1
+                fehl = self.fehlende_kontingente(geb)
+                je_turm = self.dps_l(typ, lv_neu, bisher, dokt, gabel) / max(1e-9, self.aufwand([typ], self.preis(typ) + self.levelpreis(typ, 1, lv_neu)))
+                lohnt = gewinn / max(1e-9, self.aufwand(fehl, kosten)) >= je_turm
+                if not lohnt:
+                    self.nutzung["MunitionAufgeschoben"] += 1
+            if kosten is None or kosten > self.ep - self.Z["Reserve"] or not lohnt:
                 if alt is None:
                     self.mun_aktiv.pop(typ)
                 else:
                     self.mun_aktiv[typ] = alt
+
+    def aufwand(self, fehl, coupons):
+        """Knappe Waehrung fuer Abwaegungen (Spielerwahl): im Einsatz Coupons (EndlosLauf: Gebaeude, also Bauzeit)"""
+        return max(1, coupons)
+
+    def fabrik_schluessel(self, fehl):
+        """Was eine Fabrik-Variante kostet: im Einsatz zuerst Coupons, dann Gebaeude (EndlosLauf: zuerst Bauzeit)"""
+        return (Lauf.kosten(self, fehl), len(fehl))
+
+    def fabrik(self, bed, strom, n):
+        """Gebaeude (geb, roh, last) fuer einen Bedarf. 22.11.2026 (Spielerwahl): mit Kohlekraftwerk waehlt der gute Spieler
+        Kohlestrom nur, wenn er billiger ist als Biomasse oder die Biomasse fuer die Welle nicht reicht (vorher immer Kohle)"""
+        # 23.11.2026 (Stromzweig): der gute Spieler waehlt Kraftwerk und Brennstoff nach dem, was ihn am wenigsten kostet
+        # (Einsatz: Coupons, Endlos: Bauzeit - fabrik_schluessel), nicht nach der Zahl der Gebaeude
+        kandidaten = [self.wi.gebaeude(bed, strom, n, self.erforscht, variante=v) for v in self.wi.varianten(self.erforscht)]
+        kohle = min(kandidaten, key=lambda e: self.fabrik_schluessel(self.fehlende_kontingente(e[0])))
+        if not self.Z.get("Spielerwahl") or "Kohlekraft" not in self.erforscht:
+            return kohle
+        bio = self.wi.gebaeude(bed, strom, n, self.erforscht - {"Kohlekraft"})
+        if bio[0] == kohle[0]:
+            return kohle
+        bio_mw = min(bio[2], bio[0].get("Biomassegenerator", 0) * 30)
+        zyklus = getattr(self, "welle_zyklus", 5.0)
+        brauche = bio_mw * self.Z["StromMittelAnteil"] * zyklus * 60 / self.Z["BiomasseMJ"]
+        if brauche > self.biomasse:
+            return kohle
+        if self.fabrik_schluessel(self.fehlende_kontingente(bio[0])) <= self.fabrik_schluessel(self.fehlende_kontingente(kohle[0])):
+            return bio
+        return kohle
 
     def gebaeude_ok(self, geb):
         """Gebäude, die eine Forschung brauchen, die fehlt -> nicht baubar"""
@@ -644,9 +963,10 @@ class Lauf:
         """Bauphase vor Welle n: erst Fabrik für die vorhandenen Türme, dann Türme oder Level nach Stil"""
         self.welle_n = n
         self.welle_D = D
+        self.welle_zyklus = zyklus
         def fabrik_fuer(tuerme):
             bed, strom = self.bedarf(tuerme, zyklus, D)
-            geb, _, _ = self.wi.gebaeude(bed, strom, n, self.erforscht)
+            geb, _, _ = self.fabrik(bed, strom, n)
             return geb
         self.stelle_munition_um(zyklus, D, n)
         geb = fabrik_fuer(self.tuerme)
@@ -673,7 +993,7 @@ class Lauf:
         D2 = D + self.Z["WellenJe"]
         zyklus2 = zyklus_min(self.Z, n + 1, D2)
         bed2, strom2 = self.bedarf(self.tuerme, zyklus2, D2)
-        vorhalt = self.kosten(self.fehlende_kontingente(self.wi.gebaeude(bed2, strom2, n + 1, self.erforscht)[0])) * self.Z.get("Vorhalt", 1.0)
+        vorhalt = self.kosten(self.fehlende_kontingente(self.fabrik(bed2, strom2, n + 1)[0])) * self.Z.get("Vorhalt", 1.0)
         if self.neu:
             vorhalt += self.spar_vorhalt(zyklus, D, n)
             self.kaufe_stuetzbauten(fabrik_fuer, vorhalt)
@@ -733,7 +1053,7 @@ class Lauf:
         alt = self.mun_aktiv.get("Flammenwerfer")
         self.mun_aktiv["Flammenwerfer"] = ziel
         bed, strom = self.bedarf(self.tuerme, zyklus, D)
-        geb, _, _ = self.wi.gebaeude(bed, strom, n, self.erforscht)
+        geb, _, _ = self.fabrik(bed, strom, n)
         if alt is None:
             self.mun_aktiv.pop("Flammenwerfer")
         else:
@@ -784,11 +1104,12 @@ class Lauf:
         """Biomasse für die Biomassegeneratoren dieser Welle verbrauchen; fehlt sie, fehlt Strom -> Versorgung sinkt.
         Energie = Spitzenlast x mittlere Auslastung (Live 03./04.11.: Verbrauch/Spitze im Mittel 0,75) x Zykluszeit"""
         bed, strom = self.bedarf(self.tuerme, zyklus, D)
-        geb, _, last = self.wi.gebaeude(bed, strom, n, self.erforscht)
+        geb, _, last = self.fabrik(bed, strom, n)
         bio_mw = min(last, geb.get("Biomassegenerator", 0) * 30)
         if bio_mw <= 0:
             return
         brauche = bio_mw * self.Z["StromMittelAnteil"] * zyklus * 60 / self.Z["BiomasseMJ"]
+        self.bio_brauche = brauche
         if brauche <= self.biomasse:
             self.biomasse -= brauche
             return
@@ -818,6 +1139,16 @@ class Lauf:
                 art = m[3] or ART[typ]
                 # Mehrziel_<Typ>: an Spielmessungen angepasster Faktor auf die Formel (verlust_fit.py, 07.11.)
                 d = self.dps_l(typ, lv, m, dokt, self.s["Gabel"]) * (self.versorgung if typ != "Teslaspule" else 1.0) * self.Z.get(f"Mehrziel_{typ}", 1.0)
+                # 24.11.2026 (Kernschaden-Messung): Schuesse sind ganzzahlig. Wirksam ist nur, was ein Ziel noch an LP hat - der Rest
+                # des letzten Schusses verpufft (Overkill). Anteil = Summe LP / Summe (noetige Schuesse x Schaden je Schuss).
+                hit = self.tw.treffer(typ, lv, m, dokt) if self.Z.get("VerlustOverkill") else None
+                if hit:
+                    gesamt = 0.0
+                    for name, l in gegner:
+                        r = sim.resistenz(self.B, art, name)
+                        if r > 0:
+                            gesamt += math.ceil(l / (hit * r) - 1e-9) * hit * r
+                    d *= min(1.0, lp_ges / gesamt) if gesamt > 0 else 1.0
                 wirk = d * sum(l * sim.resistenz(self.B, art, name) for name, l in gegner) / lp_ges
                 if best is None or wirk > best[0]:
                     best = (wirk, art, d, self.dps_l(typ, lv, m, dokt, self.s["Gabel"], einzel=True) * (self.versorgung if typ != "Teslaspule" else 1.0))
@@ -825,6 +1156,15 @@ class Lauf:
         if "KernGeschuetz" in self.erforscht:
             kg = self.B.get("Forschung.KernGeschuetz.Schaden", 60) / 1.5
             tuerme.append((0, "Durchschlag", kg, kg))
+        if self.Z.get("SpielerAktiv"):
+            # 23.11.2026: Talente auf die Tuerme, dazu die Handwaffe des aktiven Spielers als eigener "Turm" (Kugel wie die Gewehrmunition)
+            tf = self.turm_talentfaktor(n) * self.schwachstelle(n, gegner)
+            tuerme = [(t[0], t[1], t[2] * tf, t[3] * tf) for t in tuerme]
+            sp = self.spieler_dps(n, gegner, elite)
+            gesamt = sum(t[2] for t in tuerme) + sp
+            self.spieler_anteile.append(sp / gesamt if gesamt else 0.0)
+            self.spieler_je_welle[n] = sp / gesamt if gesamt else 0.0
+            tuerme.append((0, ART["Gewehrturm"], sp, sp))
         K = sum(t[2] for t in tuerme)
         KN = sum(t[3] for t in tuerme)
         ehp = ehpn = 0.0
@@ -844,6 +1184,9 @@ class Lauf:
         qv = q / max(1.0, len(gegner) / self.B.get("Wellen.MaxGleichzeitig", 60)) ** Z.get("VerlustStreckung", 0.0)
         # Kurve statt Gerade (07.11.: Verlust wächst schneller als Q, verlust_fit.py)
         verlust = Z["VerlustGrund"] + Z["VerlustQ"] * qv ** Z.get("VerlustP", 1.0) + Z["VerlustUeber"] * max(0.0, qv - Z["QKritisch"]) ** 2 * 100
+        # 24.11.2026 (G3-Nachgang, verlust_fit_013.py): wenige Tuerme decken die Ankunft der Gegner schlechter ab als ihr DPS sagt -
+        # im Spiel verlor 1 Bolzenturm bei Q 0,31 29 % Kern, die Kurve sagte 9 %. Faktor 1 + a / Zahl der Tuerme.
+        verlust *= 1.0 + Z.get("VerlustWenigeTuerme", 0.0) / max(1, len(self.tuerme)) ** Z.get("VerlustTurmExponent", 1.0)
         if Z.get("VerlustStreuung"):
             # gemessene Verteilung Verlust / Grundkurve (Dezile, Streuung-Messung)
             # unter hohem Druck streut der Verlust weniger (07.11.: Std. von Messung/Kurve 0,8 bis qv 0,3, 0,56 bei 0,5, 0,38 darüber)
@@ -884,6 +1227,8 @@ class Lauf:
     def belohnung(self, n, gegner_zahl, elite, boss):
         B = self.B
         p = int(B["Einsatz.EP.Grund"]) + sim.runde(B["Einsatz.EP.JeWelle"] * n)
+        if n == 1 and getattr(self, "start_coupons", 0):
+            self.ep += self.start_coupons   # 24.11.: Startkapital, ab Welle 2 ausgebbar (Shop nach W1)
         p += int(B["Einsatz.EP.KernVoll"]) if self.kern >= 99.5 else int(B["Einsatz.EP.KernAb75"]) if self.kern >= 75 else 0
         if boss:
             p = sim.runde(p * B["Einsatz.EP.BossFaktor"]) + int(B["Einsatz.EP.BossBonus"])
@@ -916,11 +1261,14 @@ def spiele(s, wellen_liste, B, Z, K, gabeln, tw, wi, stufe, laenge, rng):
         zyklus = zyklus_min(Z, n, D)
         L.forsche(n, gabeln)
         L.baue(n, zyklus, D)
+        L.baue_himmelstuerme(n)
         L.verbrenne(n, zyklus, D)
         if L.haupt_ab is None and any(t == L.haupt for t, _ in L.tuerme) and (L.haupt != "Bolzenturm" or n > 1):
             L.haupt_ab = n
         gegner, elite = wellen_liste[n - 1]
         q, Kd, verl = L.kampf(gegner, elite, n, rng)
+        L.kern -= L.flieger_schaden(n)   # 23.11.: Flieger ab W43
+        L.kern_min = min(L.kern_min, L.kern)
         qs.append(q)
         if Z.get("Verlauf"):
             L.verlauf.append((n, round(q, 4), round(verl, 3), round(max(0.0, L.kern), 2), round(L.ep, 1), round(L.fp_summe, 1), round(L.q_nenn, 4)))   # 16.11.: Nenn-Q angehaengt
@@ -936,6 +1284,8 @@ def spiele(s, wellen_liste, B, Z, K, gabeln, tw, wi, stufe, laenge, rng):
                     "Forschung": len(L.erforscht), "EPFehlt": L.ep_fehlt, "EPFehltWellen": L.ep_fehlt_wellen, "VersorgungMin": L.versorgung_min, "BiomasseMangel": L.biomasse_mangel, "Reparaturen": L.reparaturen, "HauptAb": L.haupt_ab or 99,
             "HauptFrei": K[TURM_FORSCHUNG[L.haupt]]["ab"] if TURM_FORSCHUNG[L.haupt] else 1, **{f"EP_{k}": v for k, v in L.ep_ausgegeben.items()}, **L.extra()}
         L.belohnung(n, len(gegner), elite, n % 10 == 0)
+        if n % 10 == 0:
+            L.talent_vergeben()
     return {"Erfolg": True, "Welle": laenge, "Ursache": "", "KernMin": L.kern_min, "Q_max": max(qs), "Q_Mittel": statistics.mean(qs),
             "Tuerme": len(L.tuerme), "Level": statistics.mean(lv for _, lv in L.tuerme), "EP_Rest": L.ep, "EP_Summe": L.ep_summe,
             "Forschung": len(L.erforscht), "EPFehlt": L.ep_fehlt, "EPFehltWellen": L.ep_fehlt_wellen, "VersorgungMin": L.versorgung_min, "BiomasseMangel": L.biomasse_mangel, "Reparaturen": L.reparaturen, "HauptAb": L.haupt_ab or 99,

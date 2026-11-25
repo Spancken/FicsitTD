@@ -1,0 +1,64 @@
+{
+  "Name": "Oel",
+  "_Hinweis": "23.11.2026 (Gegencheck Konzept Frage 6, Marius: 'Oel sollte nicht zu weit weg sein'): /td oel misst je festem Kernplatz die Entfernung zum naechsten Rohoel-Knoten und zur naechsten Oelquelle. Nur Messung, Werte im Log und im Bericht. 23.11. abends (Marius: Option D, Oel bleibt fern, aber sagen): beim Einsatzstart meldet der Mod Entfernung und Richtung zum naechsten Rohoel.",
+  "NeuesSpiel": {
+    "Startort": "Grass Fields",
+    "Modus": 1
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 6,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warteBis": "EinsatzAktiv",
+      "max": 120
+    },
+    {
+      "warte": 10
+    },
+    {
+      "befehl": "td oel"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Rohoel-Stellen in der geladenen Welt",
+      "min": 1,
+      "text": "Oel-Stellen gezaehlt"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Oel Gras-S1:",
+      "min": 1,
+      "text": "Messung Gras-S1"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Oel Duene-S8:",
+      "min": 1,
+      "text": "Messung Duene-S8"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Einsatz: Oel-Hinweis: Öl: Das nächste Rohöl-Vorkommen liegt",
+      "min": 1,
+      "text": "Hinweis beim Einsatzstart: Entfernung und Richtung zum naechsten Rohoel",
+      "sucheEn": "Einsatz: Oel-Hinweis: Oil: The nearest crude oil node is"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Rohöl-Vorkommen liegt 2,",
+      "min": 1,
+      "text": "Grasland: Rohöl mehr als 2 km entfernt (Messung 2205-2368 m), Angabe mit Komma",
+      "sucheEn": "crude oil node is 2."
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}

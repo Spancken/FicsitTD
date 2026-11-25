@@ -1,6 +1,6 @@
 {
   "Name": "BautenP1",
-  "_Hinweis": "0.81/0.9.1: Tor, Lockfeuer, Oelschlick-Feld im Einsatz (frei bauen, Strom frei, Versorgung fest). 0.9.1 misst Bremsung und Kombo Oelbrand (Entzuendungen, Brandschaden).",
+  "_Hinweis": "0.81/0.9.1: Tor, Lockfeuer, Oelschlick-Feld im Einsatz (frei bauen, Strom frei, Versorgung fest). 0.9.1 misst Bremsung und Kombo Oelbrand (Entzuendungen, Brandschaden). 23.11.: Forschung wie BautenE3a - ohne Forschung hat der Oelschlick kein waehlbares Rezept und bekommt kein Oel (Lauf Gegencheck: Gebremst 0). Nachtest 3: Oelschlick, Lockfeuer und Tor erst nach Welle 1 bauen - beim ersten Wellenstart sperrt die Klippenprobe Klippen und die Gegner nehmen einen anderen Weg (Platte lag sonst neben dem Weg, Gebremst 0).",
   "NeuesSpiel": {
     "Startort": "Rocky Desert"
   },
@@ -32,6 +32,18 @@
       "stromfrei": true
     },
     {
+      "erforsche": "Oelschlick"
+    },
+    {
+      "erforsche": "Lockfeuer"
+    },
+    {
+      "erforsche": "Tor"
+    },
+    {
+      "erforsche": "Flammenwerfer"
+    },
+    {
       "versorgung": {
         "Bolzenturm": 50,
         "Flammenwerfer": 6000,
@@ -51,6 +63,12 @@
       "level": 2,
       "rezept": "Recipe_TD_Flame_Fuel",
       "ring": "innen"
+    },
+    {
+      "wellenlauf": 1,
+      "zeitraffer": 4,
+      "max": 200,
+      "text": "erst eine Welle: die Klippenprobe legt die Wege beim ersten Wellenstart fest"
     },
     {
       "baue": "Oelschlick",

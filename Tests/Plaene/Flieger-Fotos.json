@@ -1,0 +1,198 @@
+{
+  "Name": "Flieger-Fotos",
+  "_Hinweis": "25.11.2026: Lage, Groesse und Flugbild von Vogel und Manta pruefen (Spielmodelle, Lage per Balance Flieger.<Art>.Neigen/Drehung/Rollen). Ohne Himmelstuerme, damit die Flieger lange leben; der Kern nimmt Schaden, das ist hier egal.",
+  "NeuesSpiel": {
+    "Startort": "Rocky Desert",
+    "Modus": 1
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 15,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warteBis": "EinsatzAktiv",
+      "max": 120
+    },
+    {
+      "befehl": "td einsatz frei an"
+    },
+    {
+      "balance": {
+        "Stufen.Normal.GegnerLP": 0.05,
+        "Flieger.Manta.Anzahl": 3,
+        "Flieger.Anzahl": 10
+      },
+      "text": "Fotolauf: keine Himmelstuerme, Flieger leben lange"
+    },
+    {
+      "befehl": "td kern springe 45"
+    },
+    {
+      "warte": 3
+    },
+    {
+      "befehl": "td kern weiter"
+    },
+    {
+      "warte": 6
+    },
+    {
+      "kamera": "frei",
+      "ort": "vogel",
+      "richtungZu": "kern",
+      "richtung": 170,
+      "abstand": 4,
+      "hoehe": 0.5,
+      "blick": "vogel",
+      "blickhoehe": 0,
+      "anheben": 0,
+      "fov": 60
+    },
+    {
+      "warte": 0.3
+    },
+    {
+      "foto": "FF_Vogel_nah",
+      "ohneHUD": true
+    },
+    {
+      "kamera": "frei",
+      "ort": "vogel",
+      "richtungZu": "kern",
+      "richtung": 90,
+      "abstand": 6,
+      "hoehe": 0,
+      "blick": "vogel",
+      "blickhoehe": 0,
+      "anheben": 0,
+      "fov": 60
+    },
+    {
+      "warte": 0.3
+    },
+    {
+      "foto": "FF_Vogel_seite",
+      "ohneHUD": true
+    },
+    {
+      "warte": 14
+    },
+    {
+      "kamera": "frei",
+      "ort": "manta",
+      "richtungZu": "kern",
+      "richtung": 90,
+      "abstand": 40,
+      "hoehe": 0,
+      "blick": "manta",
+      "blickhoehe": 0,
+      "anheben": 0,
+      "fov": 50
+    },
+    {
+      "warte": 0.3
+    },
+    {
+      "foto": "FF_Manta_seite",
+      "ohneHUD": true
+    },
+    {
+      "kamera": "frei",
+      "ort": "manta",
+      "richtungZu": "kern",
+      "richtung": 0,
+      "abstand": 40,
+      "hoehe": 0,
+      "blick": "manta",
+      "blickhoehe": 0,
+      "anheben": 0,
+      "fov": 50
+    },
+    {
+      "warte": 0.3
+    },
+    {
+      "foto": "FF_Manta_vorn",
+      "ohneHUD": true
+    },
+    {
+      "kamera": "frei",
+      "ort": "manta",
+      "richtungZu": "kern",
+      "richtung": 90,
+      "abstand": 25,
+      "hoehe": 30,
+      "blick": "manta",
+      "blickhoehe": 0,
+      "anheben": 0,
+      "fov": 60
+    },
+    {
+      "warte": 0.3
+    },
+    {
+      "foto": "FF_Manta_oben",
+      "ohneHUD": true
+    },
+    {
+      "kamera": "frei",
+      "ort": "manta",
+      "richtungZu": "kern",
+      "richtung": 45,
+      "abstand": 25,
+      "hoehe": -15,
+      "blick": "manta",
+      "blickhoehe": 0,
+      "anheben": 0,
+      "fov": 60
+    },
+    {
+      "warte": 0.3
+    },
+    {
+      "foto": "FF_Manta_unten",
+      "ohneHUD": true
+    },
+    {
+      "warte": 10
+    },
+    {
+      "kamera": "frei",
+      "ort": "kern",
+      "richtungZu": "kern",
+      "richtung": 200,
+      "abstand": 70,
+      "hoehe": 35,
+      "blick": "kern",
+      "blickhoehe": 0,
+      "anheben": 0,
+      "fov": 70
+    },
+    {
+      "warte": 0.3
+    },
+    {
+      "foto": "FF_Manta_kreist",
+      "ohneHUD": true
+    },
+    {
+      "kamera": "erste"
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    },
+    {
+      "balance": {
+        "Stufen.Normal.GegnerLP": 1.25,
+        "Flieger.Manta.Anzahl": 1,
+        "Flieger.Anzahl": 6
+      }
+    }
+  ]
+}

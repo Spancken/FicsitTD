@@ -1,0 +1,14 @@
+{
+  "Name": "Kern-Zugang-K1",
+  "_Hinweis": "0.13 K1 und N1 (Fahrplan-0.13): Pruefung 'Kern erreichbar', Wellenstart wartet, Bohrung prueft beim Start, Maschinen und Tuerme als Sperrflaeche. Regression: Grundtest, EinsatzPhase, Bohrung. K2: Ring instabiler Boden (KZ-3). K4: Wegpruefung beim Bauen (KZ-4).",
+  "Plaene": [
+    "KZ-1-Einsatz",
+    "KZ-2-Maschinen",
+    "KZ-6-Bohrung",
+    "KZ-3-Ring",
+    "KZ-4-Wegpruefung",
+    "Grundtest",
+    "EinsatzPhase",
+    "Bohrung"
+  ]
+}

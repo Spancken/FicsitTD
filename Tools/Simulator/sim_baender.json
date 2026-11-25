@@ -6,8 +6,8 @@
       "Grund": "Anteil der Wellen W1-30, deren Median-Nenn-Q im Band aus Tests/zielbaender.json liegt; einzelne Wellen duerfen streuen (Prüfstand zaehlt Verletzungen nur als Hinweis)."
     },
     "KernMin_Median_min": {
-      "Wert": 50,
-      "Grund": "Tests/zielbaender.json Kern_Proz_min, auf den Median der Kern-Tiefpunkte erfolgreicher Laeufe angewandt."
+      "Wert": 25,
+      "Grund": "Tests/zielbaender.json Kern_Proz_min, auf den Median der Kern-Tiefpunkte erfolgreicher Laeufe angewandt. 23.11.2026 (Marius, Entscheidung 3A): 50 -> 25, vorlaeufig bis zum Handspiel; Normal ist seit der schwereren Balance eine echte Herausforderung (50 % Siege, knappe Siege gehoeren dazu)."
     },
     "Erfolg": {
       "Erkundung": [

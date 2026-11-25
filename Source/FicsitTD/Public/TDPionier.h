@@ -49,6 +49,10 @@ public:
 	/** Stufe eines Zweigs ueber irgendein Objekt der Welt (0 ohne Einsatz) */
 	static int32 Stufe(const UObject* Kontext, int32 Zweig);
 	int32 FreiePunkte() const;
+	/** 21.11. (C10): Talentpunkte auch aus dem Rang (alte Regel, Pionier.TalenteAusRang = 1); Standard: nur Bosswellen und Bohrung */
+	static bool TalenteAusRang();
+	/** 21.11. (C10, Marius "1 je Boss"): nach jeder geschafften Bosswelle Pionier.PunkteJeBoss Talentpunkte (Einsatz und Endlos) */
+	static void BossGeschafft(const UObject* Kontext, int32 Welle);
 	/** Rangbonus ohne Punkte: je 3 Raenge eine Stufe (+10 LP, +3 % Lauftempo) */
 	int32 RangBoni() const;
 

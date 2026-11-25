@@ -1,6 +1,6 @@
 # Feedback form / Rückmeldebogen (Vorlage für Google Forms o. ä.)
 
-> **Stand 0.10.2** (15.11.2026), ergänzt um Endlos-Wellen und Freies Spiel mit Abwehr (0.11/0.12, unveröffentlicht). Bei jeder Version mit neuen Türmen, Modi oder Systemen hier nachziehen (Namen wie im Handbuch).
+> **Stand 0.13.0** (23.11.2026): AWESOME-Shop, Kern-Zugang, Baum Energie (Fragen 15a–15c). Bei jeder Version mit neuen Türmen, Modi oder Systemen hier nachziehen (Namen wie im Handbuch).
 
 Marius legt daraus ein Formular an. Fragen zweisprachig, Antworttyp in Klammern.
 
@@ -19,6 +19,9 @@ Marius legt daraus ein Formular an. Fragen zweisprachig, Antworttyp in Klammern.
 13. Coupons and Hard Drives: enough, too few, too many? / Coupons und Festplatten: genug, zu wenig, zu viel? (je Auswahl)
 14. Pioneer: main role and did your own fighting matter? / Pionier: Hauptrolle und hat dein eigenes Kämpfen etwas ausgemacht? (Auswahl Marksman/Schütze, Commander/Kommandant, Engineer/Techniker, Hunter/Jäger; 1–5)
 15. Endless waves: timer / Endlos-Wellen: Uhr (too hectic/zu hektisch, fine/passt, too relaxed/zu ruhig, not played/nicht gespielt); Free play: drilling worth it? / Freies Spiel: Bohrung lohnend? (1–5, not played/nicht gespielt)
+15a. AWESOME Shop: did you find everything? / AWESOME-Shop: alles gefunden? (1–5, plus Freitext)
+15b. Core access and unstable ground (60 m): did a red hologram or a blocked wave surprise you? / Kern-Zugang und instabiler Boden (60 m): Hat dich ein rotes Hologramm oder eine gesperrte Welle überrascht? (yes/ja, no/nein, plus Freitext)
+15c. Power tree: which line did you build up? / Baum Energie: Welche Linie hast du ausgebaut? (Mehrfachauswahl: coal/Kohle, oil/Öl, nuclear/Kernkraft, none/keine; plus 1–5 „was it worth it“/„hat es sich gelohnt“)
 16. Bugs (what, which wave) / Fehler (was, welche Welle) (Freitext, Datei-Upload für Log/Screenshot; Hinweis auf „Report bug / idea“ im Kern-Menü)
 17. Best moment / Bester Moment (Freitext)
 18. Most annoying / Was nervte am meisten (Freitext)

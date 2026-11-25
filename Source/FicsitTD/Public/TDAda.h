@@ -15,6 +15,9 @@ namespace TDAda
 {
 	/** Ansagen fuer die naechste Welle (Plan schon gerechnet). Rueckgabe: Zahl der Ansagen */
 	FICSITTD_API int32 VorWelle(const UObject* WorldContext, ATDDefenseCore* Kern, int32 Welle, const TArray<FTDPlanGruppe>& Plan);
+	/** 24.11.2026: ADA-Hinweis "ZweiBolzen", wenn ein Hog der naechsten Welle (HogLP) mehr LP hat als der staerkste Bolzenturm je Treffer
+	 *  Schaden macht. Einmal je Lauf, nur wenn es Bolzentuerme gibt. Rueckgabe: gesagt */
+	FICSITTD_API bool PruefeBolzenSchwelle(const UObject* WorldContext, ATDDefenseCore* Kern, float HogLP);
 	/** Ansage nach Schluessel (Gegnerart, z. B. "Hog", oder "Boss10"); false, wenn unbekannt oder schon gesagt */
 	FICSITTD_API bool Sage(const UObject* WorldContext, ATDDefenseCore* Kern, const FString& Key);
 	/** ADA ist so lange belegt (z. B. Begruessung): spaetere Ansagen warten, bis sie fertig ist */

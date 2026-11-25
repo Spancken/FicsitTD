@@ -7,7 +7,9 @@ Schreibt:
   <ordner>/sim_ergebnis.md     Kurzfassung als Tabellen
   Tools/Simulator/sim_stand.json   dieselben Hashes und das Datum (wird eingecheckt; daran erkennt die Pipeline, ob die
                                    Simulation nach einer Code-Aenderung nachgezogen wurde)
-Exit 0 = alles im Band, 1 = mindestens ein Band verletzt, 2 = Fehler (Modell passt nicht zum Code).
+Exit 0 = alles im Band, 1 = mindestens ein Band verletzt, 2 = Fehler (Modell passt nicht zum Code),
+     3 = Modell nicht gegen Spiel bestaetigt (abgleich.py fehlt, nicht bestanden oder Annahmen seitdem geaendert; 24.11.2026).
+     Bei 3 sind die Baender nicht verwendbar: erst das Modell eichen, dann `python abgleich.py`.
 
 Modi: 1 Einsatz (strategien.py), 2 Endlos-Wellen und 3 Bohrung (sim_modi.py), 0 Aus (nichts zu rechnen).
 Zielbaender: Tests/zielbaender.json (Einsatz Normal, Q je Phase) und sim_baender.json (alles andere, Begruendung im README).
@@ -148,7 +150,8 @@ def rechne_einsatz(stufe, Z, baender, zb_tests, liste):
 
 # ---------------------------------------------------------------- Endlos
 def rechne_endlos(daten, stufe, baender, max_wellen):
-    erg = sm.endlos_lauf(daten, stufe, max_wellen=max_wellen, laeufe=1)
+    # 23.11. (Gegencheck 0.13): 3 Laeufe je Linie statt 1 - Endlos streute um 1-2 Wellen je Lauf
+    erg = sm.endlos_lauf(daten, stufe, max_wellen=max_wellen, laeufe=3)
     ohne = [r for r in erg if not r["Vorziehen"]]
     mit = [r for r in erg if r["Vorziehen"]]
     w_med = median(r["Welle"] for r in ohne)
@@ -198,6 +201,8 @@ def markdown(res, stand_datum):
     z = [f"# FicsitTD Simulation aller Modi ({stand_datum})", "",
          f"Ergebnis: **{'alles im Band' if res['ok'] else 'Bänder verletzt'}**, Laufzeit {res['laufzeit_s']:.0f} s. "
          "Modell und Grenzen: `Tools/Simulator/README.md`.", ""]
+    if not res.get("modell_bestaetigt", True):
+        z += [f"> **Modell nicht gegen Spiel bestätigt:** {res.get('abgleich')}. Die Bänder unten sind für die Balance **nicht verwendbar**.", ""]
     z += ["## Einsatz (Modus 1, 50 Wellen)", "", "| Stufe | Läufe | Erfolg W50 | Erfolg W30 | Scheitern (Median) | Kern-Tief | Q W10 | Q W20 | Q W30 | ok |",
           "|---|---|---|---|---|---|---|---|---|---|"]
     for s, e in res["modi"]["Einsatz"].items():
@@ -205,6 +210,11 @@ def markdown(res, stand_datum):
         f = lambda x: f"{x:.2f}" if x is not None else "–"
         z.append(f"| {s} | {k['Laeufe']} | {k['Erfolg_W50']:.0%} | {k['Erfolg_W30']:.0%} | {k['Scheiterwelle_Median'] or '–'} | {k['KernMin_Median_Erfolg']:.0f} % | "
                  f"{f(q[10])} | {f(q[20])} | {f(q[30])} | {'ja' if e['ok'] else '**nein**'} |")
+    if res.get("aktiver_spieler"):
+        z += ["", "### Einsatz mit aktivem Spieler (Handwaffe und Talente, ohne Band: die Balance gilt für den passiven Spieler)", "",
+              "| Stufe | Erfolg W50 | Spieleranteil Median | 10–90 % |", "|---|---|---|---|"]
+        for s, e in res["aktiver_spieler"].items():
+            z.append(f"| {s} | {e['Erfolg_W50']:.0%} | {e['Anteil_Median']:.0%} | {e['Anteil_P10']:.0%}–{e['Anteil_P90']:.0%} |")
     z += ["", "## Endlos-Wellen (Modus 2)", "", "| Stufe | Welle (Median) | mit Vorziehen | beste | kippt ab | erster Überlauf | Kappung | Q W10 | Q W20 | ok |",
           "|---|---|---|---|---|---|---|---|---|---|"]
     for s, e in res["modi"]["Endlos"].items():
@@ -224,6 +234,19 @@ def markdown(res, stand_datum):
             for name, (ok, d) in e["pruefungen"].items() if not ok]
     z += [f"- {m} {s}: {name} – {d}" for m, s, name, d in verl] or ["keine"]
     return "\n".join(z) + "\n"
+
+
+def abgleich_status():
+    """24.11.2026 (Marius: nicht mehr nach einem unbestaetigten Modell einstellen): Stand des Abgleichs Modell gegen Spiel"""
+    import abgleich
+    if not os.path.exists(abgleich.STAND):
+        return False, "kein Abgleich (python abgleich.py nach einem Testlauf der festen Plaene)"
+    s = json.load(open(abgleich.STAND, encoding="utf-8"))
+    if s.get("annahmen_hash") != abgleich.annahmen_hash():
+        return False, f"Modell seit dem Abgleich vom {s.get('datum')} geaendert, Abgleich neu noetig"
+    if not s.get("bestanden"):
+        return False, f"Abgleich vom {s.get('datum')} nicht bestanden ({s.get('laeufe')} Laeufe, Ausgabe/Abgleich/abgleich.md)"
+    return True, f"Abgleich vom {s.get('datum')} bestanden ({s.get('laeufe')} Laeufe)"
 
 
 def main():
@@ -256,8 +279,19 @@ def main():
         for s in sm.BOHR_STUFEN:
             k, p = rechne_bohrung(daten, s, baender)
             modi["Bohrung"][s] = {"kennzahlen": k, "pruefungen": p, "ok": all(x[0] for x in p.values())}
+        # 23.11.2026 (Marius: Talentbaum in den Simulator): aktiver Spieler mit Handwaffe und Talenten als Zusatz, ohne Band -
+        # die Balance gilt fuer den passiven Spieler (Marius 12.11.); Ziel Spieleranteil 10-20 %
+        res["aktiver_spieler"] = {}
+        for s in STUFEN:
+            if s == "Erkundung":
+                continue
+            erg, _ = st.massenlauf(s, 50, 1, seed=7, z_ueber={"SpielerAktiv": 1}, strategie_liste=liste, stand="091")
+            ant = sorted(r.get("SpielerAnteil", 0.0) for r in erg)
+            res["aktiver_spieler"][s] = {"Erfolg_W50": round(sum(r["Erfolg"] for r in erg) / len(erg), 3),
+                                         "Anteil_Median": ant[len(ant) // 2], "Anteil_P10": ant[len(ant) // 10], "Anteil_P90": ant[len(ant) * 9 // 10]}
         modi["Aus"] = {"ok": True, "hinweis": "Spielmodus 0: normales Satisfactory, nichts zu simulieren"}
         res["ok"] = all(e["ok"] for m in ("Einsatz", "Endlos", "Bohrung") for e in modi[m].values())
+        res["modell_bestaetigt"], res["abgleich"] = abgleich_status()
         res["laufzeit_s"] = round(time.time() - t0, 1)
     except Exception as e:
         os.makedirs(a.aus, exist_ok=True)
@@ -278,6 +312,9 @@ def main():
     json.dump({"datum": res["stand"], "hinweis": "SHA-256 der Quelldateien, gegen die sim_alle_modi.py zuletzt gerechnet hat",
                "code_stand": res["code_stand"]}, open(os.path.join(HIER, "sim_stand.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=2)
     print(open(os.path.join(a.aus, "sim_ergebnis.md"), encoding="utf-8").read())
+    if not res.get("modell_bestaetigt"):
+        print("MODELL NICHT BESTAETIGT:", res.get("abgleich"))
+        return 3
     return 0 if res["ok"] else 1
 
 

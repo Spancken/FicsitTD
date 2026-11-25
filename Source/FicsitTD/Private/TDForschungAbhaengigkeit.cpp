@@ -33,6 +33,11 @@ bool UTDAbzweigungAbhaengigkeit::AreDependenciesMet(UObject* worldContext) const
 	{
 		return true;
 	}
+	// 23.11. (Gegencheck 0.13 F1, A6 Entscheidung 8): im Freien Spiel mit Abwehr ist die Gegenseite kaeuflich (doppelter Preis, TDAbwehr)
+	if (UTDKernplatz::IstAbwehr(World))
+	{
+		return true;
+	}
 	const AFGResearchManager* Forschung = AFGResearchManager::Get(World);
 	const AFGSchematicManager* Schemata = AFGSchematicManager::Get(World);
 	const bool bGewaehlt = (Forschung && (Forschung->IsResearchComplete(Andere) || Forschung->IsResearchBeingConducted(Andere)))

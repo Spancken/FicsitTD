@@ -1,6 +1,6 @@
 # FICSIT Tower Defense – Playtest Guide / Anleitung für Tester (Alpha)
 
-> **Stand 0.11.1** (Patch 21.11.2026, Inhalt wie 0.11.0 plus Fehlerbehebungen, `Changelog-0.11.1.md`). Die gültigen Regeln stehen in `..\Spielregeln.md`, das Spielerhandbuch unter https://spancken.github.io/FicsitTD/. Bei jeder Version mit sichtbaren Änderungen hier nachziehen.
+> **Stand: live 0.11.1** (Patch 21.11.2026, `Changelog-0.11.1.md`), **Entwicklung 0.13** (23.11.2026; 0.12 erscheint nicht einzeln, ihr Inhalt kommt mit 0.13). Die gültigen Regeln stehen in `..\Spielregeln.md`, das Spielerhandbuch unter https://spancken.github.io/FicsitTD/. Bei jeder Version mit sichtbaren Änderungen hier nachziehen.
 
 *English first, Deutsch weiter unten.*
 
@@ -32,6 +32,26 @@
 - **Free play with defense:** regular Satisfactory with HUB and milestones, plus turrets and defense research in the MAM (paid with Coupons from the AWESOME Sink). Nothing attacks unless you start it: place a Defense Core next to an ore node and start a **drilling** in its menu (Easy, Medium, Hard). Every wave you hold gives ore; the first success per resource and level gives Hard Drives. Abort any time without penalty.
 - Existing saves: `/td modus abwehr` in the chat switches to Free play with defense.
 - **Also new in 0.11:** one ammo item lasts for several shots (basic 4, advanced 3, special 2); the turret window shows consumption per minute. Power Storage in the shop (Coal Power research), Miner Mk.2/Mk.3 and belts up to Mk.5 in the MAM. Turrets and defenses cannot be dismantled near the Core during a wave. Wave saves carry the session name.
+
+### Coming in 0.13 (development build only, not on ficsit.app yet; includes the planned 0.12)
+- **AWESOME Shop:** after wave 1 ADA asks you to build the game's AWESOME Shop (free, one per operation). From then on quotas, gear, core repairs and Hard Drives are bought there in six sections (Turrets, Defense, Production, Power, Logistics, Pioneer and Core); the Core stops selling. Base game shop items are hidden during an operation.
+- **Getting started (order since 0.13):** first ADA asks for the HUB, after wave 1 for the shop, after wave 2 for the MAM. The second line of the status bar shows the current task (replaces the mod's To-do block).
+- **Boss waves:** a window with the phase report and three bonus cards; two Talent Points per boss wave, including wave 50 (10 in an operation).
+- The core platform cannot be dismantled during an operation.
+- Questions: Did you find the shop category? Were the prices clear? Did ADA's task lines help?
+- **Core access:** if your buildings seal off the Core, the wave (or the drilling) does not start; the blocking spot is on the map. A building that would close the last path is red in the hologram. Defense walls may close it.
+- **Unstable ground:** no factory buildings within 60 m of the Core during an operation and in Endless waves (checked at the building's outline).
+- Enemies walk around machines and turrets instead of getting stuck on them.
+- In build mode, small orange lights mark the 60 m ring; when a building would close the last path, green lights show that path.
+- **MAM research tree untangled:** the Industry tree has six entry points (manufacturing, copper, belts, power, sulfur, quartz) and no forced chain: Belt Mk.2 no longer needs copper, the Refinery hangs on Coal Power, Sulfur brings Black Powder. Bolt and Tesla lines open from wave 3, the Rifle Turret from wave 5. Shield Generator and Jammer Projector are no longer a branch.
+- **Return Hard Drives:** in the AWESOME Shop (Pioneer and Core) you can trade a spare Hard Drive for 12 Coupons (operation and Endless).
+- **Free play with defense:** the other side of a research branch can be researched too, at double the Coupon price.
+- Questions on research: On your first MAM visit after wave 2, did you have to pick a line? Did you ever have to research something you did not want? Were Hard Drives left over, and what would you have spent them on?
+- Questions: Was it clear why a wave did not start? Did the red hologram ever block something you did not expect?
+- **Harder difficulty:** on Normal, Hard and Nightmare enemies have more health and gain it faster per wave; the Core on Normal has 15,000 HP. Every operation starts with 40 FICSIT Coupons for your first turrets. Endless waves stay as before. Questions: Is Normal still fair, and do Hard and Nightmare feel like a real challenge? What did you buy with the 40 Coupons, and were the first waves still tense? When ADA said the Hogs now take two bolts, did you know what to do?
+- **Flyers** (a flock of birds from wave 43, acid-spitting Mantas from wave 45) and a harder second half (enemy health grows faster from wave 31). Hand weapons start weaker and grow stronger. Questions: Did the second half still feel dangerous? Did you notice the flyers in time?
+- **New Power tree:** coal, oil and (after wave 50) nuclear power in their own MAM tree, nothing locks anything out. Better fuels give every generator more output: Compacted Coal 100 MW, Petroleum Coke 125 MW, Turbofuel 325 MW, Rocket Fuel 400 MW. Questions: Did you build up one power line or mix coal and oil? Did the Tesla Coil feel too strong with cheaper power?
+- **Fixes from the review:** a core sealed off by an old save is reported shortly after loading; the core menu's research tab is in English; handing in a Hard Drive also works without Coupons.
 
 ### What we want to know
 - How far did you get (wave), how long did it take, which turrets did you use?
@@ -83,6 +103,26 @@ Full list in the handbook: https://spancken.github.io/FicsitTD/#issues (section 
 - **Freies Spiel mit Abwehr:** normales Satisfactory mit HUB und Meilensteinen, dazu Türme und Abwehr-Forschung im MAM (bezahlt mit Coupons aus dem AWESOME-Sink). Nichts greift an, was du nicht startest: Stell einen Abwehrkern neben einen Erzknoten und starte in seinem Menü eine **Bohrung** (Leicht, Mittel, Schwer). Jede gehaltene Welle bringt Erz, der erste Erfolg je Rohstoff und Stufe Festplatten. Abbrechen geht jederzeit ohne Strafe.
 - Bestehende Spielstände: `/td modus abwehr` im Chat stellt auf Freies Spiel mit Abwehr um.
 - **Außerdem neu in 0.11:** Ein Stück Munition reicht für mehrere Schuss (Grund 4, Stufe 2 drei, Spezial 2); das Turmfenster zeigt den Verbrauch pro Minute. Akku im Laden (Forschung Kohlekraft), Miner Mk2/Mk3 und Bänder bis Mk5 im MAM. Türme und Abwehrbauten lassen sich während der Welle am Kern nicht abreißen. Wellen-Spielstände tragen den Namen des Spiels.
+
+### Kommt mit 0.13 (nur Entwicklungsstand, noch nicht auf ficsit.app; enthält das geplante 0.12)
+- **AWESOME-Shop:** Nach Welle 1 bittet ADA dich, den AWESOME-Shop des Spiels zu bauen (kostenlos, einer je Einsatz). Ab dann kaufst du Kontingente, Ausrüstung, Kernreparatur und Festplatten dort in sechs Bereichen (Türme, Verteidigung, Produktion, Strom, Logistik, Pionier und Kern); der Kern verkauft nicht mehr. Artikel des Grundspiels sind im Einsatz ausgeblendet.
+- **Einstieg (Reihenfolge seit 0.13):** Zuerst bittet ADA um die HUB, nach Welle 1 um den Shop, nach Welle 2 um das MAM. Die zweite Zeile der Statusleiste zeigt die aktuelle Aufgabe (statt des Blocks in der To-do-Liste).
+- **Bosswellen:** ein Fenster mit Phasenbericht und drei Bonus-Karten; zwei Talentpunkte je Bosswelle, auch für Welle 50 (10 im Einsatz).
+- Die Kernplattform lässt sich im Einsatz nicht abreißen.
+- Fragen: Hast du die Shop-Kategorie gefunden? Waren die Preise klar? Haben ADAs Aufgaben geholfen?
+- **Kern-Zugang:** Riegeln deine Bauten den Kern ab, startet die Welle (oder die Bohrung) nicht; die Sperrstelle steht auf der Karte. Ein Bau, der den letzten Weg schließen würde, ist im Hologramm rot. Abwehrmauern dürfen schließen.
+- **Instabiler Boden:** Im Einsatz und im Endlos keine Fabrikgebäude in 60 m um den Kern (geprüft am Umriss des Gebäudes).
+- Gegner laufen um Maschinen und Türme herum, statt an ihnen hängen zu bleiben.
+- Im Baumodus zeigen kleine orange Leuchtsignale den 60-m-Ring; würde ein Bau den letzten Weg schließen, zeigen grüne Signale diesen Weg.
+- **MAM-Baum entflochten:** Der Industrie-Baum hat sechs Einstiege (Fertigung, Kupfer, Bänder, Strom, Schwefel, Quarz) und keine Pflichtkette mehr. Band Mk2 braucht kein Kupfer mehr, die Raffinerie hängt am Kohlekraftwerk, Schwefel bringt Schwarzpulver. Bolzen- und Tesla-Linie gehen ab Welle 3, der Gewehrturm ab Welle 5. Schildgenerator und Störfeld-Projektor sind keine Gabelung mehr.
+- **Festplatten abgeben:** Im AWESOME-Shop (Pionier und Kern) tauschst du eine übrige Festplatte gegen 12 Coupons (Einsatz und Endlos).
+- **Freies Spiel mit Abwehr:** Die andere Seite einer Forschungs-Gabelung ist dort auch erforschbar, zum doppelten Coupon-Preis.
+- Fragen zur Forschung: Musstest du dich beim ersten MAM-Besuch nach Welle 2 für eine Linie entscheiden? Musstest du je etwas erforschen, das du nicht wolltest? Lagen Festplatten herum, und wofür hättest du sie gern ausgegeben?
+- Fragen: War klar, warum eine Welle nicht startete? Hat das rote Hologramm etwas gesperrt, das du nicht erwartet hast?
+- **Mehr Herausforderung:** In Normal, Hart und Albtraum haben Gegner mehr Leben und legen je Welle schneller zu; der Kern hat in Normal 15 000 LP. Jeder Einsatz beginnt mit 40 FICSIT-Coupons für die ersten Türme. Die Endlos-Wellen bleiben wie bisher. Fragen: Ist Normal noch fair, und fühlen sich Hart und Albtraum wie eine echte Herausforderung an? Was hast du mit den 40 Coupons gekauft, und waren die ersten Wellen noch spannend? Als ADA sagte, dass Hogs jetzt zwei Bolzen brauchen: War klar, was zu tun ist?
+- **Flieger** (Vogelschwarm ab Welle 43, Säure spuckende Mantas ab Welle 45) und eine schwerere zweite Hälfte (Gegnerleben wachsen ab Welle 31 schneller). Handwaffen sind anfangs schwächer und werden stärker. Fragen: War die zweite Hälfte noch gefährlich? Hast du die Flieger rechtzeitig bemerkt?
+- **Neuer Baum Energie:** Kohle, Öl und (nach Welle 50) Kernkraft in einem eigenen MAM-Baum, nichts wird ausgeschlossen. Bessere Brennstoffe geben jedem Kraftwerk mehr Leistung: Kompaktkohle 100 MW, Petrolkoks 125 MW, Turbotreibstoff 325 MW, Raketentreibstoff 400 MW. Fragen: Hast du eine Stromlinie ausgebaut oder Kohle und Öl gemischt? War die Teslaspule mit billigerem Strom zu stark?
+- **Fehlerbehebungen aus dem Gegencheck:** Ein abgeriegelter Kern aus einem alten Spielstand meldet sich kurz nach dem Laden. Der Forschungsreiter im Kern-Menü ist auf Englisch. Festplatten lassen sich auch ohne Coupons abgeben.
 
 ### Was wir wissen wollen
 - Bis zu welcher Welle, wie lange, welche Türme?

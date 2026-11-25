@@ -1460,7 +1460,8 @@ const TCHAR* ATDTurretBase::ZielModusName(int32 Modus)
 
 const TArray<FString>& ATDTurretBase::ZielFamilien()
 {
-	static const TArray<FString> Liste = { TEXT(""), TEXT("Hog"), TEXT("Stinger"), TEXT("Spucker"), TEXT("Krabbe") };
+	// 25.11.: "Krabbe" raus - Luftgegner sind Voegel und Mantas, Bodentuerme zielen nie auf sie
+	static const TArray<FString> Liste = { TEXT(""), TEXT("Hog"), TEXT("Stinger"), TEXT("Spucker") };
 	return Liste;
 }
 

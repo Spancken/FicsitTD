@@ -1,14 +1,14 @@
 {
-  "datum": "2026-11-21 13:04",
+  "datum": "2026-11-25 09:02",
   "hinweis": "SHA-256 der Quelldateien, gegen die sim_alle_modi.py zuletzt gerechnet hat",
   "code_stand": {
-    "Source/FicsitTD/Private/TDBalance.cpp": "6e05b352ce08eb63498153050c17f79f7140a675e3e21f4879e576ba59634c64",
-    "Source/FicsitTD/Private/TDWaveSubsystem.cpp": "b512f7e720ee30173a91755f124585846c3e270a82ac9b968216a506a6c76497",
-    "Source/FicsitTD/Private/TDEinsatz.cpp": "e2bfeafa09748b63a99ba359f31ce92be7145c4916e6d3cb7e2cd8ba98fcc87c",
-    "Source/FicsitTD/Private/TDBohrung.cpp": "0f848ddd5d7fc009d20a95afe6183fe47238ed9faf117d8623c4393829368744",
-    "Source/FicsitTD/Private/TDTurretBase.cpp": "409e590be60fce8e1fdcc23ac940a5d17293cf02382737cfe5d92c82a3f3b2e7",
-    "Source/FicsitTD/Private/TDForschungInfo.inl": "8b645cc22a6d8adcb7938b6a942cdf46cbeed514447de7abfd3e4906d23b7ffd",
-    "Source/FicsitTD/Private/TDForschungVoraussetzungen.inl": "6cdbd11c51686a4391eebcb3cd30f0a1a0b57303919090877f216f1a363dbc86",
-    "Scripts/create_research.py": "1eaa0204e261d19ff9d75083dab229e4798b22c946a3e04ebde89b09a67c107d"
+    "Source/FicsitTD/Private/TDBalance.cpp": "6d47425d4fd722b36b683ee3c0f180c222bfcd653cce061b2f55e68a8f4f3071",
+    "Source/FicsitTD/Private/TDWaveSubsystem.cpp": "326f7a1f54e688b1f0448653c3577fac118f9552569cea419f8d1cd02a69b621",
+    "Source/FicsitTD/Private/TDEinsatz.cpp": "05a1e9f853ee581fb04d14081110371cd3000defe39b0ed39b38eadd9bbd10b9",
+    "Source/FicsitTD/Private/TDBohrung.cpp": "4462de51d6638847332b85eaf22fd75728a00eb5b429dc39a049316b397ee106",
+    "Source/FicsitTD/Private/TDTurretBase.cpp": "d7f7e1886bda2c7c0a3b92f810939c898e2127e107e88201a3142736004c2bfa",
+    "Source/FicsitTD/Private/TDForschungInfo.inl": "32bc9f2be57b39ff1f4e1e2085942e838e643aea28cb638c17e70c6cc4118755",
+    "Source/FicsitTD/Private/TDForschungVoraussetzungen.inl": "5d8a893d9f5a927fd638e4ce5cfee7dbad564e062028d422518c4ab962353f81",
+    "Scripts/create_research.py": "6d71fc7587708b1d45c33d749914a5aefda93446e1b8388f87a229fce2d39533"
   }
 }

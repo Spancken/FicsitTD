@@ -2,7 +2,49 @@
 
 Rechnet ohne Spiel, wie viel Gegnerdruck auf wie viel Abwehr trifft, für alle Spielmodi. Die Kennzahl ist die Druckquote **Q** (wie im Log: Gegner-EHP / (Σ Nenn-DPS × 60 s)). Nur Python-Standardbibliothek. Liest den Mod-Code direkt aus `Source\FicsitTD\Private` (Pfade relativ zum Repo), Änderungen an der Balance wirken also ohne Anpassung.
 
-## Stand 16.11.2026 (Code 0.11-dev / 0.12-dev, Turmlevel, Coupons, Festplatten)
+## Ablauf seit 24.11.2026: messen, abgleichen, eichen, rechnen
+
+> **Stand 24.11.2026 abends: Modell nicht bestätigt** (`abgleich.py`: Gewehr-Tesla ok, Mono-Bolzen und K1 nicht).
+> Bis der Abgleich besteht, stellt der Simulator keine Balance ein (Marius 24.11.: „Simulation sauber aufsetzen“).
+>
+> - **Gefundene Ursache:** Schüsse sind ganzzahlig. Ab W5 braucht ein Hog zwei Armierungsbolzen (53 LP gegen 48 Schaden), die
+>   wirksame Feuerkraft halbiert sich (Overkill im Spiel 30–60 %). Seitdem rechnet das Modell den Overkill (`VerlustOverkill`,
+>   `Turmwerte.treffer`), die Verlustkurve ist darauf neu geeicht (`eiche_verlust.py`).
+> - **Damit:** K1 Modell W5–7 vorher 96/93/86 %, jetzt 73/63/49 %, Spiel 58/14/5 %. Fallwelle K1 Modell 10, Spiel 7–8.
+> - **Was noch fehlt:** Der Verlust hängt im Spiel auch an der Zusammensetzung der Welle, nicht nur an Druck und Turmzahl. Wellen mit
+>   hohem Druck und vielen Türmen verlieren weniger als die Kurve sagt. Die Kernschaden-Messung je Gegnerart liefert dafür die Daten.
+
+Anlass: Am 24.11. schlug der Simulator 40 Start-Coupons zusammen mit 63 % mehr Gegnerleben vor. Im Spiel fielen damit alle
+Läufe in Welle 6. Jede Stufe davor hatte dem Modell vertraut. Deshalb gilt jetzt diese Reihenfolge:
+
+1. **Messen:** Testläufe fester Pläne im Spiel (`Strat-*`, `P12-K*`, z. B. Paket `Startkapital-0124`). `messungen.py` ist die
+   einzige Quelle für Spielmessungen: Metriken.csv, gültige Wellen (Fabrik-Takt ≥ 0,95, kein Munitionsmangel), abgeschnittene
+   Wellen (Kern fiel), Läufe, Kernschaden je Gegnerart aus dem Log (`Kernschaden Welle N`, seit 24.11.).
+2. **Abgleichen:** `python abgleich.py` spielt jeden dieser Läufe im Modell nach (gleicher Ausbau aus der Plandatei) und vergleicht
+   Fallwelle und Kernverlauf. Grenzen: Fallwelle ±2, Kern im Mittel ±15 Punkte. Nur Läufe nach der letzten Änderung von
+   `TDBalance.cpp` und ihrer Plandatei zählen. Ergebnis `Ausgabe/Abgleich/abgleich.md`, Stand `abgleich_stand.json` (einchecken).
+3. **Eichen:** nur wenn der Abgleich durchfällt, an den Messungen aus `messungen.py`. Danach wieder Schritt 2.
+4. **Rechnen:** `sim_alle_modi.py`. Exit **3**, solange der Abgleich fehlt, durchgefallen ist oder die Modellannahmen
+   (`strategie_annahmen.json`, `annahmen.json`, `strategien.py`, `simulator.py`) seitdem geändert wurden. Dann sind die Bänder
+   nicht verwendbar; die Pipeline meldet das als offenen Punkt.
+
+**Werkzeuge im Ordner** (alles andere liegt in `Archiv/`, nicht mehr gepflegt):
+
+| Datei | Zweck |
+|---|---|
+| `simulator.py` | Wellen und Gegner wie im Spiel, Balance aus dem Code |
+| `strategien.py` | Strategie-Prüfstand Einsatz (Modell-Spieler, Wirtschaft, Kampf, Verlustkurve) |
+| `sim_modi.py` | Endlos-Wellen und Bohrung |
+| `sim_alle_modi.py` | alle Modi und Stufen, Schnittstelle für die Pipeline |
+| `sim_variante.py` | Gegenversuch mit geänderten Freigabewellen (nur im Speicher) |
+| `strategie_plaene.py` | Testpläne `Strat-*` aus den besten Modellstrategien |
+| `balance_kreislauf.py` | fester Ausbau im Modell (`FesterLauf`), alter Kreislauf |
+| `verlust_fit.py` | alte Eichung der Verlustkurve (07.11.), wird durch die Eichung an `messungen.py` ersetzt |
+| `messungen.py` | Spielmessungen, eine Quelle für alle |
+| `eiche_verlust.py` | Verlustkurve an `messungen.py` eichen (Overkill-bereinigt, kleinste Quadrate), danach `abgleich.py` |
+| `abgleich.py` | Pflichtprüfung Modell gegen Spiel |
+
+## Stand 23.11.2026 (Code 0.13.0: Strom, aktiver Spieler, Talente; davor 16.11. Turmlevel, Coupons, Festplatten)
 
 ### Aufruf
 
@@ -33,7 +75,7 @@ python strategien.py --stand 091 --laeufe 3        # Strategie-Prüfstand Einsat
 
 - Erste Welle nach `Endlos.<Stufe>.ErsteWelle`, Abstand ab Wellenbeginn `A(n) = max(90, Abstand − 1,5 · n)`.
 - Wellendauer im Modell = `EndlosAnlaufSekunden` + max(Gegnerstrom, Q_wirksam × 60 s / `EndlosFeuerAnteil`). Gegnerstrom wie im Code: 2/s, höchstens `Endlos.StromAnteil` × A.
-- Früher fertig: Pause = max(30 s, A − Dauer). Nicht fertig bis A: Überlauf, der Rest-Anteil der Gegner-LP kommt zur nächsten Welle, Pause 5 s. Nach Bosswellen mindestens 300 s und Bonus (Kern +30 % unter 60 % Kern, sonst +80 Coupons).
+- Früher fertig: Pause = max(30 s, A − Dauer). Nicht fertig bis A: Überlauf, der Rest-Anteil der Gegner-LP kommt zur nächsten Welle, Pause 5 s. Nach Bosswellen mindestens 300 s und Bonus: unter 60 % Kern das Kern-Maximum dauerhaft +10 % (`Einsatz.Bonus.KernMax`, wie `TDDefenseCore.cpp`, ohne Heilung; bis 23.11. heilte das Modell fälschlich 30 %), sonst +80 Coupons.
 - Coupons und Festplatten je Welle wie im Einsatz (`WelleBeendet` läuft auch im Endlos-Modus), eine Front.
 - **Bauzeit:** keine Bausperre, aber jedes Kontingent (Turm, Fabrikgebäude, Kraftwerk, Stützbau) kostet `BauSekundenJeGebaeude` = 111 s. Verfügbar: Pause + 50 % der Wellenzeit, Rest bis 300 s mitgenommen. Level im Turmfenster kosten keine Bauzeit. Fabrikzyklus = tatsächlicher Wellenabstand (kürzer als im Einsatz, also mehr Munition je Minute nötig).
 - Vorziehen-Variante: bei lockerer Welle (Q < 0,25, Kern ≥ 90 %) wird ungenutzte Bauzeit gegen 1 Coupon je 10 s eingetauscht.
@@ -44,6 +86,44 @@ python strategien.py --stand 091 --laeufe 3        # Strategie-Prüfstand Einsat
 - Wellen `VonWelle..BisWelle` (Leicht 1–4, Mittel 15–19, Schwer 25–30) mit den Werten der Stufe **Normal** (`StarteKernVerteidigung(..., 1)`), Kern-LP 8000/12000/16000.
 - Der Einsatz ist dabei nicht aktiv: keine Coupons, **keine Grundreparatur** zwischen den Wellen. Der Kernverlust summiert sich über alle Wellen.
 - Geprüft wird ein fester Aufbau ohne Kern-Ausbau, Doktrin und Stützbauten, Munition voll versorgt. Ausgabe: Mindestzahl Türme je Aufbau und Stufe; Erz und Erstlohn stehen nur als Kennzahl dabei.
+
+### Stand 23.11.2026: Strom, aktiver Spieler und Talentbaum
+
+- **Strom (Baum Energie, `TDStrom.cpp`):**
+  - `Wirtschaft.varianten` liefert je erforschter Linie Kraftwerk und Brennstoff: Kohle, Kompaktkohle, Petrolkoks, Treibstoff, Turbo- und Raketentreibstoff.
+  - Die MW je Kraftwerk kommen aus `Strom.<Brennstoff>.Faktor`, der Brennstoff je Minute ist MW × 60 / Brennwert.
+  - `Lauf.fabrik` wählt die billigste Variante: im Einsatz nach Coupons, im Endlos nach Bauzeit.
+  - Der Ausbau (Kompaktkohle, Petrolkoks, Treibstoffkraftwerk, Turbo-Feuerung) beginnt ab `StromAusbauAbKraftwerken` (4).
+  - Das Kohlekraftwerk kommt vorgezogen, sobald die Biomasse knapp wird (`strom_knapp`, `StromVorlaufWellen`).
+  - Das Treibstoffkraftwerk liefert 250 MW (vorher fälschlich 150).
+- **Aktiver Spieler und Talente** (Schalter `SpielerAktiv`, Standard 0):
+  - Die Balance gilt für den passiven Spieler (Marius 12.11.).
+  - Mit `SpielerAktiv` 1 kämpft die Handwaffe als eigener „Turm“ mit: `SpielerDPS` 30, wächst mit `Pionier.WellenAnteil` wie im Mod.
+  - Je geschaffter Bosswelle gibt es einen Talentpunkt nach `TalentPlan`, höchstens 15.
+  - Wirkung der Zweige:
+    - Schütze: Kopftreffer, Schnellladen, Durchschlag, Sprengmantel
+    - Kommandant: Markierung +15 % auf den markierten Anteil
+    - Techniker: Übersteuern
+    - Jäger: ×1,5 gegen Elite und Boss, Schwachstelle im Boss
+  - Die Annahmen stehen in `strategie_annahmen.json`.
+  - `sim_alle_modi.py` zeigt eine Zusatztabelle „Einsatz mit aktivem Spieler“ (Siegquote und Spieleranteil, ohne Band).
+- **Flieger (23.11. nachmittags):**
+  - Ab W43 kommen Krabben nach `Flieger.*`.
+  - Der gute Spieler forscht den Himmelsturm nach Turmfertigung III und stellt je 8 Krabben einen auf (`FliegerJeHimmelsturm`, Preis wie im Laden).
+  - Nicht abgefangene Krabben treffen den Kern mit `Flieger.KernSchaden` × (1 + 0,25 × Wellenzuwachs).
+  - Annahme: Ein Himmelsturm fängt 8 Krabben je Welle. Im Spiel ist das noch ungemessen (Plan `Flieger`).
+- **Später Druck (Gegencheck Konzept B1):** `Wellen.LPJeWelleAb31` 1,5, Endlos eigener Wert (`Endlos.LPJeWelleAb31` 0,1).
+- **Werkzeuge** (seit 24.11. in `Archiv/`): `eiche_stufen.py`, `eiche_endlos.py`, `diagnose_endlos.py`, `varianten_gewehr_nobelisk.py`
+
+### Modell-Spieler „guter Spieler“ (22.11.2026, Schalter `Spielerwahl`)
+
+Anlass: Nach dem A6-Umbau des Baums rechnete die Simulation den Einsatz viel schwerer. Der Grund war der gierige Modell-Spieler, der jede Forschung sofort nutzte (`Notizen/Analyse-A6-Simulation-2026-11-22.md`). Mit `Spielerwahl` 1 in `strategie_annahmen.json` (Standard) spielt er wie ein guter Spieler. Mit 0 kommt das alte Verhalten zurück.
+
+- **Forschung nach Bedarf** (`Lauf._forschungsplan`): Kupfer und Kohlekraftwerk nur, wenn die Linie sie braucht (Voraussetzungen reiht `add()` selbst davor). Das Kohlekraftwerk für die Fabrik kommt nach Turmfertigung II.
+- **Strom nach Kosten** (`Lauf.fabrik`): Mit Kohlekraftwerk wählt er Kohlestrom nur, wenn die Biomasse für die Welle nicht reicht oder Kohle billiger ist. Im Einsatz zählen zuerst Coupons, im Endlos-Modus zuerst die Gebäude, also Bauzeit (`fabrik_schluessel`).
+- **Munition nur, wenn sie sich rechnet** (`Lauf.stelle_munition_um`): Der Schadensgewinn an allen Türmen des Typs je Aufwand muss mindestens so groß sein wie ein weiterer Turm mit der bisherigen Munition. Aufwand heißt im Einsatz Coupons, im Endlos-Modus Gebäude (`aufwand`). Das gilt auch für den ersten Wechsel weg von der Grundmunition.
+- Wirkung (A6-Baum): Einsatz Hart 58 → 86 %, Albtraum 38 → 76 %, Endlos Hart W11 → W11,5. Im alten Baum steigen die Werte mit dem guten Spieler ebenfalls (Hart 85 → 93 %).
+- Noch gierig: Der Spieler baut eine neue Turmart seiner Linie, sobald sie erforscht ist (Gewichte der Linie, `baue()`), samt Munitionskette. Deshalb kostet der Gewehrturm ab Welle 3 die Mischlinien im Endlos-Modus Bauzeit. Mit dem Gewehrturm ab Welle 6 liegt alles auf dem alten Stand.
 
 ### Was am Modell geändert wurde (16.11.2026)
 
@@ -79,10 +159,15 @@ Siehe `Ausgabe\Pipeline\sim_ergebnis.md`. Kurz:
 
 ### Grenzen des Modells
 
-- **Kein Spieler/Pionier**: Der Spieler als Turm (10–20 %, Fabrikmunition, Rollen) fehlt. Gerade der Anfang von Hart/Albtraum hängt daran.
+- **Spieler (seit 23.11.)**: nur mit `SpielerAktiv` 1 (die Bänder gelten für den passiven Spieler).
+  - Der Spieler hat die Armierpistole (`SpielerDPSArmier`), das Gewehr erst nach der Forschung Gewehrturm und dem Kauf für 10 Coupons.
+  - Er verbraucht keine Munition.
+  - Zehn der zwanzig Talente fehlen im Modell (Reparatur, Beute, Anzeige, Bollwerk, Hinrichtung, Nachschub, Munition sparen, Sammelbefehl).
+  - Jäger 3 wirkt nur am Bossanteil der Welle, Kommandant 5 nur über `UebersteuernFlaecheFaktor`.
 - **Keine echte Fabrik**: Munition kommt aus einer Bilanz bis zum Erz (Kontingente, Strom), ohne Bänder, Wege, Platz und Fehler. In der Bohrung ist die Versorgung immer voll.
 - Kein Ort: keine Reichweite, keine Fronten-Aufteilung, keine Laufwege, keine Mauern. Flächenwirkung nur über Faktoren (`Mehrziel_*`, Flamme 2,7 × 2 Ziele: daher der sehr starke Flammenwerfer in der Bohrung).
 - Kernverlust aus Q ist eine Kurve aus Einsatz-Messungen bis W30 (R² 0,46). Alles danach und alles in Endlos/Bohrung ist hochgerechnet.
+- **24.11.2026:** Der Kernverlust hängt im Spiel nicht allein an Q und Turmzahl. Bei Q 0,25–0,3 verliert der Kern 29 %, bei Q 0,4–0,6 nur 14 % (spätere Wellen). Über Q ≈ 0,16 springt er von 1–6 % auf 20–40 % je Welle. Ab Welle 5 (Alpha-Hog) ist der Verlust je Q mehr als doppelt so hoch. Ein Knick und ein schadensgewichteter Druck verbessern die Kurve kaum. Gemessen wird deshalb jetzt der Kernschaden je Gegnerart.
 - Endlos: Wellendauer, Überlauf-Rest und Bauzeit sind grob. Die Bauzeit ist die wichtigste und unsicherste Annahme (siehe oben). Nach W50 begrenzt `Wellen.MaxGesamt` die Gegnerzahl, das Leben wächst nur linear: deshalb laufen einzelne Linien bis zur Rechengrenze.
 - Bohrung: nur reine Aufbauten eines Turmtyps, Mindestzahl über 4 Wellensätze (Zufall der Wellen, nicht des Spiels: andere Zufallsfolge als `FRandomStream`).
 - Meisterfähigkeiten (Level 5) sind wie in `NennDPS()` nicht eingerechnet.

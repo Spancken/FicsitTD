@@ -1,0 +1,143 @@
+{
+  "Name": "Labyrinth",
+  "_Hinweis": "23.11.2026 (Lauf 1: Teilweg bis vor die aeussere Mauer - Suchgrenze der A*-Suche, Wege.SuchKnoten; A/B 2048 gegen 8192 im Plan) (Gegencheck 0.13 Konzept Frage 5, Marius: 'Schlangenlinien aus Mauern - dann muss die Wegfindung sauber laufen'): drei Ringe aus TD-Mauern (30, 42, 54 m) mit wechselnder Luecke (Osten, Westen, Sueden) ergeben ein Labyrinth. Gegner muessen hindurch, ohne Sicherheitsnetz. Bolzentuerme innen. Misst, ob die Wegfindung das Labyrinth sauber laeuft (Sicherheitsnetze 0, Hilfen gezaehlt) - Vergleich mit dem Kernschaden ohne Labyrinth ueber Grundtest/BautenP1.",
+  "NeuesSpiel": {
+    "Startort": "Rocky Desert"
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 25,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warte": 15
+    },
+    {
+      "befehl": "td einsatz stop"
+    },
+    {
+      "befehl": "td kern stop"
+    },
+    {
+      "befehl": "td einsatz start normal 30"
+    },
+    {
+      "befehl": "td einsatz frei an"
+    },
+    {
+      "stromfrei": true
+    },
+    {
+      "versorgung": {
+        "Bolzenturm": 50
+      }
+    },
+    {
+      "warte": 20
+    },
+    {
+      "spielbau": "TD-Mauer",
+      "ring": 30,
+      "luecke": true,
+      "lueckeWinkel": 0,
+      "echt": true,
+      "text": "Ring 30 m, Luecke im Osten"
+    },
+    {
+      "spielbau": "TD-Mauer",
+      "ring": 42,
+      "luecke": true,
+      "lueckeWinkel": 180,
+      "echt": true,
+      "text": "Ring 42 m, Luecke im Westen"
+    },
+    {
+      "spielbau": "TD-Mauer",
+      "ring": 54,
+      "luecke": true,
+      "lueckeWinkel": 90,
+      "echt": true,
+      "text": "Ring 54 m, Luecke im Sueden"
+    },
+    {
+      "warte": 25
+    },
+    {
+      "balance": {
+        "Wege.SuchKnoten": 2048
+      }
+    },
+    {
+      "pruefe": "KernZugang",
+      "soll": "Durchbrechbar",
+      "text": "Gegenprobe mit der Engine-Grenze 2048 Suchknoten: nur Teilweg (Ursache des ersten Laufs)"
+    },
+    {
+      "balance": {
+        "Wege.SuchKnoten": 8192
+      }
+    },
+    {
+      "pruefe": "KernZugang",
+      "soll": "Frei",
+      "text": "Labyrinth mit Luecken: Kern erreichbar (8192 Suchknoten)"
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 4,
+      "level": 2,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar",
+      "ring": "innen"
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "Labyrinth_W00"
+    },
+    {
+      "wellenlauf": 5,
+      "zeitraffer": 4,
+      "max": 500
+    },
+    {
+      "ueberblick": true
+    },
+    {
+      "foto": "Labyrinth_W05"
+    },
+    {
+      "pruefe": "KernLebt",
+      "text": "Kern hat Welle 5 im Labyrinth ueberstanden"
+    },
+    {
+      "pruefe": "Sicherheitsnetze",
+      "text": "kein Sicherheitsnetz ausgeloest (Hilfen werden mit ausgewiesen)"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Hirn:",
+      "min": 0,
+      "text": "Hirn-Meldungen (Diagnose)"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Wegsuche an der Suchgrenze (Wege.SuchKnoten 8192)",
+      "min": 0,
+      "text": "Teilwege an der Suchgrenze (Diagnose: zaehlt auch unerreichbare Ziele, z. B. waehrend das Netz die Plattform noch nicht anbindet)"
+    },
+    {
+      "entferne": "spielbau",
+      "netzneu": true,
+      "zerstoertErlaubt": true
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}

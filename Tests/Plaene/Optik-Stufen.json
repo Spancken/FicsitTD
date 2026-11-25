@@ -1,0 +1,722 @@
+{
+  "Name": "Optik-Stufen",
+  "_Hinweis": "21.11. (Bericht A3, Paket O-A, Stufenstreifen): die sieben Tuerme auf Level 1 bis 5, nach jedem Aufwerten ein Foto aus derselben Stelle (30 Grad, 16 m, Blick auf 4 m Hoehe) und die Laufzeitpruefung Optik. Kontaktabzug: python Tools\\kontaktabzug.py (nimmt den neuesten *_Optik-Stufen-Lauf mit --stufen). Grundlage fuer Marius' Optik-Abnahme (O1). Gewehrturm von 210 Grad (bei 30 Grad steht in 16 m der Felsen, Lauf 21.11. 17:29).",
+  "NeuesSpiel": {
+    "Startort": "Rocky Desert"
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 20,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warte": 15
+    },
+    {
+      "befehl": "td einsatz stop"
+    },
+    {
+      "befehl": "td kern stop"
+    },
+    {
+      "befehl": "td einsatz start normal 30"
+    },
+    {
+      "befehl": "td einsatz frei an"
+    },
+    {
+      "stromfrei": true
+    },
+    {
+      "versorgung": {
+        "Bolzenturm": 50,
+        "Gewehrturm": 20,
+        "Nobelisk-Werfer": 10,
+        "Himmelsturm": 30,
+        "Singularitaet": 8,
+        "Stoerfeld": 2,
+        "Drohnenplatz": 20
+      }
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 1,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "baue": "Gewehrturm",
+      "anzahl": 1,
+      "rezept": "Recipe_TD_Gun_Standard"
+    },
+    {
+      "baue": "Teslaspule",
+      "anzahl": 1,
+      "rezept": "Recipe_TD_Tesla_Discharge"
+    },
+    {
+      "baue": "Flammenwerfer",
+      "anzahl": 1,
+      "rezept": "Recipe_TD_Flame_Fuel"
+    },
+    {
+      "baue": "Nobelisk-Werfer",
+      "anzahl": 1,
+      "rezept": "Recipe_TD_Nobelisk_Explosive"
+    },
+    {
+      "baue": "Himmelsturm",
+      "anzahl": 1,
+      "rezept": "Recipe_TD_Flak_Shoot"
+    },
+    {
+      "baue": "Singularitaet",
+      "anzahl": 1,
+      "rezept": "Recipe_TD_Singularitaet_Ficsonium"
+    },
+    {
+      "warte": 20
+    },
+    {
+      "pruefe": "Optik",
+      "text": "Level 1: kein Original-Strom-/Statusmast, keine Nebelflaeche, Strom im Klarraum"
+    },
+    {
+      "stelle": "Bolzenturm",
+      "abstand": 16,
+      "winkel": 30,
+      "suchen": true,
+      "blickhoehe": 4
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Bolzenturm_L1_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Gewehrturm",
+      "abstand": 16,
+      "winkel": 210,
+      "suchen": true,
+      "blickhoehe": 4
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Gewehrturm_L1_210",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Teslaspule",
+      "abstand": 16,
+      "winkel": 30,
+      "suchen": true,
+      "blickhoehe": 4
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Teslaspule_L1_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Flammenwerfer",
+      "abstand": 16,
+      "winkel": 30,
+      "suchen": true,
+      "blickhoehe": 4
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Flammenwerfer_L1_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Nobelisk-Werfer",
+      "abstand": 16,
+      "winkel": 30,
+      "suchen": true,
+      "blickhoehe": 4
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Nobelisk-Werfer_L1_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Himmelsturm",
+      "abstand": 16,
+      "winkel": 30,
+      "suchen": true,
+      "blickhoehe": 4
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Himmelsturm_L1_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Singularitaet",
+      "abstand": 16,
+      "winkel": 30,
+      "suchen": true,
+      "blickhoehe": 4
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Singularitaet_L1_30",
+      "ohneHUD": true
+    },
+    {
+      "aufwerten": "Bolzenturm",
+      "level": 2
+    },
+    {
+      "aufwerten": "Gewehrturm",
+      "level": 2
+    },
+    {
+      "aufwerten": "Teslaspule",
+      "level": 2
+    },
+    {
+      "aufwerten": "Flammenwerfer",
+      "level": 2
+    },
+    {
+      "aufwerten": "Nobelisk-Werfer",
+      "level": 2
+    },
+    {
+      "aufwerten": "Himmelsturm",
+      "level": 2
+    },
+    {
+      "aufwerten": "Singularitaet",
+      "level": 2
+    },
+    {
+      "warte": 10
+    },
+    {
+      "pruefe": "Optik",
+      "text": "Level 2: kein Original-Strom-/Statusmast, keine Nebelflaeche, Strom im Klarraum"
+    },
+    {
+      "stelle": "Bolzenturm",
+      "abstand": 16,
+      "winkel": 30,
+      "suchen": true,
+      "blickhoehe": 4
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Bolzenturm_L2_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Gewehrturm",
+      "abstand": 16,
+      "winkel": 210,
+      "suchen": true,
+      "blickhoehe": 4
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Gewehrturm_L2_210",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Teslaspule",
+      "abstand": 16,
+      "winkel": 30,
+      "suchen": true,
+      "blickhoehe": 4
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Teslaspule_L2_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Flammenwerfer",
+      "abstand": 16,
+      "winkel": 30,
+      "suchen": true,
+      "blickhoehe": 4
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Flammenwerfer_L2_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Nobelisk-Werfer",
+      "abstand": 16,
+      "winkel": 30,
+      "suchen": true,
+      "blickhoehe": 4
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Nobelisk-Werfer_L2_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Himmelsturm",
+      "abstand": 16,
+      "winkel": 30,
+      "suchen": true,
+      "blickhoehe": 4
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Himmelsturm_L2_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Singularitaet",
+      "abstand": 16,
+      "winkel": 30,
+      "suchen": true,
+      "blickhoehe": 4
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Singularitaet_L2_30",
+      "ohneHUD": true
+    },
+    {
+      "aufwerten": "Bolzenturm",
+      "level": 3
+    },
+    {
+      "aufwerten": "Gewehrturm",
+      "level": 3
+    },
+    {
+      "aufwerten": "Teslaspule",
+      "level": 3
+    },
+    {
+      "aufwerten": "Flammenwerfer",
+      "level": 3
+    },
+    {
+      "aufwerten": "Nobelisk-Werfer",
+      "level": 3
+    },
+    {
+      "aufwerten": "Himmelsturm",
+      "level": 3
+    },
+    {
+      "aufwerten": "Singularitaet",
+      "level": 3
+    },
+    {
+      "warte": 10
+    },
+    {
+      "pruefe": "Optik",
+      "text": "Level 3: kein Original-Strom-/Statusmast, keine Nebelflaeche, Strom im Klarraum"
+    },
+    {
+      "stelle": "Bolzenturm",
+      "abstand": 16,
+      "winkel": 30,
+      "suchen": true,
+      "blickhoehe": 4
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Bolzenturm_L3_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Gewehrturm",
+      "abstand": 16,
+      "winkel": 210,
+      "suchen": true,
+      "blickhoehe": 4
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Gewehrturm_L3_210",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Teslaspule",
+      "abstand": 16,
+      "winkel": 30,
+      "suchen": true,
+      "blickhoehe": 4
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Teslaspule_L3_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Flammenwerfer",
+      "abstand": 16,
+      "winkel": 30,
+      "suchen": true,
+      "blickhoehe": 4
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Flammenwerfer_L3_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Nobelisk-Werfer",
+      "abstand": 16,
+      "winkel": 30,
+      "suchen": true,
+      "blickhoehe": 4
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Nobelisk-Werfer_L3_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Himmelsturm",
+      "abstand": 16,
+      "winkel": 30,
+      "suchen": true,
+      "blickhoehe": 4
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Himmelsturm_L3_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Singularitaet",
+      "abstand": 16,
+      "winkel": 30,
+      "suchen": true,
+      "blickhoehe": 4
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Singularitaet_L3_30",
+      "ohneHUD": true
+    },
+    {
+      "aufwerten": "Bolzenturm",
+      "level": 4
+    },
+    {
+      "aufwerten": "Gewehrturm",
+      "level": 4
+    },
+    {
+      "aufwerten": "Teslaspule",
+      "level": 4
+    },
+    {
+      "aufwerten": "Flammenwerfer",
+      "level": 4
+    },
+    {
+      "aufwerten": "Nobelisk-Werfer",
+      "level": 4
+    },
+    {
+      "aufwerten": "Himmelsturm",
+      "level": 4
+    },
+    {
+      "aufwerten": "Singularitaet",
+      "level": 4
+    },
+    {
+      "warte": 10
+    },
+    {
+      "pruefe": "Optik",
+      "text": "Level 4: kein Original-Strom-/Statusmast, keine Nebelflaeche, Strom im Klarraum"
+    },
+    {
+      "stelle": "Bolzenturm",
+      "abstand": 16,
+      "winkel": 30,
+      "suchen": true,
+      "blickhoehe": 4
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Bolzenturm_L4_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Gewehrturm",
+      "abstand": 16,
+      "winkel": 210,
+      "suchen": true,
+      "blickhoehe": 4
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Gewehrturm_L4_210",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Teslaspule",
+      "abstand": 16,
+      "winkel": 30,
+      "suchen": true,
+      "blickhoehe": 4
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Teslaspule_L4_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Flammenwerfer",
+      "abstand": 16,
+      "winkel": 30,
+      "suchen": true,
+      "blickhoehe": 4
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Flammenwerfer_L4_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Nobelisk-Werfer",
+      "abstand": 16,
+      "winkel": 30,
+      "suchen": true,
+      "blickhoehe": 4
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Nobelisk-Werfer_L4_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Himmelsturm",
+      "abstand": 16,
+      "winkel": 30,
+      "suchen": true,
+      "blickhoehe": 4
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Himmelsturm_L4_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Singularitaet",
+      "abstand": 16,
+      "winkel": 30,
+      "suchen": true,
+      "blickhoehe": 4
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Singularitaet_L4_30",
+      "ohneHUD": true
+    },
+    {
+      "aufwerten": "Bolzenturm",
+      "level": 5
+    },
+    {
+      "aufwerten": "Gewehrturm",
+      "level": 5
+    },
+    {
+      "aufwerten": "Teslaspule",
+      "level": 5
+    },
+    {
+      "aufwerten": "Flammenwerfer",
+      "level": 5
+    },
+    {
+      "aufwerten": "Nobelisk-Werfer",
+      "level": 5
+    },
+    {
+      "aufwerten": "Himmelsturm",
+      "level": 5
+    },
+    {
+      "aufwerten": "Singularitaet",
+      "level": 5
+    },
+    {
+      "warte": 10
+    },
+    {
+      "pruefe": "Optik",
+      "text": "Level 5: kein Original-Strom-/Statusmast, keine Nebelflaeche, Strom im Klarraum"
+    },
+    {
+      "stelle": "Bolzenturm",
+      "abstand": 16,
+      "winkel": 30,
+      "suchen": true,
+      "blickhoehe": 4
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Bolzenturm_L5_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Gewehrturm",
+      "abstand": 16,
+      "winkel": 210,
+      "suchen": true,
+      "blickhoehe": 4
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Gewehrturm_L5_210",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Teslaspule",
+      "abstand": 16,
+      "winkel": 30,
+      "suchen": true,
+      "blickhoehe": 4
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Teslaspule_L5_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Flammenwerfer",
+      "abstand": 16,
+      "winkel": 30,
+      "suchen": true,
+      "blickhoehe": 4
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Flammenwerfer_L5_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Nobelisk-Werfer",
+      "abstand": 16,
+      "winkel": 30,
+      "suchen": true,
+      "blickhoehe": 4
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Nobelisk-Werfer_L5_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Himmelsturm",
+      "abstand": 16,
+      "winkel": 30,
+      "suchen": true,
+      "blickhoehe": 4
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Himmelsturm_L5_30",
+      "ohneHUD": true
+    },
+    {
+      "stelle": "Singularitaet",
+      "abstand": 16,
+      "winkel": 30,
+      "suchen": true,
+      "blickhoehe": 4
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "Optik_Singularitaet_L5_30",
+      "ohneHUD": true
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "Name": "Stromzweig",
+  "_Hinweis": "23.11.2026 (Marius, Stromzweig): Baum Energie, MW je Brennstoff, Shop mit Atomkraftwerk/Teilchenbeschleuniger (50 Posten), Freies Spiel ohne Energie-Baum; dazu Grundtest und Einsatzphase als Gegenprobe.",
+  "Plaene": [
+    "Energie",
+    "A6-Forschung",
+    "A6-Abwehr",
+    "Shop",
+    "Grundtest",
+    "EinsatzPhase"
+  ]
+}

@@ -1,0 +1,103 @@
+{
+  "Name": "KZ-6-Bohrung",
+  "_Hinweis": "0.13 K1 (Marius 21.11.: in der Bohrung kein Ring, nur Wegpruefung beim Start): Bohrer rundum mit Spielwaenden zugebaut (ueber das Hologramm, dann Netz neu) -> Start abgelehnt mit Bau und Stelle, Kartenmarke. Nach dem Entfernen startet die Bohrung. Knoten wie Plan Bohrung (T1-6).",
+  "NeuesSpiel": {
+    "Startort": "Grass Fields",
+    "Modus": 3
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 10,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warte": 10
+    },
+    {
+      "befehl": "td bohrung platz -61337 228043"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Bohrung: Testkern gesetzt",
+      "min": 1,
+      "text": "Testkern neben einem Rohstoffknoten"
+    },
+    {
+      "warte": 20
+    },
+    {
+      "spielbau": "Wand",
+      "ring": 14,
+      "echt": true,
+      "text": "Bohrer rundum mit Spielwaenden 14 m zugebaut (Hologramm)"
+    },
+    {
+      "netzunterbau": true,
+      "text": "Netz unter den Waenden"
+    },
+    {
+      "warte": 12
+    },
+    {
+      "befehl": "td bohrung info",
+      "text": "MESSUNG: Platzpruefung ohne Netzauffrischung"
+    },
+    {
+      "netzauffrischen": 40
+    },
+    {
+      "warte": 12
+    },
+    {
+      "befehl": "td bohrung leicht",
+      "antwortEnthaelt": "abgeriegelt",
+      "text": "Start abgelehnt mit Grund"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Bohrung: Bohrer abgeriegelt durch",
+      "min": 1,
+      "text": "Bau und Stelle im Log"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "KernZugang: Kartenmarke gesetzt",
+      "min": 1,
+      "text": "Sperrstelle auf der Karte"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Bohrung gestartet",
+      "min": 0,
+      "max": 0,
+      "text": "Bohrung nicht gestartet"
+    },
+    {
+      "foto": "KZ-6_abgeriegelt"
+    },
+    {
+      "entferne": "spielbau",
+      "netzneu": true
+    },
+    {
+      "warte": 20,
+      "_Hinweis": "22.11. (Lauf 1031): nach dem Entfernen baut das Netz um den Bohrer laenger um; bei 12 s meldete die Pruefung richtig 'wird gerade aufgebaut'"
+    },
+    {
+      "befehl": "td bohrung leicht"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Bohrung gestartet: Leicht",
+      "min": 1,
+      "text": "nach dem Oeffnen startet die Bohrung"
+    },
+    {
+      "befehl": "td bohrung abbrechen"
+    }
+  ]
+}

@@ -7,6 +7,7 @@
 class AFGCreature;
 class ATDTestWall;
 class ATDDefenseCore;
+class AFGBuildable;
 
 /** Ablauf des Modus Kern-Verteidigung (Spielkonzept S2/S3) */
 UENUM()
@@ -24,6 +25,34 @@ enum class ETDSteuerModus : uint8
 	Aggro,
 	/** Zusaetzlich per MoveToActor zum Ziel laufen lassen, solange die KI nicht kaempft. */
 	Laufen
+};
+
+/** 0.13 K1 (Fahrplan-0.13, Bericht A1 5.1): Ist der Kern fuer Wellengegner erreichbar? Schlechtester Zustand ueber die aktiven Fronten. */
+enum class ETDKernZugang : uint8
+{
+	Frei,              // voller Weg
+	Durchbrechbar,     // Teilweg, die Sperre sind nur TD-Hindernisse (Mauer, Sperre, Tor, Zaun) - die Gegner greifen sie an
+	NetzNichtBereit,   // Wegsuche ohne Punkte (Netz um den Kern noch im Bau)
+	Unpassierbar       // Teilweg, ein Spielbau, eine Maschine oder ein Turm sperrt (oder Gelaende ohne erkannten Bau)
+};
+
+/** Ergebnis einer Pruefung "Kern erreichbar" */
+struct FTDKernZugang
+{
+	ETDKernZugang Zustand = ETDKernZugang::NetzNichtBereit;
+	/** Front mit dem schlechtesten Zustand (1-basiert), 0 = Ringprobe ohne Fronten */
+	int32 Front = 0;
+	/** Ein Bau des Spielers sperrt (Sperre, Sperrstelle gesetzt). false bei Unpassierbar = Gelaende oder unbekannt */
+	bool bBau = false;
+	FVector Sperrstelle = FVector::ZeroVector;
+	/** Anzeigename des sperrenden Baus (Spielsprache) und Klasse fuer das Log */
+	FString Sperre;
+	FString SperreKlasse;
+	int32 Wegsuchen = 0;
+	double Ms = 0.0;
+	/** FPlatformTime::Seconds der Pruefung (Zwischenspeicher KernZugang.Haltezeit) */
+	double Zeit = -1000.0;
+	bool IstGesperrt() const { return Zustand == ETDKernZugang::Unpassierbar; }
 };
 
 /** Schwierigkeitsstufe eines Laufs (Level-Konzept Abschnitt 5). Zeiten in Sekunden, Abstaende in cm. */
@@ -288,6 +317,39 @@ public:
 	/** Zeilen fuer das Kern-Menue (Knoten, Stufen, Erstlohn) */
 	TArray<FString> BohrInfo(ATDDefenseCore* Kern);
 	int32 GetBohrStufe() const { return mBohrStufe; }
+	// ---- 0.13 K1 Kern-Zugang (TDKernZugang.cpp, Fahrplan-0.13 Abschnitt 3) ----
+	/** Kern erreichbar? Aktive Fronten der naechsten Welle, ohne Fronten eine Ringprobe. Zwischenspeicher KernZugang.Haltezeit s */
+	const FTDKernZugang& PruefeKernZugang(bool bErzwingen = false);
+	/** Pruefung von beliebigen Startpunkten; leer = Ringprobe (8 Richtungen, KernZugang.RingAbstaende). Aendert mKernZugang nicht. */
+	FTDKernZugang PruefeKernZugangVon(const ATDDefenseCore* Kern, const TArray<FVector>& Starts, bool bRingprobe) const;
+	const FTDKernZugang& GetKernZugang() const { return mKernZugang; }
+	static const TCHAR* KernZugangName(ETDKernZugang Zustand);
+	/** 23.11.: Kasten der sichtbaren Modellteile eines Hologramms (ohne Reichweitenringe und Pruefkaesten) - Wegpruefung und Ring */
+	static FBox HologrammKasten(const class AFGHologram* Holo);
+	/** Zeile fuer Kern-Menue und Chat in der Spielsprache, z. B. "Kern-Zugang: abgeriegelt durch Konstruktor, 24 m Nordosten" */
+	FString KernZugangText(const FTDKernZugang& Z, const ATDDefenseCore* FuerKern = nullptr) const;
+	/** Wellenstart wartet gerade, weil der Kern abgeriegelt ist */
+	bool WartetAufKernZugang() const { return mZugangWarte > 0.f; }
+	// ---- 0.13 N1 Bau-Sperren (TDBauSperren.cpp): Maschinen und Tuerme als Sperrflaeche im Gegnernetz ----
+	/** Alle passenden Bauten im Umkreis Gegner.BauSperrenRadius um Mitte sperren; liefert die Zahl neuer Sperrflaechen */
+	int32 SperreBautenUm(const FVector& Mitte);
+	/** Sperrflaechen abgerissener Bauten entfernen (bAlle: alle, beim Laufende) */
+	void RaeumeBauSperren(bool bAlle);
+	int32 GetBauSperrenZahl() const { return mBauSperren.Num(); }
+	/** Bau-Ereignis des Spiels (AFGBuildableSubsystem::BuildableConstructedGlobalDelegate) */
+	UFUNCTION()
+	void BauGebaut(AFGBuildable* Bau);
+	// ---- 0.13 K4 Wegpruefung beim Bauen (TDLebensadern.cpp) ----
+	/** Hologramm, das den letzten Weg zum Kern schliessen wuerde, bekommt den Ablehnungsgrund UTDCDKernAbriegelung. true = abgelehnt */
+	bool PruefeHologrammZugang(class AFGHologram* Holo);
+	/** Schneidet der Kasten (Welt) alle gueltigen Lebensadern? (mindestens 3 gueltige) */
+	bool WuerdeAbriegeln(const FBox& Kasten, int32* OutGeschnitten = nullptr, int32* OutGueltig = nullptr) const;
+	int32 GetLebensadernZahl() const;
+	// ---- 0.13 Ring- und Lueckensignale (TDRingSignale.cpp, Marius 22.11.) ----
+	bool RingSignaleSichtbar() const;
+	int32 RingSignaleZahl() const;
+	/** gruene Signale entlang der letzten Lebensader am roten Hologramm (0,6 s sichtbar) */
+	void ZeigeLetzteLuecke(const FBox& Kasten, const TArray<FVector>& Ader);
 	/** Alle TD-Rezepte freischalten (freier Modus; im Einsatz kommen sie ueber das MAM) */
 	void SchalteSandkastenFrei();
 	int32 mWellenGesamt = 30;
@@ -331,6 +393,8 @@ private:
 	void EntferneWellenLeiste();
 	/** T3: Zusammensetzung einer Welle festlegen (reproduzierbar je Kern, Stufe und Welle) - in der Bauphase fuer die Vorschau */
 	void PlaneWelle(int32 Nummer);
+	/** 24.11.2026: LP-Faktor der Kern-Welle Nummer (Stufe, Wachstum, Endlos) - Gegner-LP = Grund-LP der Art x Faktor */
+	float LPFaktorFuer(int32 Nummer) const;
 	/** Plan einer beliebigen Welle berechnen, ohne den gespeicherten Plan zu aendern */
 	TArray<FTDPlanGruppe> PlanFuer(int32 Nummer, int32& OutArt) const;
 	int32 mPlanWelle = -1;
@@ -398,6 +462,10 @@ private:
 	TArray<FVector> mKlippenStellen;
 	/** Welle, fuer die die Frontpruefung vor dem Start schon lief */
 	int32 mFrontCheckWelle = -1;
+	/** 23.11. (Wegvorschau vor dem Start): Sekunden seit Beginn der Bauphase und Welle, deren Fronten schon frueh geprueft sind.
+	 *  Gegner.FrontPruefungAufbau > 0 zieht Frontpruefung und Klippenprobe in die Bauphase vor (Standard 5 s, Marius 23.11. abends). */
+	float mAufbauUhr = 0.f;
+	int32 mFrontCheckFruehWelle = -1;
 	/** so lange wartet der Wellenstart schon auf den Netzumbau; wie oft gewartet wurde (Log) */
 	float mKlippenWarte = 0.f;
 	int32 mStartGewartet = 0;
@@ -598,6 +666,65 @@ private:
 	int32 mFrontenStufe = -1;
 	/** Wie viele der 16 Richtungen beim Suchen geprueft gueltig waren */
 	int32 mGueltigeRichtungen = 0;
+	/** 0.13 K1: letzte Pruefung "Kern erreichbar", Warten des Wellenstarts, Uhren fuer Neupruefung und Ansage */
+	FTDKernZugang mKernZugang;
+	float mZugangWarte = 0.f;
+	float mZugangPruefUhr = 0.f;
+	float mZugangAnsageUhr = 0.f;
+	/** Abriegelung gemeldet (Ansage, Kartenmarke, Zaehler) - erst nach einer zweiten Pruefung */
+	bool mZugangGemeldet = false;
+	/** so lange haelt der Start schon wegen eines laufenden Netzumbaus (KernZugang.WarteNetz) */
+	float mZugangNetzWarte = 0.f;
+	/** 23.11. (Gegencheck 0.13 F4): einmal nach Laden/Start pruefen, ob Bestand den Kern abriegelt (-1 = nicht geplant) */
+	float mZugangLadeUhr = -1.f;
+	int32 mZugangLadeVersuche = 0;
+	bool mZugangLadeGeprueft = false;
+	/** 0.13 N1: Bau -> Sperrkasten (eigener Actor, nicht gespeichert) */
+	TMap<TWeakObjectPtr<AFGBuildable>, TWeakObjectPtr<AActor>> mBauSperren;
+	bool mBauVerbunden = false;
+	/** > 0: nach dem Bau-Ereignis in so vielen s die Bauten im Umkreis neu sperren */
+	float mBauSperrenUhr = 0.f;
+	float mBauRaeumUhr = 0.f;
+	/** 0.13 K4: volle Wege aus 16 Richtungen (leer = kein voller Weg), reihum eine je Bild */
+	TArray<TArray<FVector>> mLebensadern;
+	/** 23.11. (Marius: Flieger bauen, Spezifikation E5): fliegende Krabben der laufenden Welle. Bodentuerme suchen nur
+	 *  AFGCreature und treffen sie deshalb nicht, der Himmelsturm (ATDFlakTurret) sucht genau diese Klasse. */
+	TArray<TWeakObjectPtr<AActor>> mFlieger;
+	bool mFliegerAngesagt = false;
+	bool mMantaAngesagt = false;
+	void SpawneFlieger(int32 Nummer);
+	/** Flieger am Kern: Schaden, Explosion; Rueckgabe: Zahl der lebenden */
+	int32 PflegeFlieger();
+	void EntferneFlieger();
+	/** 23.11. (Stromzweig): Takt der Kraftwerkspflege (TDStrom.cpp) */
+	float mStromUhr = 0.f;
+	/** 23.11. (Gegencheck Konzept R4-E): Modus Aus erkennen, ohne in jedem Bild nachzufragen */
+	float mModusUhr = 0.f;
+	bool mModusAktiv = true;
+	int32 mLebensaderIndex = 0;
+	void PflegeLebensadern(float DeltaTime);
+	/** 22.11. (H4): Takt und Kosten der Lebensadern (Logzeile je Wellenstart) */
+	float mLebensaderUhr = 0.f;
+	int32 mLebensaderZahl = 0;
+	double mLebensaderMs = 0.0;
+	double mLebensaderMaxMs = 0.0;
+	void MeldeLebensaderKosten();
+	/** Ringsignale anlegen und im Baumodus zeigen, Lueckensignale ausblenden */
+	void PflegeRingSignale(float DeltaTime);
+	TWeakObjectPtr<AActor> mRingSignale;
+	TWeakObjectPtr<const ATDDefenseCore> mRingSignaleKern;
+	TWeakObjectPtr<AActor> mLueckeSignale;
+	double mLueckeBis = 0.0;
+	float mRingSignalUhr = 0.f;
+	bool BrauchtBauSperre(const AFGBuildable* Bau) const;
+	bool SperreBau(AFGBuildable* Bau);
+	void VerbindeBauSperren();
+	/** Wellenstart halten, solange ein Bau den Kern abriegelt; true = Start diesmal halten (LaufTick kehrt zurueck) */
+	bool HalteStartFuerKernZugang(float DeltaTime);
+	/** Eine Front: Weg zum Kern, bei Teilweg die Sperrstelle (Kapselfahrten, Brueckentest) */
+	FTDKernZugang PruefeZugangEinzeln(const ATDDefenseCore* Kern, const FVector& Start, int32 Front) const;
+	/** Kartenmarke an der Sperrstelle setzen (bZeigen) oder entfernen */
+	void MarkiereSperrstelle(bool bZeigen);
 	/** 18.11. (P12-E5: Neusuche nach 0 von 16 fand 13 Richtungen, waehlte aber Norden 357 m statt Nordwesten 343 m - welche
 	 *  Wege gueltig sind, haengt am Stand des Netzes): vor Welle 1 erst starten, wenn zwei Suchen nacheinander dieselben Fronten liefern */
 	bool mFrontenStabil = true;

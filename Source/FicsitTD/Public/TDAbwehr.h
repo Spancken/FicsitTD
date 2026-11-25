@@ -23,6 +23,11 @@ public:
 	virtual void Deinitialize() override;
 	/** Wie viele Industrie-Knoten bisher dem HUB gefolgt sind (Log, Test) */
 	int32 GetNachgezogen() const { return mNachgezogen; }
+	/** A6 Entscheidung 8 (Marius 22.11.): Gegenseite einer Gabelung zum Faktor Abwehr.GabelFaktor (2) des Coupon-Preises.
+	 *  Setzt die Kosten am Schematic-CDO aus mOriginalKosten neu; ohne Tausch (kein Freies Spiel mit Abwehr) wirkungslos. */
+	void SetzeGabelPreise();
+	/** Wie viele Knoten zuletzt den Gabel-Aufschlag trugen (Log, Test) */
+	int32 GetGabelAufschlag() const { return mGabelAufschlag; }
 
 private:
 	void Pruefe();
@@ -36,5 +41,6 @@ private:
 	FTimerHandle mTimer;
 	bool mGetauscht = false;
 	int32 mNachgezogen = 0;
+	int32 mGabelAufschlag = -1;
 	TMap<TWeakObjectPtr<UClass>, TArray<FItemAmount>> mOriginalKosten;
 };

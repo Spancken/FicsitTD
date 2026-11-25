@@ -1,0 +1,109 @@
+{
+  "Name": "Front-Gras-S8",
+  "_Hinweis": "23.11.2026 abends (Marius: Gras-S8 Front 1 angehen): Aufbau wie der Flieger-Plan, der im Grasland zweimal rot war. Gras-S8, Erkundung, Sprung auf Welle 43 (alle Fronten offen, grosse Gegner), Bodengegner mit 5 % LP. Vorher verlegte die Klippenprobe den Start von Front 1 in drei Schritten in ein Klippenfeld (X -57570 Y 216277), Elite-Stinger, Alpha-Hog und Spucker-Alpha blieben dort haengen. Erwartet: verlegte Startpunkte mit Freiraum (Gegner.FrontFreiRadius), keine Festgefahrenen, kein Sicherheitsnetz. 24.11.: Front 1 der Tabelle jetzt r14 (nah). Erwartet: Front 1 r=14 im Log.",
+  "NeuesSpiel": {
+    "Startort": "Grass Fields",
+    "Kernplatz": "2",
+    "Modus": 1
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 20,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warteBis": "EinsatzAktiv",
+      "max": 120
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Front 1: Nordosten",
+      "min": 1,
+      "text": "Front 1 im Nordosten"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "(r=14 d=0)",
+      "min": 1,
+      "text": "Front 1 aus der Tabelle r14 nah"
+    },
+    {
+      "befehl": "td einsatz frei an"
+    },
+    {
+      "stromfrei": true
+    },
+    {
+      "versorgung": {
+        "Bolzenturm": 200,
+        "Himmelsturm": 200
+      }
+    },
+    {
+      "baue": "Himmelsturm",
+      "anzahl": 3,
+      "level": 2,
+      "rezept": "Recipe_TD_Flak_Shoot",
+      "ring": "innen"
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 8,
+      "level": 3,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "balance": {
+        "Stufen.Erkundung.GegnerLP": 0.05
+      },
+      "text": "Bodengegner schwach: geprueft wird der Start der Fronten, nicht die Abwehr"
+    },
+    {
+      "befehl": "td kern springe 43"
+    },
+    {
+      "warte": 3
+    },
+    {
+      "wellenlauf": 43,
+      "zeitraffer": 2,
+      "max": 400
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "Startpunkt von Front",
+      "min": 0,
+      "text": "Verlegte Startpunkte (Diagnose)"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "OHNE Freiraum",
+      "min": 0,
+      "text": "Verlegungen ohne Freiraum (Diagnose; Front 3 bei CliffFlat_03 zweimal je Lauf, dort blieb in 5 W43-Laeufen kein Gegner haengen)"
+    },
+    {
+      "pruefe": "LogEnthaelt",
+      "suche": "festgefahren bei",
+      "min": 0,
+      "max": 0,
+      "text": "kein Gegner bleibt am Startpunkt haengen"
+    },
+    {
+      "pruefe": "Sicherheitsnetze",
+      "text": "kein Sicherheitsnetz ausgeloest"
+    },
+    {
+      "balance": {
+        "Stufen.Erkundung.GegnerLP": 0.7
+      }
+    },
+    {
+      "pruefe": "KeineWarnungen",
+      "text": "keine Warnungen oder Fehler des Mods im Log"
+    }
+  ]
+}

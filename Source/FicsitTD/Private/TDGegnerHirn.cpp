@@ -32,6 +32,7 @@
 #include "TDSicherheitsnetz.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "NavigationPath.h"
+#include "NavigationData.h"
 #include "NavigationSystem.h"
 
 float UTDGegnerHirn::TempoFaktor = 1.f;
@@ -39,6 +40,7 @@ int32 UTDGegnerHirn::AnimNurSichtbarErzwungen = -1;
 int32 UTDGegnerHirn::KollisionErzwungen = -1;
 int32 UTDGegnerHirn::RagdollErzwungen = -1;
 bool UTDGegnerHirn::bAngriffAus = false;
+int32 UTDGegnerHirn::SuchgrenzeErreicht = 0;
 
 namespace TDHirn
 {
@@ -254,6 +256,7 @@ TArray<FVector> UTDGegnerHirn::BerechneWeg(UWorld* World, const FVector& Ort, co
 		}
 	}
 	const ANavigationData* Standard = Nav->GetDefaultNavDataInstance(FNavigationSystem::DontCreate);
+	bool bGrenze = false;
 	for (int32 Durchgang = 0; Durchgang < 2; ++Durchgang)
 	{
 		const ANavigationData* Daten = Durchgang == 0 ? (Eigenes ? Eigenes : Standard) : Standard;
@@ -287,8 +290,12 @@ TArray<FVector> UTDGegnerHirn::BerechneWeg(UWorld* World, const FVector& Ort, co
 		if (Pfad && Pfad->IsValid() && Pfad->PathPoints.Num() >= 2)
 		{
 			const bool bAmZiel = UTDWaveSubsystem::PfadAmZiel(Pfad, Ziel.Location);
+			const FNavPathSharedPtr Roh = const_cast<UNavigationPath*>(Pfad)->GetPath();   // GetPath ist nicht const
 			if (bAmZiel || Durchgang == 1 || Daten == Standard || Weg.Num() == 0)
 			{
+				// 23.11. (Labyrinth-Nachtest): nur der zurueckgegebene Weg zaehlt. Im Netz des Alpha-Hogs ist der Kern oft nicht
+				// erreichbar, die Suche laeuft dort immer bis zur Grenze - danach findet das Standardnetz den vollen Weg.
+				bGrenze = !bAmZiel && Roh.IsValid() && Roh->DidSearchReachedLimit();
 				Weg = Pfad->PathPoints;
 				if (bVoll)
 				{
@@ -299,6 +306,18 @@ TArray<FVector> UTDGegnerHirn::BerechneWeg(UWorld* World, const FVector& Ort, co
 			{
 				break;
 			}
+		}
+	}
+	if (bGrenze && Weg.Num() > 0)
+	{
+		// 23.11. (Labyrinth-Selbsttest): Teilweg, weil die Suche ihre Knotengrenze erreichte - kein echtes Hindernis (Ziel 0)
+		++SuchgrenzeErreicht;
+		static double Gemeldet = -100.0;
+		if (FPlatformTime::Seconds() - Gemeldet > 10.0)
+		{
+			Gemeldet = FPlatformTime::Seconds();
+			UE_LOG(LogFicsitTD, Log, TEXT("Hirn: Wegsuche an der Suchgrenze (Wege.SuchKnoten %d), Teilweg endet %.0f m vor dem Kern (%d mal)"),
+				TDBalance::Ganz(TEXT("Wege.SuchKnoten"), 8192), FVector::Dist2D(Weg.Last(), Kern->GetActorLocation()) / 100.f, SuchgrenzeErreicht);
 		}
 	}
 	return Weg;
@@ -765,6 +784,7 @@ void UTDGegnerHirn::NeuerWeg(const AFGCreature* Kreatur)
 	// neuen Mauer ist lang.)
 	if (!bVoll && mWegVoll && mWeg.Num() >= 2 && Laenge < 1000.f && RestVorher > 2000.f)
 	{
+		TDNetz::MeldeHilfe(TDNetz::EHilfe::Netzinsel);
 		static int32 Inseln = 0;
 		if (Inseln++ < 20)
 		{
@@ -803,6 +823,7 @@ bool UTDGegnerHirn::RestToeten(AActor* Ziel)
 	const float Rest = Leben->GetCurrentHealth();
 	if (Rest > 0.f && Rest < TDBalance::Wert(TEXT("Treffer.Rundungsrest"), 1.f))
 	{
+		TDNetz::MeldeHilfe(TDNetz::EHilfe::Rundungsrest);
 		Leben->Kill();
 		return true;
 	}
@@ -963,6 +984,7 @@ void UTDGegnerHirn::Marschiere(AFGCreature* Kreatur, float DeltaTime)
 						return;
 					}
 					UE_LOG(LogFicsitTD, Log, TEXT("Hirn: %s wartet %.0f s hinter %s, wird versetzt"), *Kreatur->GetClass()->GetName(), mStau, *Vordermann->GetClass()->GetName());
+					TDNetz::MeldeHilfe(TDNetz::EHilfe::StauGeduld);
 				}
 				// 0.78.6: Modell des Hindernisses (welche Pflanze, welcher Fels?)
 				FString Modell = Hindernis.GetComponent() ? Hindernis.GetComponent()->GetName() : FString(TEXT("-"));
@@ -1060,6 +1082,7 @@ void UTDGegnerHirn::Marschiere(AFGCreature* Kreatur, float DeltaTime)
 				return;
 			}
 			UE_LOG(LogFicsitTD, Log, TEXT("Hirn: %s steht %.0f s im Stau hinter %s, wird versetzt"), *Kreatur->GetClass()->GetName(), mStau, *KapselGegner->GetClass()->GetName());
+			TDNetz::MeldeHilfe(TDNetz::EHilfe::StauGeduld);
 		}
 		// 0.83.1 (58 von 174 hingen an Palmen und Kakteen neben dem geraeumten Streifen, Treffer 0,8-1,8 m ueber dem Fuss):
 		// den Bewuchs vor ihm raeumen statt ihn zu versetzen - so ist das Hindernis auch fuer alle Folgenden weg
@@ -1070,6 +1093,7 @@ void UTDGegnerHirn::Marschiere(AFGCreature* Kreatur, float DeltaTime)
 			if (Geraeumt > 0)
 			{
 				UE_LOG(LogFicsitTD, Log, TEXT("Hirn: %s hing an Bewuchs bei %s, %d Pflanzen geraeumt"), *Kreatur->GetClass()->GetName(), *BewuchsOrt.ToCompactString(), Geraeumt);
+				TDNetz::MeldeHilfe(TDNetz::EHilfe::Bewuchs);
 				mStill = 0.f;
 				return;
 			}
@@ -1082,6 +1106,7 @@ void UTDGegnerHirn::Marschiere(AFGCreature* Kreatur, float DeltaTime)
 			if (UTDWaveSubsystem* Wellen = GetWorld()->GetSubsystem<UTDWaveSubsystem>())
 			{
 				Wellen->SperreKlippe(KapselKlippe);
+				TDNetz::MeldeHilfe(TDNetz::EHilfe::Klippe);
 			}
 		}
 		// 18.11. (Diagnose, 9 Faelle seit 17.11.: grosse Stinger am Startpunkt Nordwesten, MOVE_NavWalking, Tempo voll, Boden nicht begehbar):

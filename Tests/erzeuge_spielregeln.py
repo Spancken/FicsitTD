@@ -43,6 +43,9 @@ def tabellen(B, ns):
     z += ["", "### Wellen", "",
           f"- Budget = Stufe × ({w('Wellen.BudgetGrund')} + {w('Wellen.BudgetJeWelle')} × N + {w('Wellen.BudgetQuadrat')} × N²)",
           f"- Gegner-LP × (1 + {w('Wellen.LPJeWelle')} × (N − 1)) bis Welle 31, danach + {w('Wellen.LPJeWelleAb31')} je weitere Welle; Elite-LP × {w('Wellen.EliteLP')}",
+          # 23.11.2026 (Marius: Einsatz schwerer): Endlos hat eigenen Zuwachs und je Stufe einen Ausgleich, damit es auf dem Stand vor dem 23.11. bleibt
+          f"- Endlos-Wellen: Zuwachs {w('Endlos.LPJeWelle')} statt {w('Wellen.LPJeWelle')} je Welle, Gegner-LP zusätzlich × "
+          + " / ".join(f"{s} {w(f'Endlos.{s}.LPFaktor', '1')}" for s in ("Erkundung", "Normal", "Hart", "Albtraum")),
           f"- Bosswellen: Gegnerbudget × {w('Wellen.BossBudget')} plus Boss",
           f"- höchstens {w('Wellen.MaxGleichzeitig')} gleichzeitig, {w('Wellen.MaxGesamt')} je Welle (Nachschub alle {w('Wellen.NachschubTakt')} s je {w('Wellen.NachschubPaket')})",
           f"- Standardlänge eines Einsatzes: {w('Einsatz.WellenStandard', '50')} Wellen", ""]
@@ -52,6 +55,14 @@ def tabellen(B, ns):
     z += ["", "| Phase | Bosse | Boss-LP × |", "|---|---|---|"]
     for p in range(1, 6):
         z.append(f"| {p} | {w(f'Phasen.{p}.BossAnzahl')} | {w(f'Phasen.{p}.BossLP')} |")
+    # 23.11.2026 (Marius, Stromzweig): MW je Kraftwerk und Brennstoff (TDStrom.cpp)
+    z += ["", "### Strom je Brennstoff", "", "| Kraftwerk | Brennstoff | Faktor | MW |", "|---|---|---|---|"]
+    for werk, grund, stoffe in (("Kohlekraftwerk", 75, ("Kohle", "Kompaktkohle", "Petrolkoks")),
+                                ("Treibstoffkraftwerk", 250, ("Treibstoff", "Biotreibstoff", "Turbotreibstoff", "Raketentreibstoff", "Ionisiert")),
+                                ("Atomkraftwerk", 2500, ("Uran", "Plutonium", "Ficsonium"))):
+        for st in stoffe:
+            f = B.get(f"Strom.{st}.Faktor", 1.0)
+            z.append(f"| {werk} | {st} | {zahl(f)} | {zahl(round(grund * f))} |")
     # Belohnung
     z += ["", "### Belohnung je Welle", "",
           f"- **Coupons** = {w('Einsatz.EP.Grund')} + {w('Einsatz.EP.JeWelle')} × N, +{w('Einsatz.EP.KernVoll')} bei vollem Kern bzw. +{w('Einsatz.EP.KernAb75')} ab 75 %; Bosswelle × {w('Einsatz.EP.BossFaktor')} + {w('Einsatz.EP.BossBonus')}",

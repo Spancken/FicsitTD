@@ -18,6 +18,8 @@
 #include "FicsitTDModule.h"
 #include "TDBalance.h"
 #include "TDSprache.h"
+#include "TDShop.h"
+#include "TDAda.h"
 #include "UObject/TextProperty.h"
 #include "TDBarrier.h"
 #include "TDDamageable.h"
@@ -41,6 +43,8 @@
 #include "Buildables/FGBuildablePipelineJunction.h"
 #include "Buildables/FGBuildableTradingPost.h"
 #include "Buildables/FGBuildableMAM.h"
+#include "Buildables/FGBuildableResourceSinkShop.h"
+#include "Buildables/FGBuildableFoundation.h"
 #include "EngineUtils.h"
 #include "Engine/World.h"
 #include "FGCharacterPlayer.h"
@@ -82,6 +86,8 @@ static const TPair<const TCHAR*, int32> StartKontingent[] = {
 	{ TEXT("MAM"), 1 },          // Basis: HUB und MAM setzt der Spieler am Start selbst (kostenlos)
 	{ TEXT("Splitter"), 0 },
 	{ TEXT("Verbinder"), 0 },
+	// 0.12 E4 (Marius 21.11.: Kontingent 1): das Rezept kommt erst nach Welle 2 (FreigabeShop)
+	{ TEXT("AWESOME-Shop"), 1 },
 };
 
 /** Startressourcen zusaetzlich zum Baumaterial des Startkontingents (das wird aus den Rezepten berechnet, Marius 02.11.):
@@ -141,6 +147,9 @@ static const FTDLadenEintrag LadenListe[] = {
 	{ TEXT("Oelpumpe"), 6, 0.4f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_OilPump.Recipe_OilPump_C") },
 	{ TEXT("Raffinerie"), 8, 0.4f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_OilRefinery.Recipe_OilRefinery_C") },
 	{ TEXT("Treibstoffkraftwerk"), 8, 0.4f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_GeneratorFuel.Recipe_GeneratorFuel_C") },
+	// 23.11. (Marius, Stromzweig): Kernkraft in den Ueberstunden (Baum Energie, Kernkraft ab W51, Plutonium ab W56)
+	{ TEXT("Atomkraftwerk"), 40, 0.6f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_GeneratorNuclear.Recipe_GeneratorNuclear_C") },
+	{ TEXT("Teilchenbeschleuniger"), 40, 0.6f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_HadronCollider.Recipe_HadronCollider_C") },
 	// 0.9.1 Endgame-Konzept (Marius 09.11.2026): spaete Maschinen. Ohne sie waren Schild, Himmelsturm, Stoerfeld nicht herstellbar.
 	{ TEXT("Fluessigkeitspuffer"), 3, 0.3f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_PipeStorageTank.Recipe_PipeStorageTank_C") },
 	{ TEXT("Fertiger"), 14, 0.5f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_ManufacturerMk1.Recipe_ManufacturerMk1_C") },
@@ -159,6 +168,11 @@ static const FTDLadenEintrag LadenListe[] = {
 	// ab der Forschung Caterium, damit verschuettete Vorkommen ohne fremde Turmlinie und Stahl-/Pulverkette frei zu sprengen sind
 	{ TEXT("Nobelisken-Zünder"), 12, 0.f, 1, TEXT("/Game/FactoryGame/Recipes/Smelter/Recipe_IngotCaterium.Recipe_IngotCaterium_C") },
 	{ TEXT("Nobelisken"), 5, 0.2f, 5, TEXT("/Game/FactoryGame/Recipes/Smelter/Recipe_IngotCaterium.Recipe_IngotCaterium_C") },
+	// 0.12 E4 (Marius 14./15.11.: Festplatten im Shop, 40 Coupons, jede weitere 10 teurer): nur im AWESOME-Shop, nicht am Kern
+	{ TEXT("Festplatte"), 40, 0.25f, 1, TEXT("/FicsitTD/Buildings/BoltTurret/Recipe_TD_BoltTurret.Recipe_TD_BoltTurret_C") },
+	// A6 E7 (Marius 22.11., Bericht-A6-Forschungsbaum 5.6): Senke fuer uebrige Festplatten. Preis 0 (der Shop zeigt mindestens 1 Coupon,
+	// den erstattet TDShopNachKauf), Lohn Einsatz.Laden.Festplatte.Rueckgabe Coupons je Stueck. Nur im AWESOME-Shop, nur Einsatz und Endlos.
+	{ TEXT("Festplattenabgabe"), 0, 0.f, 1, TEXT("/FicsitTD/Buildings/BoltTurret/Recipe_TD_BoltTurret.Recipe_TD_BoltTurret_C") },
 	// 18.11. (Marius: Bewegung spaeter kaufen): Jetpack erst mit Oel (Raffinerie im MAM, der Jetpack fliegt mit Treibstoff), danach das
 	// Hover-Pack mit dem Fertiger (spaetes Spiel, braucht Stromleitungen in der Naehe)
 	{ TEXT("Jetpack"), 16, 0.f, 1, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_OilRefinery.Recipe_OilRefinery_C") },
@@ -167,7 +181,8 @@ static const FTDLadenEintrag LadenListe[] = {
 	{ TEXT("Kernreparatur"), 15, 0.5f, 25, TEXT("/FicsitTD/Buildings/DefenseCore/Recipe_TD_DefenseCore.Recipe_TD_DefenseCore_C") },
 };
 
-/** Spieler-Posten: Wirkung statt Kontingent. Art 0 = Ausruestung ins Inventar, 1 = Inventarplaetze, 2 = Handplatz, 3 = Kern heilen (Prozent).
+/** Spieler-Posten: Wirkung statt Kontingent. Art 0 = Ausruestung ins Inventar, 1 = Inventarplaetze, 2 = Handplatz, 3 = Kern heilen (Prozent),
+ *  4 = Festplatte abgeben (Item aus dem Inventar gegen Coupons).
  *  Max 0 = unbegrenzt */
 struct FTDSpielerPosten
 {
@@ -189,6 +204,8 @@ static const FTDSpielerPosten SpielerPosten[] = {
 	{ TEXT("Nobelisken-Zünder"), 0, 1, TEXT("/Game/FactoryGame/Resource/Equipment/NobeliskDetonator/BP_EquipmentDescriptorNobeliskDetonator.BP_EquipmentDescriptorNobeliskDetonator_C"),
 		TEXT("/Game/FactoryGame/Resource/Parts/NobeliskExplosive/Desc_NobeliskExplosive.Desc_NobeliskExplosive_C"), 10 },
 	{ TEXT("Nobelisken"), 0, 0, TEXT("/Game/FactoryGame/Resource/Parts/NobeliskExplosive/Desc_NobeliskExplosive.Desc_NobeliskExplosive_C") },
+	{ TEXT("Festplatte"), 0, 0, TEXT("/Game/FactoryGame/Resource/Environment/CrashSites/Desc_HardDrive.Desc_HardDrive_C") },
+	{ TEXT("Festplattenabgabe"), 4, 0, TEXT("/Game/FactoryGame/Resource/Environment/CrashSites/Desc_HardDrive.Desc_HardDrive_C") },
 	{ TEXT("Jetpack"), 0, 1, TEXT("/Game/FactoryGame/Resource/Equipment/JetPack/BP_EquipmentDescriptorJetPack.BP_EquipmentDescriptorJetPack_C") },
 	{ TEXT("Hover-Pack"), 0, 1, TEXT("/Game/FactoryGame/Resource/Equipment/HoverPack/BP_EquipmentDescriptorHoverPack.BP_EquipmentDescriptorHoverPack_C") },
 	{ TEXT("Kernreparatur"), 3, 0, TEXT("/Game/FactoryGame/Resource/Parts/IronPlateReinforced/Desc_IronPlateReinforced.Desc_IronPlateReinforced_C") },
@@ -255,7 +272,7 @@ static const TCHAR* StartRezepte[] = {
 	TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_PowerLine.Recipe_PowerLine_C"),
 	TEXT("/Game/FactoryGame/Recipes/Smelter/Recipe_IngotIron.Recipe_IngotIron_C"),
 	TEXT("/Game/FactoryGame/Recipes/Constructor/Recipe_IronRod.Recipe_IronRod_C"),
-	TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_Mam.Recipe_Mam_C"),
+	// 22.11. (Handspiel H2): das MAM-Rezept kommt erst nach Welle 2 (FreigabeMam, Einsatz.Mam.AbWelle)
 	TEXT("/Game/FactoryGame/Recipes/Constructor/Recipe_Biomass_Leaves.Recipe_Biomass_Leaves_C"),
 	TEXT("/Game/FactoryGame/Recipes/Constructor/Recipe_Biomass_Wood.Recipe_Biomass_Wood_C"),
 	TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_TradingPost.Recipe_TradingPost_C"),
@@ -278,6 +295,7 @@ static FString TDAnzeige(const FString& Key)
 			{ TEXT("Singularitaet"), TEXT("Singularitätswerfer") }, { TEXT("Oelpumpe"), TEXT("Ölpumpe") }, { TEXT("Abfueller"), TEXT("Abfüller") },
 			{ TEXT("Foerderanlage"), TEXT("Förderanlage") }, { TEXT("Fluessigkeitspuffer"), TEXT("Flüssigkeitspuffer") },
 			{ TEXT("Flammenturm"), TEXT("Flammenwerfer") }, { TEXT("Splitter"), TEXT("Förderbandsplitter") }, { TEXT("Wasserpumpe"), TEXT("Wasserextraktor") },
+			{ TEXT("Festplattenabgabe"), TEXT("Festplatte abgeben") },
 		};
 		const FString* Name = De.Find(Key);
 		return Name ? *Name : Key;
@@ -295,13 +313,13 @@ static FString TDAnzeige(const FString& Key)
 		{ TEXT("Foerderanlage"), TEXT("Resource Well") }, { TEXT("Fluessigkeitspuffer"), TEXT("Fluid Buffer") },
 		{ TEXT("Teslaspule"), TEXT("Tesla Coil") }, { TEXT("Nobelisk-Werfer"), TEXT("Nobelisk Launcher") }, { TEXT("Reparaturstation"), TEXT("Repair Station") }, { TEXT("Drohnenplatz"), TEXT("Drone Pad") },
 		{ TEXT("Lockfeuer"), TEXT("Lure Fire") }, { TEXT("Oelschlick"), TEXT("Oil Slick Field") }, { TEXT("Wasserpumpe"), TEXT("Water Extractor") }, { TEXT("Akku"), TEXT("Power Storage") },
-		{ TEXT("Oelpumpe"), TEXT("Oil Extractor") }, { TEXT("Foerderanlage"), TEXT("Extractor") }, { TEXT("Kohlekraftwerk"), TEXT("Coal-Powered Generator") },
-		{ TEXT("Treibstoffkraftwerk"), TEXT("Fuel-Powered Generator") }, { TEXT("Atomkraftwerk"), TEXT("Nuclear Power Plant") }, { TEXT("Kraftwerk"), TEXT("Power Generator") },
+		{ TEXT("Oelpumpe"), TEXT("Oil Extractor") }, { TEXT("Kohlekraftwerk"), TEXT("Coal-Powered Generator") },
+		{ TEXT("Treibstoffkraftwerk"), TEXT("Fuel-Powered Generator") }, { TEXT("Atomkraftwerk"), TEXT("Nuclear Power Plant") }, { TEXT("Teilchenbeschleuniger"), TEXT("Particle Accelerator") }, { TEXT("Kraftwerk"), TEXT("Power Generator") },
 		{ TEXT("Giesserei"), TEXT("Foundry") }, { TEXT("Assembler"), TEXT("Assembler") }, { TEXT("Fertiger"), TEXT("Manufacturer") },
 		{ TEXT("Raffinerie"), TEXT("Refinery") }, { TEXT("Abfueller"), TEXT("Packager") }, { TEXT("Mischer"), TEXT("Blender") },
 		{ TEXT("Fabrik"), TEXT("Factory") }, { TEXT("Fluessigkeitspuffer"), TEXT("Fluid Buffer") }, { TEXT("Inventarplätze"), TEXT("Inventory Slots") },
 		{ TEXT("Handplatz"), TEXT("Hand Slot") }, { TEXT("Armierpistole"), TEXT("Rebar Gun") }, { TEXT("Klingenläufer"), TEXT("Blade Runners") },
-		{ TEXT("Gewehr"), TEXT("Rifle") }, { TEXT("Nobelisken-Zünder"), TEXT("Nobelisk Detonator") }, { TEXT("Nobelisken"), TEXT("Nobelisks") }, { TEXT("Kernreparatur"), TEXT("Core Repair") },
+		{ TEXT("Gewehr"), TEXT("Rifle") }, { TEXT("Nobelisken-Zünder"), TEXT("Nobelisk Detonator") }, { TEXT("Nobelisken"), TEXT("Nobelisks") }, { TEXT("Festplatte"), TEXT("Hard Drive") }, { TEXT("Festplattenabgabe"), TEXT("Return Hard Drive") }, { TEXT("AWESOME-Shop"), TEXT("AWESOME Shop") }, { TEXT("Kernreparatur"), TEXT("Core Repair") },
 		{ TEXT("Jetpack"), TEXT("Jetpack") }, { TEXT("Hover-Pack"), TEXT("Hover Pack") },
 	};
 	const FString* Gefunden = En.Find(Key);
@@ -310,10 +328,47 @@ static FString TDAnzeige(const FString& Key)
 
 /** Sperrtexte der Bau-Hologramme: stehen am CDO. Im Konstruktor ist die Spielsprache evtl. noch nicht die endgueltige,
  *  deshalb setzt PruefeHologramm sie bei Bedarf neu (TDAktualisiereSperrTexte) */
-static FText TDTextKontingent() { return TDTX(TEXT("Kontingent erschöpft (/td einsatz status)"), TEXT("Quota used up (/td einsatz status)")); }
+// 23.11. (Gegencheck Konzept R5): Grund und Ausweg statt nur des Verbots
+static FText TDTextKontingent() { return TDTX(TEXT("Kontingent erschöpft: Weitere gibt es im AWESOME-Shop (vor dem Shop am Kern)."), TEXT("Quota used up: buy more in the AWESOME Shop (before the Shop: at the Core).")); }
 static FText TDTextSinkGesperrt() { return TDTX(TEXT("Im Einsatz gesperrt: FICSIT-Coupons gibt es nur vom Abwehrkern"), TEXT("Locked during an operation: FICSIT Coupons only come from the Defense Core")); }
-static FText TDTextBlaupause() { return TDTX(TEXT("Im Einsatz gesperrt: Blaupausen sind nicht erlaubt"), TEXT("Locked during an operation: blueprints are not allowed")); }
-static FText TDTextWellenSperre() { return TDTX(TEXT("Während der Welle ist Bauen am Kern gesperrt"), TEXT("Building near the Core is locked during a wave")); }
+static FText TDTextBlaupause() { return TDTX(TEXT("Im Einsatz gesperrt: Blaupausen würden die Kontingente umgehen."), TEXT("Locked during an operation: blueprints would bypass the quotas.")); }
+static FText TDTextWellenSperre() { return TDTX(TEXT("Während der Welle ist Bauen am Kern gesperrt: Die Abwehr steht, wenn die Gegner kommen. Zwischen den Wellen geht es wieder."), TEXT("Building near the Core is locked during a wave: your defense stands when the enemies arrive. It opens again between waves.")); }
+// 0.13 K2 (Marius 21.11.: Lore - der Boden um den Bohrer ist nicht stabil genug fuer Fabriken)
+static FText TDTextBodenInstabil()
+{
+	const int32 Meter = FMath::RoundToInt(TDBalance::Wert(TEXT("Einsatz.Ring.Radius"), 60.f));
+	return TDFX(TEXT("Boden instabil: Das Bohrbeben des Abwehrkerns trägt hier keine Fabrik. Fabrikgebäude erst ab %d m vom Kern, Abwehrbauten gehen."),
+		TEXT("Unstable ground: the Defense Core's drilling tremors cannot carry a factory here. Factory buildings only from %d m away, defenses are fine."), Meter);
+}
+
+UTDCDBodenInstabil::UTDCDBodenInstabil()
+{
+	mDisqfualifyingText = TDTextBodenInstabil();
+}
+
+// 23.11. (Gegencheck 0.13): MAM vor Welle 2
+static FText TDTextMamFrueh()
+{
+	return TDFX(TEXT("Das MAM kommt nach Welle %d: Dann gibt es die ersten Festplatten für neue Technik."),
+		TEXT("The MAM comes after wave %d: that is when the first Hard Drives for new technology arrive."), TDBalance::Ganz(TEXT("Einsatz.Mam.AbWelle"), 2));
+}
+
+UTDCDMamFrueh::UTDCDMamFrueh()
+{
+	mDisqfualifyingText = TDTextMamFrueh();
+}
+
+// 0.13 K4
+static FText TDTextKernAbriegelung()
+{
+	return TDTX(TEXT("Würde den letzten Weg zum Kern schließen. Lass eine Lücke oder sperre mit einer Abwehrmauer."),
+		TEXT("Would close the last path to the Core. Leave a gap or block it with a defense wall."));
+}
+
+UTDCDKernAbriegelung::UTDCDKernAbriegelung()
+{
+	mDisqfualifyingText = TDTextKernAbriegelung();
+}
 
 UTDCDBlaupause::UTDCDBlaupause()
 {
@@ -352,6 +407,41 @@ void TDAbrissSperreGruende(const AActor* Bau, TArray<TSubclassOf<UFGConstructDis
 	}
 }
 
+static FText TDTextPlattform() { return TDTX(TEXT("Die Kernplattform lässt sich im Einsatz nicht abreißen"), TEXT("The Core platform cannot be dismantled during an operation")); }
+
+UTDCDPlattform::UTDCDPlattform()
+{
+	mDisqfualifyingText = TDTextPlattform();
+}
+
+bool TDPlattformAbrissGesperrt(const AActor* Bau)
+{
+	// 21.11. (Marius, A5 Nr. 6; Fenster 1: ohne die 28 Rampen 0 von 16 Richtungen begehbar). Die Plattform besteht aus
+	// Spiel-Fundamenten und -Rampen (Lightweight); zum Abreissen erzeugt das Spiel kurz einen Actor dieser Klasse an ihrem Ort.
+	return Bau && TDPlattformAbrissGesperrtAn(Bau->GetWorld(), Bau->GetClass(), Bau->GetActorLocation());
+}
+
+int32 GTDAbrissHooks = 0;
+
+bool TDPlattformAbrissGesperrtAn(UWorld* World, const UClass* Klasse, const FVector& Ort)
+{
+	const UTDEinsatzSubsystem* Einsatz = World ? World->GetSubsystem<UTDEinsatzSubsystem>() : nullptr;
+	const ATDDefenseCore* Kern = Einsatz && Einsatz->IstAktiv() ? Einsatz->GetKern() : nullptr;
+	// 22.11. (Handspiel H1: Fundamente liessen sich abreissen, solange der Kernplatz noch auf das Netz wartete): auch den wartenden Kern
+	if (!Kern)
+	{
+		const UTDKernplatz* Platz = World ? UTDKernplatz::Get(World) : nullptr;
+		Kern = Platz ? Platz->GetWartenderKern() : nullptr;
+	}
+	if (!Kern || !Klasse || !Klasse->IsChildOf(AFGBuildableFoundation::StaticClass()) || TDBalance::Wert(TEXT("Einsatz.Plattform.AbrissSperren"), 1.f) < 1.f)
+	{
+		return false;
+	}
+	// 6 x 6 Fundamente (48 m) plus Rampenring und Ecken: bis 36 m von der Kernmitte, hoechstens 12 m Hoehenunterschied
+	const FVector D = Ort - Kern->GetActorLocation();
+	return FVector2D(D.X, D.Y).Size() <= TDBalance::Wert(TEXT("Einsatz.Plattform.Radius"), 3600.f) && FMath::Abs(D.Z) <= 1200.f;
+}
+
 UTDCDWellenSperre::UTDCDWellenSperre()
 {
 	mDisqfualifyingText = TDTextWellenSperre();
@@ -376,6 +466,16 @@ static void TDAktualisiereSperrTexte()
 	Feld->SetPropertyValue_InContainer(GetMutableDefault<UTDCDWellenSperre>(), TDTextWellenSperre());
 	Feld->SetPropertyValue_InContainer(GetMutableDefault<UTDCDAbrissSperre>(), TDTextAbrissSperre());
 	Feld->SetPropertyValue_InContainer(GetMutableDefault<UTDCDBlaupause>(), TDTextBlaupause());
+	Feld->SetPropertyValue_InContainer(GetMutableDefault<UTDCDPlattform>(), TDTextPlattform());
+	Feld->SetPropertyValue_InContainer(GetMutableDefault<UTDCDBodenInstabil>(), TDTextBodenInstabil());
+	Feld->SetPropertyValue_InContainer(GetMutableDefault<UTDCDMamFrueh>(), TDTextMamFrueh());
+	Feld->SetPropertyValue_InContainer(GetMutableDefault<UTDCDKernAbriegelung>(), TDTextKernAbriegelung());
+}
+
+bool UTDEinsatzSubsystem::IstFabrikgebaeude(const UClass* BauKlasse)
+{
+	return BauKlasse && BauKlasse->IsChildOf(AFGBuildable::StaticClass()) && !BauKlasse->IsChildOf(AFGBuildableFactoryBuilding::StaticClass())
+		&& !IstLogistik(BauKlasse) && !BauKlasse->GetPathName().StartsWith(TEXT("/FicsitTD/"));
 }
 
 bool UTDEinsatzSubsystem::IstLogistik(const UClass* BauKlasse)
@@ -389,7 +489,7 @@ bool UTDEinsatzSubsystem::IstLogistik(const UClass* BauKlasse)
 bool UTDEinsatzSubsystem::Kostenlos(const UClass* BauKlasse) const
 {
 	return mAktiv && BauKlasse && (IstLogistik(BauKlasse) || BauKlasse->IsChildOf(AFGBuildableTradingPost::StaticClass())
-		|| BauKlasse->IsChildOf(AFGBuildableMAM::StaticClass()));
+		|| BauKlasse->IsChildOf(AFGBuildableMAM::StaticClass()) || BauKlasse->IsChildOf(AFGBuildableResourceSinkShop::StaticClass()));
 }
 
 /** Originalzutaten der kostenlos gemachten Rezepte (prozessweit, die Rezept-CDOs leben laenger als eine Welt) */
@@ -502,6 +602,7 @@ void UTDEinsatzSubsystem::PruefeForschungsbaeume()
 	}
 	static const TCHAR* Baeume[] = {
 		TEXT("/FicsitTD/Research/BPD_ResearchTree_TD_Industrie.BPD_ResearchTree_TD_Industrie_C"),
+		TEXT("/FicsitTD/Research/BPD_ResearchTree_TD_Energie.BPD_ResearchTree_TD_Energie_C"),   // 23.11. Stromzweig
 		TEXT("/FicsitTD/Research/BPD_ResearchTree_TD_Ballistik.BPD_ResearchTree_TD_Ballistik_C"),
 		TEXT("/FicsitTD/Research/BPD_ResearchTree_TD_Elementar.BPD_ResearchTree_TD_Elementar_C"),
 		TEXT("/FicsitTD/Research/BPD_ResearchTree_TD_Festung.BPD_ResearchTree_TD_Festung_C"),
@@ -561,6 +662,7 @@ FString UTDEinsatzSubsystem::Schluessel(const UClass* BauKlasse)
 	// 0.84.4 Coupons (Marius 08.11.): der Kern zahlt FICSIT-Coupons statt EP; der AWESOME-Sink ist im Einsatz gesperrt, sonst gaebe
 	// er eine zweite Coupon-Quelle. Kein Start- und kein Ladenkontingent -> Grenze 0 -> nicht baubar (Shop bleibt erlaubt)
 	if (Name.Contains(TEXT("ResourceSink")) && !Name.Contains(TEXT("Shop"))) return TEXT("AWESOME-Sink");
+	if (Name.Contains(TEXT("ResourceSinkShop"))) return TEXT("AWESOME-Shop");   // 0.12 E4: Kontingent 1, kostenlos
 	if (BauKlasse->IsChildOf(ATDDefenseCore::StaticClass())) return TEXT("Abwehrkern");
 	if (BauKlasse->IsChildOf(AFGBuildableMAM::StaticClass())) return TEXT("MAM");
 	// Band-Splitter (auch Smart/Programmierbar/Lift) und Verbinder: Kontingent wie Gebaeude
@@ -615,6 +717,7 @@ FString UTDEinsatzSubsystem::Schluessel(const UClass* BauKlasse)
 		if (Name.Contains(TEXT("Refinery"))) return TEXT("Raffinerie");
 		if (Name.Contains(TEXT("Packager"))) return TEXT("Abfueller");
 		if (Name.Contains(TEXT("Blender"))) return TEXT("Mischer");
+		if (Name.Contains(TEXT("HadronCollider"))) return TEXT("Teilchenbeschleuniger");   // 23.11. Stromzweig (Plutonium)
 		return TEXT("Fabrik");
 	}
 	if (BauKlasse->IsChildOf(AFGBuildableStorage::StaticClass())) return TEXT("Lager");
@@ -634,6 +737,16 @@ int32 UTDEinsatzSubsystem::Grenze(const FString& Key) const
 		}
 	}
 	const ATDDefenseCore* Kern = mKern.Get();
+	// 22.11. (Handspiel H2: MAM liess sich sofort bauen): vor Einsatz.Mam.AbWelle kein MAM, auch wenn die HUB-Stufen das Rezept geben
+	if (Key == TEXT("MAM"))
+	{
+		const UTDWaveSubsystem* MamWaves = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
+		const int32 Geschafft = MamWaves ? (MamWaves->LaeuftWelle() ? MamWaves->GetWelle() - 1 : MamWaves->GetWelle()) : 0;
+		if (Geschafft < TDBalance::Ganz(TEXT("Einsatz.Mam.AbWelle"), 2))
+		{
+			return 0;
+		}
+	}
 	const FTDLadenEintrag* Laden = LadenFuer(Key);
 	const int32* Gekauft = Kern ? Kern->mKontingentGekauft.Find(Key) : nullptr;
 	int32 Geschenk = 0;
@@ -1086,6 +1199,23 @@ bool UTDEinsatzSubsystem::HoleTurmErbe(const FString& Turm, int32& Kills, int32&
 
 FString UTDEinsatzSubsystem::SpielerWirkung(const FTDSpielerPosten& P, int32 Menge)
 {
+	// A6 E7: Festplatten aus dem Inventar gegen Coupons (nie mehr als vorhanden)
+	if (P.Art == 4)
+	{
+		UFGInventoryComponent* Inventar = SpielerInventar(GetWorld());
+		UClass* FP = FPKlasse();
+		const int32 Weg = Inventar && FP ? FMath::Min(Menge, Inventar->GetNumItems(FP)) : 0;
+		const int32 Lohn = Weg * FMath::Max(0, TDBalance::Ganz(TEXT("Einsatz.Laden.Festplatte.Rueckgabe"), 12));
+		if (Weg > 0)
+		{
+			Inventar->Remove(FP, Weg);
+			GibEP(Lohn, TEXT("Festplatte abgegeben"));
+		}
+		UE_LOG(LogFicsitTD, Log, TEXT("Einsatz: Festplattenabgabe %d von %d Stueck, +%d Coupons, Festplatten im Inventar %d"), Weg, Menge, Lohn, FPImInventar());
+		return Weg > 0
+			? TDF(TEXT("Abgegeben: %d Festplatte(n), +%d Coupons."), TEXT("Returned: %d Hard Drive(s), +%d Coupons."), Weg, Lohn)
+			: TDT(TEXT("Keine Festplatte im Inventar, nichts abgegeben."), TEXT("No Hard Drive in your inventory, nothing returned."));
+	}
 	if (P.Art == 3)
 	{
 		ATDDefenseCore* Kern = mKern.Get();
@@ -1183,7 +1313,7 @@ static int32 LadenKategorie(const FString& Key)
 {
 	static const TCHAR* Tuerme[] = { TEXT("Bolzenturm"), TEXT("Gewehrturm"), TEXT("Teslaspule"), TEXT("Himmelsturm"), TEXT("Flammenturm"), TEXT("Nobelisk-Werfer"), TEXT("Singularitaet") };
 	static const TCHAR* Abwehr[] = { TEXT("Mauer"), TEXT("Panzersperre"), TEXT("Tor"), TEXT("Lockfeuer"), TEXT("Oelschlick"), TEXT("Elektrozaun"), TEXT("Funkmast"), TEXT("Schildgenerator"), TEXT("Stoerfeld"), TEXT("Drohnenplatz") };
-	static const TCHAR* Strom[] = { TEXT("Biomassegenerator"), TEXT("Kohlekraftwerk"), TEXT("Treibstoffkraftwerk") };
+	static const TCHAR* Strom[] = { TEXT("Biomassegenerator"), TEXT("Kohlekraftwerk"), TEXT("Treibstoffkraftwerk"), TEXT("Atomkraftwerk") };
 	static const TCHAR* Logistik[] = { TEXT("Lager"), TEXT("Splitter"), TEXT("Verbinder"), TEXT("Fluessigkeitspuffer") };
 	for (const TCHAR* K : Tuerme)   { if (Key == K) return 0; }
 	for (const TCHAR* K : Abwehr)   { if (Key == K) return 1; }
@@ -1199,7 +1329,8 @@ TArray<FTDLadenZeile> UTDEinsatzSubsystem::LadenZeilen() const
 	for (const FTDLadenEintrag& E : LadenListe)
 	{
 		// 0.72.1: Panzersperre entfernt (Eintrag bleibt fuer das Kontingent gebauter Sperren alter Spielstaende)
-		if (FCString::Strcmp(E.Key, TEXT("Panzersperre")) == 0)
+		// 0.12 E4: Festplatte nur im AWESOME-Shop
+		if (FCString::Strcmp(E.Key, TEXT("Panzersperre")) == 0 || FCString::Strcmp(E.Key, TEXT("Festplatte")) == 0 || FCString::Strcmp(E.Key, TEXT("Festplattenabgabe")) == 0)
 		{
 			continue;
 		}
@@ -1217,7 +1348,7 @@ TArray<FTDLadenZeile> UTDEinsatzSubsystem::LadenZeilen() const
 		if (const FTDSpielerPosten* SP = SpielerFuer(E.Key))
 		{
 			Z.Einheit = SP->Art == 1 ? TDT(TEXT("Inventarplätze"), TEXT("inventory slots")) : SP->Art == 2 ? TDT(TEXT("Handplatz"), TEXT("hand slot"))
-				: SP->Art == 3 ? TDT(TEXT("% Kern-LP"), TEXT("% Core HP")) : SP->Max == 0 ? TDT(TEXT("Stück"), TEXT("pcs")) : TDT(TEXT("Ausrüstung"), TEXT("equipment"));
+				: SP->Art == 3 ? TDT(TEXT("% Kern-LP"), TEXT("% Core HP")) : SP->Art == 4 ? TDT(TEXT("Festplatte"), TEXT("Hard Drive")) : SP->Max == 0 ? TDT(TEXT("Stück"), TEXT("pcs")) : TDT(TEXT("Ausrüstung"), TEXT("equipment"));
 			Z.Max = SpielerMax(*SP);
 			// Marius 03.11.2026: eine gekaufte Waffe noch einmal anzubieten ergibt keinen Sinn
 			if (Z.Max > 0 && Z.Gekauft >= Z.Max)
@@ -1395,60 +1526,204 @@ FString UTDEinsatzSubsystem::Kaufe(const FString& Name, int32 Anzahl)
 	{
 		return TDF(TEXT("Unbekannt: %s (Liste: /td laden)"), TEXT("Unknown: %s (list: /td laden)"), *Name);
 	}
-	if (!RezeptVerfuegbar(GetWorld(), E->Rezept))
+	// 0.12 E4.1: Pruefen, Preis und Wirkung getrennt - der AWESOME-Shop nutzt dieselben Funktionen (TDShop.cpp)
+	if (FCString::Strcmp(E->Key, TEXT("Festplatte")) == 0 || FCString::Strcmp(E->Key, TEXT("Festplattenabgabe")) == 0)
 	{
-		return TDF(TEXT("%s ist noch nicht erforscht (MAM)."), TEXT("%s is not researched yet (MAM)."), *TDAnzeige(E->Key));
+		return TDT(TEXT("Festplatten gibt es nur im AWESOME-Shop, dort lassen sie sich auch abgeben."), TEXT("Hard Drives are traded only in the AWESOME Shop, where you can also return them."));
 	}
-	int32 Gekauft = 0, Kosten = 0;
-	int32& Bisher = Kern->mKontingentGekauft.FindOrAdd(E->Key);
+	if (KernVerkauftNicht())
+	{
+		return TDT(TEXT("Der Kern verkauft nicht mehr - gekauft wird im AWESOME-Shop."), TEXT("The Core no longer sells - buy in the AWESOME Shop."));
+	}
+	FString Grund;
+	if (!KaufErlaubt(E->Key, Grund))
+	{
+		return Grund;
+	}
+	const int32 Bisher = Kern->mKontingentGekauft.FindRef(E->Key);
 	const FTDSpielerPosten* SP = SpielerFuer(E->Key);
-	if (SP && SpielerMax(*SP) > 0 && Bisher >= SpielerMax(*SP))
-	{
-		return TDF(TEXT("%s: schon %d von %d gekauft."), TEXT("%s: already bought %d of %d."), *TDAnzeige(E->Key), Bisher, SpielerMax(*SP));
-	}
-	// 21.11. (C9, C14): Klingenlaeufer nur als Ersatz, Nobelisken erst mit dem Zuender
-	if (SP && !SpielerPostenSichtbar(*SP))
-	{
-		return FCString::Strcmp(SP->Key, TEXT("Nobelisken")) == 0
-			? TDT(TEXT("Nobelisken gibt es im Laden erst mit dem Nobelisken-Zünder."), TEXT("Nobelisks are sold only once you have the Nobelisk Detonator."))
-			: TDF(TEXT("%s hast du schon."), TEXT("You already have %s."), *TDAnzeige(E->Key));
-	}
-	// 0.11 (Gegencheck Einsatz A7): nach der Niederlage kostete die Reparatur Coupons und heilte nichts
-	if (SP && SP->Art == 3 && (Kern->mLaufEnde != 0 || Kern->GetTDHealth() <= 0.f))
-	{
-		return TDT(TEXT("Der Lauf ist vorbei - der Kern lässt sich nicht mehr reparieren."), TEXT("The run is over - the Core can no longer be repaired."));
-	}
-	if (SP && SP->Art == 3 && Kern->GetTDHealth() >= Kern->GetTDMaxHealth() - 1.f)
-	{
-		return TDT(TEXT("Der Kern ist unbeschädigt."), TEXT("The Core is undamaged."));
-	}
+	int32 Gekauft = 0, Kosten = 0;
 	for (int32 i = 0; i < FMath::Max(1, Anzahl); ++i)
 	{
-		if (SP && SpielerMax(*SP) > 0 && Bisher >= SpielerMax(*SP))
+		if (SP && SpielerMax(*SP) > 0 && Bisher + Gekauft >= SpielerMax(*SP))
 		{
 			break;
 		}
-		const int32 Preis = LadenPreis(*E, Bisher);
-		if (Konto() < Preis)
+		const int32 Preis = LadenPreis(*E, Bisher + Gekauft);
+		if (Konto() < Kosten + Preis)
 		{
 			break;
 		}
-		NimmCoupons(GetWorld(), Kern, Preis);
 		Kosten += Preis;
-		if (UTDLaufProtokoll* Lauf = UTDLaufProtokoll::Get(this))
-		{
-			Lauf->Kauf(E->Key, Preis);
-		}
-		++Bisher;
 		++Gekauft;
 	}
 	if (Gekauft == 0)
 	{
 		return TDF(TEXT("Zu wenig FICSIT-Coupons (Konto %d Coupons)."), TEXT("Not enough FICSIT Coupons (balance %d Coupons)."), Konto());
 	}
-	mBelegtZeit = -1.f;
-	if (SP)
+	NimmCoupons(GetWorld(), Kern, Kosten);
+	return WirkeKauf(E->Key, Gekauft, Kosten);
+}
+
+bool UTDEinsatzSubsystem::KernVerkauftNicht() const
+{
+	return mAktiv && TDBalance::Wert(TEXT("Einsatz.Shop.KernBisShop"), 1.f) >= 1.f && TDShop::ShopSteht(this);
+}
+
+bool UTDEinsatzSubsystem::KaufErlaubt(const FString& Key, FString& OutGrund) const
+{
+	ATDDefenseCore* Kern = mKern.Get();
+	const FTDLadenEintrag* E = LadenFuer(Key);
+	if (!mAktiv || !Kern)
 	{
+		OutGrund = TDT(TEXT("Kein Einsatz aktiv."), TEXT("No operation active."));
+		return false;
+	}
+	if (!E)
+	{
+		OutGrund = TDF(TEXT("Unbekannt: %s (Liste: /td laden)"), TEXT("Unknown: %s (list: /td laden)"), *Key);
+		return false;
+	}
+	if (LadenInWelleZu())
+	{
+		OutGrund = TDT(TEXT("Während der Welle ist der Laden geschlossen."), TEXT("The shop is closed during a wave."));
+		return false;
+	}
+	if (!RezeptVerfuegbar(GetWorld(), E->Rezept))
+	{
+		OutGrund = TDF(TEXT("%s ist noch nicht erforscht (MAM)."), TEXT("%s is not researched yet (MAM)."), *TDAnzeige(E->Key));
+		return false;
+	}
+	const int32 Bisher = Kern->mKontingentGekauft.FindRef(E->Key);
+	const FTDSpielerPosten* SP = SpielerFuer(E->Key);
+	if (SP && SpielerMax(*SP) > 0 && Bisher >= SpielerMax(*SP))
+	{
+		OutGrund = TDF(TEXT("%s: schon %d von %d gekauft."), TEXT("%s: already bought %d of %d."), *TDAnzeige(E->Key), Bisher, SpielerMax(*SP));
+		return false;
+	}
+	// 21.11. (C9, C14): Klingenlaeufer nur als Ersatz, Nobelisken erst mit dem Zuender
+	if (SP && !SpielerPostenSichtbar(*SP))
+	{
+		OutGrund = FCString::Strcmp(SP->Key, TEXT("Nobelisken")) == 0
+			? TDT(TEXT("Nobelisken gibt es im Laden erst mit dem Nobelisken-Zünder."), TEXT("Nobelisks are sold only once you have the Nobelisk Detonator."))
+			: TDF(TEXT("%s hast du schon."), TEXT("You already have %s."), *TDAnzeige(E->Key));
+		return false;
+	}
+	// A6 E7: Abgabe nur mit einer Festplatte im Inventar
+	if (SP && SP->Art == 4 && FPImInventar() < 1)
+	{
+		OutGrund = TDT(TEXT("Keine Festplatte im Inventar."), TEXT("No Hard Drive in your inventory."));
+		return false;
+	}
+	// 0.11 (Gegencheck Einsatz A7): nach der Niederlage kostete die Reparatur Coupons und heilte nichts
+	if (SP && SP->Art == 3 && (Kern->mLaufEnde != 0 || Kern->GetTDHealth() <= 0.f))
+	{
+		OutGrund = TDT(TEXT("Der Lauf ist vorbei - der Kern lässt sich nicht mehr reparieren."), TEXT("The run is over - the Core can no longer be repaired."));
+		return false;
+	}
+	if (SP && SP->Art == 3 && Kern->GetTDHealth() >= Kern->GetTDMaxHealth() - 1.f)
+	{
+		OutGrund = TDT(TEXT("Der Kern ist unbeschädigt."), TEXT("The Core is undamaged."));
+		return false;
+	}
+	return true;
+}
+
+TArray<FString> UTDEinsatzSubsystem::LadenSchluessel()
+{
+	TArray<FString> Keys;
+	for (const FTDLadenEintrag& E : LadenListe)
+	{
+		if (FCString::Strcmp(E.Key, TEXT("Panzersperre")) != 0)
+		{
+			Keys.Add(E.Key);
+		}
+	}
+	return Keys;
+}
+
+int32 UTDEinsatzSubsystem::GrundpreisFuer(const FString& Key)
+{
+	const FTDLadenEintrag* E = LadenFuer(Key);
+	return E ? LadenPreis(*E, 0) : 0;
+}
+
+bool UTDEinsatzSubsystem::ShopSichtbar(const FString& Key) const
+{
+	const ATDDefenseCore* Kern = mKern.Get();
+	const FTDLadenEintrag* E = LadenFuer(Key);
+	if (!mAktiv || !Kern || !E || FCString::Strcmp(E->Key, TEXT("Panzersperre")) == 0 || !RezeptVerfuegbar(GetWorld(), E->Rezept))
+	{
+		return false;
+	}
+	if (const FTDSpielerPosten* SP = SpielerFuer(E->Key))
+	{
+		if (SpielerMax(*SP) > 0 && Kern->mKontingentGekauft.FindRef(E->Key) >= SpielerMax(*SP))
+		{
+			return false;
+		}
+		if (SP->Art == 3 && (Kern->mLaufEnde != 0 || Kern->GetTDHealth() >= Kern->GetTDMaxHealth() - 1.f))
+		{
+			return false;
+		}
+		return SpielerPostenSichtbar(*SP);
+	}
+	return true;
+}
+
+int32 UTDEinsatzSubsystem::PreisFuer(const FString& Key, int32 Anzahl) const
+{
+	const ATDDefenseCore* Kern = mKern.Get();
+	const FTDLadenEintrag* E = LadenFuer(Key);
+	if (!E)
+	{
+		return 0;
+	}
+	const int32 Bisher = Kern ? Kern->mKontingentGekauft.FindRef(E->Key) : 0;
+	int32 Summe = 0;
+	for (int32 i = 0; i < FMath::Max(1, Anzahl); ++i)
+	{
+		Summe += LadenPreis(*E, Bisher + i);
+	}
+	return Summe;
+}
+
+FString UTDEinsatzSubsystem::WirkeKauf(const FString& Key, int32 Gekauft, int32 Kosten)
+{
+	ATDDefenseCore* Kern = mKern.Get();
+	const FTDLadenEintrag* E = LadenFuer(Key);
+	if (!Kern || !E || Gekauft <= 0)
+	{
+		return FString();
+	}
+	// 23.11. (Gegencheck 0.13): Festplatte abgeben zaehlt nur Stuecke, die wirklich im Inventar lagen (keine Scheinkaeufe im Laufprotokoll)
+	if (FCString::Strcmp(E->Key, TEXT("Festplattenabgabe")) == 0)
+	{
+		Gekauft = FMath::Min(Gekauft, FPImInventar());
+		if (Gekauft <= 0)
+		{
+			return TDT(TEXT("Keine Festplatte im Inventar, nichts abgegeben."), TEXT("No Hard Drive in your inventory, nothing returned."));
+		}
+	}
+	int32& Bisher = Kern->mKontingentGekauft.FindOrAdd(E->Key);
+	for (int32 i = 0; i < Gekauft; ++i)
+	{
+		if (UTDLaufProtokoll* Lauf = UTDLaufProtokoll::Get(this))
+		{
+			Lauf->Kauf(E->Key, LadenPreis(*E, Bisher));
+		}
+		++Bisher;
+	}
+	mBelegtZeit = -1.f;
+	// 0.12 E4: naechster Preis auch im AWESOME-Shop (Kauf am Kern oder im Shop)
+	TDShop::SetzePreise(this);
+	if (const FTDSpielerPosten* SP = SpielerFuer(E->Key))
+	{
+		if (SP->Art == 4)
+		{
+			const FString Wirkung = SpielerWirkung(*SP, Gekauft * LadenPaket(*E));
+			return TDF(TEXT("%s Konto %d Coupons."), TEXT("%s Balance %d Coupons."), *Wirkung, Konto());
+		}
 		return TDF(TEXT("Gekauft: %s für %d Coupons. %s Konto %d Coupons."), TEXT("Bought: %s for %d Coupons. %s Balance %d Coupons."),
 			*TDAnzeige(E->Key), Kosten, *SpielerWirkung(*SP, Gekauft * LadenPaket(*E)), Konto());
 	}
@@ -1467,6 +1742,10 @@ FString UTDEinsatzSubsystem::KaufeKorb(const TMap<FString, int32>& Korb)
 	if (!mAktiv || !Kern)
 	{
 		return TDT(TEXT("Kein Einsatz aktiv."), TEXT("No operation active."));
+	}
+	if (KernVerkauftNicht())
+	{
+		return TDT(TEXT("Der Kern verkauft nicht mehr - gekauft wird im AWESOME-Shop."), TEXT("The Core no longer sells - buy in the AWESOME Shop."));
 	}
 	if (LadenInWelleZu())
 	{
@@ -1569,8 +1848,52 @@ void UTDEinsatzSubsystem::SetzeEinkauf(UFGShoppingListComponent* Liste, UClass* 
 	}
 }
 
+void UTDEinsatzSubsystem::FreigabeShop()
+{
+	// 0.12 E4/E5 (Marius 14.11.: nach Welle 2 der Shop; 0.13, Marius 22.11.: nach Welle 1 - Einsatz.Shop.AbWelle): Rezept geben,
+	// sobald die Welle geschafft ist - auch in alten Spielstaenden
+	if (!mAktiv)
+	{
+		return;
+	}
+	const UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
+	const int32 Geschafft = Waves ? (Waves->LaeuftWelle() ? Waves->GetWelle() - 1 : Waves->GetWelle()) : 0;
+	AFGRecipeManager* Rezepte = AFGRecipeManager::Get(GetWorld());
+	UClass* Rezept = LoadClass<UFGRecipe>(nullptr, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_ResourceSinkShop.Recipe_ResourceSinkShop_C"));
+	if (!Rezepte || !Rezept || Geschafft < TDBalance::Ganz(TEXT("Einsatz.Shop.AbWelle"), 1) || Rezepte->IsRecipeAvailable(Rezept))
+	{
+		return;
+	}
+	Rezepte->AddAvailableRecipe(Rezept);
+	UE_LOG(LogFicsitTD, Log, TEXT("Einstieg: AWESOME-Shop freigegeben nach Welle %d"), Geschafft);
+	TDAda::Sage(this, mKern.Get(), TEXT("AufgabeShop"));   // 0.12 E5: ADA mit Stimme, einmal je Kern (mAdaGesagt)
+	Melde(TDT(TEXT("AUFGABE: Baue den AWESOME-Shop (kostenlos, Baumenü Spezial, mindestens 60 m vom Kern). Dort kaufst du ab jetzt Kontingente, Ausrüstung und Festplatten. Der Kern verkauft nur noch, bis dein Shop steht."),
+		TEXT("TASK: Build the AWESOME Shop (free, build menu Special, at least 60 m from the Core). From now on you buy quotas, gear and Hard Drives there. The Core only sells until your Shop is built.")));
+}
+
+void UTDEinsatzSubsystem::FreigabeMam()
+{
+	// 22.11. (Handspiel H2): MAM-Rezept nach Einsatz.Mam.AbWelle geben (vorher Startrezept) - auch in alten Spielstaenden
+	if (!mAktiv)
+	{
+		return;
+	}
+	const UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
+	const int32 Geschafft = Waves ? (Waves->LaeuftWelle() ? Waves->GetWelle() - 1 : Waves->GetWelle()) : 0;
+	AFGRecipeManager* Rezepte = AFGRecipeManager::Get(GetWorld());
+	UClass* Rezept = LoadClass<UFGRecipe>(nullptr, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_Mam.Recipe_Mam_C"));
+	if (!Rezepte || !Rezept || Geschafft < TDBalance::Ganz(TEXT("Einsatz.Mam.AbWelle"), 2) || Rezepte->IsRecipeAvailable(Rezept))
+	{
+		return;
+	}
+	Rezepte->AddAvailableRecipe(Rezept);
+	UE_LOG(LogFicsitTD, Log, TEXT("Einstieg: MAM freigegeben nach Welle %d"), Geschafft);
+}
+
 void UTDEinsatzSubsystem::AktualisiereToDo()
 {
+	FreigabeShop();
+	FreigabeMam();
 	// neu freigeschaltete Logistik-Rezepte (z. B. Band Mk2 aus dem MAM) ebenfalls kostenlos machen
 	AktualisiereGratisRezepte();
 	SchalteScannerFrei();
@@ -1664,6 +1987,63 @@ void UTDEinsatzSubsystem::AktualisiereToDo()
 		Block.Add(TDT(TEXT("Laden und Welle: E am Abwehrkern"), TEXT("Shop and wave: E at the Defense Core")));
 		Block.Add(Ende);
 		Neu = FString::Join(Block, TEXT("\n")) + (Eigen.IsEmpty() ? FString() : FString(TEXT("\n\n")) + Eigen);
+		// 21.11. (Marius, C15): zweite Zeile der HUD-Statusleiste statt Notizblock - das Spiel liest die private To-do-Liste nur
+		// beim Laden (FGPlayerState.h), der Block blieb dort alt und in der alten Sprache stehen
+		AFGRecipeManager* RezeptVerwaltung = AFGRecipeManager::Get(GetWorld());
+		UClass* ShopRezept = LoadClass<UFGRecipe>(nullptr, TEXT("/Game/FactoryGame/Recipes/Buildings/Recipe_ResourceSinkShop.Recipe_ResourceSinkShop_C"));
+		const bool bShopAufgabe = !mFrei && !TDShop::ShopSteht(this) && RezeptVerwaltung && ShopRezept && RezeptVerwaltung->IsRecipeAvailable(ShopRezept);
+		// 0.13 (Marius 22.11.: Einstieg HUB -> Shop -> MAM, "dann baut sich alles logisch auf"): zu Beginn die HUB (Strom aus den
+		// Biomasse-Brennern, Wiedereinstiegspunkt), nach Welle 1 der Shop (Kontingente), nach Welle 2 das MAM (Festplatten)
+		const int32 Geschafft = Waves ? (Waves->LaeuftWelle() ? Waves->GetWelle() - 1 : Waves->GetWelle()) : 0;
+		bool bHubSteht = false;
+		for (TActorIterator<AFGBuildableTradingPost> It(GetWorld()); It; ++It)
+		{
+			bHubSteht = true;
+			break;
+		}
+		const bool bHubAufgabe = !mFrei && !bHubSteht;
+		if (bHubAufgabe && !mHubGemeldet)
+		{
+			mHubGemeldet = true;
+			UE_LOG(LogFicsitTD, Log, TEXT("Einstieg: Aufgabe HUB zu Beginn (Welle %d geschafft)"), Geschafft);
+			TDAda::Sage(this, mKern.Get(), TEXT("AufgabeHub"));
+			Melde(TDT(TEXT("AUFGABE: Baue die HUB (kostenlos, Baumenü Spezial, mindestens 60 m vom Kern). Ihre Biomasse-Brenner liefern Strom, und sie ist dein Wiedereinstiegspunkt."),
+				TEXT("TASK: Build the HUB (free, build menu Special, at least 60 m from the Core). Its biomass burners provide power, and it is your respawn point.")));
+		}
+		bool bMamSteht = false;
+		for (TActorIterator<AFGBuildableMAM> It(GetWorld()); It; ++It)
+		{
+			bMamSteht = true;
+			break;
+		}
+		const bool bMamAufgabe = !mFrei && !bMamSteht && Geschafft >= TDBalance::Ganz(TEXT("Einsatz.Mam.AbWelle"), 2);
+		if (bMamAufgabe && !mMamGemeldet)
+		{
+			mMamGemeldet = true;
+			UE_LOG(LogFicsitTD, Log, TEXT("Einstieg: Aufgabe MAM nach Welle %d"), Geschafft);
+			TDAda::Sage(this, mKern.Get(), TEXT("AufgabeMam"));
+			Melde(TDT(TEXT("AUFGABE: Baue das MAM (kostenlos, Baumenü Spezial, mindestens 60 m vom Kern). Dort setzt du Festplatten für neue Technik ein."),
+				TEXT("TASK: Build the MAM (free, build menu Special, at least 60 m from the Core). Spend Hard Drives there on new technology.")));
+		}
+		// 23.11. (Gegencheck 0.13): ohne gebaute HUB verdeckte die HUB-Aufgabe Shop und MAM - mehrere offene Aufgaben in einer Zeile
+		TArray<FString> Aufgaben;
+		if (bHubAufgabe) { Aufgaben.Add(TDT(TEXT("HUB"), TEXT("HUB"))); }
+		if (bShopAufgabe) { Aufgaben.Add(TDT(TEXT("AWESOME-Shop"), TEXT("AWESOME Shop"))); }
+		if (bMamAufgabe) { Aufgaben.Add(TDT(TEXT("MAM"), TEXT("MAM"))); }
+		mHudZeile = Aufgaben.Num() > 1 ? TDF(TEXT("AUFGABEN: Baue %s (kostenlos, mindestens 60 m vom Kern)"), TEXT("TASKS: Build %s (free, at least 60 m from the Core)"), *FString::Join(Aufgaben, TEXT(", ")))
+			: bHubAufgabe ? TDT(TEXT("AUFGABE: Baue die HUB (kostenlos) - Strom und Wiedereinstieg"), TEXT("TASK: Build the HUB (free) - power and respawn point"))
+			: bShopAufgabe ? TDT(TEXT("AUFGABE: Baue den AWESOME-Shop (kostenlos) - dort kaufst du ab jetzt"), TEXT("TASK: Build the AWESOME Shop (free) - buy there from now on"))
+			: bMamAufgabe ? TDT(TEXT("AUFGABE: Baue das MAM (kostenlos) - dort setzt du Festplatten ein"), TEXT("TASK: Build the MAM (free) - spend Hard Drives there"))
+			: Block[3];
+	}
+	else
+	{
+		mHudZeile.Reset();
+	}
+	// 21.11. (C15): Block nur noch auf Wunsch (Einsatz.ToDo.Block = 1); sonst wird ein alter Block aus der Liste entfernt
+	if (TDBalance::Wert(TEXT("Einsatz.ToDo.Block"), 0.f) < 1.f)
+	{
+		Neu = Eigen;
 	}
 	if (Neu != Bisher)
 	{
@@ -1748,14 +2128,35 @@ void UTDEinsatzSubsystem::PruefeHologramm(AFGHologram* Hologramm)
 		return;
 	}
 	// Mehrere auf einmal (Mauern ziehen): alle muessen ins Kontingent passen (Test 0.19.1: "Mauer 6/5")
-	const FString Grund = SperrGrund(Hologramm->GetBuildClass(), Hologramm->GetActorLocation(), FMath::Max(1, Hologramm->GetBaseCostMultiplier()));
+	FString Grund = SperrGrund(Hologramm->GetBuildClass(), Hologramm->GetActorLocation(), FMath::Max(1, Hologramm->GetBaseCostMultiplier()));
+	// 23.11. (Gegencheck 0.13): Ring am Umriss des Gebaeudes, nicht nur am Mittelpunkt (sichtbare Modellteile wie bei der Wegpruefung)
+	if (Grund != TEXT("Boden") && !mFrei && mKern.IsValid() && TDBalance::Wert(TEXT("Einsatz.Ring.Aktiv"), 1.f) > 0.f && IstFabrikgebaeude(Hologramm->GetBuildClass()))
+	{
+		const FBox Kasten = UTDWaveSubsystem::HologrammKasten(Hologramm);
+		const FVector KernOrt = mKern->GetActorLocation();
+		const FVector Naechster = Kasten.GetClosestPointTo(FVector(KernOrt.X, KernOrt.Y, Kasten.GetCenter().Z));
+		if (Kasten.IsValid && FVector::Dist2D(Naechster, KernOrt) < TDBalance::Wert(TEXT("Einsatz.Ring.Radius"), 60.f) * 100.f)
+		{
+			Grund = TEXT("Boden");
+		}
+	}
 	if (Grund == TEXT("Welle"))
 	{
 		Hologramm->AddConstructDisqualifier(UTDCDWellenSperre::StaticClass());
 	}
+	else if (Grund == TEXT("Boden"))
+	{
+		Hologramm->AddConstructDisqualifier(UTDCDBodenInstabil::StaticClass());
+		// 0.13 (Marius 22.11.): ADA beim ersten Versuch, im Ring zu bauen (Stimme einmal je Kern)
+		TDAda::Sage(this, mKern.Get(), TEXT("RingInstabil"));
+	}
 	else if (Grund == TEXT("Sink"))
 	{
 		Hologramm->AddConstructDisqualifier(UTDCDSinkGesperrt::StaticClass());
+	}
+	else if (Grund == TEXT("MamFrueh"))
+	{
+		Hologramm->AddConstructDisqualifier(UTDCDMamFrueh::StaticClass());
 	}
 	else if (Grund == TEXT("Kontingent"))
 	{
@@ -1769,10 +2170,27 @@ FString UTDEinsatzSubsystem::SperrGrund(UClass* BauKlasse, const FVector& Ort, i
 	{
 		return FString();
 	}
+	// 0.13 K2 (Marius 21.11.): Ring "instabiler Boden" - Fabrikgebaeude nicht naeher als Einsatz.Ring.Radius am Kern (Einsatz und
+	// Endlos; Bestand bleibt stehen, gesperrt ist nur der Neubau). Vor dem Kontingent, weil nicht jedes Fabrikgebaeude einen Schluessel hat.
+	if (const ATDDefenseCore* RingKern = mKern.Get(); RingKern && TDBalance::Wert(TEXT("Einsatz.Ring.Aktiv"), 1.f) > 0.f && IstFabrikgebaeude(BauKlasse)
+		&& FVector::Dist2D(Ort, RingKern->GetActorLocation()) < TDBalance::Wert(TEXT("Einsatz.Ring.Radius"), 60.f) * 100.f)
+	{
+		return TEXT("Boden");
+	}
 	const FString Key = Schluessel(BauKlasse);
 	if (Key.IsEmpty())
 	{
 		return FString();
+	}
+	// 23.11. (Gegencheck 0.13): MAM vor Einsatz.Mam.AbWelle (z. B. ueber ein HUB-Rezept) - eigener Grund statt "Kontingent erschoepft"
+	if (Key == TEXT("MAM"))
+	{
+		const UTDWaveSubsystem* MamWaves = GetWorld() ? GetWorld()->GetSubsystem<UTDWaveSubsystem>() : nullptr;
+		const int32 Geschafft = MamWaves ? (MamWaves->LaeuftWelle() ? MamWaves->GetWelle() - 1 : MamWaves->GetWelle()) : 0;
+		if (Geschafft < TDBalance::Ganz(TEXT("Einsatz.Mam.AbWelle"), 2))
+		{
+			return TEXT("MamFrueh");
+		}
 	}
 	// Bausperre im Verteidigungsfeld waehrend einer Welle
 	const ATDDefenseCore* Kern = mKern.Get();
@@ -1897,10 +2315,14 @@ void UTDEinsatzSubsystem::Starte(ATDDefenseCore* Kern, int32 Stufe, int32 Wellen
 	Verbinde();
 	mKern = Kern;
 	mAktiv = true;
+	// 21.11. (Fenster 2): die Hooks entstehen beim Modulstart, vor jedem Selbsttest-Plan - deshalb hier je Einsatz melden
+	UE_LOG(LogFicsitTD, Log, TEXT("Abriss: Sperre der Kernplattform %s (%d Hooks, Einsatz.Plattform.AbrissSperren %.0f)"),
+		GTDAbrissHooks > 0 ? TEXT("aktiv") : TEXT("FEHLT"), GTDAbrissHooks, TDBalance::Wert(TEXT("Einsatz.Plattform.AbrissSperren"), 1.f));
 	mFrei = false;
 	Kern->mEinsatzAktiv = true;
 	Kern->mEinsatzFrei = false;
 	// Startkit nur einmal je Einsatz (sonst liesse es sich durch Neustart beliebig oft holen)
+	const bool bErsterStart = !Kern->mEinsatzStartkit;   // 24.11.: auch fuer das Startkapital
 	if (!Kern->mEinsatzStartkit)
 	{
 		// Startkit = Baumaterial fuer das ganze Startkontingent (aus den Rezepten) + Brennstoff
@@ -1954,6 +2376,32 @@ void UTDEinsatzSubsystem::Starte(ATDDefenseCore* Kern, int32 Stufe, int32 Wellen
 	ZeigeHud();
 	Meldungen.Append(StatusText());
 	UE_LOG(LogFicsitTD, Log, TEXT("Einsatz gestartet (Stufe %d, %d Wellen)"), Stufe, Wellen);
+	// 23.11. (Gegencheck Konzept R5, Marius: "keine Fundamente im Einsatz" bleibt): einmal je Einsatz erklaeren, warum
+	Melde(TDT(TEXT("Hinweis: Im Einsatz gibt es keine Fundamente, Wände und Rampen des Spiels. Sie würden den Gegnern jeden Weg versperren. Abwehrmauern und Tore gibt es im Shop."),
+		TEXT("Note: during an operation there are no foundations, walls or ramps from the base game. They would block every enemy path. Defense walls and gates are in the Shop.")));
+	// 24.11. (Marius: frueh entschaerfen; kalibrierter Simulator: ohne Startkapital scheiterte jeder zweite Lauf bis W8, mit 20-30
+	// Coupons keiner): Startkapital fuer die ersten Tuerme, einmal je Einsatz (wie das Startkit), Endlos-Wellen bleiben beim Alten
+	const int32 StartCoupons = TDBalance::Ganz(TEXT("Einsatz.Start.Coupons"), 40);
+	if (Kern && StartCoupons > 0 && bErsterStart && !UTDKernplatz::IstEndlos(this))
+	{
+		Kern->mEinsatzPunkte += StartCoupons;
+		const int32 Gegeben = GibOffeneCoupons();
+		UE_LOG(LogFicsitTD, Log, TEXT("Einsatz: Startkapital %d Coupons (%d ins Inventar)"), StartCoupons, Gegeben);
+		Melde(TDF(TEXT("Startkapital: %d FICSIT-Coupons für deine ersten Türme (AWESOME-Shop, Kontingente)."),
+			TEXT("Starting funds: %d FICSIT Coupons for your first turrets (AWESOME Shop, quotas)."), StartCoupons));
+	}
+	// 23.11. (Marius: Oel bleibt fern, Option D "so lassen, aber sagen"): einmal je Einsatz sagen, wo das naechste Rohoel liegt
+	if (Kern)
+	{
+		const FString Oel = UTDKernplatz::OelHinweis(GetWorld(), Kern->GetActorLocation());
+		if (!Oel.IsEmpty())
+		{
+			UE_LOG(LogFicsitTD, Log, TEXT("Einsatz: Oel-Hinweis: %s"), *Oel);
+			Melde(Oel);
+		}
+	}
+	// 0.12 E4: Shop-Preise aus den Kaufzaehlern (ohne Einsatz Grundpreise)
+	TDShop::SetzePreise(this);
 }
 
 void UTDEinsatzSubsystem::Beende()
@@ -1978,6 +2426,8 @@ void UTDEinsatzSubsystem::Beende()
 	}
 	AktualisiereToDo();
 	StelleRezepteWiederHer();
+	// 0.12 E4: Shop-Preise aus den Kaufzaehlern (ohne Einsatz Grundpreise)
+	TDShop::SetzePreise(this);
 }
 
 int32 UTDEinsatzSubsystem::LaufEnde() const
@@ -2092,6 +2542,8 @@ void UTDEinsatzSubsystem::Lade(ATDDefenseCore* Kern)
 		mUmstellVersuche = 0;
 		GetWorld()->GetTimerManager().SetTimer(mUmstellTimer, FTimerDelegate::CreateUObject(this, &UTDEinsatzSubsystem::UmstellungNachLaden), 2.f, true, 2.f);
 	}
+	// 0.12 E4: Shop-Preise aus den Kaufzaehlern (ohne Einsatz Grundpreise)
+	TDShop::SetzePreise(this);
 }
 
 void UTDEinsatzSubsystem::UmstellungNachLaden()
@@ -2212,6 +2664,10 @@ void UTDEinsatzSubsystem::BieteEndlosBonusAn(int32 Welle)
 	const UTDWaveSubsystem* Waves = GetWorld()->GetSubsystem<UTDWaveSubsystem>();
 	const bool bEndlos = Waves && Waves->IstEndlos();
 	UE_LOG(LogFicsitTD, Log, TEXT("%s: Bonuswahl nach Bosswelle %d angeboten"), bEndlos ? TEXT("Endlos") : TEXT("Einsatz"), Welle);
+	// 21.11. (Marius, C10 "1 je Boss"): jede geschaffte Bosswelle bringt Talentpunkte, Rang nur noch Boni
+	UTDPionier::BossGeschafft(this, Welle);
+	// 21.11. (Marius, C11): eigenes Fenster mit Bericht und drei Karten (die Knoepfe im Kern-Menue bleiben fuer "spaeter")
+	UTDBonusFenster::Zeige(this, Welle, bEndlos);
 	Melde(bEndlos ? TDF(TEXT("Bosswelle %d geschafft! Lange Pause - wähle im Kern-Menü (E am Kern) einen Bonus: %s, %s oder %s."),
 		TEXT("Boss wave %d done! Long break - pick a bonus in the Core Menu (E at the Core): %s, %s or %s."), Welle,
 		*EndlosBonusName(0), *EndlosBonusName(1), *EndlosBonusName(2))
