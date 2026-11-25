@@ -1,0 +1,254 @@
+{
+  "Name": "Screenshots-EN-013",
+  "_Hinweis": "25.11.2026 (Marius: neue Screenshots zusaetzlich zu den alten fuer Mod-Seite und Posts): englische Bilder der 0.13-Neuerungen. Kein Pruefplan, Aufruf mit -Sprache en -Kultur en. AWESOME Shop (nach dem ADA-Gruss, ohne Kaeufe, damit keine Chatzeilen im Bild stehen), Ring 'instabiler Boden' von oben, dann W45 mit Himmelstuermen: Vogelschwarm, Mantas ueber der Basis (Manta-LP sehr hoch, damit sie lange leben), Welle mit HUD. Bilder nur Vogelperspektive bzw. HUD, keine Ego-Perspektive vor Tuermen (Marius 20.11.).",
+  "NeuesSpiel": {
+    "Startort": "Rocky Desert",
+    "Modus": 1
+  },
+  "ErweiterteEinstellungen": false,
+  "WarteNachLaden": 60,
+  "MaxMinuten": 20,
+  "Schritte": [
+    {
+      "pruefe": "Version",
+      "soll": "{VERSION}",
+      "text": "richtige Mod-Version geladen"
+    },
+    {
+      "warteBis": "EinsatzAktiv",
+      "max": 120
+    },
+    {
+      "warte": 45
+    },
+    {
+      "gib": "/Game/FactoryGame/Resource/Parts/ResourceSinkCoupon/Desc_ResourceSinkCoupon.Desc_ResourceSinkCoupon_C",
+      "anzahl": 120
+    },
+    {
+      "baue": "Shop",
+      "klasse": "/Game/FactoryGame/Buildable/Factory/ResourceSinkShop/Build_ResourceSinkShop.Build_ResourceSinkShop_C",
+      "baurezept": "/Game/FactoryGame/Recipes/Buildings/Recipe_ResourceSinkShop.Recipe_ResourceSinkShop_C"
+    },
+    {
+      "warte": 25
+    },
+    {
+      "oeffne": "Shop"
+    },
+    {
+      "warte": 3
+    },
+    {
+      "foto": "EN013_AwesomeShop"
+    },
+    {
+      "schliesse": true
+    },
+    {
+      "warte": 1
+    },
+    {
+      "balance": {
+        "Einsatz.Ring.SignaleImmer": 1
+      }
+    },
+    {
+      "warte": 2
+    },
+    {
+      "kamera": "frei",
+      "ort": "kern",
+      "richtung": 300,
+      "abstand": 20,
+      "hoehe": 45,
+      "blick": "kern",
+      "blickhoehe": 0,
+      "fov": 80
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "EN013_UnstableGround_Top",
+      "ohneHUD": true
+    },
+    {
+      "kamera": "frei",
+      "ort": "kern",
+      "richtung": 30,
+      "abstand": 66,
+      "hoehe": 6,
+      "blick": "kern",
+      "blickhoehe": 4,
+      "fov": 60
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "EN013_UnstableGround_Ring",
+      "ohneHUD": true
+    },
+    {
+      "kamera": "erste"
+    },
+    {
+      "balance": {
+        "Einsatz.Ring.SignaleImmer": 0
+      }
+    },
+    {
+      "befehl": "td einsatz frei an"
+    },
+    {
+      "stromfrei": true
+    },
+    {
+      "versorgung": {
+        "Bolzenturm": 200,
+        "Himmelsturm": 200
+      }
+    },
+    {
+      "baue": "Himmelsturm",
+      "anzahl": 3,
+      "level": 2,
+      "rezept": "Recipe_TD_Flak_Shoot",
+      "ring": "innen"
+    },
+    {
+      "baue": "Bolzenturm",
+      "anzahl": 8,
+      "level": 3,
+      "rezept": "Recipe_TD_Shoot_SpikedRebar"
+    },
+    {
+      "balance": {
+        "Stufen.Normal.GegnerLP": 0.05,
+        "Flieger.Manta.LP": 400000,
+        "Flieger.Manta.Anzahl": 3,
+        "Flieger.Anzahl": 16
+      },
+      "text": "Fotolauf: Mantas leben lange (400000 x 0,05 = 20000 LP), grosser Vogelschwarm"
+    },
+    {
+      "befehl": "td kern springe 45"
+    },
+    {
+      "warte": 3
+    },
+    {
+      "befehl": "td kern weiter"
+    },
+    {
+      "warte": 8
+    },
+    {
+      "kamera": "frei",
+      "ort": "vogel",
+      "richtungZu": "kern",
+      "richtung": 180,
+      "abstand": 22,
+      "hoehe": 3,
+      "blick": "vogel",
+      "blickhoehe": 0,
+      "anheben": 20,
+      "fov": 55
+    },
+    {
+      "warte": 0.1
+    },
+    {
+      "foto": "EN013_BirdFlock",
+      "ohneHUD": true
+    },
+    {
+      "warte": 14
+    },
+    {
+      "kamera": "frei",
+      "ort": "manta",
+      "richtungZu": "kern",
+      "richtung": 120,
+      "abstand": 18,
+      "hoehe": 3,
+      "blick": "manta",
+      "blickhoehe": 0,
+      "anheben": 0,
+      "fov": 60
+    },
+    {
+      "warte": 0.3
+    },
+    {
+      "foto": "EN013_Manta_Close",
+      "ohneHUD": true
+    },
+    {
+      "kamera": "frei",
+      "ort": "manta",
+      "richtungZu": "kern",
+      "richtung": 45,
+      "abstand": 25,
+      "hoehe": -15,
+      "blick": "manta",
+      "blickhoehe": 0,
+      "anheben": 0,
+      "fov": 60
+    },
+    {
+      "warte": 0.3
+    },
+    {
+      "foto": "EN013_Manta_Below",
+      "ohneHUD": true
+    },
+    {
+      "kamera": "frei",
+      "ort": "kern",
+      "richtung": 200,
+      "abstand": 60,
+      "hoehe": 30,
+      "blick": "kern",
+      "blickhoehe": 8,
+      "anheben": 0,
+      "fov": 70
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "EN013_Mantas_Over_Base",
+      "ohneHUD": true
+    },
+    {
+      "kamera": "frei",
+      "ort": "kern",
+      "richtung": 140,
+      "abstand": 45,
+      "hoehe": 22,
+      "blick": "kern",
+      "blickhoehe": 8,
+      "anheben": 0,
+      "fov": 70
+    },
+    {
+      "warte": 2
+    },
+    {
+      "foto": "EN013_Wave45_HUD"
+    },
+    {
+      "kamera": "erste"
+    },
+    {
+      "balance": {
+        "Stufen.Normal.GegnerLP": 1.25,
+        "Flieger.Manta.LP": 1500,
+        "Flieger.Manta.Anzahl": 1,
+        "Flieger.Anzahl": 6
+      }
+    }
+  ]
+}
