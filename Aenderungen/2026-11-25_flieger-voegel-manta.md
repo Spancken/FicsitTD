@@ -36,4 +36,8 @@ Es gilt weiter: Gegner greifen nie den Spieler an und zerstören nie die Fabrik.
 
 **Changelog DE:** Flieger sind jetzt echte Flugtiere: ein Vogelschwarm ab Welle 43 und ab Welle 45 Mantas, die über dem Kern kreisen und Säure spucken. Bodentürme treffen sie nicht, der Himmelsturm und deine Handwaffen schon. Die fliegenden Krabben sind raus.
 
-**Nachweis:** offen (Selbsttest `Flieger` nach dem Build).
+**Nachweis:**
+- `2026-11-25_1134_Flieger` 30/30 auf dem Endstand `2c85d3c`: 7 Vögel und 2 Mantas mit 400 LP. Die Himmelstürme trafen 9-mal und schossen 5 Vögel und beide Mantas ab, die Säure richtete 84 Schaden am Kern an. Kein Sicherheitsnetz, keine Warnungen. Fotos: Vogel (Skala 1,5) gut erkennbar, Manta kreist über dem Kern.
+- Davor `_1000_Flieger` 29/30: Die Kern-Kamera richtete sich nach einem lebenden Manta, beide waren aber schon abgeschossen. Das war ein Fehler im Plan. Die Kern-Kamera hat jetzt eine feste Richtung, die Vogel-Kamera mehr Abstand und darf angehoben werden.
+- Regression auf `2c85d3c`: Release DE `_1107` 31/31, ReleaseEn `_1122` 10/10, Zip mit G5 `_1130` bestanden (Version 0.13.0).
+- Offen fürs Handspiel: die Balance des Flieger-Schadens und Treffer der Handwaffen auf Flieger.

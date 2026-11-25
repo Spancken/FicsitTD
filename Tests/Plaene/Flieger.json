@@ -67,16 +67,16 @@
       "kamera": "frei",
       "ort": "vogel",
       "richtungZu": "kern",
-      "richtung": 160,
-      "abstand": 8,
-      "hoehe": 1,
+      "richtung": 180,
+      "abstand": 16,
+      "hoehe": 2,
       "blick": "vogel",
       "blickhoehe": 0,
-      "anheben": 0,
-      "fov": 60
+      "anheben": 20,
+      "fov": 50
     },
     {
-      "warte": 0.5
+      "warte": 0.1
     },
     {
       "foto": "Flieger_Vogel",
@@ -107,7 +107,6 @@
     {
       "kamera": "frei",
       "ort": "kern",
-      "richtungZu": "manta",
       "richtung": 200,
       "abstand": 45,
       "hoehe": 25,
