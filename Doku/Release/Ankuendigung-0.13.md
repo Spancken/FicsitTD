@@ -59,6 +59,8 @@ Player guide: https://spancken.github.io/FicsitTD/
 
 ## Ko-fi-Beitrag (Englisch, Bild: `docs/img/mantas-over-base.jpg`)
 
+> **Veröffentlicht 25.11.2026** durch Claude auf Marius’ Freigabe: https://ko-fi.com/post/FICSIT-Tower-Defense-0-13-something-is-coming-fr-J3H32B9TOK
+
 **Titel:** FICSIT Tower Defense 0.13 – something is coming from the sky
 
 **Text:**
